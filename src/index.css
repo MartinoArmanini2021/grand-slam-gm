@@ -1,0 +1,114 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --font-sans: 'Plus Jakarta Sans Variable', system-ui, sans-serif;
+  --font-mono: 'DM Mono', ui-monospace, monospace;
+
+  /* ATP-inspired light palette */
+  --bg:        #EEF1F5;
+  --surface:   #FFFFFF;
+  --raised:    #F5F7FA;
+  --navy:      #0A1B33;  /* deep ATP navy — header + primary text */
+  --ink:       #0A1B33;
+  --ink-2:     #5B6B84;
+  --ink-3:     #9AA7BC;
+  --blue:      #1466D6;  /* ATP accent blue */
+  --green:     #12A150;
+  --ember:     #E5472B;
+  --gold:      #D99A00;
+  --line:      rgba(10,27,51,0.10);
+  --line-soft: rgba(10,27,51,0.06);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root { min-height: 100svh; }
+
+.font-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* ─── Surfaces ─────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(10,27,51,0.04), 0 4px 16px rgba(10,27,51,0.04);
+}
+.card-raised {
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+/* ─── Buttons ──────────────────────────────── */
+.btn-primary {
+  background: var(--blue);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 14px;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.1s;
+}
+.btn-primary:hover { filter: brightness(1.06); }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.btn-ghost {
+  background: #fff;
+  color: var(--ink-2);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 13px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.btn-ghost:hover { color: var(--ink); border-color: rgba(10,27,51,0.2); }
+
+/* ─── Badges ───────────────────────────────── */
+.badge-win  { background: rgba(18,161,80,0.12);  color: var(--green); border: 1px solid rgba(18,161,80,0.25); }
+.badge-loss { background: rgba(229,71,43,0.12);   color: var(--ember); border: 1px solid rgba(229,71,43,0.25); }
+.badge-gold { background: rgba(217,154,0,0.14);   color: var(--gold);  border: 1px solid rgba(217,154,0,0.3); }
+.badge-dim  { background: rgba(10,27,51,0.05);     color: var(--ink-2); border: 1px solid var(--line); }
+
+/* ─── Surface colours ──────────────────────── */
+.grass-text { color: var(--green); }
+.clay-text  { color: var(--ember); }
+.hard-text  { color: var(--blue); }
+
+/* ─── Scrollbar ────────────────────────────── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(10,27,51,0.18); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(10,27,51,0.3); }
+
+/* ─── Motion ───────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+.fade-in { animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.pulse-dot { animation: pulseDot 1.8s ease-in-out infinite; }
+@keyframes pulseDot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
