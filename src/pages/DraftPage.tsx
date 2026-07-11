@@ -4,6 +4,7 @@ import { PLAYERS, getPlayer } from '../data/players';
 import SurfaceBar from '../components/SurfaceBar';
 import FormDots from '../components/FormDots';
 import PlayerAvatar from '../components/PlayerAvatar';
+import { toast } from '../store/toastStore';
 
 type SortKey = 'ranking' | 'price' | 'grass' | 'form';
 type FilterSurface = 'all' | 'grass' | 'hard' | 'clay';
@@ -301,7 +302,7 @@ export default function DraftPage() {
             )}
 
             <button
-              onClick={finalizeDraft}
+              onClick={() => { finalizeDraft(); toast('Squad locked in — good luck! 🎾', 'good'); }}
               disabled={myTeam.length === 0}
               className="w-full py-2.5 rounded-xl font-bold text-sm transition-all"
               style={{

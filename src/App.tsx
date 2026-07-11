@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useGameStore } from './store/gameStore';
 import { ROUNDS } from './data/tournament';
 import HomePage from './pages/HomePage';
@@ -8,9 +9,15 @@ import TeamPage from './pages/TeamPage';
 import LeaguePage from './pages/LeaguePage';
 import BacktestPage from './pages/BacktestPage';
 import PlayerPage from './pages/PlayerPage';
+import Toaster from './components/Toaster';
+import HowToPlay from './components/HowToPlay';
+import { toast } from './store/toastStore';
 
 const NAVY = '#0A1B33';
 const BLUE = '#1466D6';
+
+const seenRules = () => { try { return !!localStorage.getItem('gsgm-seen-rules'); } catch { return true; } };
+const markSeen = () => { try { localStorage.setItem('gsgm-seen-rules', '1'); } catch { /* ignore */ } };
 
 const TABS = [
   { id: 'home',       label: 'Home'    },
@@ -23,6 +30,11 @@ const TABS = [
 export default function App() {
   const { activeTab, setActiveTab, phase, myScore, budget, currentRoundIndex, myTeam } = useGameStore();
   const currentRound = currentRoundIndex < ROUNDS.length ? ROUNDS[currentRoundIndex] : null;
+  const [showRules, setShowRules] = useState(() => !seenRules());
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  const closeRules = () => { setShowRules(false); markSeen(); };
+  const doReset = () => { useGameStore.getState().resetGame(); setConfirmReset(false); toast('Game reset — draft a new squad', 'info'); };
 
   return (
     <div className="min-h-screen" style={{ background: '#EEF1F5' }}>
@@ -92,15 +104,28 @@ export default function App() {
               )}
             </div>
 
-            <button
-              onClick={() => useGameStore.getState().resetGame()}
-              className="text-xs transition-colors shrink-0"
-              style={{ color: '#6B7E9C' }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#B9C6DA')}
-              onMouseLeave={e => (e.currentTarget.style.color = '#6B7E9C')}
-            >
-              Reset
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => setShowRules(true)}
+                aria-label="How to play"
+                className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors"
+                style={{ background: 'rgba(255,255,255,0.12)', color: '#B9C6DA' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#B9C6DA')}
+                title="How to play"
+              >
+                ?
+              </button>
+              <button
+                onClick={() => setConfirmReset(true)}
+                className="text-xs transition-colors"
+                style={{ color: '#6B7E9C' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#B9C6DA')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#6B7E9C')}
+              >
+                Reset
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -115,6 +140,40 @@ export default function App() {
         {activeTab === 'backtest'   && <BacktestPage />}
         {activeTab === 'player'     && <PlayerPage />}
       </main>
+
+      <HowToPlay open={showRules} onClose={closeRules} />
+      <Toaster />
+
+      {/* Reset confirmation */}
+      {confirmReset && (
+        <div
+          onClick={() => setConfirmReset(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(10,27,51,0.55)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+        >
+          <div onClick={e => e.stopPropagation()} className="fade-in card" style={{ maxWidth: 380, width: '100%', padding: 22, background: '#fff' }}>
+            <div className="text-lg font-bold" style={{ color: '#0A1B33' }}>Reset your game?</div>
+            <p className="text-sm mt-1 mb-4" style={{ color: '#5B6B84' }}>
+              This clears your squad, captain, score and transfers, and starts a fresh draft. This can’t be undone.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmReset(false)}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+                style={{ background: '#F0F3F7', color: '#0A1B33', border: '1px solid rgba(10,27,51,0.1)' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={doReset}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white"
+                style={{ background: '#E5472B' }}
+              >
+                Reset game
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

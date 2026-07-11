@@ -4,6 +4,7 @@ import { ROUNDS, getMatchesForRound, getPlayerExit, transfersOpen } from '../dat
 import { getPlayer } from '../data/players';
 import PlayerAvatar from '../components/PlayerAvatar';
 import { getTier, TIER_META } from '../data/tiers';
+import { toast } from '../store/toastStore';
 import type { RoundId } from '../types';
 
 export default function TournamentPage() {
@@ -77,7 +78,7 @@ export default function TournamentPage() {
                     return (
                       <button
                         key={id}
-                        onClick={() => setCaptain(id)}
+                        onClick={() => { setCaptain(id); toast(`${p.name.split(' ').slice(-1)[0]} is your captain ⭐`, 'info'); }}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all"
                         style={{
                           background: isCap ? 'rgba(217,154,0,0.1)' : 'rgba(10,27,51,0.04)',
@@ -93,7 +94,13 @@ export default function TournamentPage() {
                   })}
                 </div>
                 <button
-                  onClick={playNextRound}
+                  onClick={() => {
+                    const label = currentRound.label;
+                    playNextRound();
+                    const rs = useGameStore.getState().roundScores;
+                    const last = rs[rs.length - 1];
+                    if (last) toast(last.points > 0 ? `+${last.points} points in the ${label}! 🎾` : `No points in the ${label}`, last.points > 0 ? 'good' : 'info');
+                  }}
                   disabled={!isCaptainSet}
                   className="px-6 py-2.5 rounded-xl font-bold text-sm transition-all"
                   style={{
@@ -367,7 +374,7 @@ function TransfersPanel() {
                         return (
                           <button
                             key={c.id}
-                            onClick={() => { replacePlayer(id, c.id); setOpenFor(null); }}
+                            onClick={() => { replacePlayer(id, c.id); setOpenFor(null); toast(`Transferred in ${c.name}`, 'good'); }}
                             className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all hover:brightness-[0.98]"
                             style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.07)' }}
                           >
