@@ -5,12 +5,12 @@ import PlayerAvatar from '../components/PlayerAvatar';
 import SurfaceBar from '../components/SurfaceBar';
 import FormDots from '../components/FormDots';
 
-const SURFACE_DOT: Record<string, string> = { grass: '#12A150', clay: '#E5472B', hard: '#1466D6' };
+const SURFACE_DOT: Record<string, string> = { grass: '#12A150', clay: '#E5472B', hard: '#0e6fc4' };
 
 function resultStyle(r: string): [string, string] {
   if (r === 'W')   return ['rgba(217,154,0,0.16)',  '#D99A00'];
-  if (r === 'F')   return ['rgba(10,27,51,0.08)',   '#0A1B33'];
-  if (r === 'SF')  return ['rgba(20,102,214,0.12)',  '#1466D6'];
+  if (r === 'F')   return ['rgba(10,27,51,0.08)',   '#0a1f44'];
+  if (r === 'SF')  return ['rgba(14,111,196,0.12)',  '#0e6fc4'];
   if (r === 'QF')  return ['rgba(18,161,80,0.12)',   '#12A150'];
   if (r === 'R16') return ['rgba(10,27,51,0.05)',    '#5B6B84'];
   if (r === 'DNS') return ['transparent',            '#9AA7BC'];
@@ -37,12 +37,12 @@ export default function PlayerPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 fade-in">
-      <button onClick={() => setActiveTab(playerReturnTab)} className="text-sm font-semibold mb-4" style={{ color: '#1466D6' }}>
+      <button onClick={() => setActiveTab(playerReturnTab)} className="text-sm font-semibold mb-4" style={{ color: '#0e6fc4' }}>
         ‹ {backLabel[playerReturnTab] ?? 'Back'}
       </button>
 
       {/* Hero */}
-      <div className="relative rounded-2xl overflow-hidden mb-4 p-6" style={{ background: 'linear-gradient(120deg,#0A1B33,#123163)' }}>
+      <div className="relative rounded-2xl overflow-hidden mb-4 p-6" style={{ background: 'linear-gradient(120deg,#0a1f44,#123163)' }}>
         <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 50% 90% at 88% 40%, ${tm.color}22 0%, transparent 70%)` }} />
         <div className="relative flex items-center gap-5">
           <PlayerAvatar playerId={p.id} name={p.name} size="xl" />
@@ -77,7 +77,7 @@ export default function PlayerPage() {
           { label: 'Record', value: `${p.ytd.wins}-${p.ytd.losses}` },
         ].map((f, i) => (
           <div key={i} className="rounded-xl p-3 text-center" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.08)' }}>
-            <div className="font-num text-lg font-bold" style={{ color: '#0A1B33' }}>{f.value}</div>
+            <div className="font-num text-lg font-bold" style={{ color: '#0a1f44' }}>{f.value}</div>
             <div className="text-[10px] mt-0.5" style={{ color: '#5B6B84' }}>{f.label}</div>
           </div>
         ))}

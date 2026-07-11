@@ -61,7 +61,7 @@ export default function DraftPage() {
               style={{
                 background: '#FFFFFF',
                 border: '1px solid rgba(10,27,51,0.09)',
-                color: '#0A1B33',
+                color: '#0a1f44',
               }}
             />
             {/* Surface filter */}
@@ -75,14 +75,14 @@ export default function DraftPage() {
                     background: filter === f
                       ? f === 'grass' ? 'rgba(18,161,80,0.15)'
                         : f === 'clay' ? 'rgba(229,71,43,0.15)'
-                        : f === 'hard' ? 'rgba(20,102,214,0.15)'
+                        : f === 'hard' ? 'rgba(14,111,196,0.15)'
                         : 'rgba(10,27,51,0.1)'
                       : 'transparent',
                     color: filter === f
                       ? f === 'grass' ? '#12A150'
                         : f === 'clay' ? '#E5472B'
-                        : f === 'hard' ? '#1466D6'
-                        : '#0A1B33'
+                        : f === 'hard' ? '#0e6fc4'
+                        : '#0a1f44'
                       : '#5B6B84',
                   }}
                 >
@@ -99,7 +99,7 @@ export default function DraftPage() {
                   className="px-3 py-2 text-xs font-semibold transition-colors"
                   style={{
                     background: sort === s ? 'rgba(10,27,51,0.08)' : 'transparent',
-                    color: sort === s ? '#0A1B33' : '#5B6B84',
+                    color: sort === s ? '#0a1f44' : '#5B6B84',
                   }}
                 >
                   {SORT_LABEL[s]}
@@ -139,7 +139,7 @@ export default function DraftPage() {
                     <div className="flex items-center gap-2.5 flex-1 min-w-0">
                       <PlayerAvatar playerId={player.id} name={player.name} size="sm" onClick={e => { e.stopPropagation(); openPlayer(player.id); }} />
                       <div className="min-w-0">
-                        <div className="text-sm font-semibold truncate" style={{ color: '#0A1B33' }}>
+                        <div className="text-sm font-semibold truncate" style={{ color: '#0a1f44' }}>
                           {player.name}
                           {player.seed && (
                             <span className="ml-1.5 font-num text-[10px] px-1 py-0.5 rounded" style={{ background: 'rgba(10,27,51,0.07)', color: '#5B6B84' }}>
@@ -159,12 +159,12 @@ export default function DraftPage() {
                     {/* Surface nums */}
                     <div className="hidden lg:flex gap-3 text-xs shrink-0">
                       <span className="font-num font-semibold" style={{ color: '#12A150' }}>G {player.surface.grass}%</span>
-                      <span className="font-num" style={{ color: '#1466D6' }}>H {player.surface.hard}%</span>
+                      <span className="font-num" style={{ color: '#0e6fc4' }}>H {player.surface.hard}%</span>
                       <span className="font-num" style={{ color: '#E5472B' }}>C {player.surface.clay}%</span>
                     </div>
 
                     {/* Price */}
-                    <div className="font-num font-bold text-sm shrink-0 w-14 text-right" style={{ color: '#1466D6' }}>
+                    <div className="font-num font-bold text-sm shrink-0 w-14 text-right" style={{ color: '#0e6fc4' }}>
                       ${player.price}M
                     </div>
 
@@ -228,7 +228,7 @@ export default function DraftPage() {
         <div className="w-72 shrink-0 hidden lg:block">
           <div className="sticky top-20 rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.09)' }}>
             <div className="flex items-center justify-between mb-1">
-              <h2 className="font-bold text-sm" style={{ color: '#0A1B33' }}>My Squad</h2>
+              <h2 className="font-bold text-sm" style={{ color: '#0a1f44' }}>My Squad</h2>
               <span className="font-num text-xs" style={{ color: '#5B6B84' }}>{myTeam.length} / {TEAM_SIZE}</span>
             </div>
 
@@ -236,10 +236,10 @@ export default function DraftPage() {
             <div className="mb-4 pt-3">
               <div className="flex justify-between text-xs mb-1.5" style={{ color: '#5B6B84' }}>
                 <span>Budget</span>
-                <span className="font-num font-semibold" style={{ color: '#1466D6' }}>${budget.toFixed(1)}M</span>
+                <span className="font-num font-semibold" style={{ color: '#0e6fc4' }}>${budget.toFixed(1)}M</span>
               </div>
               <div className="h-1 rounded-full" style={{ background: 'rgba(10,27,51,0.07)' }}>
-                <div className="h-full rounded-full transition-all" style={{ width: `${budget}%`, background: '#1466D6' }} />
+                <div className="h-full rounded-full transition-all" style={{ width: `${budget}%`, background: '#0e6fc4' }} />
               </div>
             </div>
 
@@ -262,7 +262,7 @@ export default function DraftPage() {
                   >
                     <PlayerAvatar playerId={id} name={p.name} size="sm" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium truncate" style={{ color: '#0A1B33' }}>{p.name}</div>
+                      <div className="text-xs font-medium truncate" style={{ color: '#0a1f44' }}>{p.name}</div>
                       <div className="font-num text-[10px]" style={{ color: '#5B6B84' }}>${p.price}M · 🌱{p.surface.grass}%</div>
                     </div>
                     {isCap && (
@@ -306,7 +306,7 @@ export default function DraftPage() {
               disabled={myTeam.length === 0}
               className="w-full py-2.5 rounded-xl font-bold text-sm transition-all"
               style={{
-                background: myTeam.length > 0 ? '#1466D6' : 'rgba(10,27,51,0.05)',
+                background: myTeam.length > 0 ? '#0e6fc4' : 'rgba(10,27,51,0.05)',
                 color: myTeam.length > 0 ? '#fff' : '#9AA7BC',
                 cursor: myTeam.length === 0 ? 'not-allowed' : 'pointer',
               }}
@@ -323,8 +323,8 @@ export default function DraftPage() {
 function ResultBadge({ result }: { result: string }) {
   const cfg: Record<string, [string, string]> = {
     W:   ['rgba(217,154,0,0.15)',  '#D99A00'],
-    F:   ['rgba(10,27,51,0.08)', '#0A1B33'],
-    SF:  ['rgba(20,102,214,0.12)',  '#1466D6'],
+    F:   ['rgba(10,27,51,0.08)', '#0a1f44'],
+    SF:  ['rgba(14,111,196,0.12)',  '#0e6fc4'],
     QF:  ['rgba(18,161,80,0.12)',    '#12A150'],
     R16: ['rgba(10,27,51,0.05)', '#5B6B84'],
     R32: ['rgba(10,27,51,0.04)', '#9AA7BC'],

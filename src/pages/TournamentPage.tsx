@@ -35,7 +35,7 @@ export default function TournamentPage() {
         <div className="mb-6 px-6 py-5 rounded-2xl text-center" style={{ background: 'rgba(217,154,0,0.06)', border: '1px solid rgba(217,154,0,0.2)' }}>
           <div className="text-3xl mb-2">🏆</div>
           <h2 className="text-xl font-bold mb-1" style={{ color: '#D99A00' }}>Tournament Complete</h2>
-          <div className="font-num text-2xl font-bold mb-3" style={{ color: '#0A1B33' }}>{myScore} pts</div>
+          <div className="font-num text-2xl font-bold mb-3" style={{ color: '#0a1f44' }}>{myScore} pts</div>
           <div className="flex justify-center gap-4">
             {roundScores.map(rs => (
               <div key={rs.round} className="text-center">
@@ -55,14 +55,14 @@ export default function TournamentPage() {
                 <div className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: '#5B6B84' }}>
                   {phase === 'pre_round' ? 'Up Next' : 'Round Complete'}
                 </div>
-                <div className="text-lg font-bold" style={{ color: '#0A1B33' }}>{currentRound.label}</div>
+                <div className="text-lg font-bold" style={{ color: '#0a1f44' }}>{currentRound.label}</div>
                 <div className="text-xs mt-0.5" style={{ color: '#5B6B84' }}>
                   Win = +{currentRound.points} pts · Captain win = +{currentRound.points * 2} pts
                 </div>
               </div>
               <div className="text-right">
                 <div className="text-xs mb-0.5" style={{ color: '#5B6B84' }}>Score</div>
-                <div className="font-num text-2xl font-bold" style={{ color: '#1466D6' }}>{myScore}</div>
+                <div className="font-num text-2xl font-bold" style={{ color: '#0e6fc4' }}>{myScore}</div>
               </div>
             </div>
           </div>
@@ -83,7 +83,7 @@ export default function TournamentPage() {
                         style={{
                           background: isCap ? 'rgba(217,154,0,0.1)' : 'rgba(10,27,51,0.04)',
                           border: `1px solid ${isCap ? 'rgba(217,154,0,0.3)' : 'rgba(10,27,51,0.07)'}`,
-                          color: isCap ? '#D99A00' : '#0A1B33',
+                          color: isCap ? '#D99A00' : '#0a1f44',
                           fontWeight: isCap ? 600 : 400,
                         }}
                       >
@@ -104,7 +104,7 @@ export default function TournamentPage() {
                   disabled={!isCaptainSet}
                   className="px-6 py-2.5 rounded-xl font-bold text-sm transition-all"
                   style={{
-                    background: isCaptainSet ? '#1466D6' : 'rgba(10,27,51,0.05)',
+                    background: isCaptainSet ? '#0e6fc4' : 'rgba(10,27,51,0.05)',
                     color: isCaptainSet ? '#fff' : '#9AA7BC',
                     cursor: isCaptainSet ? 'pointer' : 'not-allowed',
                   }}
@@ -121,7 +121,7 @@ export default function TournamentPage() {
                   .map(ret => (
                     <div key={ret.playerId} className="text-sm mb-1.5 flex items-center gap-2">
                       <span style={{ color: '#5B6B84' }}>💸</span>
-                      <span style={{ color: '#0A1B33' }}>{getPlayer(ret.playerId).name}</span>
+                      <span style={{ color: '#0a1f44' }}>{getPlayer(ret.playerId).name}</span>
                       <span style={{ color: '#5B6B84' }}>eliminated →</span>
                       <span className="font-num font-semibold" style={{ color: '#D99A00' }}>+${ret.amount}M returned</span>
                     </div>
@@ -130,7 +130,7 @@ export default function TournamentPage() {
                   <button
                     className="mt-3 px-5 py-2 rounded-xl text-sm font-semibold transition-all"
                     onClick={() => useGameStore.setState({ phase: 'pre_round' })}
-                    style={{ background: 'rgba(20,102,214,0.12)', border: '1px solid rgba(20,102,214,0.25)', color: '#1466D6' }}
+                    style={{ background: 'rgba(14,111,196,0.12)', border: '1px solid rgba(14,111,196,0.25)', color: '#0e6fc4' }}
                   >
                     Set Captain for {ROUNDS[currentRoundIndex]?.label} →
                   </button>
@@ -156,13 +156,13 @@ export default function TournamentPage() {
               onClick={() => setViewRound(round.id)}
               className="flex-1 py-2 px-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
               style={{
-                background: active ? 'rgba(20,102,214,0.15)' : 'transparent',
-                color: active ? '#1466D6' : revealed ? '#5B6B84' : '#9AA7BC',
+                background: active ? 'rgba(14,111,196,0.15)' : 'transparent',
+                color: active ? '#0e6fc4' : revealed ? '#5B6B84' : '#9AA7BC',
               }}
             >
               {round.short}
               {isCurrent && (
-                <span className="w-1.5 h-1.5 rounded-full pulse-dot inline-block" style={{ background: '#1466D6' }} />
+                <span className="w-1.5 h-1.5 rounded-full pulse-dot inline-block" style={{ background: '#0e6fc4' }} />
               )}
               {revealed && !active && (
                 <span className="w-1 h-1 rounded-full inline-block" style={{ background: '#12A150' }} />
@@ -218,8 +218,8 @@ function RoundMatches({
             key={match.id}
             className="flex items-center gap-2 px-3 py-2.5 rounded-2xl"
             style={{
-              background: hasMyPlayer ? 'rgba(20,102,214,0.04)' : '#FFFFFF',
-              border: `1px solid ${hasMyPlayer ? 'rgba(20,102,214,0.12)' : 'rgba(10,27,51,0.07)'}`,
+              background: hasMyPlayer ? 'rgba(14,111,196,0.04)' : '#FFFFFF',
+              border: `1px solid ${hasMyPlayer ? 'rgba(14,111,196,0.12)' : 'rgba(10,27,51,0.07)'}`,
             }}
           >
             <PlayerCell
@@ -287,7 +287,7 @@ function PlayerCell({
       <div className="min-w-0 flex-1">
         <div
           className="text-xs font-medium leading-tight truncate"
-          style={{ color: isMine ? '#0A1B33' : '#5B6B84' }}
+          style={{ color: isMine ? '#0a1f44' : '#5B6B84' }}
         >
           {player.name}
           {isCaptain && <span className="ml-1" style={{ color: '#D99A00' }}>⭐</span>}
@@ -316,7 +316,7 @@ function TransfersPanel() {
       <div className="mb-6 rounded-2xl px-5 py-4 flex items-center gap-3" style={{ background: 'rgba(10,27,51,0.03)', border: '1px solid rgba(10,27,51,0.1)' }}>
         <div className="text-xl">🔒</div>
         <div>
-          <div className="text-sm font-bold" style={{ color: '#0A1B33' }}>Transfer window closed</div>
+          <div className="text-sm font-bold" style={{ color: '#0a1f44' }}>Transfer window closed</div>
           <div className="text-xs" style={{ color: '#5B6B84' }}>No purchases after the quarter-finals — your squad is locked for the semis &amp; final.</div>
         </div>
       </div>
@@ -330,7 +330,7 @@ function TransfersPanel() {
     <div className="mb-6 rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid rgba(217,154,0,0.35)' }}>
       <div className="px-5 py-3 flex items-center justify-between" style={{ background: 'rgba(217,154,0,0.08)', borderBottom: '1px solid rgba(217,154,0,0.2)' }}>
         <div>
-          <div className="text-sm font-bold" style={{ color: '#0A1B33' }}>Transfers <span className="font-normal" style={{ color: '#9AA7BC' }}>· window closes after the QF</span></div>
+          <div className="text-sm font-bold" style={{ color: '#0a1f44' }}>Transfers <span className="font-normal" style={{ color: '#9AA7BC' }}>· window closes after the QF</span></div>
           <div className="text-xs" style={{ color: '#5B6B84' }}>Replace an eliminated player with anyone still in the draw · scores from {nextRound}</div>
         </div>
         <div className="text-right shrink-0">
@@ -349,13 +349,13 @@ function TransfersPanel() {
               <div className="flex items-center gap-3 px-3 py-2.5">
                 <PlayerAvatar playerId={id} name={p.name} size="sm" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold truncate" style={{ color: '#0A1B33' }}>{p.name}</div>
+                  <div className="text-sm font-semibold truncate" style={{ color: '#0a1f44' }}>{p.name}</div>
                   <div className="text-[11px]" style={{ color: '#E5472B' }}>OUT {exit} · <span className="font-num" style={{ color: '#5B6B84' }}>${p.price}M spent</span></div>
                 </div>
                 <button
                   onClick={() => setOpenFor(isOpen ? null : id)}
                   className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg"
-                  style={{ background: isOpen ? 'rgba(10,27,51,0.06)' : '#1466D6', color: isOpen ? '#5B6B84' : '#fff' }}
+                  style={{ background: isOpen ? 'rgba(10,27,51,0.06)' : '#0e6fc4', color: isOpen ? '#5B6B84' : '#fff' }}
                 >
                   {isOpen ? 'Cancel' : 'Replace →'}
                 </button>
@@ -380,10 +380,10 @@ function TransfersPanel() {
                           >
                             <PlayerAvatar playerId={c.id} name={c.name} size="sm" />
                             <div className="flex-1 min-w-0">
-                              <div className="text-xs font-semibold truncate" style={{ color: '#0A1B33' }}>{c.name}</div>
+                              <div className="text-xs font-semibold truncate" style={{ color: '#0a1f44' }}>{c.name}</div>
                               <div className="text-[10px]" style={{ color: tier.color }}>{getTier(c.ranking)} · #{c.ranking}</div>
                             </div>
-                            <div className="font-num text-sm font-bold shrink-0" style={{ color: '#1466D6' }}>${c.price}M</div>
+                            <div className="font-num text-sm font-bold shrink-0" style={{ color: '#0e6fc4' }}>${c.price}M</div>
                           </button>
                         );
                       })}

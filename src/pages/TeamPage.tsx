@@ -13,7 +13,7 @@ function BackToLeague() {
     <button
       onClick={() => setActiveTab('league')}
       className="inline-flex items-center gap-1 text-sm font-semibold mb-4"
-      style={{ color: '#1466D6' }}
+      style={{ color: '#0e6fc4' }}
     >
       ‹ League
     </button>
@@ -34,7 +34,7 @@ export default function TeamPage() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-20 text-center fade-in">
         <div className="text-5xl mb-4">🎾</div>
-        <h2 className="text-xl font-bold mb-2" style={{ color: '#0A1B33' }}>No squad yet</h2>
+        <h2 className="text-xl font-bold mb-2" style={{ color: '#0a1f44' }}>No squad yet</h2>
         <p className="text-sm" style={{ color: '#5B6B84' }}>Head to the Draft tab to pick your 6 players.</p>
       </div>
     );
@@ -49,13 +49,13 @@ export default function TeamPage() {
       {/* ── Score summary ── */}
       <div className="grid grid-cols-3 gap-3 mb-5">
         {[
-          { label: 'Total Score', value: myScore, unit: 'pts', color: '#1466D6' },
-          { label: 'Budget Left', value: `$${budget.toFixed(1)}M`, unit: 'of $100M', color: '#0A1B33' },
+          { label: 'Total Score', value: myScore, unit: 'pts', color: '#0e6fc4' },
+          { label: 'Budget Left', value: `$${budget.toFixed(1)}M`, unit: 'of $100M', color: '#0a1f44' },
           {
             label: phase === 'finished' ? 'Final Round' : 'Current Round',
             value: phase === 'finished' ? 'F' : phase === 'draft' ? '—' : ROUNDS[currentRoundIndex]?.short ?? '—',
             unit: phase === 'finished' ? 'done' : 'in play',
-            color: '#0A1B33',
+            color: '#0a1f44',
           },
         ].map((c, i) => (
           <div key={i} className="rounded-2xl p-4" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.07)' }}>
@@ -124,7 +124,7 @@ export default function TeamPage() {
                 <PlayerAvatar playerId={id} name={p.name} size="md" onClick={e => { e.stopPropagation(); openPlayer(id); }} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="font-bold" style={{ color: '#0A1B33' }}>{p.name}</span>
+                    <span className="font-bold" style={{ color: '#0a1f44' }}>{p.name}</span>
                     {isCap && (
                       <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ background: 'rgba(217,154,0,0.15)', color: '#D99A00', border: '1px solid rgba(217,154,0,0.25)' }}>
                         CAPTAIN ⭐
@@ -216,7 +216,7 @@ function RivalTeamView({ id, currentRoundIndex }: { id: string; currentRoundInde
       <div className="flex items-center gap-3 mb-5">
         <div className="w-1.5 h-10 rounded-full" style={{ background: rival.color }} />
         <div className="flex-1">
-          <h1 className="text-xl font-extrabold tracking-tight" style={{ color: '#0A1B33' }}>{rival.name}</h1>
+          <h1 className="text-xl font-extrabold tracking-tight" style={{ color: '#0a1f44' }}>{rival.name}</h1>
           <div className="text-xs" style={{ color: '#5B6B84' }}>{rival.tag}{transfers.length > 0 && ` · ${transfers.length} transfer${transfers.length > 1 ? 's' : ''} made`}</div>
         </div>
       </div>
@@ -224,9 +224,9 @@ function RivalTeamView({ id, currentRoundIndex }: { id: string; currentRoundInde
       {/* Summary */}
       <div className="grid grid-cols-3 gap-3 mb-5">
         {[
-          { label: 'Total Score', value: score, unit: 'pts', color: '#1466D6' },
-          { label: 'Budget Left', value: `$${budget.toFixed(1)}M`, unit: 'to spend', color: '#0A1B33' },
-          { label: 'Players', value: squad.length, unit: 'in squad', color: '#0A1B33' },
+          { label: 'Total Score', value: score, unit: 'pts', color: '#0e6fc4' },
+          { label: 'Budget Left', value: `$${budget.toFixed(1)}M`, unit: 'to spend', color: '#0a1f44' },
+          { label: 'Players', value: squad.length, unit: 'in squad', color: '#0a1f44' },
         ].map((c, i) => (
           <div key={i} className="rounded-2xl p-4" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.07)' }}>
             <div className="text-xs mb-1" style={{ color: '#5B6B84' }}>{c.label}</div>
@@ -249,8 +249,8 @@ function RivalTeamView({ id, currentRoundIndex }: { id: string; currentRoundInde
                 <PlayerAvatar playerId={pid} name={p.name} size="md" onClick={() => openPlayer(pid)} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold" style={{ color: '#0A1B33' }}>{p.name}</span>
-                    {inThisRound.has(pid) && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(20,102,214,0.12)', color: '#1466D6' }}>SUB IN</span>}
+                    <span className="font-bold" style={{ color: '#0a1f44' }}>{p.name}</span>
+                    {inThisRound.has(pid) && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(14,111,196,0.12)', color: '#0e6fc4' }}>SUB IN</span>}
                     {isCap && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(217,154,0,0.15)', color: '#D99A00' }}>C</span>}
                     {isOut && <span className="text-xs font-semibold px-2 py-0.5 rounded" style={{ background: 'rgba(229,71,43,0.1)', color: '#E5472B' }}>OUT {exit}</span>}
                   </div>

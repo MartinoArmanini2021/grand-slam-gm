@@ -11,10 +11,11 @@ import BacktestPage from './pages/BacktestPage';
 import PlayerPage from './pages/PlayerPage';
 import Toaster from './components/Toaster';
 import HowToPlay from './components/HowToPlay';
+import Logo from './components/Logo';
 import { toast } from './store/toastStore';
 
-const NAVY = '#0A1B33';
-const BLUE = '#1466D6';
+const NAVY = '#0a1f44';
+const BLUE = '#0e6fc4';
 
 const seenRules = () => { try { return !!localStorage.getItem('gsgm-seen-rules'); } catch { return true; } };
 const markSeen = () => { try { localStorage.setItem('gsgm-seen-rules', '1'); } catch { /* ignore */ } };
@@ -42,15 +43,10 @@ export default function App() {
       <header className="sticky top-0 z-50" style={{ background: NAVY, boxShadow: '0 1px 0 rgba(255,255,255,0.06), 0 6px 20px rgba(10,27,51,0.18)' }}>
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-center gap-4 h-14">
-            {/* Logo — placeholder monogram; swap for the Grand Slam GM logo when ready */}
-            <button onClick={() => setActiveTab('home')} className="flex items-center gap-2.5 shrink-0">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-extrabold text-sm" style={{ background: BLUE }}>
-                GM
-              </div>
-              <div className="hidden sm:block text-left">
-                <div className="text-sm font-extrabold leading-tight tracking-tight text-white">Grand Slam GM</div>
-                <div className="text-[10px]" style={{ color: '#8FA1BE' }}>Wimbledon 2026</div>
-              </div>
+            {/* Brand logo (reversed lockup for the navy header) */}
+            <button onClick={() => setActiveTab('home')} className="shrink-0" aria-label="Grand Slam GM — home">
+              <Logo height={26} reversed className="hidden sm:flex" />
+              <Logo height={26} reversed markOnly className="sm:hidden" />
             </button>
 
             {/* Nav */}
@@ -92,7 +88,7 @@ export default function App() {
                 ${budget.toFixed(1)}M
               </div>
               {phase === 'pre_round' && currentRound && (
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold" style={{ background: 'rgba(20,102,214,0.25)', color: '#8EB6F5' }}>
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold" style={{ background: 'rgba(14,111,196,0.25)', color: '#8EB6F5' }}>
                   <span className="w-1.5 h-1.5 rounded-full pulse-dot" style={{ background: '#8EB6F5', display: 'inline-block' }} />
                   {currentRound.short}
                 </div>
@@ -151,7 +147,7 @@ export default function App() {
           style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(10,27,51,0.55)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
         >
           <div onClick={e => e.stopPropagation()} className="fade-in card" style={{ maxWidth: 380, width: '100%', padding: 22, background: '#fff' }}>
-            <div className="text-lg font-bold" style={{ color: '#0A1B33' }}>Reset your game?</div>
+            <div className="text-lg font-bold" style={{ color: '#0a1f44' }}>Reset your game?</div>
             <p className="text-sm mt-1 mb-4" style={{ color: '#5B6B84' }}>
               This clears your squad, captain, score and transfers, and starts a fresh draft. This can’t be undone.
             </p>
@@ -159,7 +155,7 @@ export default function App() {
               <button
                 onClick={() => setConfirmReset(false)}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
-                style={{ background: '#F0F3F7', color: '#0A1B33', border: '1px solid rgba(10,27,51,0.1)' }}
+                style={{ background: '#F0F3F7', color: '#0a1f44', border: '1px solid rgba(10,27,51,0.1)' }}
               >
                 Cancel
               </button>

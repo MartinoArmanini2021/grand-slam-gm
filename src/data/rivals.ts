@@ -20,7 +20,7 @@ const SQUAD = 6;
 const formWins = (p: Player) => p.form.filter(r => r === 'W').length;
 
 export const RIVALS: Rival[] = [
-  { id: 'stars',    name: 'Galácticos FC',   tag: 'Stars & scrubs',        color: '#1466D6', rank: (a, b) => b.price - a.price },
+  { id: 'stars',    name: 'Galácticos FC',   tag: 'Stars & scrubs',        color: '#0e6fc4', rank: (a, b) => b.price - a.price },
   { id: 'value',    name: 'Value Vultures',  tag: 'Best grass per $',      color: '#12A150', rank: (a, b) => (b.surface.grass / b.price) - (a.surface.grass / a.price) },
   { id: 'grass',    name: 'Grass Gods',      tag: 'Grass-court merchants',  color: '#37B24D', rank: (a, b) => b.surface.grass - a.surface.grass },
   { id: 'form',     name: 'Momentum FC',     tag: 'Chasing hot form',      color: '#E5472B', rank: (a, b) => (formWins(b) - formWins(a)) || (b.surface.grass - a.surface.grass) },

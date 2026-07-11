@@ -14,8 +14,8 @@ const TIER_RANGE: Record<string, string> = {
 
 function resultStyle(r: TournamentResult): [string, string] {
   if (r === 'W')   return ['rgba(217,154,0,0.15)',  '#D99A00'];
-  if (r === 'F')   return ['rgba(10,27,51,0.07)', '#0A1B33'];
-  if (r === 'SF')  return ['rgba(20,102,214,0.12)',  '#1466D6'];
+  if (r === 'F')   return ['rgba(10,27,51,0.07)', '#0a1f44'];
+  if (r === 'SF')  return ['rgba(14,111,196,0.12)',  '#0e6fc4'];
   if (r === 'QF')  return ['rgba(18,161,80,0.12)',    '#12A150'];
   if (r === 'R16') return ['rgba(10,27,51,0.04)', '#5B6B84'];
   if (r === 'DNS') return ['transparent',           '#9AA7BC'];
@@ -49,14 +49,14 @@ export default function PlayersPage() {
         <th className="text-left px-3 py-3 text-xs font-semibold w-8" style={{ color: '#9AA7BC' }}>#</th>
         <th className="text-left px-3 py-3 text-xs font-semibold" style={{ color: '#5B6B84' }}>Player</th>
         <th className="text-center px-2 py-3 text-xs font-semibold" style={{ color: '#12A150' }}>Grass</th>
-        <th className="text-center px-2 py-3 text-xs font-semibold" style={{ color: '#1466D6' }}>Hard</th>
+        <th className="text-center px-2 py-3 text-xs font-semibold" style={{ color: '#0e6fc4' }}>Hard</th>
         <th className="text-center px-2 py-3 text-xs font-semibold" style={{ color: '#E5472B' }}>Clay</th>
         <th className="text-center px-2 py-3 text-xs font-semibold" style={{ color: '#5B6B84' }}>YTD</th>
         <th className="text-center px-2 py-3 text-xs font-semibold" style={{ color: '#5B6B84' }}>Form</th>
         {tournaments.map(t => (
           <th key={t} className="text-center px-2 py-3 text-xs font-semibold" style={{ color: '#9AA7BC' }}>{t}</th>
         ))}
-        <th className="text-right px-3 py-3 text-xs font-semibold" style={{ color: '#1466D6' }}>Price</th>
+        <th className="text-right px-3 py-3 text-xs font-semibold" style={{ color: '#0e6fc4' }}>Price</th>
       </tr>
     </thead>
   );
@@ -75,7 +75,7 @@ export default function PlayersPage() {
         <div className="flex items-center gap-2.5">
           <PlayerAvatar playerId={player.id} name={player.name} size="sm" />
           <div>
-            <div className="font-semibold text-xs leading-tight" style={{ color: '#0A1B33' }}>{player.name}</div>
+            <div className="font-semibold text-xs leading-tight" style={{ color: '#0a1f44' }}>{player.name}</div>
             {player.seed && <span className="font-num text-[10px]" style={{ color: '#5B6B84' }}>[{player.seed}]</span>}
           </div>
         </div>
@@ -103,7 +103,7 @@ export default function PlayersPage() {
           </td>
         );
       })}
-      <td className="px-3 py-2.5 text-right font-num font-bold text-sm" style={{ color: '#1466D6' }}>${player.price}M</td>
+      <td className="px-3 py-2.5 text-right font-num font-bold text-sm" style={{ color: '#0e6fc4' }}>${player.price}M</td>
     </tr>
   );
 
@@ -112,7 +112,7 @@ export default function PlayersPage() {
       {/* Controls */}
       <div className="flex items-center gap-3 mb-5 flex-wrap">
         <div>
-          <h1 className="text-lg font-bold" style={{ color: '#0A1B33' }}>Player Stats</h1>
+          <h1 className="text-lg font-bold" style={{ color: '#0a1f44' }}>Player Stats</h1>
           <div className="text-xs" style={{ color: '#5B6B84' }}>Wimbledon 2026 · 32 players · by tier</div>
         </div>
         <div className="flex-1" />
@@ -122,7 +122,7 @@ export default function PlayersPage() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="text-sm outline-none px-3 py-2 rounded-xl w-36"
-          style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.09)', color: '#0A1B33' }}
+          style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.09)', color: '#0a1f44' }}
         />
         <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.07)' }}>
           {(['ranking','grass','form','price'] as const).map(s => (
@@ -132,7 +132,7 @@ export default function PlayersPage() {
               className="px-3 py-2 text-xs font-semibold transition-colors"
               style={{
                 background: sort === s ? 'rgba(10,27,51,0.08)' : 'transparent',
-                color: sort === s ? '#0A1B33' : '#5B6B84',
+                color: sort === s ? '#0a1f44' : '#5B6B84',
               }}
             >
               {s === 'grass' ? 'Grass' : s === 'form' ? 'Form' : s === 'price' ? 'Price' : 'Rank'}

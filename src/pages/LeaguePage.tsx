@@ -37,7 +37,7 @@ export default function LeaguePage() {
 
   if (myTeam.length > 0) {
     rows.push({
-      id: 'you', name: 'You', tag: 'Your squad', color: '#1466D6',
+      id: 'you', name: 'You', tag: 'Your squad', color: '#0e6fc4',
       squad: myTeam, captainId: captain ?? myTeam[0], transfers: 0,
       score: myScore, you: true,
     });
@@ -56,12 +56,12 @@ export default function LeaguePage() {
       {/* Header */}
       <div className="flex items-end justify-between mb-5 flex-wrap gap-2">
         <div>
-          <h1 className="text-xl font-extrabold tracking-tight" style={{ color: '#0A1B33' }}>League Standings</h1>
+          <h1 className="text-xl font-extrabold tracking-tight" style={{ color: '#0a1f44' }}>League Standings</h1>
           <div className="text-xs" style={{ color: '#5B6B84' }}>
             Everyone gets $100M · pick any player · {roundLabel}
           </div>
         </div>
-        <div className="text-xs px-3 py-1.5 rounded-full font-semibold" style={{ background: 'rgba(20,102,214,0.1)', color: '#1466D6' }}>
+        <div className="text-xs px-3 py-1.5 rounded-full font-semibold" style={{ background: 'rgba(14,111,196,0.1)', color: '#0e6fc4' }}>
           {rows.length} managers
         </div>
       </div>
@@ -74,12 +74,12 @@ export default function LeaguePage() {
             onClick={() => openTeam(row.id)}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all hover:brightness-[0.98]"
             style={{
-              background: row.you ? 'rgba(20,102,214,0.05)' : '#FFFFFF',
-              border: `1px solid ${row.you ? 'rgba(20,102,214,0.3)' : 'rgba(10,27,51,0.08)'}`,
+              background: row.you ? 'rgba(14,111,196,0.05)' : '#FFFFFF',
+              border: `1px solid ${row.you ? 'rgba(14,111,196,0.3)' : 'rgba(10,27,51,0.08)'}`,
               boxShadow: '0 1px 2px rgba(10,27,51,0.04)',
             }}
           >
-            <div className="w-7 text-center font-num font-bold text-lg shrink-0" style={{ color: i < 3 ? '#0A1B33' : '#9AA7BC' }}>
+            <div className="w-7 text-center font-num font-bold text-lg shrink-0" style={{ color: i < 3 ? '#0a1f44' : '#9AA7BC' }}>
               {medal(i)}
             </div>
             <div className="flex -space-x-3 shrink-0">
@@ -89,15 +89,15 @@ export default function LeaguePage() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-bold truncate" style={{ color: '#0A1B33' }}>{row.name}</span>
-                {row.you && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: '#1466D6', color: '#fff' }}>YOU</span>}
+                <span className="font-bold truncate" style={{ color: '#0a1f44' }}>{row.name}</span>
+                {row.you && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: '#0e6fc4', color: '#fff' }}>YOU</span>}
               </div>
               <div className="text-xs truncate" style={{ color: '#5B6B84' }}>
                 {row.tag}{row.transfers > 0 && <> · <span className="font-num">{row.transfers} transfer{row.transfers > 1 ? 's' : ''}</span></>}
               </div>
             </div>
             <div className="text-right shrink-0">
-              <div className="font-num text-xl font-extrabold" style={{ color: '#1466D6' }}>{row.score}</div>
+              <div className="font-num text-xl font-extrabold" style={{ color: '#0e6fc4' }}>{row.score}</div>
               <div className="text-[10px]" style={{ color: '#9AA7BC' }}>pts</div>
             </div>
             <div className="shrink-0 text-lg" style={{ color: '#9AA7BC' }}>›</div>

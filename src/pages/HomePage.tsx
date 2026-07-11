@@ -37,7 +37,7 @@ export default function HomePage() {
     <div className="max-w-5xl mx-auto px-4 py-8 fade-in">
 
       {/* ── Tournament hero ── */}
-      <div className="relative rounded-2xl overflow-hidden mb-6 p-6" style={{ background: 'linear-gradient(120deg,#0A1B33 0%,#123163 100%)', boxShadow: '0 8px 30px rgba(10,27,51,0.18)' }}>
+      <div className="relative rounded-2xl overflow-hidden mb-6 p-6" style={{ background: 'linear-gradient(120deg,#0a1f44 0%,#123163 100%)', boxShadow: '0 8px 30px rgba(10,27,51,0.18)' }}>
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 55% 90% at 85% 40%, rgba(55,214,122,0.16) 0%, transparent 70%)' }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="flex-1">
@@ -77,29 +77,29 @@ export default function HomePage() {
       >
         <div className="text-2xl">📊</div>
         <div className="flex-1">
-          <div className="font-bold text-sm" style={{ color: '#0A1B33' }}>Backtest — the last 4 Grand Slams</div>
+          <div className="font-bold text-sm" style={{ color: '#0a1f44' }}>Backtest — the last 4 Grand Slams</div>
           <div className="text-xs" style={{ color: '#5B6B84' }}>See how this format would've scored on real results</div>
         </div>
-        <div className="text-lg" style={{ color: '#1466D6' }}>›</div>
+        <div className="text-lg" style={{ color: '#0e6fc4' }}>›</div>
       </button>
 
       {/* ── Stats row ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        <StatCard label="Total Score" value={`${myScore}`} unit="pts" color="#1466D6" />
-        <StatCard label="Budget" value={`$${budget.toFixed(1)}M`} unit="remaining" color="#0A1B33" />
+        <StatCard label="Total Score" value={`${myScore}`} unit="pts" color="#0e6fc4" />
+        <StatCard label="Budget" value={`$${budget.toFixed(1)}M`} unit="remaining" color="#0a1f44" />
         <StatCard label="Squad" value={`${myTeam.length}/6`} unit="players" color={myTeam.length === 6 ? '#12A150' : '#D99A00'} />
         <StatCard
           label={phase === 'finished' ? 'Final Round' : 'Current Round'}
           value={phase === 'draft' ? '—' : phase === 'finished' ? 'F' : (currentRound?.short ?? '—')}
           unit={phase === 'finished' ? 'done' : phase === 'draft' ? 'drafting' : 'in play'}
-          color="#0A1B33"
+          color="#0a1f44"
         />
       </div>
 
       {/* ── Action callout ── */}
       {phase === 'draft' && (
         <ActionBanner
-          color="#1466D6"
+          color="#0e6fc4"
           title="Draft your squad"
           body={`$${budget.toFixed(1)}M budget · pick up to 6 players`}
           cta="Go to Draft"
@@ -138,11 +138,11 @@ export default function HomePage() {
         {/* ── Squad ── */}
         <div className="lg:col-span-3 rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.07)' }}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-sm" style={{ color: '#0A1B33' }}>My Squad</h2>
+            <h2 className="font-semibold text-sm" style={{ color: '#0a1f44' }}>My Squad</h2>
             <button
               onClick={() => openTeam('you')}
               className="text-xs font-medium"
-              style={{ color: '#1466D6' }}
+              style={{ color: '#0e6fc4' }}
             >
               Full view →
             </button>
@@ -172,7 +172,7 @@ export default function HomePage() {
                   >
                     <PlayerAvatar playerId={id} name={p.name} size="sm" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate" style={{ color: '#0A1B33' }}>{p.name}</div>
+                      <div className="text-sm font-medium truncate" style={{ color: '#0a1f44' }}>{p.name}</div>
                       <div className="text-xs" style={{ color: '#5B6B84' }}>#{p.ranking} · 🌱 {p.surface.grass}%</div>
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -180,7 +180,7 @@ export default function HomePage() {
                       {isWinner && <span className="text-xs">🏆</span>}
                       {isOut && <span className="text-xs" style={{ color: '#E5472B' }}>OUT {exit}</span>}
                     </div>
-                    <div className="font-num text-xs font-semibold shrink-0" style={{ color: '#1466D6' }}>${p.price}M</div>
+                    <div className="font-num text-xs font-semibold shrink-0" style={{ color: '#0e6fc4' }}>${p.price}M</div>
                   </div>
                 );
               })}
@@ -195,7 +195,7 @@ export default function HomePage() {
 
         {/* ── Round history ── */}
         <div className="lg:col-span-2 rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.07)' }}>
-          <h2 className="font-semibold text-sm mb-4" style={{ color: '#0A1B33' }}>Round History</h2>
+          <h2 className="font-semibold text-sm mb-4" style={{ color: '#0a1f44' }}>Round History</h2>
           {roundScores.length === 0 ? (
             <div className="text-center py-8 text-sm" style={{ color: '#9AA7BC' }}>Rounds not started</div>
           ) : (
@@ -212,7 +212,7 @@ export default function HomePage() {
                   </div>
                 );
                 return (
-                  <div key={round.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: 'rgba(20,102,214,0.05)', border: '1px solid rgba(20,102,214,0.1)' }}>
+                  <div key={round.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: 'rgba(14,111,196,0.05)', border: '1px solid rgba(14,111,196,0.1)' }}>
                     <div className="w-9 text-xs font-semibold" style={{ color: '#5B6B84' }}>{round.short}</div>
                     <div className="flex-1 text-xs" style={{ color: '#5B6B84' }}>
                       {cap && <span style={{ color: '#D99A00' }}>⭐ {getPlayer(cap.playerId).name.split(' ').slice(-1)[0]}</span>}
@@ -228,7 +228,7 @@ export default function HomePage() {
           {roundScores.length > 0 && (
             <div className="mt-3 pt-3 flex justify-between items-center" style={{ borderTop: '1px solid rgba(10,27,51,0.07)' }}>
               <span className="text-xs" style={{ color: '#5B6B84' }}>Total</span>
-              <span className="font-num text-lg font-bold" style={{ color: '#1466D6' }}>{myScore} pts</span>
+              <span className="font-num text-lg font-bold" style={{ color: '#0e6fc4' }}>{myScore} pts</span>
             </div>
           )}
         </div>
@@ -250,22 +250,22 @@ function StatCard({ label, value, unit, color }: { label: string; value: string;
 function ActionBanner({ color, title, body, cta, onClick }: {
   color: string; title: string; body: string; cta: string; onClick: () => void;
 }) {
-  const bg = color === '#1466D6' ? 'rgba(20,102,214,0.07)'
+  const bg = color === '#0e6fc4' ? 'rgba(14,111,196,0.07)'
     : color === '#D99A00' ? 'rgba(217,154,0,0.07)'
     : 'rgba(18,161,80,0.07)';
-  const border = color === '#1466D6' ? 'rgba(20,102,214,0.2)'
+  const border = color === '#0e6fc4' ? 'rgba(14,111,196,0.2)'
     : color === '#D99A00' ? 'rgba(217,154,0,0.2)'
     : 'rgba(18,161,80,0.2)';
   return (
     <div className="flex items-center gap-4 px-5 py-4 rounded-2xl" style={{ background: bg, border: `1px solid ${border}` }}>
       <div className="flex-1">
-        <div className="font-semibold text-sm" style={{ color: '#0A1B33' }}>{title}</div>
+        <div className="font-semibold text-sm" style={{ color: '#0a1f44' }}>{title}</div>
         <div className="text-xs mt-0.5" style={{ color: '#5B6B84' }}>{body}</div>
       </div>
       <button
         onClick={onClick}
         className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
-        style={{ background: color, color: color === '#0A1B33' ? '#EEF1F5' : '#fff' }}
+        style={{ background: color, color: color === '#0a1f44' ? '#EEF1F5' : '#fff' }}
       >
         {cta}
       </button>

@@ -61,7 +61,7 @@ export default function PlayerAvatar({ playerId, name, size = 'md', className = 
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: 'linear-gradient(160deg,#E8EDF4,#D7E0EC)',
         fontFamily: '"Plus Jakarta Sans Variable",system-ui,sans-serif',
-        fontSize: FONT[size], fontWeight: 700, color: '#1466D6', ...ringStyle, ...clickable,
+        fontSize: FONT[size], fontWeight: 700, color: '#0e6fc4', ...ringStyle, ...clickable,
       }}
     >
       {initials}

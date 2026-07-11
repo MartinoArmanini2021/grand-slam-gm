@@ -5,17 +5,19 @@
 :root {
   color-scheme: light;
   --font-sans: 'Plus Jakarta Sans Variable', system-ui, sans-serif;
+  --font-display: 'Urbanist', system-ui, sans-serif;
   --font-mono: 'DM Mono', ui-monospace, monospace;
 
-  /* ATP-inspired light palette */
+  /* Grand Slam GM brand palette */
   --bg:        #EEF1F5;
   --surface:   #FFFFFF;
   --raised:    #F5F7FA;
-  --navy:      #0A1B33;  /* deep ATP navy — header + primary text */
-  --ink:       #0A1B33;
+  --navy:      #0a1f44;  /* brand navy — header + primary text */
+  --ink:       #0a1f44;
   --ink-2:     #5B6B84;
   --ink-3:     #9AA7BC;
-  --blue:      #1466D6;  /* ATP accent blue */
+  --blue:      #0e6fc4;  /* brand accent blue */
+  --blue-light:#4aa8ea;
   --green:     #12A150;
   --ember:     #E5472B;
   --gold:      #D99A00;
@@ -36,6 +38,14 @@ body {
 }
 
 #root { min-height: 100svh; }
+
+/* Brand display type for headings */
+h1, h2 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+.font-display { font-family: var(--font-display); }
 
 .font-num {
   font-family: var(--font-mono);

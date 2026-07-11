@@ -3,7 +3,7 @@ import { BACKTEST_SLAMS } from '../data/backtestData';
 import { analyzeSlam } from '../data/backtestEngine';
 import { useGameStore } from '../store/gameStore';
 
-const SURFACE_COLOR: Record<string, string> = { hard: '#1466D6', clay: '#E5472B', grass: '#12A150' };
+const SURFACE_COLOR: Record<string, string> = { hard: '#0e6fc4', clay: '#E5472B', grass: '#12A150' };
 
 export default function BacktestPage() {
   const setActiveTab = useGameStore(s => s.setActiveTab);
@@ -14,7 +14,7 @@ export default function BacktestPage() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-20 text-center fade-in">
         <div className="text-5xl mb-4">📊</div>
-        <h2 className="text-xl font-bold mb-2" style={{ color: '#0A1B33' }}>Backtest loading</h2>
+        <h2 className="text-xl font-bold mb-2" style={{ color: '#0a1f44' }}>Backtest loading</h2>
         <p className="text-sm" style={{ color: '#5B6B84' }}>Grand Slam results are being compiled.</p>
       </div>
     );
@@ -26,9 +26,9 @@ export default function BacktestPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 fade-in">
-      <button onClick={() => setActiveTab('home')} className="text-sm font-semibold mb-4" style={{ color: '#1466D6' }}>‹ Home</button>
+      <button onClick={() => setActiveTab('home')} className="text-sm font-semibold mb-4" style={{ color: '#0e6fc4' }}>‹ Home</button>
 
-      <h1 className="text-xl font-extrabold tracking-tight" style={{ color: '#0A1B33' }}>Backtest — real Grand Slams</h1>
+      <h1 className="text-xl font-extrabold tracking-tight" style={{ color: '#0a1f44' }}>Backtest — real Grand Slams</h1>
       <p className="text-xs mb-4" style={{ color: '#5B6B84' }}>
         The last {analyses.length} completed Slams, scored with this exact economy — steep prices, budget returns, captain 2×, and upset bonuses.
       </p>
@@ -41,8 +41,8 @@ export default function BacktestPage() {
             onClick={() => setActive(i)}
             className="px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all"
             style={{
-              background: i === active ? 'rgba(20,102,214,0.1)' : 'transparent',
-              color: i === active ? '#1466D6' : '#5B6B84',
+              background: i === active ? 'rgba(14,111,196,0.1)' : 'transparent',
+              color: i === active ? '#0e6fc4' : '#5B6B84',
             }}
           >
             {x.slam.slam} {String(x.slam.year).slice(2)}
@@ -51,7 +51,7 @@ export default function BacktestPage() {
       </div>
 
       {/* Slam header */}
-      <div className="rounded-2xl p-5 mb-4" style={{ background: 'linear-gradient(120deg,#0A1B33,#123163)' }}>
+      <div className="rounded-2xl p-5 mb-4" style={{ background: 'linear-gradient(120deg,#0a1f44,#123163)' }}>
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest" style={{ color: surf }}>
@@ -76,11 +76,11 @@ export default function BacktestPage() {
             <div key={p.name} className="flex items-center gap-3 px-1 py-2" style={{ borderBottom: i < 5 ? '1px solid rgba(10,27,51,0.05)' : 'none' }}>
               <div className="w-5 font-num text-xs font-bold" style={{ color: '#9AA7BC' }}>{i + 1}</div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold truncate" style={{ color: '#0A1B33' }}>{p.name}</div>
+                <div className="text-sm font-semibold truncate" style={{ color: '#0a1f44' }}>{p.name}</div>
                 <div className="text-[10px]" style={{ color: '#5B6B84' }}>Seed {p.seed} · <span className="font-num">${p.price}M</span> · {p.exit === 'W' ? 'Champion' : `out ${p.exit}`}</div>
               </div>
               {p.upset > 0 && <span className="text-[10px]" title="upset bonus">🔥+{p.upset}</span>}
-              <div className="font-num text-lg font-bold shrink-0" style={{ color: '#1466D6' }}>{p.total}</div>
+              <div className="font-num text-lg font-bold shrink-0" style={{ color: '#0e6fc4' }}>{p.total}</div>
             </div>
           ))}
         </Panel>
@@ -91,7 +91,7 @@ export default function BacktestPage() {
             <div key={p.name} className="flex items-center gap-3 px-1 py-2" style={{ borderBottom: i < 5 ? '1px solid rgba(10,27,51,0.05)' : 'none' }}>
               <div className="w-5 font-num text-xs font-bold" style={{ color: '#9AA7BC' }}>{i + 1}</div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold truncate" style={{ color: '#0A1B33' }}>{p.name}</div>
+                <div className="text-sm font-semibold truncate" style={{ color: '#0a1f44' }}>{p.name}</div>
                 <div className="text-[10px]" style={{ color: '#5B6B84' }}>Seed {p.seed} · <span className="font-num">${p.price}M</span> · {p.total} pts</div>
               </div>
               <div className="font-num text-base font-bold shrink-0" style={{ color: '#12A150' }}>{p.valuePerM.toFixed(1)}<span className="text-[10px]" style={{ color: '#9AA7BC' }}>/$M</span></div>
@@ -106,13 +106,13 @@ export default function BacktestPage() {
           {cur.a.squads.map(sq => (
             <div key={sq.label}>
               <div className="flex items-center justify-between text-xs mb-1">
-                <span className="font-semibold" style={{ color: '#0A1B33' }}>{sq.label}</span>
+                <span className="font-semibold" style={{ color: '#0a1f44' }}>{sq.label}</span>
                 <span style={{ color: '#5B6B84' }}>
-                  <span className="font-num">${sq.spent}M</span> · <span className="font-num font-bold" style={{ color: '#1466D6' }}>{sq.score} pts</span>
+                  <span className="font-num">${sq.spent}M</span> · <span className="font-num font-bold" style={{ color: '#0e6fc4' }}>{sq.score} pts</span>
                 </span>
               </div>
               <div className="h-2.5 rounded-full" style={{ background: 'rgba(10,27,51,0.06)' }}>
-                <div className="h-full rounded-full transition-all" style={{ width: `${(sq.score / maxSquad) * 100}%`, background: sq.label === 'Optimal XI' ? '#F0C24B' : '#1466D6' }} />
+                <div className="h-full rounded-full transition-all" style={{ width: `${(sq.score / maxSquad) * 100}%`, background: sq.label === 'Optimal XI' ? '#F0C24B' : '#0e6fc4' }} />
               </div>
               <div className="text-[10px] mt-1 truncate" style={{ color: '#9AA7BC' }}>
                 {sq.players.map(p => p.name.split(' ').slice(-1)[0]).join(' · ')}

@@ -16,6 +16,7 @@
     "@dicebear/core": "^9.4.3",
     "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
     "@fontsource/dm-mono": "^5.2.7",
+    "@fontsource/urbanist": "^5.2.7",
     "@imgly/background-removal-node": "^1.4.5",
     "clsx": "^2.1.1",
     "jimp": "^0.22.12",

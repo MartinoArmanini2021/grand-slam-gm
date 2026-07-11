@@ -8,7 +8,7 @@ interface Props {
 
 const SURFACES = [
   { key: 'grass', label: 'G', active: '#12A150', dim: '#9AA7BC', bar: '#12A150' },
-  { key: 'hard',  label: 'H', active: '#1466D6', dim: '#9AA7BC', bar: '#1466D6' },
+  { key: 'hard',  label: 'H', active: '#0e6fc4', dim: '#9AA7BC', bar: '#0e6fc4' },
   { key: 'clay',  label: 'C', active: '#E5472B', dim: '#9AA7BC', bar: '#E5472B' },
 ];
 
