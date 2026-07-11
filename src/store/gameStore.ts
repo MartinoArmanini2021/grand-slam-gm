@@ -190,7 +190,7 @@ export const useGameStore = create<GameStore>()(
         playerReturnTab: 'players',
       }),
     }),
-    { name: 'tennis-fantasy-v1' }
+    { name: 'grand-slam-gm-v1' }
   )
 );
 

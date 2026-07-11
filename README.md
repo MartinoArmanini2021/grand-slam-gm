@@ -1,6 +1,6 @@
-# Tennis Fantasy
+# Grand Slam GM
 
-A Grand Slam fantasy tennis game. Draft a 6-player squad under a $100M budget,
+A Grand Slam fantasy tennis game — be the GM of your own squad. Draft a 6-player squad under a $100M budget,
 pick a captain each round, score points as your players win, earn upset bonuses
 when underdogs beat higher seeds, and make transfers until the quarter-finals.
 Compete against simulated league managers, and see how the format would have

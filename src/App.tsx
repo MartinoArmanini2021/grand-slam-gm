@@ -30,13 +30,13 @@ export default function App() {
       <header className="sticky top-0 z-50" style={{ background: NAVY, boxShadow: '0 1px 0 rgba(255,255,255,0.06), 0 6px 20px rgba(10,27,51,0.18)' }}>
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-center gap-4 h-14">
-            {/* Logo */}
+            {/* Logo — placeholder monogram; swap for the Grand Slam GM logo when ready */}
             <button onClick={() => setActiveTab('home')} className="flex items-center gap-2.5 shrink-0">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-extrabold text-sm" style={{ background: BLUE }}>
-                TF
+                GM
               </div>
               <div className="hidden sm:block text-left">
-                <div className="text-sm font-extrabold leading-tight tracking-tight text-white">Tennis Fantasy</div>
+                <div className="text-sm font-extrabold leading-tight tracking-tight text-white">Grand Slam GM</div>
                 <div className="text-[10px]" style={{ color: '#8FA1BE' }}>Wimbledon 2026</div>
               </div>
             </button>
