@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { PLAYERS } from '../data/players';
 import type { Player, TournamentResult } from '../types';
-import SurfaceBar from '../components/SurfaceBar';
 import FormDots from '../components/FormDots';
 import PlayerAvatar from '../components/PlayerAvatar';
 import { getTier, TIER_META, TIER_ORDER } from '../data/tiers';
+import { useGameStore } from '../store/gameStore';
 
 const RESULT_ORDER: TournamentResult[] = ['W', 'F', 'SF', 'QF', 'R16', 'R32', 'R64', 'DNS'];
 
@@ -23,7 +23,7 @@ function resultStyle(r: TournamentResult): [string, string] {
 }
 
 export default function PlayersPage() {
-  const [selected, setSelected] = useState<Player | null>(null);
+  const openPlayer = useGameStore(s => s.openPlayer);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<'ranking' | 'grass' | 'form' | 'price'>('ranking');
 
@@ -64,14 +64,11 @@ export default function PlayersPage() {
   const renderRow = (player: Player) => (
     <tr
       key={player.id}
-      onClick={() => setSelected(selected?.id === player.id ? null : player)}
+      onClick={() => openPlayer(player.id)}
       className="cursor-pointer transition-colors"
-      style={{
-        borderBottom: '1px solid rgba(10,27,51,0.04)',
-        background: selected?.id === player.id ? 'rgba(20,102,214,0.05)' : 'transparent',
-      }}
-      onMouseEnter={e => { if (selected?.id !== player.id) (e.currentTarget as HTMLElement).style.background = 'rgba(10,27,51,0.02)'; }}
-      onMouseLeave={e => { if (selected?.id !== player.id) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+      style={{ borderBottom: '1px solid rgba(10,27,51,0.04)', background: 'transparent' }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(10,27,51,0.02)'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
     >
       <td className="px-3 py-2.5 font-num text-xs" style={{ color: '#9AA7BC' }}>#{player.ranking}</td>
       <td className="px-3 py-2.5">
@@ -164,92 +161,7 @@ export default function PlayersPage() {
         </div>
       ))}
 
-      {/* Selected player detail */}
-      {selected && (
-        <div className="mt-4 p-5 rounded-2xl fade-in" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.09)' }}>
-          <div className="flex items-start justify-between gap-4 mb-5">
-            <div className="flex items-center gap-4">
-              <PlayerAvatar playerId={selected.id} name={selected.name} size="xl" />
-              <div>
-                <div className="flex items-center gap-2 mb-0.5">
-                  <h2 className="text-xl font-bold" style={{ color: '#0A1B33' }}>{selected.name}</h2>
-                  {(() => {
-                    const m = TIER_META[getTier(selected.ranking)];
-                    return (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: m.soft, color: m.color, border: `1px solid ${m.color}44` }}>
-                        {m.label}
-                      </span>
-                    );
-                  })()}
-                </div>
-                <div className="flex gap-3 text-sm mt-1" style={{ color: '#5B6B84' }}>
-                  <span>#{selected.ranking} ATP</span>
-                  <span>Age {selected.age}</span>
-                  <span>{selected.hand === 'R' ? 'Right' : 'Left'}-handed</span>
-                  <span>{selected.style}</span>
-                  {selected.ytd.titles > 0 && <span style={{ color: '#D99A00' }}>🏆 {selected.ytd.titles} title{selected.ytd.titles > 1 ? 's' : ''}</span>}
-                </div>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="font-num text-2xl font-bold" style={{ color: '#1466D6' }}>${selected.price}M</div>
-              <div className="text-xs" style={{ color: '#5B6B84' }}>Wimbledon price</div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="rounded-2xl p-4" style={{ background: '#F5F7FA', border: '1px solid rgba(10,27,51,0.06)' }}>
-              <div className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#5B6B84' }}>Surface Win Rate</div>
-              <SurfaceBar hard={selected.surface.hard} clay={selected.surface.clay} grass={selected.surface.grass} highlight="grass" />
-            </div>
-            <div className="rounded-2xl p-4" style={{ background: '#F5F7FA', border: '1px solid rgba(10,27,51,0.06)' }}>
-              <div className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#5B6B84' }}>2026 Season</div>
-              <div className="flex gap-4 text-center">
-                {[
-                  { val: selected.ytd.wins, label: 'W', color: '#12A150' },
-                  { val: selected.ytd.losses, label: 'L', color: '#E5472B' },
-                  { val: selected.ytd.titles, label: '🏆', color: '#D99A00' },
-                  {
-                    val: `${Math.round(selected.ytd.wins / (selected.ytd.wins + selected.ytd.losses) * 100)}%`,
-                    label: 'win%', color: '#1466D6',
-                  },
-                ].map((s, i) => (
-                  <div key={i}>
-                    <div className="font-num text-xl font-bold" style={{ color: s.color }}>{s.val}</div>
-                    <div className="text-xs" style={{ color: '#5B6B84' }}>{s.label}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="rounded-2xl p-4" style={{ background: '#F5F7FA', border: '1px solid rgba(10,27,51,0.06)' }}>
-              <div className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#5B6B84' }}>Recent Form</div>
-              <FormDots form={selected.form} size="md" />
-              <div className="text-xs mt-2" style={{ color: '#9AA7BC' }}>Last 5 matches</div>
-            </div>
-          </div>
-
-          <div className="mt-4 rounded-2xl p-4" style={{ background: '#F5F7FA', border: '1px solid rgba(10,27,51,0.06)' }}>
-            <div className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#5B6B84' }}>2026 Tournament Trail</div>
-            <div className="flex gap-3 flex-wrap">
-              {selected.yearResults.map(r => {
-                const [bg, color] = resultStyle(r.result);
-                const surfColor = r.surface === 'grass' ? '#12A150' : r.surface === 'clay' ? '#E5472B' : '#1466D6';
-                return (
-                  <div key={r.short} className="text-center min-w-[3rem]">
-                    <div className="flex items-center justify-center gap-1 text-[10px] mb-1.5" style={{ color: '#5B6B84' }}>
-                      {r.short}
-                      <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: surfColor }} />
-                    </div>
-                    <span className="font-num text-xs font-bold px-2 py-1 rounded inline-block" style={{ background: bg, color, border: `1px solid ${color}30` }}>
-                      {r.result}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
+      <p className="text-center text-xs mt-2" style={{ color: '#9AA7BC' }}>Tap any player to open their profile.</p>
     </div>
   );
 }

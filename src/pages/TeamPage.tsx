@@ -23,7 +23,7 @@ function BackToLeague() {
 export default function TeamPage() {
   const {
     myTeam, captain, setCaptain, budget, myScore, roundScores,
-    budgetReturns, phase, currentRoundIndex, captainHistory, viewTeam,
+    budgetReturns, phase, currentRoundIndex, captainHistory, viewTeam, openPlayer,
   } = useGameStore();
 
   if (viewTeam !== 'you') {
@@ -121,7 +121,7 @@ export default function TeamPage() {
               }}
             >
               <div className="flex items-start gap-4">
-                <PlayerAvatar playerId={id} name={p.name} size="md" />
+                <PlayerAvatar playerId={id} name={p.name} size="md" onClick={e => { e.stopPropagation(); openPlayer(id); }} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="font-bold" style={{ color: '#0A1B33' }}>{p.name}</span>
@@ -201,6 +201,7 @@ export default function TeamPage() {
 }
 
 function RivalTeamView({ id, currentRoundIndex }: { id: string; currentRoundIndex: number }) {
+  const openPlayer = useGameStore(s => s.openPlayer);
   const team = getRivalTeams(currentRoundIndex).find(t => t.rival.id === id);
   if (!team) return null;
   const { rival, squad, budget, captainId, score, transfers } = team;
@@ -245,7 +246,7 @@ function RivalTeamView({ id, currentRoundIndex }: { id: string; currentRoundInde
           return (
             <div key={pid} className="rounded-2xl p-4" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.07)', opacity: isOut ? 0.55 : 1 }}>
               <div className="flex items-center gap-4">
-                <PlayerAvatar playerId={pid} name={p.name} size="md" />
+                <PlayerAvatar playerId={pid} name={p.name} size="md" onClick={() => openPlayer(pid)} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold" style={{ color: '#0A1B33' }}>{p.name}</span>

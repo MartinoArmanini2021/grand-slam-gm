@@ -7,6 +7,7 @@ import PlayersPage from './pages/PlayersPage';
 import TeamPage from './pages/TeamPage';
 import LeaguePage from './pages/LeaguePage';
 import BacktestPage from './pages/BacktestPage';
+import PlayerPage from './pages/PlayerPage';
 
 const NAVY = '#0A1B33';
 const BLUE = '#1466D6';
@@ -112,6 +113,7 @@ export default function App() {
         {activeTab === 'players'    && <PlayersPage />}
         {activeTab === 'team'       && <TeamPage />}
         {activeTab === 'backtest'   && <BacktestPage />}
+        {activeTab === 'player'     && <PlayerPage />}
       </main>
     </div>
   );

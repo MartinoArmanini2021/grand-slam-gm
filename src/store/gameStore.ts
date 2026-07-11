@@ -20,8 +20,10 @@ interface GameStore {
   currentRoundIndex: number;
   myScore: number;
   roundScores: RoundScore[];
-  activeTab: 'home' | 'draft' | 'tournament' | 'players' | 'team' | 'league' | 'backtest';
+  activeTab: 'home' | 'draft' | 'tournament' | 'players' | 'team' | 'league' | 'backtest' | 'player';
   viewTeam: string; // which team the detail view shows: 'you' or a rival id
+  viewPlayer: string; // which player the profile page shows
+  playerReturnTab: GameStore['activeTab']; // where the profile's back button returns to
   // Actions
   addPlayer: (id: string) => void;
   removePlayer: (id: string) => void;
@@ -31,6 +33,7 @@ interface GameStore {
   playNextRound: () => void;
   setActiveTab: (tab: GameStore['activeTab']) => void;
   openTeam: (teamId: string) => void;
+  openPlayer: (playerId: string) => void;
   resetGame: () => void;
 }
 
@@ -48,6 +51,8 @@ export const useGameStore = create<GameStore>()(
       roundScores: [],
       activeTab: 'draft',
       viewTeam: 'you',
+      viewPlayer: '',
+      playerReturnTab: 'players',
 
       addPlayer: (id) => {
         const { myTeam, budget } = get();
@@ -163,6 +168,12 @@ export const useGameStore = create<GameStore>()(
 
       openTeam: (teamId) => set({ viewTeam: teamId, activeTab: 'team' }),
 
+      openPlayer: (playerId) => set(s => ({
+        viewPlayer: playerId,
+        playerReturnTab: s.activeTab === 'player' ? s.playerReturnTab : s.activeTab,
+        activeTab: 'player',
+      })),
+
       resetGame: () => set({
         phase: 'draft',
         myTeam: [],
@@ -175,6 +186,8 @@ export const useGameStore = create<GameStore>()(
         roundScores: [],
         activeTab: 'home',
         viewTeam: 'you',
+        viewPlayer: '',
+        playerReturnTab: 'players',
       }),
     }),
     { name: 'tennis-fantasy-v1' }

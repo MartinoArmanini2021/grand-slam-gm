@@ -19,7 +19,7 @@ const SORT_LABEL: Record<SortKey, string> = {
 };
 
 export default function DraftPage() {
-  const { myTeam, captain, budget, addPlayer, removePlayer, setCaptain, finalizeDraft } = useGameStore();
+  const { myTeam, captain, budget, addPlayer, removePlayer, setCaptain, finalizeDraft, openPlayer } = useGameStore();
   const [sort, setSort] = useState<SortKey>('ranking');
   const [filter, setFilter] = useState<FilterSurface>('all');
   const [search, setSearch] = useState('');
@@ -136,7 +136,7 @@ export default function DraftPage() {
 
                     {/* Avatar + name */}
                     <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                      <PlayerAvatar playerId={player.id} name={player.name} size="sm" />
+                      <PlayerAvatar playerId={player.id} name={player.name} size="sm" onClick={e => { e.stopPropagation(); openPlayer(player.id); }} />
                       <div className="min-w-0">
                         <div className="text-sm font-semibold truncate" style={{ color: '#0A1B33' }}>
                           {player.name}
