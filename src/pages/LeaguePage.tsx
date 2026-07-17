@@ -82,9 +82,9 @@ export default function LeaguePage() {
             <div className="w-7 text-center font-num font-bold text-lg shrink-0" style={{ color: i < 3 ? '#0a1f44' : '#9AA7BC' }}>
               {medal(i)}
             </div>
-            <div className="flex -space-x-3 shrink-0">
+            <div className="flex -space-x-2.5 shrink-0">
               {row.squad.slice(0, 5).map(id => (
-                <PlayerAvatar key={id} playerId={id} name={getPlayer(id).name} size="sm" ring={false} />
+                <PlayerAvatar key={id} playerId={id} name={getPlayer(id).name} size="sm" />
               ))}
             </div>
             <div className="flex-1 min-w-0">

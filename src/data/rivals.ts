@@ -10,6 +10,8 @@ import type { Player, RoundId } from '../types';
 export interface Rival {
   id: string;
   name: string;
+  manager: string; // username of the person running the team
+  emblem: string;  // club-crest emoji, stands in for their chosen logo
   tag: string;
   color: string;
   rank: (a: Player, b: Player) => number;
@@ -20,11 +22,11 @@ const SQUAD = 6;
 const formWins = (p: Player) => p.form.filter(r => r === 'W').length;
 
 export const RIVALS: Rival[] = [
-  { id: 'stars',    name: 'Galácticos FC',   tag: 'Stars & scrubs',        color: '#0e6fc4', rank: (a, b) => b.price - a.price },
-  { id: 'value',    name: 'Value Vultures',  tag: 'Best grass per $',      color: '#12A150', rank: (a, b) => (b.surface.grass / b.price) - (a.surface.grass / a.price) },
-  { id: 'grass',    name: 'Grass Gods',      tag: 'Grass-court merchants',  color: '#37B24D', rank: (a, b) => b.surface.grass - a.surface.grass },
-  { id: 'form',     name: 'Momentum FC',     tag: 'Chasing hot form',      color: '#E5472B', rank: (a, b) => (formWins(b) - formWins(a)) || (b.surface.grass - a.surface.grass) },
-  { id: 'balanced', name: 'The Allrounders', tag: 'Balanced build',        color: '#D99A00', rank: (a, b) => balancedScore(b) - balancedScore(a) },
+  { id: 'stars',    name: 'Galácticos FC',   manager: '@carlosdeluxe', emblem: '🌌', tag: 'Stars & scrubs',        color: '#0e6fc4', rank: (a, b) => b.price - a.price },
+  { id: 'value',    name: 'Value Vultures',  manager: '@moneyball_m',  emblem: '🦅', tag: 'Best grass per $',      color: '#12A150', rank: (a, b) => (b.surface.grass / b.price) - (a.surface.grass / a.price) },
+  { id: 'grass',    name: 'Grass Gods',      manager: '@sw19_sam',     emblem: '🌱', tag: 'Grass-court merchants',  color: '#37B24D', rank: (a, b) => b.surface.grass - a.surface.grass },
+  { id: 'form',     name: 'Momentum FC',     manager: '@hot_streak',   emblem: '🔥', tag: 'Chasing hot form',      color: '#E5472B', rank: (a, b) => (formWins(b) - formWins(a)) || (b.surface.grass - a.surface.grass) },
+  { id: 'balanced', name: 'The Allrounders', manager: '@steady_eddie', emblem: '⚖️', tag: 'Balanced build',        color: '#D99A00', rank: (a, b) => balancedScore(b) - balancedScore(a) },
 ];
 
 function balancedScore(p: Player) {
@@ -85,6 +87,8 @@ export interface RivalTeam {
   squad: string[];        // current squad at the simulated round
   initialSquad: string[]; // the drafted squad
   budget: number;         // budget remaining
+  spent: number;          // total gross outlay (draft + transfers)
+  bought: number;         // total players purchased over the tournament
   captainId: string;
   score: number;
   transfers: Transfer[];
@@ -95,7 +99,8 @@ export interface RivalTeam {
 export function simulateRival(rival: Rival, upto: number): RivalTeam {
   const initialSquad = buildSquad(rival.rank);
   let squad = [...initialSquad];
-  let budget = BUDGET - initialSquad.reduce((s, id) => s + getPlayer(id).price, 0);
+  let spent = initialSquad.reduce((s, id) => s + getPlayer(id).price, 0);
+  let budget = BUDGET - spent;
   let score = 0;
   const transfers: Transfer[] = [];
 
@@ -132,6 +137,7 @@ export function simulateRival(rival: Rival, upto: number): RivalTeam {
         if (pick) {
           transfers.push({ out: squad[idx], in: pick.id, round: round.id });
           budget = Math.round((budget - pick.price) * 10) / 10;
+          spent = Math.round((spent + pick.price) * 10) / 10;
           squad[idx] = pick.id;
         }
       }
@@ -139,7 +145,8 @@ export function simulateRival(rival: Rival, upto: number): RivalTeam {
   }
 
   const captainId = [...squad].sort((a, b) => getPlayer(b).price - getPlayer(a).price)[0];
-  return { rival, squad, initialSquad, budget, captainId, score, transfers };
+  const bought = initialSquad.length + transfers.length;
+  return { rival, squad, initialSquad, budget, spent, bought, captainId, score, transfers };
 }
 
 const cache = new Map<number, RivalTeam[]>();

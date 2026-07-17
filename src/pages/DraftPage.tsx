@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { PLAYERS, getPlayer } from '../data/players';
 import SurfaceBar from '../components/SurfaceBar';
-import FormDots from '../components/FormDots';
 import PlayerAvatar from '../components/PlayerAvatar';
 import { toast } from '../store/toastStore';
 
-type SortKey = 'ranking' | 'price' | 'grass' | 'form';
+type SortKey = 'ranking' | 'price' | 'grass';
 type FilterSurface = 'all' | 'grass' | 'hard' | 'clay';
 
 const TEAM_SIZE = 6;
@@ -16,7 +15,7 @@ const SURFACE_LABEL: Record<FilterSurface, string> = {
 };
 
 const SORT_LABEL: Record<SortKey, string> = {
-  ranking: '# Rank', price: '$ Price', grass: 'Grass %', form: 'Form',
+  ranking: '# Rank', price: '$ Price', grass: 'Grass %',
 };
 
 export default function DraftPage() {
@@ -38,7 +37,6 @@ export default function DraftPage() {
       if (sort === 'ranking') return a.ranking - b.ranking;
       if (sort === 'price') return b.price - a.price;
       if (sort === 'grass') return b.surface.grass - a.surface.grass;
-      if (sort === 'form') return b.form.filter(r => r === 'W').length - a.form.filter(r => r === 'W').length;
       return 0;
     });
 
@@ -92,7 +90,7 @@ export default function DraftPage() {
             </div>
             {/* Sort */}
             <div className="flex rounded-xl overflow-hidden ml-auto" style={{ border: '1px solid rgba(10,27,51,0.07)' }}>
-              {(['ranking','price','grass','form'] as SortKey[]).map(s => (
+              {(['ranking','price','grass'] as SortKey[]).map(s => (
                 <button
                   key={s}
                   onClick={() => setSort(s)}
@@ -149,11 +147,6 @@ export default function DraftPage() {
                         </div>
                         <div className="text-xs truncate" style={{ color: '#5B6B84' }}>{player.style}</div>
                       </div>
-                    </div>
-
-                    {/* Form (hidden on small) */}
-                    <div className="hidden sm:block shrink-0">
-                      <FormDots form={player.form} size="sm" />
                     </div>
 
                     {/* Surface nums */}

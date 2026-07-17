@@ -3,8 +3,8 @@ import { getPlayer } from '../data/players';
 import { ROUNDS, getPlayerExit, BUDGET_RETURN_RATES, MATCHES, getOpponentId, upsetBonus } from '../data/tournament';
 import { getRivalTeams } from '../data/rivals';
 import SurfaceBar from '../components/SurfaceBar';
-import FormDots from '../components/FormDots';
 import PlayerAvatar from '../components/PlayerAvatar';
+import { getTier, TIER_META } from '../data/tiers';
 import type { RoundId } from '../types';
 
 function BackToLeague() {
@@ -35,7 +35,7 @@ export default function TeamPage() {
       <div className="max-w-4xl mx-auto px-4 py-20 text-center fade-in">
         <div className="text-5xl mb-4">🎾</div>
         <h2 className="text-xl font-bold mb-2" style={{ color: '#0a1f44' }}>No squad yet</h2>
-        <p className="text-sm" style={{ color: '#5B6B84' }}>Head to the Draft tab to pick your 6 players.</p>
+        <p className="text-sm" style={{ color: '#5B6B84' }}>Head to the Market tab to pick your 6 players.</p>
       </div>
     );
   }
@@ -159,7 +159,6 @@ export default function TeamPage() {
                 </div>
                 <div className="hidden sm:flex flex-col items-end gap-2">
                   <SurfaceBar hard={p.surface.hard} clay={p.surface.clay} grass={p.surface.grass} highlight="grass" compact />
-                  <FormDots form={p.form} size="sm" />
                 </div>
               </div>
 
@@ -204,60 +203,74 @@ function RivalTeamView({ id, currentRoundIndex }: { id: string; currentRoundInde
   const openPlayer = useGameStore(s => s.openPlayer);
   const team = getRivalTeams(currentRoundIndex).find(t => t.rival.id === id);
   if (!team) return null;
-  const { rival, squad, budget, captainId, score, transfers } = team;
+  const { rival, squad, spent, bought, captainId, score, transfers } = team;
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
-  const inThisRound = new Set(transfers.map(t => t.in)); // transferred-in players
+  const inThisRound = new Set(transfers.map(t => t.in));
+  const isOut = (pid: string) => { const e = getPlayerExit(pid); return e !== null && revealed.includes(e); };
+  const eliminated = transfers.length + squad.filter(isOut).length;
+  // Captain first, so it reads as the differentiated pick
+  const ordered = [...squad].sort((a, b) => (a === captainId ? -1 : b === captainId ? 1 : 0));
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 fade-in">
       <BackToLeague />
 
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-5">
-        <div className="w-1.5 h-10 rounded-full" style={{ background: rival.color }} />
-        <div className="flex-1">
-          <h1 className="text-xl font-extrabold tracking-tight" style={{ color: '#0a1f44' }}>{rival.name}</h1>
-          <div className="text-xs" style={{ color: '#5B6B84' }}>{rival.tag}{transfers.length > 0 && ` · ${transfers.length} transfer${transfers.length > 1 ? 's' : ''} made`}</div>
+      {/* Club header: emblem + name + username, with total score at the same level */}
+      <div className="rounded-2xl p-5 mb-4" style={{ background: 'linear-gradient(120deg,#0a1f44,#123163)' }}>
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shrink-0" style={{ background: rival.color, boxShadow: '0 4px 14px rgba(0,0,0,0.25)' }}>
+            {rival.emblem}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl font-extrabold tracking-tight text-white leading-tight truncate">{rival.name}</h1>
+            <div className="text-sm" style={{ color: '#AFBFDA' }}>{rival.manager} · {rival.tag}</div>
+          </div>
+          <div className="text-right shrink-0">
+            <div className="font-num text-4xl font-extrabold leading-none" style={{ color: '#F0C24B' }}>{score}</div>
+            <div className="text-[10px] uppercase tracking-widest mt-1" style={{ color: '#8FA1BE' }}>Total score</div>
+          </div>
         </div>
       </div>
 
-      {/* Summary */}
+      {/* Stats: players bought, money spent, players eliminated */}
       <div className="grid grid-cols-3 gap-3 mb-5">
         {[
-          { label: 'Total Score', value: score, unit: 'pts', color: '#0e6fc4' },
-          { label: 'Budget Left', value: `$${budget.toFixed(1)}M`, unit: 'to spend', color: '#0a1f44' },
-          { label: 'Players', value: squad.length, unit: 'in squad', color: '#0a1f44' },
+          { label: 'Players bought', value: bought, color: '#0a1f44' },
+          { label: 'Money spent', value: `$${spent}M`, color: '#0e6fc4' },
+          { label: 'Players eliminated', value: eliminated, color: '#E5472B' },
         ].map((c, i) => (
-          <div key={i} className="rounded-2xl p-4" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.07)' }}>
-            <div className="text-xs mb-1" style={{ color: '#5B6B84' }}>{c.label}</div>
-            <div className="font-num text-3xl font-bold" style={{ color: c.color }}>{c.value}</div>
-            <div className="text-xs mt-0.5" style={{ color: '#9AA7BC' }}>{c.unit}</div>
+          <div key={i} className="rounded-2xl p-4 text-center" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.07)' }}>
+            <div className="font-num text-2xl font-bold" style={{ color: c.color }}>{c.value}</div>
+            <div className="text-[11px] mt-0.5" style={{ color: '#5B6B84' }}>{c.label}</div>
           </div>
         ))}
       </div>
 
-      {/* Squad */}
+      {/* Squad — captain first & differentiated, tier colour-coded */}
       <div className="space-y-2">
-        {squad.map(pid => {
+        {ordered.map(pid => {
           const p = getPlayer(pid);
           const exit = getPlayerExit(pid);
-          const isOut = exit !== null && revealed.includes(exit);
+          const out = isOut(pid);
           const isCap = captainId === pid;
+          const tm = TIER_META[getTier(p.ranking)];
           return (
-            <div key={pid} className="rounded-2xl p-4" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.07)', opacity: isOut ? 0.55 : 1 }}>
+            <div key={pid} className="rounded-2xl p-4" style={{
+              background: isCap ? 'rgba(217,154,0,0.06)' : '#FFFFFF',
+              border: `1px solid ${isCap ? 'rgba(217,154,0,0.4)' : 'rgba(10,27,51,0.07)'}`,
+              opacity: out ? 0.55 : 1,
+            }}>
+              {isCap && <div className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#D99A00' }}>⭐ Captain · 2× points</div>}
               <div className="flex items-center gap-4">
                 <PlayerAvatar playerId={pid} name={p.name} size="md" onClick={() => openPlayer(pid)} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold" style={{ color: '#0a1f44' }}>{p.name}</span>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: tm.soft, color: tm.color, border: `1px solid ${tm.color}55` }}>{getTier(p.ranking)}</span>
                     {inThisRound.has(pid) && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(14,111,196,0.12)', color: '#0e6fc4' }}>SUB IN</span>}
-                    {isCap && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(217,154,0,0.15)', color: '#D99A00' }}>C</span>}
-                    {isOut && <span className="text-xs font-semibold px-2 py-0.5 rounded" style={{ background: 'rgba(229,71,43,0.1)', color: '#E5472B' }}>OUT {exit}</span>}
+                    {out && <span className="text-xs font-semibold px-2 py-0.5 rounded" style={{ background: 'rgba(229,71,43,0.1)', color: '#E5472B' }}>OUT {exit}</span>}
                   </div>
                   <div className="text-xs mt-0.5" style={{ color: '#5B6B84' }}>#{p.ranking} · <span className="font-num">${p.price}M</span></div>
-                </div>
-                <div className="hidden sm:block">
-                  <FormDots form={p.form} size="sm" />
                 </div>
               </div>
               {revealed.length > 0 && (

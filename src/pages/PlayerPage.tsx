@@ -3,7 +3,6 @@ import { getPlayer } from '../data/players';
 import { getTier, TIER_META } from '../data/tiers';
 import PlayerAvatar from '../components/PlayerAvatar';
 import SurfaceBar from '../components/SurfaceBar';
-import FormDots from '../components/FormDots';
 
 const SURFACE_DOT: Record<string, string> = { grass: '#12A150', clay: '#E5472B', hard: '#0e6fc4' };
 
@@ -32,7 +31,7 @@ export default function PlayerPage() {
     `Aged ${p.age} and ${hand}-handed, ${p.ytd.titles > 0 ? `with ${p.ytd.titles} title${p.ytd.titles > 1 ? 's' : ''} in 2026.` : 'still chasing a first title in 2026.'}`;
 
   const backLabel: Record<string, string> = {
-    players: 'Stats', draft: 'Draft', team: 'My Squad', league: 'League', home: 'Home', tournament: 'Bracket',
+    players: 'Stats', draft: 'Market', team: 'My Squad', league: 'League', home: 'Home', tournament: 'Bracket',
   };
 
   return (
@@ -83,21 +82,9 @@ export default function PlayerPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-        {/* Surface win rate */}
+      <div className="mb-4">
         <Panel title="Surface win rate">
           <SurfaceBar hard={p.surface.hard} clay={p.surface.clay} grass={p.surface.grass} highlight="grass" />
-        </Panel>
-
-        {/* Recent form */}
-        <Panel title="Recent form">
-          <div className="flex items-center gap-3">
-            <FormDots form={p.form} size="md" />
-            <span className="font-num text-sm" style={{ color: '#5B6B84' }}>
-              {p.form.filter(r => r === 'W').length}W – {p.form.filter(r => r === 'L').length}L
-            </span>
-          </div>
-          <div className="text-[11px] mt-2" style={{ color: '#9AA7BC' }}>Last 5 matches</div>
         </Panel>
       </div>
 

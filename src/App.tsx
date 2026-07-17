@@ -23,8 +23,8 @@ const markSeen = () => { try { localStorage.setItem('gsgm-seen-rules', '1'); } c
 const TABS = [
   { id: 'home',       label: 'Home'    },
   { id: 'league',     label: 'League'  },
+  { id: 'draft',      label: 'Market'  },
   { id: 'tournament', label: 'Bracket' },
-  { id: 'draft',      label: 'Draft'   },
   { id: 'players',    label: 'Stats'   },
 ] as const;
 

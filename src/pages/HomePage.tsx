@@ -100,9 +100,9 @@ export default function HomePage() {
       {phase === 'draft' && (
         <ActionBanner
           color="#0e6fc4"
-          title="Draft your squad"
+          title="Build your squad"
           body={`$${budget.toFixed(1)}M budget · pick up to 6 players`}
-          cta="Go to Draft"
+          cta="Go to Market"
           onClick={() => setActiveTab('draft')}
         />
       )}

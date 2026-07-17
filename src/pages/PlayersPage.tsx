@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { PLAYERS } from '../data/players';
 import type { Player, TournamentResult } from '../types';
-import FormDots from '../components/FormDots';
 import PlayerAvatar from '../components/PlayerAvatar';
 import { getTier, TIER_META, TIER_ORDER } from '../data/tiers';
 import { useGameStore } from '../store/gameStore';
@@ -25,7 +24,7 @@ function resultStyle(r: TournamentResult): [string, string] {
 export default function PlayersPage() {
   const openPlayer = useGameStore(s => s.openPlayer);
   const [search, setSearch] = useState('');
-  const [sort, setSort] = useState<'ranking' | 'grass' | 'form' | 'price'>('ranking');
+  const [sort, setSort] = useState<'ranking' | 'grass' | 'price'>('ranking');
 
   const sorted = [...PLAYERS]
     .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()))
@@ -33,7 +32,6 @@ export default function PlayersPage() {
       if (sort === 'ranking') return a.ranking - b.ranking;
       if (sort === 'grass')   return b.surface.grass - a.surface.grass;
       if (sort === 'price')   return b.price - a.price;
-      if (sort === 'form')    return b.form.filter(r => r === 'W').length - a.form.filter(r => r === 'W').length;
       return 0;
     });
 
@@ -52,7 +50,6 @@ export default function PlayersPage() {
         <th className="text-center px-2 py-3 text-xs font-semibold" style={{ color: '#0e6fc4' }}>Hard</th>
         <th className="text-center px-2 py-3 text-xs font-semibold" style={{ color: '#E5472B' }}>Clay</th>
         <th className="text-center px-2 py-3 text-xs font-semibold" style={{ color: '#5B6B84' }}>YTD</th>
-        <th className="text-center px-2 py-3 text-xs font-semibold" style={{ color: '#5B6B84' }}>Form</th>
         {tournaments.map(t => (
           <th key={t} className="text-center px-2 py-3 text-xs font-semibold" style={{ color: '#9AA7BC' }}>{t}</th>
         ))}
@@ -88,9 +85,6 @@ export default function PlayersPage() {
       <td className="px-2 py-2.5 text-center font-num text-xs" style={{ color: '#5B6B84' }}>{player.surface.hard}%</td>
       <td className="px-2 py-2.5 text-center font-num text-xs" style={{ color: '#5B6B84' }}>{player.surface.clay}%</td>
       <td className="px-2 py-2.5 text-center font-num text-xs" style={{ color: '#5B6B84' }}>{player.ytd.wins}–{player.ytd.losses}</td>
-      <td className="px-2 py-2.5">
-        <FormDots form={player.form} size="sm" />
-      </td>
       {tournaments.map(t => {
         const res = player.yearResults.find(r => r.short === t);
         if (!res) return <td key={t} className="px-2 py-2.5 text-center font-num text-xs" style={{ color: '#9AA7BC' }}>—</td>;
@@ -125,7 +119,7 @@ export default function PlayersPage() {
           style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.09)', color: '#0a1f44' }}
         />
         <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.07)' }}>
-          {(['ranking','grass','form','price'] as const).map(s => (
+          {(['ranking','grass','price'] as const).map(s => (
             <button
               key={s}
               onClick={() => setSort(s)}
@@ -135,7 +129,7 @@ export default function PlayersPage() {
                 color: sort === s ? '#0a1f44' : '#5B6B84',
               }}
             >
-              {s === 'grass' ? 'Grass' : s === 'form' ? 'Form' : s === 'price' ? 'Price' : 'Rank'}
+              {s === 'grass' ? 'Grass' : s === 'price' ? 'Price' : 'Rank'}
             </button>
           ))}
         </div>
