@@ -43,21 +43,24 @@ export default function App() {
       <header className="sticky top-0 z-50" style={{ background: NAVY, boxShadow: '0 1px 0 rgba(255,255,255,0.06), 0 6px 20px rgba(10,27,51,0.18)' }}>
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-center gap-4 h-16">
-            {/* Brand logo (reversed lockup for the navy header) — the visual anchor */}
+            {/* Brand logo (reversed lockup for the navy header) — the visual anchor.
+                Wrapper divs (not the Logo itself) carry the responsive show/hide, so the
+                Logo's own inline flex can't override Tailwind's `hidden`. */}
             <button onClick={() => setActiveTab('home')} className="shrink-0 mr-1" aria-label="Grand Slam GM — home">
-              <Logo height={36} reversed className="hidden sm:flex" />
-              <Logo height={34} reversed markOnly className="sm:hidden" />
+              <div className="hidden sm:block"><Logo height={34} reversed /></div>
+              <div className="sm:hidden"><Logo height={32} reversed markOnly /></div>
             </button>
 
-            {/* Nav */}
-            <nav className="flex items-center gap-0.5 flex-1">
+            {/* Nav — scrolls horizontally on very narrow screens so it never
+                overflows the header */}
+            <nav className="flex items-center gap-0.5 flex-1 min-w-0 overflow-x-auto no-scrollbar">
               {TABS.map(tab => {
                 const active = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className="relative px-3 py-1.5 rounded-lg text-sm font-semibold transition-all"
+                    className="relative px-3 py-1.5 rounded-lg text-sm font-semibold transition-all shrink-0 whitespace-nowrap"
                     style={{
                       color: active ? '#fff' : '#8FA1BE',
                       background: active ? 'rgba(255,255,255,0.10)' : 'transparent',

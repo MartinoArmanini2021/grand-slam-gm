@@ -47,6 +47,9 @@ h1, h2 {
 
 .font-display { font-family: var(--font-display); }
 
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
 .font-num {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
