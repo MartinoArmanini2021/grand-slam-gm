@@ -11,12 +11,13 @@ const SPOTS = [
   { x: 79, y: 30 }, { x: 69, y: 52 }, { x: 79, y: 74 }, // right half
 ];
 
-export default function SquadCourt({ squad, captainId, readOnly, teamName, emblem }: {
+export default function SquadCourt({ squad, captainId, readOnly, teamName, emblem, onTeamClick }: {
   squad?: string[];        // when given, renders this squad instead of your own (read-only)
   captainId?: string;
   readOnly?: boolean;
   teamName?: string;       // team identity shown inside the court (top-left)
   emblem?: string;
+  onTeamClick?: () => void; // makes the team label a link (e.g. to your team page)
 } = {}) {
   const { myTeam, captain, currentRoundIndex, phase, openPlayer } = useGameStore();
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -75,12 +76,19 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
           </g>
         </svg>
 
-        {/* Team identity — logo + name, top-left */}
+        {/* Team identity — logo + name, top-left (links to your team page) */}
         {teamName && (
-          <div className="absolute top-3 left-3 flex items-center gap-2.5">
+          <button
+            onClick={onTeamClick}
+            disabled={!onTeamClick}
+            className="absolute top-3 left-3 flex items-center gap-2.5 transition-opacity hover:opacity-90"
+            style={{ cursor: onTeamClick ? 'pointer' : 'default' }}
+            title={onTeamClick ? 'Open your team' : undefined}
+          >
             <span className="flex items-center justify-center rounded-xl text-xl shrink-0" style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.28)' }}>{emblem}</span>
             <span className="text-lg font-extrabold text-white" style={{ textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}>{teamName}</span>
-          </div>
+            {onTeamClick && <span className="text-white text-lg leading-none" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>›</span>}
+          </button>
         )}
 
         {/* Players / empty slots */}

@@ -1,4 +1,5 @@
 import { useGameStore } from '../store/gameStore';
+import { useProfile } from '../store/profileStore';
 import { ROUNDS, isPlayerOut } from '../data/tournament';
 import { getPlayer } from '../data/players';
 import { getRivalTeams } from '../data/rivals';
@@ -13,6 +14,7 @@ export default function HomePage() {
     phase, myTeam, budget, myScore, currentRoundIndex,
     roundScores, setActiveTab, openTeam,
   } = useGameStore();
+  const { teamName, teamEmblem, username } = useProfile();
 
   const currentRound = currentRoundIndex < ROUNDS.length ? ROUNDS[currentRoundIndex] : null;
   const revealedRounds = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
@@ -29,7 +31,7 @@ export default function HomePage() {
       manager: rt.rival.manager, color: rt.rival.color, squad: rt.squad, score: rt.score, you: false,
     })),
     ...(myTeam.length > 0 ? [{
-      id: 'you', name: 'You', emblem: '🎾', manager: '@you', color: '#0e6fc4',
+      id: 'you', name: teamName, emblem: teamEmblem, manager: username ? `@${username}` : '@you', color: '#0e6fc4',
       squad: myTeam, score: myScore, you: true,
     }] : []),
   ].sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
@@ -50,7 +52,7 @@ export default function HomePage() {
       </div>
 
       {/* ── The court ── */}
-      <SquadCourt teamName="You" emblem="🎾" />
+      <SquadCourt teamName={teamName} emblem={teamEmblem} onTeamClick={() => openTeam('you')} />
       <div className="text-[11px] mt-1.5 mb-2 text-center" style={{ color: '#9AA7BC' }}>
         {phase === 'draft'
           ? 'Tap a + to add players · your squad lines up on court'

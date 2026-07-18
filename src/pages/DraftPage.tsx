@@ -32,8 +32,8 @@ export default function DraftPage() {
   const th = 'text-left px-2 py-2 text-[11px] font-bold uppercase tracking-wide';
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6">
-      <div className="flex gap-6 items-start">
+    <div className="max-w-7xl mx-auto px-2 sm:px-3 py-6">
+      <div className="flex gap-4 lg:gap-6 items-start">
 
         {/* ── Left: Player table ── */}
         <div className="flex-1 min-w-0">
@@ -65,17 +65,20 @@ export default function DraftPage() {
           <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.08)' }}>
             <table className="w-full text-sm border-collapse bg-white">
               <thead>
+                <tr style={{ background: '#F5F7FA' }}>
+                  <th className={th} rowSpan={2} style={{ color: '#9AA7BC', textAlign: 'center', width: 54 }}><div style={{ lineHeight: 1.05 }}>ATP<br />Ranking</div></th>
+                  <th className={th} rowSpan={2} style={{ color: '#5B6B84' }}>Player</th>
+                  <th className={`${th} hidden sm:table-cell`} rowSpan={2} style={{ color: '#5B6B84', textAlign: 'center' }}>Age</th>
+                  <th className={`${th} hidden md:table-cell`} colSpan={3} style={{ color: '#5B6B84', textAlign: 'center', borderBottom: '1px solid rgba(10,27,51,0.08)' }}>Win&nbsp;%&nbsp;(YTD)</th>
+                  <th className={`${th} hidden md:table-cell`} rowSpan={2} style={{ color: '#5B6B84', textAlign: 'center' }}><div style={{ lineHeight: 1.05 }}>2026<br />W–L</div></th>
+                  <th className={`${th} hidden lg:table-cell`} rowSpan={2} style={{ color: '#D99A00', textAlign: 'center' }}><div style={{ lineHeight: 1.05 }}>2026<br />Titles</div></th>
+                  <th className={th} rowSpan={2} style={{ color: '#0e6fc4', textAlign: 'right' }}>Price</th>
+                  <th className={th} rowSpan={2} style={{ width: 78 }}></th>
+                </tr>
                 <tr style={{ background: '#F5F7FA', borderBottom: '1px solid rgba(10,27,51,0.1)' }}>
-                  <th className={th} style={{ color: '#9AA7BC', textAlign: 'left', width: 52 }}><div style={{ lineHeight: 1.05 }}>ATP<br />Ranking</div></th>
-                  <th className={th} style={{ color: '#5B6B84' }}>Player</th>
-                  <th className={`${th} hidden sm:table-cell`} style={{ color: '#5B6B84', textAlign: 'center' }}>Age</th>
-                  <th className={th} style={{ color: '#12A150', textAlign: 'center' }}>Grass&nbsp;win&nbsp;%</th>
-                  <th className={`${th} hidden lg:table-cell`} style={{ color: '#0e6fc4', textAlign: 'center' }}>Hard&nbsp;%</th>
-                  <th className={`${th} hidden lg:table-cell`} style={{ color: '#E5472B', textAlign: 'center' }}>Clay&nbsp;%</th>
-                  <th className={`${th} hidden md:table-cell`} style={{ color: '#5B6B84', textAlign: 'center' }}>2026&nbsp;W–L</th>
-                  <th className={`${th} hidden lg:table-cell`} style={{ color: '#D99A00', textAlign: 'center' }}>2026&nbsp;Titles</th>
-                  <th className={th} style={{ color: '#0e6fc4', textAlign: 'right' }}>Price</th>
-                  <th className={th} style={{ width: 78 }}></th>
+                  <th className={`${th} hidden md:table-cell`} style={{ color: '#12A150', textAlign: 'center' }}>Grass</th>
+                  <th className={`${th} hidden md:table-cell`} style={{ color: '#0e6fc4', textAlign: 'center' }}>Hard</th>
+                  <th className={`${th} hidden md:table-cell`} style={{ color: '#E5472B', textAlign: 'center' }}>Clay</th>
                 </tr>
               </thead>
               <tbody>
@@ -100,7 +103,7 @@ export default function DraftPage() {
                       onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'rgba(10,27,51,0.02)'; }}
                       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = isSelected ? 'rgba(18,161,80,0.05)' : 'transparent'; }}
                     >
-                      <td className="px-2 py-1.5 font-num text-xs text-left" style={{ color: tierColor, fontWeight: 700 }}>{player.ranking}</td>
+                      <td className="px-2 py-1.5 font-num text-xs text-center" style={{ color: tierColor, fontWeight: 700 }}>{player.ranking}</td>
                       <td className="px-2 py-1.5">
                         <div className="flex items-center gap-2 min-w-0">
                           <PlayerAvatar playerId={player.id} name={player.name} size="sm" onClick={e => { e.stopPropagation(); openPlayer(player.id); }} />
@@ -114,9 +117,9 @@ export default function DraftPage() {
                         </div>
                       </td>
                       <td className="px-2 py-1.5 text-center font-num text-xs hidden sm:table-cell" style={{ color: '#5B6B84' }}>{player.age}</td>
-                      <td className="px-2 py-1.5 text-center font-num text-xs font-bold" style={{ color: '#12A150' }}>{player.surface.grass}%</td>
-                      <td className="px-2 py-1.5 text-center font-num text-xs hidden lg:table-cell" style={{ color: '#5B6B84' }}>{player.surface.hard}%</td>
-                      <td className="px-2 py-1.5 text-center font-num text-xs hidden lg:table-cell" style={{ color: '#5B6B84' }}>{player.surface.clay}%</td>
+                      <td className="px-2 py-1.5 text-center font-num text-xs font-bold hidden md:table-cell" style={{ color: '#12A150' }}>{player.surface.grass}%</td>
+                      <td className="px-2 py-1.5 text-center font-num text-xs hidden md:table-cell" style={{ color: '#5B6B84' }}>{player.surface.hard}%</td>
+                      <td className="px-2 py-1.5 text-center font-num text-xs hidden md:table-cell" style={{ color: '#5B6B84' }}>{player.surface.clay}%</td>
                       <td className="px-2 py-1.5 text-center font-num text-xs hidden md:table-cell" style={{ color: '#5B6B84' }}>{player.ytd.wins}–{player.ytd.losses}</td>
                       <td className="px-2 py-1.5 text-center font-num text-xs hidden lg:table-cell" style={{ color: player.ytd.titles > 0 ? '#D99A00' : '#9AA7BC' }}>{player.ytd.titles}</td>
                       <td className="px-2 py-1.5 text-right font-num text-sm font-bold" style={{ color: '#0e6fc4' }}>${player.price}M</td>

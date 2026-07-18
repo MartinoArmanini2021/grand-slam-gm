@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { WIMBLEDON_2026, WIMBLEDON_2026_EARLY, WIMBLEDON_2026_CHAMPION } from '../data/wimbledon2026';
 import type { WMatch, WRound } from '../data/wimbledon2026';
 import { useGameStore } from '../store/gameStore';
+import { useProfile } from '../store/profileStore';
 import { getPlayer } from '../data/players';
 import { getRivalTeams } from '../data/rivals';
 
@@ -17,10 +18,11 @@ export default function BracketTree() {
   const [depth, setDepth] = useState<'full' | 'last32'>('last32');
   const cols = depth === 'full' ? ALL_COLS : SCORED_COLS;
   const { myTeam, currentRoundIndex } = useGameStore();
+  const { teamName, username } = useProfile();
 
   // Teams you can highlight in the draw: your squad + every league rival.
   const teams = [
-    ...(myTeam.length > 0 ? [{ id: 'you', name: 'You', username: '@you', squad: myTeam }] : []),
+    ...(myTeam.length > 0 ? [{ id: 'you', name: teamName, username: username ? `@${username}` : '@you', squad: myTeam }] : []),
     ...getRivalTeams(currentRoundIndex).map(rt => ({ id: rt.rival.id, name: rt.rival.name, username: rt.rival.manager, squad: rt.squad })),
   ];
   const [teamId, setTeamId] = useState('you');

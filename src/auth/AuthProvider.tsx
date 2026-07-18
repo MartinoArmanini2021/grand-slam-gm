@@ -12,6 +12,7 @@ interface AuthCtx {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   resend: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
   continueAsGuest: () => void;
 }
 
@@ -65,13 +66,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
+  const updatePassword: AuthCtx['updatePassword'] = async (password) => {
+    if (!supabase) throw new Error('Accounts are not configured yet.');
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
+  };
+
   const continueAsGuest = () => {
     setGuest(true);
     try { localStorage.setItem(GUEST_KEY, '1'); } catch { /* ignore */ }
   };
 
   return (
-    <Ctx.Provider value={{ ready, enabled: isAuthEnabled, user, guest, signUp, signIn, signOut, resend, continueAsGuest }}>
+    <Ctx.Provider value={{ ready, enabled: isAuthEnabled, user, guest, signUp, signIn, signOut, resend, updatePassword, continueAsGuest }}>
       {children}
     </Ctx.Provider>
   );

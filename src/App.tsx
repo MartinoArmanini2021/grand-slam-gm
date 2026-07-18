@@ -57,7 +57,7 @@ export default function App() {
             {/* Brand logo (reversed lockup for the navy header) — the visual anchor.
                 Wrapper divs (not the Logo itself) carry the responsive show/hide, so the
                 Logo's own inline flex can't override Tailwind's `hidden`. */}
-            <button onClick={() => setActiveTab('home')} className="shrink-0 mr-1" aria-label="Grand Slam GM — home">
+            <button onClick={() => setActiveTab('home')} className="shrink-0 mr-3 sm:mr-8" aria-label="Grand Slam GM — home">
               <div className="hidden sm:block"><Logo height={42} reversed /></div>
               <div className="sm:hidden"><Logo height={38} reversed markOnly /></div>
             </button>

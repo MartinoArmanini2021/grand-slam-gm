@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
+import { useProfile } from '../store/profileStore';
 import { getPlayer } from '../data/players';
 import { getRivalTeams } from '../data/rivals';
 import { ROUNDS, isPlayerOut, getPlayerExit } from '../data/tournament';
@@ -41,6 +42,7 @@ function RankBadge({ i }: { i: number }) {
 
 export default function LeaguePage() {
   const { myTeam, myScore, budget, currentRoundIndex, openTeam } = useGameStore();
+  const { teamName, teamEmblem } = useProfile();
   const [view, setView] = useState<'public' | 'private'>('public');
 
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
@@ -52,7 +54,7 @@ export default function LeaguePage() {
       emblem: rt.rival.emblem, color: rt.rival.color, squad: rt.squad, budget: rt.budget, score: rt.score, you: false,
     })),
     ...(myTeam.length > 0 ? [{
-      id: 'you', name: 'You', motto: 'Your squad', emblem: '🎾', color: '#0e6fc4',
+      id: 'you', name: teamName, motto: 'Your squad', emblem: teamEmblem, color: '#0e6fc4',
       squad: myTeam, budget, score: myScore, you: true,
     }] : []),
   ];
