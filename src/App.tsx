@@ -11,6 +11,8 @@ import Toaster from './components/Toaster';
 import HowToPlay from './components/HowToPlay';
 import Logo from './components/Logo';
 import { NAV_ICONS } from './components/NavIcons';
+import AuthScreen from './components/AuthScreen';
+import { useAuth } from './auth/AuthProvider';
 
 const NAVY = '#0a1f44';
 const BLUE = '#0e6fc4';
@@ -29,8 +31,20 @@ export default function App() {
   const { activeTab, setActiveTab, phase, myScore, budget, currentRoundIndex, myTeam } = useGameStore();
   const currentRound = currentRoundIndex < ROUNDS.length ? ROUNDS[currentRoundIndex] : null;
   const [showRules, setShowRules] = useState(() => !seenRules());
+  const { ready, user, guest, signOut, enabled } = useAuth();
 
   const closeRules = () => { setShowRules(false); markSeen(); };
+
+  // Auth gate — while checking the session, then the login screen until the
+  // visitor signs in or chooses to continue as a guest.
+  if (!ready) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0a1f44' }}>
+        <div className="text-sm" style={{ color: '#8FA1BE' }}>Loading…</div>
+      </div>
+    );
+  }
+  if (!user && !guest) return <AuthScreen />;
 
   return (
     <div className="min-h-screen" style={{ background: '#EEF1F5' }}>
@@ -115,6 +129,14 @@ export default function App() {
               >
                 ?
               </button>
+              {user ? (
+                <>
+                  <span className="hidden md:inline text-xs font-num max-w-[130px] truncate" style={{ color: '#B9C6DA' }} title={user.email}>{user.email}</span>
+                  <button onClick={signOut} className="text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors" style={{ background: 'rgba(255,255,255,0.1)', color: '#B9C6DA' }}>Sign out</button>
+                </>
+              ) : enabled ? (
+                <button onClick={signOut} className="text-xs font-semibold px-2.5 py-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.1)', color: '#B9C6DA' }}>Log in</button>
+              ) : null}
             </div>
           </div>
         </div>
