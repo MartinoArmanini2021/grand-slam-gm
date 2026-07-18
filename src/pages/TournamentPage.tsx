@@ -15,9 +15,11 @@ export default function TournamentPage() {
   } = useGameStore();
 
   const currentRound = phase !== 'draft' && phase !== 'finished' ? ROUNDS[currentRoundIndex] : null;
-  const isCaptainSet = phase === 'pre_round' && !!captain;
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
   const aliveSquad = myTeam.filter(id => !isPlayerOut(id, revealed));
+  // Ready to play once a captain is chosen — or when no players remain to
+  // captain (all eliminated), so the tournament can still be played out.
+  const canPlay = phase === 'pre_round' && (!!captain || aliveSquad.length === 0);
 
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-3 py-6 fade-in">
@@ -68,7 +70,11 @@ export default function TournamentPage() {
           <div className="px-5 py-4">
             {phase === 'pre_round' && (
               <>
-                <p className="text-xs mb-3" style={{ color: '#D99A00' }}>Choose your captain — they score 2× points if they win (eliminated players can't be captain)</p>
+                <p className="text-xs mb-3" style={{ color: '#D99A00' }}>
+                  {aliveSquad.length === 0
+                    ? 'All your players are out — play on to finish the tournament.'
+                    : 'Choose your captain — they score 2× points if they win (eliminated players can\'t be captain)'}
+                </p>
                 <div className="flex flex-wrap gap-2 mb-4">
                   {aliveSquad.map(id => {
                     const p = getPlayer(id);
@@ -99,15 +105,15 @@ export default function TournamentPage() {
                     const last = rs[rs.length - 1];
                     if (last) toast(last.points > 0 ? `+${last.points} points in the ${label}! 🎾` : `No points in the ${label}`, last.points > 0 ? 'good' : 'info');
                   }}
-                  disabled={!isCaptainSet}
+                  disabled={!canPlay}
                   className="px-6 py-2.5 rounded-xl font-bold text-sm transition-all"
                   style={{
-                    background: isCaptainSet ? '#0e6fc4' : 'rgba(10,27,51,0.05)',
-                    color: isCaptainSet ? '#fff' : '#9AA7BC',
-                    cursor: isCaptainSet ? 'pointer' : 'not-allowed',
+                    background: canPlay ? '#0e6fc4' : 'rgba(10,27,51,0.05)',
+                    color: canPlay ? '#fff' : '#9AA7BC',
+                    cursor: canPlay ? 'pointer' : 'not-allowed',
                   }}
                 >
-                  {isCaptainSet ? `▶ Play ${currentRound.label}` : 'Select a captain first'}
+                  {canPlay ? `▶ Play ${currentRound.label}` : 'Select a captain first'}
                 </button>
               </>
             )}
