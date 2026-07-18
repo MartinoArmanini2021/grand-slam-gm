@@ -10,6 +10,7 @@ import PlayerPage from './pages/PlayerPage';
 import Toaster from './components/Toaster';
 import HowToPlay from './components/HowToPlay';
 import Logo from './components/Logo';
+import { NAV_ICONS } from './components/NavIcons';
 
 const NAVY = '#0a1f44';
 const BLUE = '#0e6fc4';
@@ -18,10 +19,10 @@ const seenRules = () => { try { return !!localStorage.getItem('gsgm-seen-rules')
 const markSeen = () => { try { localStorage.setItem('gsgm-seen-rules', '1'); } catch { /* ignore */ } };
 
 const TABS = [
-  { id: 'home',       label: 'Home',    icon: '🎾', accent: '#37D67A' },
-  { id: 'league',     label: 'League',  icon: '🏆', accent: '#F0C24B' },
-  { id: 'draft',      label: 'Market',  icon: '💸', accent: '#4aa8ea' },
-  { id: 'tournament', label: 'Bracket', icon: '🎯', accent: '#E5472B' },
+  { id: 'home',       label: 'Home',    accent: '#37D67A' },
+  { id: 'league',     label: 'League',  accent: '#F0C24B' },
+  { id: 'draft',      label: 'Market',  accent: '#4aa8ea' },
+  { id: 'tournament', label: 'Bracket', accent: '#E5472B' },
 ] as const;
 
 export default function App() {
@@ -50,6 +51,7 @@ export default function App() {
             <nav className="flex items-center gap-1 flex-1 min-w-0 overflow-x-auto no-scrollbar">
               {TABS.map(tab => {
                 const active = activeTab === tab.id;
+                const Icon = NAV_ICONS[tab.id];
                 return (
                   <button
                     key={tab.id}
@@ -63,7 +65,7 @@ export default function App() {
                     onMouseEnter={e => { if (!active) e.currentTarget.style.color = '#fff'; }}
                     onMouseLeave={e => { if (!active) e.currentTarget.style.color = '#9FB0CC'; }}
                   >
-                    <span className="text-base leading-none" style={{ opacity: active ? 1 : 0.85 }}>{tab.icon}</span>
+                    <Icon size={17} style={{ color: active ? tab.accent : 'currentColor' }} />
                     {tab.label}
                     {tab.id === 'league' && myTeam.length > 0 && (
                       <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center" style={{ background: BLUE, color: '#fff' }}>

@@ -39,12 +39,12 @@ export default function HomePage() {
     <div className="max-w-4xl mx-auto px-4 py-7 fade-in">
 
       {/* ── Title + subtitle ── */}
-      <div className="text-center mb-4">
-        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight" style={{ color: '#0a1f44' }}>Wimbledon 2026</h1>
-        <div className="text-xs font-bold uppercase tracking-[0.2em] mt-1.5" style={{ color: '#12A150' }}>
+      <div className="text-center mb-3">
+        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-none" style={{ color: '#0a1f44' }}>Wimbledon 2026</h1>
+        <div className="text-xs font-bold uppercase tracking-[0.2em] mt-1" style={{ color: '#12A150' }}>
           Grand Slam · Grass
         </div>
-        <div className="text-sm mt-1.5" style={{ color: '#5B6B84' }}>
+        <div className="text-sm mt-1" style={{ color: '#5B6B84' }}>
           {phase === 'draft' && 'Draft open — pick your 6 from the draw'}
           {phase === 'pre_round' && currentRound && `${currentRound.label} · set your captain to play`}
           {phase === 'round_complete' && currentRound && `${ROUNDS[currentRoundIndex - 1]?.label} complete · ${currentRound.label} up next`}

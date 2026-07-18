@@ -74,9 +74,10 @@ export default function SquadCourt({ squad, captainId, readOnly, title }: {
           </g>
         </svg>
 
-        {/* In-court label */}
+        {/* In-court label — top-left */}
         {title && (
-          <div className="absolute top-2.5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[11px] font-bold uppercase" style={{ background: 'rgba(10,31,68,0.72)', color: '#fff', letterSpacing: '0.14em' }}>
+          <div className="absolute top-3 left-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-extrabold" style={{ background: 'rgba(10,31,68,0.92)', color: '#fff', boxShadow: '0 2px 10px rgba(0,0,0,0.28)' }}>
+            <span style={{ width: 7, height: 7, borderRadius: 2, background: '#37D67A', display: 'inline-block' }} />
             {title}
           </div>
         )}
