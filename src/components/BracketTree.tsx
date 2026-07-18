@@ -1,16 +1,21 @@
 import { useState } from 'react';
-import { WIMBLEDON_2026, WIMBLEDON_2026_CHAMPION } from '../data/wimbledon2026';
+import { WIMBLEDON_2026, WIMBLEDON_2026_EARLY, WIMBLEDON_2026_CHAMPION } from '../data/wimbledon2026';
 import type { WMatch, WRound } from '../data/wimbledon2026';
 import { useGameStore } from '../store/gameStore';
 import { getPlayer } from '../data/players';
 import { getRivalTeams } from '../data/rivals';
 
-const COLS: WRound[] = ['R32', 'R16', 'QF', 'SF'];
-const ROUND_LABEL: Record<WRound, string> = { R32: 'Round of 32', R16: 'Round of 16', QF: 'Quarter-finals', SF: 'Semi-finals', F: 'Final' };
+// The full draw for display (first two rounds + the scored bracket).
+const FULL_DRAW: WMatch[] = [...WIMBLEDON_2026_EARLY, ...WIMBLEDON_2026];
+const ALL_COLS: WRound[] = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF'];
+const SCORED_COLS: WRound[] = ['R32', 'R16', 'QF', 'SF'];
+const ROUND_LABEL: Record<WRound, string> = { R128: 'Round of 128', R64: 'Round of 64', R32: 'Round of 32', R16: 'Round of 16', QF: 'Quarter-finals', SF: 'Semi-finals', F: 'Final' };
 
 export default function BracketTree() {
   const [half, setHalf] = useState<'top' | 'bottom'>('top');
   const [focus, setFocus] = useState<string | null>(null);
+  const [depth, setDepth] = useState<'full' | 'last32'>('last32');
+  const cols = depth === 'full' ? ALL_COLS : SCORED_COLS;
   const { myTeam, currentRoundIndex } = useGameStore();
 
   // Teams you can highlight in the draw: your squad + every league rival.
@@ -65,19 +70,33 @@ export default function BracketTree() {
 
   return (
     <div>
-      {/* Controls — half toggle (left), highlight team (right) */}
+      {/* Controls — half + depth toggles (left), highlight team (right) */}
       <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-        <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.1)' }}>
-          {(['top', 'bottom'] as const).map(h => (
-            <button
-              key={h}
-              onClick={() => setHalf(h)}
-              className="px-4 py-2 text-xs font-bold transition-colors"
-              style={{ background: half === h ? 'rgba(14,111,196,0.1)' : '#FFFFFF', color: half === h ? '#0e6fc4' : '#5B6B84' }}
-            >
-              {h === 'top' ? 'Left Half' : 'Right Half'}
-            </button>
-          ))}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.1)' }}>
+            {(['top', 'bottom'] as const).map(h => (
+              <button
+                key={h}
+                onClick={() => setHalf(h)}
+                className="px-4 py-2 text-xs font-bold transition-colors"
+                style={{ background: half === h ? 'rgba(14,111,196,0.1)' : '#FFFFFF', color: half === h ? '#0e6fc4' : '#5B6B84' }}
+              >
+                {h === 'top' ? 'Left Half' : 'Right Half'}
+              </button>
+            ))}
+          </div>
+          <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.1)' }}>
+            {([['last32', 'Last 32'], ['full', 'Full draw (128)']] as const).map(([d, label]) => (
+              <button
+                key={d}
+                onClick={() => setDepth(d)}
+                className="px-4 py-2 text-xs font-bold transition-colors"
+                style={{ background: depth === d ? 'rgba(14,111,196,0.1)' : '#FFFFFF', color: depth === d ? '#0e6fc4' : '#5B6B84' }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
         {teams.length > 0 && (
           <div className="flex items-center gap-1.5">
@@ -106,15 +125,15 @@ export default function BracketTree() {
       </div>
 
       {/* Tree */}
-      <div className="overflow-x-auto no-scrollbar rounded-2xl p-3" style={{ background: '#F5F7FA', border: '1px solid rgba(10,27,51,0.07)' }}>
+      <div className="overflow-auto rounded-2xl p-3" style={{ background: '#F5F7FA', border: '1px solid rgba(10,27,51,0.07)', maxHeight: depth === 'full' ? '78vh' : undefined }}>
         <div className="flex gap-3 items-stretch" style={{ minWidth: 'min-content' }}>
-          {COLS.map(round => {
-            const matches = WIMBLEDON_2026.filter(m => m.round === round && m.half === half);
+          {cols.map(round => {
+            const matches = FULL_DRAW.filter(m => m.round === round && m.half === half);
             return (
               <div key={round} className="flex flex-col" style={{ minWidth: 158 }}>
-                <div className="text-[10px] font-bold uppercase tracking-wider mb-2 text-center" style={{ color: '#5B6B84' }}>{ROUND_LABEL[round]}</div>
+                <div className="text-[10px] font-bold uppercase tracking-wider mb-2 text-center sticky top-0" style={{ color: '#5B6B84', background: '#F5F7FA', zIndex: 1, paddingBottom: 4 }}>{ROUND_LABEL[round]}</div>
                 <div className="flex-1 flex flex-col justify-around gap-2">
-                  {matches.map(m => <MatchCard key={m.slot} m={m} />)}
+                  {matches.map(m => <MatchCard key={`${round}-${m.slot}`} m={m} />)}
                 </div>
               </div>
             );
