@@ -65,46 +65,44 @@ export default function BracketTree() {
 
   return (
     <div>
-      {/* Controls */}
-      <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-        <div className="flex items-center gap-2">
-          <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.1)' }}>
-            {(['top', 'bottom'] as const).map(h => (
-              <button
-                key={h}
-                onClick={() => setHalf(h)}
-                className="px-4 py-2 text-xs font-bold transition-colors"
-                style={{ background: half === h ? 'rgba(14,111,196,0.1)' : '#FFFFFF', color: half === h ? '#0e6fc4' : '#5B6B84' }}
-              >
-                {h === 'top' ? 'Left Half' : 'Right Half'}
-              </button>
-            ))}
+      {/* Controls — half toggle (left), highlight team (right) */}
+      <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+        <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.1)' }}>
+          {(['top', 'bottom'] as const).map(h => (
+            <button
+              key={h}
+              onClick={() => setHalf(h)}
+              className="px-4 py-2 text-xs font-bold transition-colors"
+              style={{ background: half === h ? 'rgba(14,111,196,0.1)' : '#FFFFFF', color: half === h ? '#0e6fc4' : '#5B6B84' }}
+            >
+              {h === 'top' ? 'Left Half' : 'Right Half'}
+            </button>
+          ))}
+        </div>
+        {teams.length > 0 && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-bold" style={{ color: '#5B6B84' }}>Highlight team:</span>
+            <select
+              value={teamId}
+              onChange={e => setTeamId(e.target.value)}
+              className="text-xs font-bold rounded-xl px-2.5 py-2 outline-none"
+              style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.1)', color: '#0a1f44' }}
+              title="Highlight a team's players in the draw"
+            >
+              {teams.map(t => <option key={t.id} value={t.id}>{t.name} · {t.username}</option>)}
+            </select>
           </div>
-          {teams.length > 0 && (
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold" style={{ color: '#5B6B84' }}>Highlight:</span>
-              <select
-                value={teamId}
-                onChange={e => setTeamId(e.target.value)}
-                className="text-xs font-bold rounded-xl px-2.5 py-2 outline-none"
-                style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.1)', color: '#0a1f44' }}
-                title="Highlight a team's players in the draw"
-              >
-                {teams.map(t => <option key={t.id} value={t.id}>{t.name} · {t.username}</option>)}
-              </select>
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-3 text-[11px]" style={{ color: '#9AA7BC' }}>
-          {highlight.size > 0 && selected && (
-            <span className="flex items-center gap-1 font-semibold" style={{ color: '#D99A00' }}>
-              <span style={{ width: 8, height: 8, borderRadius: 2, background: '#D99A00', display: 'inline-block' }} /> {selected.name}
-            </span>
-          )}
-          <span>
-            {focus ? <>Tracing <span className="font-bold" style={{ color: '#0e6fc4' }}>{focus}</span> · <button onClick={() => setFocus(null)} className="underline">clear</button></> : 'Tap a player to trace their route'}
+        )}
+      </div>
+      <div className="flex items-center gap-3 text-[11px] mb-3 flex-wrap" style={{ color: '#9AA7BC' }}>
+        {highlight.size > 0 && selected && (
+          <span className="flex items-center gap-1 font-semibold" style={{ color: '#D99A00' }}>
+            <span style={{ width: 8, height: 8, borderRadius: 2, background: '#D99A00', display: 'inline-block' }} /> Highlighting {selected.name}'s players (★)
           </span>
-        </div>
+        )}
+        <span>
+          {focus ? <>Tracing <span className="font-bold" style={{ color: '#0e6fc4' }}>{focus}</span> · <button onClick={() => setFocus(null)} className="underline">clear</button></> : 'Tap a player to trace their route'}
+        </span>
       </div>
 
       {/* Tree */}

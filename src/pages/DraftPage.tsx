@@ -66,12 +66,14 @@ export default function DraftPage() {
             <table className="w-full text-sm border-collapse bg-white">
               <thead>
                 <tr style={{ background: '#F5F7FA', borderBottom: '1px solid rgba(10,27,51,0.1)' }}>
-                  <th className={th} style={{ color: '#9AA7BC', width: 34, textAlign: 'right', paddingRight: 8 }}>#</th>
+                  <th className={th} style={{ color: '#9AA7BC', textAlign: 'right', paddingRight: 8 }}>ATP&nbsp;Ranking</th>
                   <th className={th} style={{ color: '#5B6B84' }}>Player</th>
-                  <th className={th} style={{ color: '#12A150', textAlign: 'center' }}>Grass</th>
-                  <th className={`${th} hidden md:table-cell`} style={{ color: '#5B6B84', textAlign: 'center' }}>2026</th>
-                  <th className={`${th} hidden lg:table-cell`} style={{ color: '#0e6fc4', textAlign: 'center' }}>Hard</th>
-                  <th className={`${th} hidden lg:table-cell`} style={{ color: '#E5472B', textAlign: 'center' }}>Clay</th>
+                  <th className={`${th} hidden sm:table-cell`} style={{ color: '#5B6B84', textAlign: 'center' }}>Age</th>
+                  <th className={th} style={{ color: '#12A150', textAlign: 'center' }}>Grass&nbsp;win&nbsp;%</th>
+                  <th className={`${th} hidden lg:table-cell`} style={{ color: '#0e6fc4', textAlign: 'center' }}>Hard&nbsp;%</th>
+                  <th className={`${th} hidden lg:table-cell`} style={{ color: '#E5472B', textAlign: 'center' }}>Clay&nbsp;%</th>
+                  <th className={`${th} hidden md:table-cell`} style={{ color: '#5B6B84', textAlign: 'center' }}>2026&nbsp;W–L</th>
+                  <th className={`${th} hidden lg:table-cell`} style={{ color: '#D99A00', textAlign: 'center' }}>2026&nbsp;Titles</th>
                   <th className={th} style={{ color: '#0e6fc4', textAlign: 'right' }}>Price</th>
                   <th className={th} style={{ width: 78 }}></th>
                 </tr>
@@ -111,10 +113,12 @@ export default function DraftPage() {
                           </div>
                         </div>
                       </td>
+                      <td className="px-2 py-1.5 text-center font-num text-xs hidden sm:table-cell" style={{ color: '#5B6B84' }}>{player.age}</td>
                       <td className="px-2 py-1.5 text-center font-num text-xs font-bold" style={{ color: '#12A150' }}>{player.surface.grass}%</td>
-                      <td className="px-2 py-1.5 text-center font-num text-xs hidden md:table-cell" style={{ color: '#5B6B84' }}>{player.ytd.wins}–{player.ytd.losses}</td>
                       <td className="px-2 py-1.5 text-center font-num text-xs hidden lg:table-cell" style={{ color: '#5B6B84' }}>{player.surface.hard}%</td>
                       <td className="px-2 py-1.5 text-center font-num text-xs hidden lg:table-cell" style={{ color: '#5B6B84' }}>{player.surface.clay}%</td>
+                      <td className="px-2 py-1.5 text-center font-num text-xs hidden md:table-cell" style={{ color: '#5B6B84' }}>{player.ytd.wins}–{player.ytd.losses}</td>
+                      <td className="px-2 py-1.5 text-center font-num text-xs hidden lg:table-cell" style={{ color: player.ytd.titles > 0 ? '#D99A00' : '#9AA7BC' }}>{player.ytd.titles}</td>
                       <td className="px-2 py-1.5 text-right font-num text-sm font-bold" style={{ color: '#0e6fc4' }}>${player.price}M</td>
                       <td className="px-2 py-1.5 text-right">
                         <button

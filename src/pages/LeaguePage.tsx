@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { getPlayer } from '../data/players';
 import { getRivalTeams } from '../data/rivals';
 import { ROUNDS, isPlayerOut, getPlayerExit } from '../data/tournament';
 import PlayerAvatar from '../components/PlayerAvatar';
+import { toast } from '../store/toastStore';
 import type { RoundId } from '../types';
 
 interface Row {
@@ -39,6 +41,7 @@ function RankBadge({ i }: { i: number }) {
 
 export default function LeaguePage() {
   const { myTeam, myScore, budget, currentRoundIndex, openTeam } = useGameStore();
+  const [view, setView] = useState<'public' | 'private'>('public');
 
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
   const rivalTeams = getRivalTeams(currentRoundIndex);
@@ -60,22 +63,50 @@ export default function LeaguePage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 fade-in">
-      {/* League identity */}
-      <div className="rounded-2xl p-4 mb-4 flex items-center gap-3" style={{ background: 'linear-gradient(120deg,#0a1f44,#123163)' }}>
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0" style={{ background: 'rgba(255,255,255,0.14)' }}>🌍</div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-white font-extrabold text-lg leading-tight">Wimbledon 2026 Open League</h1>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(55,214,122,0.2)', color: '#37D67A' }}>PUBLIC</span>
-          </div>
-          <div className="text-xs" style={{ color: '#AFBFDA' }}>Open to everyone · {rows.length} managers</div>
-        </div>
-        {myTeam.length > 0 && (
-          <span className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1 shrink-0" style={{ background: 'rgba(55,214,122,0.16)', color: '#37D67A' }}>✓ You're in</span>
-        )}
+      {/* Public / Private league selector */}
+      <div className="grid grid-cols-2 gap-2 mb-5">
+        {([['public', '🌍', 'Public Leagues', 'Play against everyone'], ['private', '🔒', 'Private Leagues', 'Invite-only friends']] as const).map(([v, icon, label, sub]) => {
+          const active = view === v;
+          return (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className="rounded-2xl px-4 py-3 text-left transition-all"
+              style={{
+                background: active ? 'linear-gradient(120deg,#0a1f44,#123163)' : '#FFFFFF',
+                border: `1px solid ${active ? 'transparent' : 'rgba(10,27,51,0.1)'}`,
+                boxShadow: active ? '0 6px 20px rgba(10,27,51,0.18)' : 'none',
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{icon}</span>
+                <span className="font-extrabold text-sm" style={{ color: active ? '#fff' : '#0a1f44' }}>{label}</span>
+              </div>
+              <div className="text-[11px] mt-0.5" style={{ color: active ? '#AFBFDA' : '#9AA7BC' }}>{sub}</div>
+            </button>
+          );
+        })}
       </div>
 
-      <h2 className="text-sm font-bold mb-2.5 px-1" style={{ color: '#5B6B84' }}>Standings</h2>
+      {view === 'private' ? (
+        <div className="rounded-2xl p-8 text-center" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.09)' }}>
+          <div className="text-4xl mb-3">🔒</div>
+          <h3 className="text-lg font-extrabold mb-1" style={{ color: '#0a1f44' }}>Private Leagues</h3>
+          <p className="text-sm mb-5 max-w-sm mx-auto" style={{ color: '#5B6B84' }}>
+            Play only against friends you invite. Create a league to get a shareable invite code, or join one with a code.
+          </p>
+          <div className="flex gap-2 justify-center flex-wrap">
+            <button onClick={() => toast('Private leagues arrive with accounts (Go-Live)', 'info')} className="px-4 py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: '#0e6fc4' }}>Create a league</button>
+            <button onClick={() => toast('Private leagues arrive with accounts (Go-Live)', 'info')} className="px-4 py-2.5 rounded-xl text-sm font-bold" style={{ background: 'rgba(14,111,196,0.1)', color: '#0e6fc4' }}>Join with a code</button>
+          </div>
+          <p className="text-xs mt-5" style={{ color: '#9AA7BC' }}>Available once accounts are enabled.</p>
+        </div>
+      ) : (
+      <>
+      <div className="flex items-center justify-between mb-2.5 px-1">
+        <h2 className="text-sm font-bold" style={{ color: '#5B6B84' }}>Wimbledon 2026 Open League · {rows.length} managers</h2>
+        {myTeam.length > 0 && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(55,214,122,0.14)', color: '#12A150' }}>✓ You're in</span>}
+      </div>
 
       {/* Standings */}
       <div className="space-y-2.5">
@@ -139,6 +170,8 @@ export default function LeaguePage() {
 
       {myTeam.length === 0 && (
         <p className="text-center text-sm mt-6" style={{ color: '#9AA7BC' }}>Draft your squad to join the standings.</p>
+      )}
+      </>
       )}
     </div>
   );

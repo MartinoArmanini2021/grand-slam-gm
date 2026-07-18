@@ -12,6 +12,7 @@ import HowToPlay from './components/HowToPlay';
 import Logo from './components/Logo';
 import { NAV_ICONS } from './components/NavIcons';
 import AuthScreen from './components/AuthScreen';
+import UserProfile from './components/UserProfile';
 import { useAuth } from './auth/AuthProvider';
 
 const NAVY = '#0a1f44';
@@ -28,10 +29,11 @@ const TABS = [
 ] as const;
 
 export default function App() {
-  const { activeTab, setActiveTab, phase, myScore, budget, currentRoundIndex, myTeam } = useGameStore();
+  const { activeTab, setActiveTab, phase, myScore, currentRoundIndex, myTeam } = useGameStore();
   const currentRound = currentRoundIndex < ROUNDS.length ? ROUNDS[currentRoundIndex] : null;
   const [showRules, setShowRules] = useState(() => !seenRules());
-  const { ready, user, guest, signOut, enabled } = useAuth();
+  const [showProfile, setShowProfile] = useState(false);
+  const { ready, user, guest } = useAuth();
 
   const closeRules = () => { setShowRules(false); markSeen(); };
 
@@ -101,9 +103,6 @@ export default function App() {
                   {myScore} pts
                 </div>
               )}
-              <div className="font-num px-3 py-1 rounded-full text-sm font-semibold text-white" style={{ background: 'rgba(255,255,255,0.10)' }}>
-                ${budget.toFixed(1)}M
-              </div>
               {phase === 'pre_round' && currentRound && (
                 <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold" style={{ background: 'rgba(14,111,196,0.25)', color: '#8EB6F5' }}>
                   <span className="w-1.5 h-1.5 rounded-full pulse-dot" style={{ background: '#8EB6F5', display: 'inline-block' }} />
@@ -121,7 +120,7 @@ export default function App() {
               <button
                 onClick={() => setShowRules(true)}
                 aria-label="How to play"
-                className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors"
+                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors"
                 style={{ background: 'rgba(255,255,255,0.12)', color: '#B9C6DA' }}
                 onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
                 onMouseLeave={e => (e.currentTarget.style.color = '#B9C6DA')}
@@ -129,14 +128,20 @@ export default function App() {
               >
                 ?
               </button>
-              {user ? (
-                <>
-                  <span className="hidden md:inline text-xs font-num max-w-[130px] truncate" style={{ color: '#B9C6DA' }} title={user.email}>{user.email}</span>
-                  <button onClick={signOut} className="text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors" style={{ background: 'rgba(255,255,255,0.1)', color: '#B9C6DA' }}>Sign out</button>
-                </>
-              ) : enabled ? (
-                <button onClick={signOut} className="text-xs font-semibold px-2.5 py-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.1)', color: '#B9C6DA' }}>Log in</button>
-              ) : null}
+              <button
+                onClick={() => setShowProfile(true)}
+                aria-label="Your profile"
+                title="Your profile"
+                className="w-7 h-7 rounded-full flex items-center justify-center transition-colors"
+                style={{ background: 'rgba(255,255,255,0.12)', color: '#B9C6DA' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#B9C6DA')}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
+                </svg>
+              </button>
             </div>
           </div>
         </div>
@@ -152,6 +157,7 @@ export default function App() {
       </main>
 
       <HowToPlay open={showRules} onClose={closeRules} />
+      <UserProfile open={showProfile} onClose={() => setShowProfile(false)} />
       <Toaster />
     </div>
   );

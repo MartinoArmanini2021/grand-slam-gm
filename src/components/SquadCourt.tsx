@@ -11,13 +11,12 @@ const SPOTS = [
   { x: 79, y: 30 }, { x: 69, y: 52 }, { x: 79, y: 74 }, // right half
 ];
 
-export default function SquadCourt({ squad, captainId, readOnly, teamName, emblem, status }: {
+export default function SquadCourt({ squad, captainId, readOnly, teamName, emblem }: {
   squad?: string[];        // when given, renders this squad instead of your own (read-only)
   captainId?: string;
   readOnly?: boolean;
   teamName?: string;       // team identity shown inside the court (top-left)
   emblem?: string;
-  status?: string;         // contextual status line shown at the top of the court
 } = {}) {
   const { myTeam, captain, currentRoundIndex, phase, openPlayer } = useGameStore();
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -76,20 +75,11 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
           </g>
         </svg>
 
-        {/* Top status bar — team identity (left) + contextual status (right) */}
-        {(teamName || status) && (
-          <div className="absolute top-0 left-0 right-0 flex items-start justify-between gap-2 px-3.5 py-2.5" style={{ background: 'linear-gradient(180deg, rgba(8,26,56,0.92), rgba(8,26,56,0))' }}>
-            {teamName ? (
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="flex items-center justify-center rounded-lg text-sm shrink-0" style={{ width: 24, height: 24, background: 'rgba(255,255,255,0.18)' }}>{emblem}</span>
-                <span className="text-sm font-extrabold text-white truncate">{teamName}</span>
-              </div>
-            ) : <span />}
-            {status && (
-              <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg text-right leading-tight" style={{ maxWidth: '62%', background: 'rgba(55,214,122,0.2)', color: '#eafff2', border: '1px solid rgba(55,214,122,0.4)' }}>
-                {status}
-              </span>
-            )}
+        {/* Team identity — logo + name, top-left */}
+        {teamName && (
+          <div className="absolute top-3 left-3 flex items-center gap-2.5">
+            <span className="flex items-center justify-center rounded-xl text-xl shrink-0" style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.28)' }}>{emblem}</span>
+            <span className="text-lg font-extrabold text-white" style={{ textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}>{teamName}</span>
           </div>
         )}
 

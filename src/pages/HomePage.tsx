@@ -38,17 +38,20 @@ export default function HomePage() {
   return (
     <div className="max-w-4xl mx-auto px-4 pt-3 pb-6 fade-in">
 
-      {/* ── Title + subtitle ── */}
+      {/* ── Title + subtitle + status ── */}
       <div className="text-center mb-2">
         <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-none" style={{ color: '#0a1f44' }}>Wimbledon 2026</h1>
         <div className="text-xs font-bold uppercase tracking-[0.2em] mt-1" style={{ color: '#12A150' }}>
           Grand Slam · Grass
         </div>
+        <div className="text-xs font-bold uppercase tracking-[0.2em] mt-1" style={{ color: '#E5472B' }}>
+          {courtStatus(phase, currentRound, ROUNDS[currentRoundIndex - 1]?.short)}
+        </div>
       </div>
 
       {/* ── The court ── */}
-      <SquadCourt teamName="You" emblem="🎾" status={courtStatus(phase, currentRound, ROUNDS[currentRoundIndex - 1]?.short)} />
-      <div className="text-[11px] mt-2 mb-6 text-center" style={{ color: '#9AA7BC' }}>
+      <SquadCourt teamName="You" emblem="🎾" />
+      <div className="text-[11px] mt-1.5 mb-2 text-center" style={{ color: '#9AA7BC' }}>
         {phase === 'draft'
           ? 'Tap a + to add players · your squad lines up on court'
           : <>Tap a player for their profile · <span style={{ color: '#D99A00' }}>⭐ = captain (2× points)</span></>}
