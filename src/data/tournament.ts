@@ -86,7 +86,23 @@ export function upsetBonus(winnerId: string, loserId: string): number {
   const w = getPlayer(winnerId)?.ranking;
   const l = getPlayer(loserId)?.ranking;
   if (!w || !l || w <= l) return 0; // winner is equal/higher-ranked → no upset
-  return Math.min(12, Math.round((w - l) * 0.4));
+  return Math.min(15, Math.round((w - l) * 0.4));
+}
+
+// A win by a lower-ranked player is worth more; a top seed winning is "expected"
+// and worth less. Rank 1 → ×0.6, rank ~40 → ×1.5.
+export function rankingMultiplier(rank: number): number {
+  const r = Math.max(1, Math.min(40, rank));
+  return 0.6 + 0.9 * ((r - 1) / 39);
+}
+
+// Total points a player earns for winning a match: round stakes scaled by the
+// winner's ranking (underdogs earn more) plus an upset bonus for beating someone
+// ranked above them.
+export function winPoints(roundId: RoundId, winnerId: string, loserId: string): number {
+  const base = ROUNDS.find(r => r.id === roundId)?.points ?? 0;
+  const wRank = getPlayer(winnerId)?.ranking ?? 40;
+  return Math.round(base * rankingMultiplier(wRank)) + upsetBonus(winnerId, loserId);
 }
 
 // Map player → exit round (null if still in)
@@ -102,10 +118,12 @@ export function getPlayerExit(playerId: string): RoundId | null {
 }
 
 // Points returned when eliminated (based on how far they reached)
+// Refunds only arrive while you can still spend them — the transfer window shuts
+// after the QF, so SF/Final eliminations return nothing.
 export const BUDGET_RETURN_RATES: Record<RoundId, number> = {
-  R32: 0.30,
-  R16: 0.40,
-  QF:  0.55,
-  SF:  0.70,
-  F:   0.90,
+  R32: 0.15,
+  R16: 0.25,
+  QF:  0.35,
+  SF:  0,
+  F:   0,
 };

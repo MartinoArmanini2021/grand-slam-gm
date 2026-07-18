@@ -61,11 +61,11 @@ describe('backtest scoring — known results', () => {
 describe('backtest budget returns', () => {
   it('matches the live game rates, keyed by exit round', () => {
     expect(budgetReturn(20, 'W')).toBe(0);          // champion — kept to the end
-    expect(budgetReturn(20, 'F')).toBe(20 * 0.90);  // runner-up, went furthest
-    expect(budgetReturn(20, 'SF')).toBe(20 * 0.70);
-    expect(budgetReturn(20, 'QF')).toBe(20 * 0.55);
-    expect(budgetReturn(20, 'R16')).toBe(20 * 0.40);
-    expect(budgetReturn(20, 'R32')).toBe(20 * 0.30);
+    expect(budgetReturn(20, 'F')).toBe(0);          // final over — nothing to spend it on
+    expect(budgetReturn(20, 'SF')).toBe(0);         // transfer window already shut
+    expect(budgetReturn(20, 'QF')).toBe(20 * 0.35);
+    expect(budgetReturn(20, 'R16')).toBe(20 * 0.25);
+    expect(budgetReturn(20, 'R32')).toBe(20 * 0.15);
     expect(budgetReturn(20, 'R64')).toBe(0);        // fell before the scored stage
     expect(budgetReturn(20, 'R128')).toBe(0);
   });

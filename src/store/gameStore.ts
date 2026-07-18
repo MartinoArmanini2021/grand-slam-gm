@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { GamePhase, RoundId, RoundScore, BudgetReturn } from '../types';
 import {
-  ROUNDS, MATCHES, getMatchesForRound, getPlayerExit, BUDGET_RETURN_RATES, upsetBonus, transfersOpen,
+  ROUNDS, MATCHES, getMatchesForRound, getPlayerExit, BUDGET_RETURN_RATES, winPoints, transfersOpen,
 } from '../data/tournament';
 import { getPlayer, PLAYERS } from '../data/players';
 
@@ -126,7 +126,7 @@ export const useGameStore = create<GameStore>()(
           const won = match.winnerId === playerId;
           if (won) {
             const oppId = match.p1Id === playerId ? match.p2Id : match.p1Id;
-            const pts = round.points + upsetBonus(playerId, oppId); // base + upset bonus
+            const pts = winPoints(round.id, playerId, oppId); // ranking-weighted + upset bonus
             if (playerId === captain) {
               captainBonus += pts; // +pts extra (total 2x)
               roundPoints += pts * CAPTAIN_MULTIPLIER;
@@ -139,7 +139,7 @@ export const useGameStore = create<GameStore>()(
             if (exitRound) {
               const player = getPlayer(playerId);
               const returnAmt = Math.round(player.price * BUDGET_RETURN_RATES[exitRound] * 10) / 10;
-              newReturns.push({ playerId, round: exitRound, amount: returnAmt });
+              if (returnAmt > 0) newReturns.push({ playerId, round: exitRound, amount: returnAmt });
             }
           }
         });

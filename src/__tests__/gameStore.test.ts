@@ -73,12 +73,13 @@ describe('draft mechanics', () => {
 });
 
 describe('scoring — solo champion, captained every round', () => {
-  it('scores base+captain across all 5 rounds with no upset (=154)', () => {
+  it('scores ranking-weighted base+captain across all 5 rounds with no upset (=92)', () => {
     store().addPlayer('alcaraz'); // #1, wins the whole thing
     store().finalizeDraft();
     for (let i = 0; i < 5; i++) play('alcaraz');
-    // R32 2*2 + R16 5*2 + QF 10*2 + SF 20*2 + F 40*2 = 4+10+20+40+80
-    expect(store().myScore).toBe(154);
+    // #1 → ranking mult 0.6. round(base*0.6) then captain ×2:
+    // R32 round(2*.6)=1→2 · R16 round(5*.6)=3→6 · QF 6→12 · SF 12→24 · F 24→48 = 92
+    expect(store().myScore).toBe(92);
     expect(store().phase).toBe('finished');
     expect(store().roundScores).toHaveLength(5);
     expect(store().budgetReturns).toHaveLength(0); // never eliminated
@@ -89,16 +90,16 @@ describe('scoring — upset bonus + budget return', () => {
   it('captained underdog win adds upset bonus, then elimination returns budget', () => {
     store().addPlayer('eubanks'); // #25, price 7
     store().finalizeDraft();
-    // R32: eubanks (#25) beats rublev (#8) → base 2 + upset 7 = 9, captain → 18
+    // R32: eubanks (#25, mult 1.15) beats rublev (#8) → round(2*1.15)=2 + upset 7 = 9, captain → 18
     play('eubanks');
     expect(store().myScore).toBe(18);
-    // R16: eubanks loses to rune → eliminated, no points, budget return 7*0.40 = 2.8
+    // R16: eubanks loses to rune → eliminated, no points, budget return round(7*0.25*10)/10 = 1.8
     play('eubanks');
     expect(store().myScore).toBe(18);
     expect(store().budgetReturns).toHaveLength(1);
-    expect(store().budgetReturns[0]).toMatchObject({ playerId: 'eubanks', round: 'R16', amount: 2.8 });
-    // budget: 100 - 7 spent + 2.8 returned
-    expect(store().budget).toBeCloseTo(95.8, 5);
+    expect(store().budgetReturns[0]).toMatchObject({ playerId: 'eubanks', round: 'R16', amount: 1.8 });
+    // budget: 100 - 7 spent + 1.8 returned
+    expect(store().budget).toBeCloseTo(94.8, 5);
   });
 });
 
@@ -135,22 +136,22 @@ describe('mid-tournament substitutions', () => {
   it('an eliminated player can be replaced by an affordable, still-alive player', () => {
     draftAndReachR16();
     expect(eliminatedSquad(store().myTeam, store().currentRoundIndex)).toEqual(['eubanks']);
-    const budgetBefore = store().budget; // 45 draft leftover + 2.8 return = 47.8
-    expect(budgetBefore).toBeCloseTo(47.8, 5);
+    const budgetBefore = store().budget; // 45 draft leftover + 1.8 return = 46.8
+    expect(budgetBefore).toBeCloseTo(46.8, 5);
 
     store().replacePlayer('eubanks', 'zverev'); // #3, $38, still alive (reaches final)
     expect(store().myTeam).toContain('zverev');
     expect(store().myTeam).not.toContain('eubanks');
-    expect(store().budget).toBeCloseTo(47.8 - 38, 5);
+    expect(store().budget).toBeCloseTo(46.8 - 38, 5);
   });
 
   it('the replacement scores from the next round on', () => {
     draftAndReachR16();
     store().replacePlayer('eubanks', 'zverev');
-    play('alcaraz'); // QF: alcaraz(cap) beats rune → 20; zverev beats de Minaur → 10
+    play('alcaraz'); // QF: alcaraz(cap #1) round(10*.6)=6 ×2 = 12; zverev(#3) round(10*.646)=6 → 18
     const qf = store().roundScores.at(-1)!;
     expect(qf.round).toBe('QF');
-    expect(qf.points).toBe(30);
+    expect(qf.points).toBe(18);
   });
 
   it('rejects replacing a player who is not eliminated', () => {
