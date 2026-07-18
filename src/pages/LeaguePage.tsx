@@ -60,13 +60,22 @@ export default function LeaguePage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 fade-in">
-      {/* Header */}
-      <div className="flex items-end justify-between mb-5 flex-wrap gap-2">
-        <h1 className="text-xl font-extrabold tracking-tight" style={{ color: '#0a1f44' }}>League Standings</h1>
-        <div className="text-xs px-3 py-1.5 rounded-full font-semibold" style={{ background: 'rgba(14,111,196,0.1)', color: '#0e6fc4' }}>
-          {rows.length} managers
+      {/* League identity */}
+      <div className="rounded-2xl p-4 mb-4 flex items-center gap-3" style={{ background: 'linear-gradient(120deg,#0a1f44,#123163)' }}>
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0" style={{ background: 'rgba(255,255,255,0.14)' }}>🌍</div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-white font-extrabold text-lg leading-tight">Wimbledon 2026 Open League</h1>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(55,214,122,0.2)', color: '#37D67A' }}>PUBLIC</span>
+          </div>
+          <div className="text-xs" style={{ color: '#AFBFDA' }}>Open to everyone · {rows.length} managers</div>
         </div>
+        {myTeam.length > 0 && (
+          <span className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1 shrink-0" style={{ background: 'rgba(55,214,122,0.16)', color: '#37D67A' }}>✓ You're in</span>
+        )}
       </div>
+
+      <h2 className="text-sm font-bold mb-2.5 px-1" style={{ color: '#5B6B84' }}>Standings</h2>
 
       {/* Standings */}
       <div className="space-y-2.5">

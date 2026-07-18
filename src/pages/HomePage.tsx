@@ -47,7 +47,7 @@ export default function HomePage() {
       </div>
 
       {/* ── The court ── */}
-      <SquadCourt teamName="You" emblem="🎾" />
+      <SquadCourt teamName="You" emblem="🎾" status={courtStatus(phase, currentRound, ROUNDS[currentRoundIndex - 1]?.short)} />
       <div className="text-[11px] mt-2 mb-6 text-center" style={{ color: '#9AA7BC' }}>
         {phase === 'draft'
           ? 'Tap a + to add players · your squad lines up on court'
@@ -136,6 +136,15 @@ export default function HomePage() {
       </div>
     </div>
   );
+}
+
+// Contextual status shown at the top of the court, driven by phase + round.
+function courtStatus(phase: string, currentRound: { short: string } | null, prevShort?: string): string {
+  if (phase === 'draft') return 'Tournament about to begin — choose your players';
+  if (phase === 'pre_round' && currentRound) return `${currentRound.short} incoming — choose your captain`;
+  if (phase === 'round_complete' && currentRound) return `${prevShort ?? ''} done — set your captain for ${currentRound.short}`;
+  if (phase === 'finished') return 'Tournament complete — final standings';
+  return '';
 }
 
 function StatCard({ label, value, unit, color }: { label: string; value: string; unit: string; color: string }) {

@@ -15,8 +15,8 @@ export default function BracketTree() {
 
   // Teams you can highlight in the draw: your squad + every league rival.
   const teams = [
-    ...(myTeam.length > 0 ? [{ id: 'you', name: 'Your squad', squad: myTeam }] : []),
-    ...getRivalTeams(currentRoundIndex).map(rt => ({ id: rt.rival.id, name: rt.rival.name, squad: rt.squad })),
+    ...(myTeam.length > 0 ? [{ id: 'you', name: 'You', username: '@you', squad: myTeam }] : []),
+    ...getRivalTeams(currentRoundIndex).map(rt => ({ id: rt.rival.id, name: rt.rival.name, username: rt.rival.manager, squad: rt.squad })),
   ];
   const [teamId, setTeamId] = useState('you');
   const selected = teams.find(t => t.id === teamId) ?? teams[0];
@@ -81,15 +81,18 @@ export default function BracketTree() {
             ))}
           </div>
           {teams.length > 0 && (
-            <select
-              value={teamId}
-              onChange={e => setTeamId(e.target.value)}
-              className="text-xs font-bold rounded-xl px-2.5 py-2 outline-none"
-              style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.1)', color: '#0a1f44' }}
-              title="Highlight a team's players in the draw"
-            >
-              {teams.map(t => <option key={t.id} value={t.id}>Highlight: {t.name}</option>)}
-            </select>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold" style={{ color: '#5B6B84' }}>Highlight:</span>
+              <select
+                value={teamId}
+                onChange={e => setTeamId(e.target.value)}
+                className="text-xs font-bold rounded-xl px-2.5 py-2 outline-none"
+                style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.1)', color: '#0a1f44' }}
+                title="Highlight a team's players in the draw"
+              >
+                {teams.map(t => <option key={t.id} value={t.id}>{t.name} · {t.username}</option>)}
+              </select>
+            </div>
           )}
         </div>
         <div className="flex items-center gap-3 text-[11px]" style={{ color: '#9AA7BC' }}>

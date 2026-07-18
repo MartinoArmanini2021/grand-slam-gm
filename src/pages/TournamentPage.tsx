@@ -18,20 +18,17 @@ export default function TournamentPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 fade-in">
-      <div className="mb-5">
+      <div className="mb-4">
         <h1 className="text-lg font-extrabold" style={{ color: '#0a1f44' }}>Wimbledon 2026 — the draw</h1>
         <p className="text-xs mt-0.5" style={{ color: '#5B6B84' }}>
-          The real men's singles bracket. Your players are highlighted — tap anyone to trace their route to the final.
+          The real men's singles bracket. Highlight any team's players and tap anyone to trace their route to the final.
         </p>
       </div>
 
-      {/* ── Game controls ── */}
-      {phase === 'draft' && (
-        <div className="mb-6 px-5 py-4 rounded-2xl text-sm" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.07)', color: '#5B6B84' }}>
-          Complete your draft in the Market to start playing the bracket.
-        </div>
-      )}
+      {/* ── All stages, from round one ── */}
+      <StagesStrip currentRoundIndex={currentRoundIndex} phase={phase} />
 
+      {/* ── Game controls ── */}
       {phase === 'finished' && (
         <div className="mb-6 px-6 py-5 rounded-2xl text-center" style={{ background: 'rgba(217,154,0,0.06)', border: '1px solid rgba(217,154,0,0.2)' }}>
           <div className="text-3xl mb-2">🏆</div>
@@ -147,6 +144,29 @@ export default function TournamentPage() {
 
       {/* ── The real Wimbledon 2026 draw ── */}
       <BracketTree />
+    </div>
+  );
+}
+
+// Every stage of the competition, from round one → final, always visible.
+function StagesStrip({ currentRoundIndex, phase }: { currentRoundIndex: number; phase: string }) {
+  return (
+    <div className="flex items-stretch gap-1.5 mb-6">
+      {ROUNDS.map((r, i) => {
+        const done = i < currentRoundIndex;
+        const current = i === currentRoundIndex && phase !== 'draft' && phase !== 'finished';
+        return (
+          <div key={r.id} className="flex-1 rounded-xl px-1 py-2 text-center" style={{
+            background: current ? 'rgba(14,111,196,0.12)' : done ? 'rgba(18,161,80,0.1)' : '#FFFFFF',
+            border: `1px solid ${current ? 'rgba(14,111,196,0.35)' : done ? 'rgba(18,161,80,0.25)' : 'rgba(10,27,51,0.08)'}`,
+          }}>
+            <div className="text-[9px] font-bold uppercase tracking-wide" style={{ color: '#9AA7BC' }}>Round {i + 1}</div>
+            <div className="text-xs font-extrabold flex items-center justify-center gap-0.5" style={{ color: current ? '#0e6fc4' : done ? '#12A150' : '#5B6B84' }}>
+              {r.short}{done && ' ✓'}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
