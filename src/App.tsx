@@ -21,11 +21,11 @@ const seenRules = () => { try { return !!localStorage.getItem('gsgm-seen-rules')
 const markSeen = () => { try { localStorage.setItem('gsgm-seen-rules', '1'); } catch { /* ignore */ } };
 
 const TABS = [
-  { id: 'home',       label: 'Home'    },
-  { id: 'league',     label: 'League'  },
-  { id: 'draft',      label: 'Market'  },
-  { id: 'tournament', label: 'Bracket' },
-  { id: 'players',    label: 'Stats'   },
+  { id: 'home',       label: 'Home',    icon: '🎾', accent: '#37D67A' },
+  { id: 'league',     label: 'League',  icon: '🏆', accent: '#F0C24B' },
+  { id: 'draft',      label: 'Market',  icon: '💸', accent: '#4aa8ea' },
+  { id: 'tournament', label: 'Bracket', icon: '🎯', accent: '#E5472B' },
+  { id: 'players',    label: 'Stats',   icon: '📊', accent: '#8EB6F5' },
 ] as const;
 
 export default function App() {
@@ -47,25 +47,29 @@ export default function App() {
                 Wrapper divs (not the Logo itself) carry the responsive show/hide, so the
                 Logo's own inline flex can't override Tailwind's `hidden`. */}
             <button onClick={() => setActiveTab('home')} className="shrink-0 mr-1" aria-label="Grand Slam GM — home">
-              <div className="hidden sm:block"><Logo height={34} reversed /></div>
-              <div className="sm:hidden"><Logo height={32} reversed markOnly /></div>
+              <div className="hidden sm:block"><Logo height={42} reversed /></div>
+              <div className="sm:hidden"><Logo height={38} reversed markOnly /></div>
             </button>
 
-            {/* Nav — scrolls horizontally on very narrow screens so it never
-                overflows the header */}
-            <nav className="flex items-center gap-0.5 flex-1 min-w-0 overflow-x-auto no-scrollbar">
+            {/* Nav — icon + label per tab, distinct accent underline when active;
+                scrolls horizontally on very narrow screens so it never overflows */}
+            <nav className="flex items-center gap-1 flex-1 min-w-0 overflow-x-auto no-scrollbar">
               {TABS.map(tab => {
                 const active = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className="relative px-3 py-1.5 rounded-lg text-sm font-semibold transition-all shrink-0 whitespace-nowrap"
+                    className="relative flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-all shrink-0 whitespace-nowrap"
                     style={{
-                      color: active ? '#fff' : '#8FA1BE',
-                      background: active ? 'rgba(255,255,255,0.10)' : 'transparent',
+                      color: active ? '#fff' : '#9FB0CC',
+                      background: active ? 'rgba(255,255,255,0.13)' : 'transparent',
+                      boxShadow: active ? `inset 0 -2.5px 0 ${tab.accent}` : 'none',
                     }}
+                    onMouseEnter={e => { if (!active) e.currentTarget.style.color = '#fff'; }}
+                    onMouseLeave={e => { if (!active) e.currentTarget.style.color = '#9FB0CC'; }}
                   >
+                    <span className="text-base leading-none" style={{ opacity: active ? 1 : 0.85 }}>{tab.icon}</span>
                     {tab.label}
                     {tab.id === 'league' && myTeam.length > 0 && (
                       <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center" style={{ background: BLUE, color: '#fff' }}>
