@@ -119,7 +119,17 @@ export const useGameStore = create<GameStore>()(
 
         myTeam.forEach(playerId => {
           const match = roundMatches.find(m => m.p1Id === playerId || m.p2Id === playerId);
-          if (!match) return;
+          if (!match) {
+            // No match this round. If it's the R32 and this player never reached
+            // the last 32 (lost R128/R64), they're revealed as out now → one-time
+            // refund at the R32 rate so every eliminated player returns something.
+            const player = getPlayer(playerId);
+            if (round.id === 'R32' && player && (player.exit === 'R128' || player.exit === 'R64')) {
+              const amt = Math.round(player.price * BUDGET_RETURN_RATES.R32 * 10) / 10;
+              if (amt > 0) newReturns.push({ playerId, round: 'R32', amount: amt });
+            }
+            return;
+          }
 
           const won = match.winnerId === playerId;
           if (won) {
@@ -185,7 +195,22 @@ export const useGameStore = create<GameStore>()(
         playerReturnTab: 'home',
       }),
     }),
-    { name: 'grand-slam-gm-v1' }
+    {
+      name: 'grand-slam-gm-v1',
+      version: 1,
+      // Drop any persisted player id that no longer exists in the roster so a
+      // rehydrated squad can never dereference an undefined player and crash.
+      migrate: (persisted) => {
+        const s = persisted as Partial<GameStore> | undefined;
+        if (s && Array.isArray(s.myTeam)) {
+          const ids = new Set(PLAYERS.map(p => p.id));
+          s.myTeam = s.myTeam.filter(id => ids.has(id));
+          if (s.captain && !ids.has(s.captain)) s.captain = null;
+          if (s.viewPlayer && !ids.has(s.viewPlayer)) s.viewPlayer = '';
+        }
+        return s as GameStore;
+      },
+    }
   )
 );
 
@@ -217,13 +242,6 @@ export const selectEliminatedPlayers = (myTeam: string[], revealedRounds: RoundI
 export const selectActivePlayers = (myTeam: string[], currentRoundIndex: number) => {
   const playedRounds = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
   return myTeam.filter(id => !isPlayerOut(id, playedRounds));
-};
-
-export const selectRevealedRounds = (currentRoundIndex: number, phase: GamePhase): RoundId[] => {
-  const count = phase === 'draft' || phase === 'pre_round'
-    ? currentRoundIndex
-    : currentRoundIndex;
-  return ROUNDS.slice(0, count).map(r => r.id);
 };
 
 export const MATCHES_DATA = MATCHES;

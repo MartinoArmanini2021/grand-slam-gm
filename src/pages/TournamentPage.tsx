@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useGameStore, eliminatedSquad, substitutionCandidates } from '../store/gameStore';
-import { ROUNDS, getPlayerExit, transfersOpen } from '../data/tournament';
+import { ROUNDS, getPlayerExit, isPlayerOut, transfersOpen } from '../data/tournament';
 import { getPlayer } from '../data/players';
+import type { RoundId } from '../types';
 import PlayerAvatar from '../components/PlayerAvatar';
 import BracketTree from '../components/BracketTree';
 import { getTier, TIER_META } from '../data/tiers';
@@ -15,6 +16,8 @@ export default function TournamentPage() {
 
   const currentRound = phase !== 'draft' && phase !== 'finished' ? ROUNDS[currentRoundIndex] : null;
   const isCaptainSet = phase === 'pre_round' && !!captain;
+  const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
+  const aliveSquad = myTeam.filter(id => !isPlayerOut(id, revealed));
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 fade-in">
@@ -65,9 +68,9 @@ export default function TournamentPage() {
           <div className="px-5 py-4">
             {phase === 'pre_round' && (
               <>
-                <p className="text-xs mb-3" style={{ color: '#D99A00' }}>Choose your captain — they score 2× points if they win</p>
+                <p className="text-xs mb-3" style={{ color: '#D99A00' }}>Choose your captain — they score 2× points if they win (eliminated players can't be captain)</p>
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {myTeam.map(id => {
+                  {aliveSquad.map(id => {
                     const p = getPlayer(id);
                     const isCap = captain === id;
                     return (
@@ -153,14 +156,14 @@ function TransfersPanel() {
   const outs = eliminatedSquad(myTeam, currentRoundIndex);
   if (outs.length === 0) return null;
 
-  // Transfer window closes after the quarter-finals.
+  // Transfer window closes after the semi-finals.
   if (!transfersOpen(currentRoundIndex)) {
     return (
       <div className="mb-6 rounded-2xl px-5 py-4 flex items-center gap-3" style={{ background: 'rgba(10,27,51,0.03)', border: '1px solid rgba(10,27,51,0.1)' }}>
         <div className="text-xl">🔒</div>
         <div>
           <div className="text-sm font-bold" style={{ color: '#0a1f44' }}>Transfer window closed</div>
-          <div className="text-xs" style={{ color: '#5B6B84' }}>No purchases after the quarter-finals — your squad is locked for the semis &amp; final.</div>
+          <div className="text-xs" style={{ color: '#5B6B84' }}>No purchases after the semi-finals — your squad is locked for the final.</div>
         </div>
       </div>
     );
@@ -173,7 +176,7 @@ function TransfersPanel() {
     <div className="mb-6 rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid rgba(217,154,0,0.35)' }}>
       <div className="px-5 py-3 flex items-center justify-between" style={{ background: 'rgba(217,154,0,0.08)', borderBottom: '1px solid rgba(217,154,0,0.2)' }}>
         <div>
-          <div className="text-sm font-bold" style={{ color: '#0a1f44' }}>Transfers <span className="font-normal" style={{ color: '#9AA7BC' }}>· window closes after the QF</span></div>
+          <div className="text-sm font-bold" style={{ color: '#0a1f44' }}>Transfers <span className="font-normal" style={{ color: '#9AA7BC' }}>· window closes after the SF</span></div>
           <div className="text-xs" style={{ color: '#5B6B84' }}>Replace an eliminated player with anyone still in the draw · scores from {nextRound}</div>
         </div>
         <div className="text-right shrink-0">

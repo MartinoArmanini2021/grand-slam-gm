@@ -44,10 +44,11 @@ export const MATCHES: Match[] = WIMBLEDON_2026.map(m => ({
 export const getMatchesForRound = (round: RoundId) =>
   MATCHES.filter(m => m.round === round);
 
-// Transfer window closes after the quarter-finals: no purchases for the semis or
-// final. ROUNDS index — R32=0, R16=1, QF=2, SF=3, F=4 — so once currentRoundIndex
-// reaches 3 (SF up next), the squad is locked.
-export const TRANSFER_LOCK_INDEX = 3;
+// Transfer window closes after the semi-finals: the final squad is locked, but a
+// QF-round elimination CAN still be replaced for the semis (so the QF refund is
+// spendable). ROUNDS index — R32=0, R16=1, QF=2, SF=3, F=4 — so once
+// currentRoundIndex reaches 4 (the Final is up next), the squad is locked.
+export const TRANSFER_LOCK_INDEX = 4;
 export const transfersOpen = (currentRoundIndex: number) => currentRoundIndex < TRANSFER_LOCK_INDEX;
 
 // A player's opponent in a given round (null if they weren't in it).

@@ -28,11 +28,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!supabase) return;
-    supabase.auth.getSession().then(({ data }) => {
-      const u = data.session?.user;
-      if (u) setUser({ id: u.id, email: u.email ?? '' });
-      setReady(true);
-    });
+    supabase.auth.getSession()
+      .then(({ data }) => {
+        const u = data.session?.user;
+        if (u) setUser({ id: u.id, email: u.email ?? '' });
+      })
+      .catch(() => { /* network/env failure — fall through to the login screen */ })
+      .finally(() => setReady(true));
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       const u = session?.user;
       setUser(u ? { id: u.id, email: u.email ?? '' } : null);

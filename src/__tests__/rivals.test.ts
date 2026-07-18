@@ -95,12 +95,12 @@ describe('transfer-aware simulation', () => {
     }
   });
 
-  it('no manager transfers after the quarter-finals (window locked for SF & final)', () => {
+  it('no manager transfers after the semi-finals (window locked for the final)', () => {
     for (const r of RIVALS) {
       const t = simulateRival(r, ROUNDS.length);
       for (const tr of t.transfers) {
-        // transfers are triggered by eliminations in R32 or R16 only (prep for R16/QF)
-        expect(['R32', 'R16']).toContain(tr.round);
+        // transfers can react to R32/R16/QF eliminations (prep for R16/QF/SF); never SF/F
+        expect(['R32', 'R16', 'QF']).toContain(tr.round);
       }
     }
   });

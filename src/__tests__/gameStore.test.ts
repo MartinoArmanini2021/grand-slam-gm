@@ -113,6 +113,16 @@ describe('budget returns', () => {
     expect(store().budgetReturns[0]).toMatchObject({ playerId: 'fritz', round: 'QF', amount: 7.7 });
     expect(store().budget).toBeCloseTo(100 - 22 + 7.7, 5);
   });
+
+  it('a player who lost before the last 32 is still refunded at the R32 reveal', () => {
+    store().addPlayer('sinner');
+    store().addPlayer('ruud'); // $18, lost in R128 (never reached the scored draw)
+    store().finalizeDraft();
+    play('sinner'); // R32 → ruud revealed as out, refunded at the R32 rate 18·0.15 = 2.7
+    const ret = store().budgetReturns.find(r => r.playerId === 'ruud');
+    expect(ret).toMatchObject({ round: 'R32', amount: 2.7 });
+    expect(store().budget).toBeCloseTo(100 - 50 - 18 + 2.7, 5);
+  });
 });
 
 describe('scoring invariants over a mixed squad', () => {
@@ -189,16 +199,30 @@ describe('mid-tournament substitutions', () => {
     expect(store().myTeam).toContain('lehecka');
   });
 
-  it('the transfer window closes after the quarter-finals', () => {
+  it('a QF-round refund is still spendable — transfers stay open through the QF', () => {
     store().addPlayer('sinner');
     store().addPlayer('lehecka'); // out R16
     store().finalizeDraft();
     play('sinner'); // R32
     play('sinner'); // R16 → lehecka eliminated
-    play('sinner'); // QF → currentRoundIndex now 3 (SF up next)
+    play('sinner'); // QF → currentRoundIndex now 3 (SF up next) — window still open
     expect(store().currentRoundIndex).toBe(3);
+    store().replacePlayer('lehecka', 'zverev'); // zverev alive; window OPEN for the SF
+    expect(store().myTeam).toContain('zverev');
+    expect(store().myTeam).not.toContain('lehecka');
+  });
+
+  it('the transfer window closes after the semi-finals (final squad locked)', () => {
+    store().addPlayer('sinner');
+    store().addPlayer('lehecka'); // out R16
+    store().finalizeDraft();
+    play('sinner'); // R32
+    play('sinner'); // R16 → lehecka eliminated
+    play('sinner'); // QF
+    play('sinner'); // SF → currentRoundIndex now 4 (Final up next) — window shut
+    expect(store().currentRoundIndex).toBe(4);
     expect(eliminatedSquad(store().myTeam, store().currentRoundIndex)).toContain('lehecka');
-    store().replacePlayer('lehecka', 'zverev'); // still alive but window shut
+    store().replacePlayer('lehecka', 'zverev'); // still alive but window shut for the final
     expect(store().myTeam).toContain('lehecka');
     expect(store().myTeam).not.toContain('zverev');
   });
