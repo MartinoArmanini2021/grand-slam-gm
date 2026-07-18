@@ -16,7 +16,7 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
   if (!open) return null;
 
   const accountEmail = user?.email ?? '';
-  const field = { background: '#F5F7FA', border: '1px solid rgba(10,27,51,0.12)', color: '#0a1f44' } as const;
+  const field = { background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.12)', color: 'var(--ink)' } as const;
   const initials = ((firstName[0] ?? '') + (lastName[0] ?? '')) || (username[0] ?? accountEmail[0] ?? 'U');
 
   const changePassword = async () => {
@@ -39,7 +39,7 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(10,27,51,0.55)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div onClick={e => e.stopPropagation()} className="fade-in rounded-2xl w-full" style={{ maxWidth: 440, background: '#fff', maxHeight: '90vh', overflowY: 'auto' }}>
         {/* Header */}
-        <div className="flex items-center gap-3 px-5 py-4 sticky top-0" style={{ background: 'linear-gradient(120deg,#0a1f44,#123163)', borderRadius: '16px 16px 0 0', zIndex: 1 }}>
+        <div className="flex items-center gap-3 px-5 py-4 sticky top-0" style={{ background: 'linear-gradient(120deg,var(--ink),var(--navy-2))', borderRadius: '16px 16px 0 0', zIndex: 1 }}>
           <div className="flex items-center justify-center rounded-xl text-lg font-extrabold uppercase" style={{ width: 44, height: 44, background: 'rgba(255,255,255,0.16)', color: '#fff' }}>
             {initials}
           </div>
@@ -47,7 +47,7 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
             <div className="text-white font-extrabold text-base leading-tight truncate">
               {firstName || lastName ? `${firstName} ${lastName}`.trim() : (username || 'Your profile')}
             </div>
-            <div className="text-xs font-num truncate" style={{ color: '#AFBFDA' }}>{accountEmail || email || (guest ? 'Guest' : '')}</div>
+            <div className="text-xs font-num truncate" style={{ color: 'var(--on-navy)' }}>{accountEmail || email || (guest ? 'Guest' : '')}</div>
           </div>
           <button onClick={onClose} className="text-white text-sm font-bold px-3 py-1.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.15)' }}>Done</button>
         </div>
@@ -66,9 +66,9 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
           </div>
           <Row label="Email">
             {accountEmail ? (
-              <div className="w-full text-sm px-3 py-2.5 rounded-xl font-num flex items-center justify-between" style={{ ...field, color: '#5B6B84' }}>
+              <div className="w-full text-sm px-3 py-2.5 rounded-xl font-num flex items-center justify-between" style={{ ...field, color: 'var(--ink-2)' }}>
                 {accountEmail}
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(18,161,80,0.12)', color: '#12A150' }}>VERIFIED</span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(18,161,80,0.12)', color: 'var(--green)' }}>VERIFIED</span>
               </div>
             ) : (
               <input value={email} onChange={e => set({ email: e.target.value })} placeholder="you@email.com" type="email" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={field} />
@@ -91,22 +91,22 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
               style={{ ...field }}
             >
               <span className="flex items-center justify-center rounded-lg text-lg" style={{ width: 30, height: 30, background: 'rgba(14,111,196,0.1)' }}>{teamEmblem}</span>
-              <span className="flex-1 text-sm font-bold" style={{ color: '#0a1f44' }}>{teamName}</span>
-              <span className="text-xs font-semibold" style={{ color: '#0e6fc4' }}>Edit on team page ›</span>
+              <span className="flex-1 text-sm font-bold" style={{ color: 'var(--ink)' }}>{teamName}</span>
+              <span className="text-xs font-semibold" style={{ color: 'var(--blue)' }}>Edit on team page ›</span>
             </button>
           </Row>
 
           {/* Password */}
           <div className="pt-2" style={{ borderTop: '1px solid rgba(10,27,51,0.07)' }}>
-            <div className="text-[11px] font-bold uppercase tracking-wide mb-2 mt-1" style={{ color: '#5B6B84' }}>Change password</div>
+            <div className="text-[11px] font-bold uppercase tracking-wide mb-2 mt-1" style={{ color: 'var(--ink-2)' }}>Change password</div>
             {user ? (
               <div className="space-y-2">
                 <input value={newPw} onChange={e => setNewPw(e.target.value)} type="password" placeholder="New password" autoComplete="new-password" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={field} />
                 <input value={confirmPw} onChange={e => setConfirmPw(e.target.value)} type="password" placeholder="Confirm new password" autoComplete="new-password" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={field} />
                 {pwMsg && (
-                  <div className="text-xs rounded-xl px-3 py-2" style={{ background: pwMsg.ok ? 'rgba(18,161,80,0.08)' : 'rgba(229,71,43,0.08)', color: pwMsg.ok ? '#12A150' : '#c0341c', border: `1px solid ${pwMsg.ok ? 'rgba(18,161,80,0.25)' : 'rgba(229,71,43,0.25)'}` }}>{pwMsg.text}</div>
+                  <div className="text-xs rounded-xl px-3 py-2" style={{ background: pwMsg.ok ? 'rgba(18,161,80,0.08)' : 'rgba(229,71,43,0.08)', color: pwMsg.ok ? 'var(--green)' : '#c0341c', border: `1px solid ${pwMsg.ok ? 'rgba(18,161,80,0.25)' : 'rgba(229,71,43,0.25)'}` }}>{pwMsg.text}</div>
                 )}
-                <button onClick={changePassword} disabled={pwBusy} className="w-full py-2.5 rounded-xl text-sm font-bold" style={{ background: 'rgba(14,111,196,0.1)', color: '#0e6fc4' }}>{pwBusy ? 'Updating…' : 'Update password'}</button>
+                <button onClick={changePassword} disabled={pwBusy} className="w-full py-2.5 rounded-xl text-sm font-bold" style={{ background: 'rgba(14,111,196,0.1)', color: 'var(--blue)' }}>{pwBusy ? 'Updating…' : 'Update password'}</button>
               </div>
             ) : (
               <div className="text-xs rounded-xl px-3 py-2.5" style={{ background: 'rgba(217,154,0,0.1)', border: '1px solid rgba(217,154,0,0.25)', color: '#8a6a00' }}>
@@ -115,10 +115,10 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
             )}
           </div>
 
-          <p className="text-[11px] pt-1" style={{ color: '#9AA7BC' }}>Saved on this device. It'll sync to your account once accounts go live.</p>
+          <p className="text-[11px] pt-1" style={{ color: 'var(--ink-3)' }}>Saved on this device. It'll sync to your account once accounts go live.</p>
 
           {(user || guest) && (
-            <button onClick={() => { signOut(); onClose(); }} className="w-full py-2.5 rounded-xl text-sm font-bold" style={{ background: 'rgba(229,71,43,0.1)', color: '#E5472B', border: '1px solid rgba(229,71,43,0.25)' }}>
+            <button onClick={() => { signOut(); onClose(); }} className="w-full py-2.5 rounded-xl text-sm font-bold" style={{ background: 'rgba(229,71,43,0.1)', color: 'var(--ember)', border: '1px solid rgba(229,71,43,0.25)' }}>
               {user ? 'Sign out' : 'Exit guest & sign in'}
             </button>
           )}
@@ -131,7 +131,7 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="text-[11px] font-bold uppercase tracking-wide mb-1.5" style={{ color: '#5B6B84' }}>{label}</div>
+      <div className="text-[11px] font-bold uppercase tracking-wide mb-1.5" style={{ color: 'var(--ink-2)' }}>{label}</div>
       {children}
     </div>
   );

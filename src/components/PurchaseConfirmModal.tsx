@@ -25,17 +25,17 @@ export default function PurchaseConfirmModal({ player, onClose }: { player: Play
         <div className="flex items-center gap-3 mb-3">
           <PlayerAvatar playerId={player.id} name={player.name} size="lg" />
           <div>
-            <div className="font-extrabold text-base" style={{ color: '#0a1f44' }}>{player.name}</div>
-            <div className="text-xs" style={{ color: '#5B6B84' }}>#{player.ranking} · {getTier(player.ranking)}</div>
+            <div className="font-extrabold text-base" style={{ color: 'var(--ink)' }}>{player.name}</div>
+            <div className="text-xs" style={{ color: 'var(--ink-2)' }}>#{player.ranking} · {getTier(player.ranking)}</div>
           </div>
         </div>
-        <div className="rounded-xl px-3 py-2.5 mb-4 flex items-center justify-between text-sm" style={{ background: '#F5F7FA' }}>
-          <span style={{ color: '#5B6B84' }}>Price · budget after</span>
-          <span className="font-num font-bold" style={{ color: '#0a1f44' }}>${player.price}M · ${(budget - player.price).toFixed(1)}M</span>
+        <div className="rounded-xl px-3 py-2.5 mb-4 flex items-center justify-between text-sm" style={{ background: 'var(--raised)' }}>
+          <span style={{ color: 'var(--ink-2)' }}>Price · budget after</span>
+          <span className="font-num font-bold" style={{ color: 'var(--ink)' }}>${player.price}M · ${(budget - player.price).toFixed(1)}M</span>
         </div>
         <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-semibold" style={{ background: '#F0F3F7', color: '#0a1f44', border: '1px solid rgba(10,27,51,0.1)' }}>Cancel</button>
-          <button onClick={buy} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: '#12A150' }}>Confirm buy</button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-semibold" style={{ background: '#F0F3F7', color: 'var(--ink)', border: '1px solid rgba(10,27,51,0.1)' }}>Cancel</button>
+          <button onClick={buy} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: 'var(--green)' }}>Confirm buy</button>
         </div>
       </div>
     </div>

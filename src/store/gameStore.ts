@@ -201,18 +201,26 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'grand-slam-gm-v1',
-      version: 1,
-      // Drop any persisted player id that no longer exists in the roster so a
-      // rehydrated squad can never dereference an undefined player and crash.
+      version: 2,
+      // Drop any persisted player id that no longer exists in the roster (so a
+      // rehydrated squad can never dereference an undefined player and crash), and
+      // re-derive a stale draft budget after roster/price changes.
       migrate: (persisted) => {
         const s = persisted as Partial<GameStore> | undefined;
         if (s) {
           const ids = new Set(PLAYERS.map(p => p.id));
+          const priceById = new Map(PLAYERS.map(p => [p.id, p.price]));
           if (Array.isArray(s.myTeam)) s.myTeam = s.myTeam.filter(id => ids.has(id));
           if (s.captain && !ids.has(s.captain)) s.captain = null;
           if (s.viewPlayer && !ids.has(s.viewPlayer)) s.viewPlayer = '';
           if (Array.isArray(s.budgetReturns)) s.budgetReturns = s.budgetReturns.filter(r => ids.has(r.playerId));
           if (Array.isArray(s.captainHistory)) s.captainHistory = s.captainHistory.filter(c => ids.has(c.playerId));
+          // During the draft, budget is exactly 100 − squad cost; recompute it so a
+          // squad carried over from an older price curve can't show the wrong budget.
+          if (s.phase === 'draft' && Array.isArray(s.myTeam)) {
+            const spent = s.myTeam.reduce((sum, id) => sum + (priceById.get(id) ?? 0), 0);
+            s.budget = STARTING_BUDGET - spent;
+          }
         }
         return s as GameStore;
       },

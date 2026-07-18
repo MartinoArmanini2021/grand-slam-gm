@@ -15,17 +15,17 @@ import AuthScreen from './components/AuthScreen';
 import UserProfile from './components/UserProfile';
 import { useAuth } from './auth/AuthProvider';
 
-const NAVY = '#0a1f44';
-const BLUE = '#0e6fc4';
+const NAVY = 'var(--ink)';
+const BLUE = 'var(--blue)';
 
 const seenRules = () => { try { return !!localStorage.getItem('gsgm-seen-rules'); } catch { return true; } };
 const markSeen = () => { try { localStorage.setItem('gsgm-seen-rules', '1'); } catch { /* ignore */ } };
 
 const TABS = [
-  { id: 'home',       label: 'Home',    accent: '#37D67A' },
-  { id: 'league',     label: 'League',  accent: '#F0C24B' },
-  { id: 'draft',      label: 'Market',  accent: '#4aa8ea' },
-  { id: 'tournament', label: 'Bracket', accent: '#E5472B' },
+  { id: 'home',       label: 'Home',    accent: 'var(--green-bright)' },
+  { id: 'league',     label: 'League',  accent: 'var(--gold-bright)' },
+  { id: 'draft',      label: 'Market',  accent: 'var(--blue-light)' },
+  { id: 'tournament', label: 'Bracket', accent: 'var(--ember)' },
 ] as const;
 
 export default function App() {
@@ -41,15 +41,15 @@ export default function App() {
   // visitor signs in or chooses to continue as a guest.
   if (!ready) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0a1f44' }}>
-        <div className="text-sm" style={{ color: '#8FA1BE' }}>Loading…</div>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--ink)' }}>
+        <div className="text-sm" style={{ color: 'var(--on-navy-2)' }}>Loading…</div>
       </div>
     );
   }
   if (!user && !guest) return <AuthScreen />;
 
   return (
-    <div className="min-h-screen" style={{ background: '#EEF1F5' }}>
+    <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
       {/* ── ATP-style navy header ── */}
       <header className="sticky top-0 z-50" style={{ background: NAVY, boxShadow: '0 1px 0 rgba(255,255,255,0.06), 0 6px 20px rgba(10,27,51,0.18)' }}>
         <div className="w-full px-3 sm:px-5">
@@ -89,7 +89,7 @@ export default function App() {
                       </span>
                     )}
                     {tab.id === 'tournament' && phase === 'pre_round' && (
-                      <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full pulse-dot" style={{ background: '#37D67A' }} />
+                      <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full pulse-dot" style={{ background: 'var(--green-bright)' }} />
                     )}
                   </button>
                 );
@@ -99,7 +99,7 @@ export default function App() {
             {/* Status chips */}
             <div className="hidden md:flex items-center gap-2 shrink-0">
               {phase !== 'draft' && (
-                <div className="font-num px-3 py-1 rounded-full text-sm font-bold" style={{ background: 'rgba(55,214,122,0.16)', color: '#37D67A' }}>
+                <div className="font-num px-3 py-1 rounded-full text-sm font-bold" style={{ background: 'rgba(55,214,122,0.16)', color: 'var(--green-bright)' }}>
                   {myScore} pts
                 </div>
               )}
@@ -110,7 +110,7 @@ export default function App() {
                 </div>
               )}
               {phase === 'finished' && (
-                <div className="px-3 py-1 rounded-full text-xs font-bold" style={{ background: 'rgba(217,154,0,0.2)', color: '#F0C24B' }}>
+                <div className="px-3 py-1 rounded-full text-xs font-bold" style={{ background: 'rgba(217,154,0,0.2)', color: 'var(--gold-bright)' }}>
                   Complete
                 </div>
               )}

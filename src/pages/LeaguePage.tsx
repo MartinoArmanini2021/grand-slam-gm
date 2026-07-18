@@ -17,8 +17,8 @@ function RankBadge({ i }: { i: number }) {
       className="shrink-0 flex items-center justify-center font-num font-extrabold"
       style={{
         width: 34, height: 34, borderRadius: 10,
-        background: top ? MEDAL[i] : '#EEF1F5',
-        color: top ? '#fff' : '#9AA7BC',
+        background: top ? MEDAL[i] : 'var(--bg)',
+        color: top ? '#fff' : 'var(--ink-3)',
         fontSize: top ? 15 : 13,
         boxShadow: top ? `0 2px 8px ${MEDAL[i]}66, inset 0 0 0 2px rgba(255,255,255,0.35)` : 'none',
       }}
@@ -47,16 +47,16 @@ export default function LeaguePage() {
               onClick={() => setView(v)}
               className="rounded-2xl px-4 py-3 text-left transition-all"
               style={{
-                background: active ? 'linear-gradient(120deg,#0a1f44,#123163)' : '#FFFFFF',
+                background: active ? 'linear-gradient(120deg,var(--ink),var(--navy-2))' : '#FFFFFF',
                 border: `1px solid ${active ? 'transparent' : 'rgba(10,27,51,0.1)'}`,
                 boxShadow: active ? '0 6px 20px rgba(10,27,51,0.18)' : 'none',
               }}
             >
               <div className="flex items-center gap-2">
                 <span className="text-lg">{icon}</span>
-                <span className="font-extrabold text-sm" style={{ color: active ? '#fff' : '#0a1f44' }}>{label}</span>
+                <span className="font-extrabold text-sm" style={{ color: active ? '#fff' : 'var(--ink)' }}>{label}</span>
               </div>
-              <div className="text-[11px] mt-0.5" style={{ color: active ? '#AFBFDA' : '#9AA7BC' }}>{sub}</div>
+              <div className="text-[11px] mt-0.5" style={{ color: active ? 'var(--on-navy)' : 'var(--ink-3)' }}>{sub}</div>
             </button>
           );
         })}
@@ -65,21 +65,21 @@ export default function LeaguePage() {
       {view === 'private' ? (
         <div className="rounded-2xl p-8 text-center" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.09)' }}>
           <div className="text-4xl mb-3">🔒</div>
-          <h3 className="text-lg font-extrabold mb-1" style={{ color: '#0a1f44' }}>Private Leagues</h3>
-          <p className="text-sm mb-5 max-w-sm mx-auto" style={{ color: '#5B6B84' }}>
+          <h3 className="text-lg font-extrabold mb-1" style={{ color: 'var(--ink)' }}>Private Leagues</h3>
+          <p className="text-sm mb-5 max-w-sm mx-auto" style={{ color: 'var(--ink-2)' }}>
             Play only against friends you invite. Create a league to get a shareable invite code, or join one with a code.
           </p>
           <div className="flex gap-2 justify-center flex-wrap">
-            <button onClick={() => toast('Private leagues arrive with accounts (Go-Live)', 'info')} className="px-4 py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: '#0e6fc4' }}>Create a league</button>
-            <button onClick={() => toast('Private leagues arrive with accounts (Go-Live)', 'info')} className="px-4 py-2.5 rounded-xl text-sm font-bold" style={{ background: 'rgba(14,111,196,0.1)', color: '#0e6fc4' }}>Join with a code</button>
+            <button onClick={() => toast('Private leagues arrive with accounts (Go-Live)', 'info')} className="px-4 py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: 'var(--blue)' }}>Create a league</button>
+            <button onClick={() => toast('Private leagues arrive with accounts (Go-Live)', 'info')} className="px-4 py-2.5 rounded-xl text-sm font-bold" style={{ background: 'rgba(14,111,196,0.1)', color: 'var(--blue)' }}>Join with a code</button>
           </div>
-          <p className="text-xs mt-5" style={{ color: '#9AA7BC' }}>Available once accounts are enabled.</p>
+          <p className="text-xs mt-5" style={{ color: 'var(--ink-3)' }}>Available once accounts are enabled.</p>
         </div>
       ) : (
       <>
       <div className="flex items-center justify-between mb-2.5 px-1">
-        <h2 className="text-sm font-bold" style={{ color: '#5B6B84' }}>Wimbledon 2026 Open League · {rows.length} managers</h2>
-        {myTeam.length > 0 && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(55,214,122,0.14)', color: '#12A150' }}>✓ You're in</span>}
+        <h2 className="text-sm font-bold" style={{ color: 'var(--ink-2)' }}>Wimbledon 2026 Open League · {rows.length} managers</h2>
+        {myTeam.length > 0 && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(55,214,122,0.14)', color: 'var(--green)' }}>✓ You're in</span>}
       </div>
 
       {/* Standings */}
@@ -103,14 +103,14 @@ export default function LeaguePage() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-sm truncate" style={{ color: '#0a1f44' }}>{row.name}</span>
-                  {row.you && <span className="text-[9px] font-bold px-1 py-0.5 rounded" style={{ background: '#0e6fc4', color: '#fff' }}>YOU</span>}
+                  <span className="font-bold text-sm truncate" style={{ color: 'var(--ink)' }}>{row.name}</span>
+                  {row.you && <span className="text-[9px] font-bold px-1 py-0.5 rounded" style={{ background: 'var(--blue)', color: '#fff' }}>YOU</span>}
                 </div>
-                <div className="text-[11px] truncate" style={{ color: '#9AA7BC' }}>{row.motto}</div>
+                <div className="text-[11px] truncate" style={{ color: 'var(--ink-3)' }}>{row.motto}</div>
               </div>
               <div className="text-right shrink-0">
-                <div className="font-num text-xl font-extrabold leading-none" style={{ color: '#0e6fc4' }}>{row.score} <span className="text-[10px] font-semibold" style={{ color: '#9AA7BC' }}>pts</span></div>
-                <div className="font-num text-[11px] font-semibold mt-1" style={{ color: '#12A150' }}>${row.budget.toFixed(1)}M left</div>
+                <div className="font-num text-xl font-extrabold leading-none" style={{ color: 'var(--blue)' }}>{row.score} <span className="text-[10px] font-semibold" style={{ color: 'var(--ink-3)' }}>pts</span></div>
+                <div className="font-num text-[11px] font-semibold mt-1" style={{ color: 'var(--green)' }}>${row.budget.toFixed(1)}M left</div>
               </div>
             </div>
 
@@ -130,10 +130,10 @@ export default function LeaguePage() {
                     title={out ? `Out — ${getPlayerExit(id)}` : 'Still in'}
                   >
                     <PlayerAvatar playerId={id} name={getPlayer(id).name} size="sm" />
-                    <span className="text-[11px] font-semibold" style={{ color: out ? '#9AA7BC' : '#0a1f44', textDecoration: out ? 'line-through' : 'none' }}>
+                    <span className="text-[11px] font-semibold" style={{ color: out ? 'var(--ink-3)' : 'var(--ink)', textDecoration: out ? 'line-through' : 'none' }}>
                       {lastName(getPlayer(id).name)}
                     </span>
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: out ? '#E5472B' : '#12A150', display: 'inline-block' }} />
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: out ? 'var(--ember)' : 'var(--green)', display: 'inline-block' }} />
                   </span>
                 );
               })}
@@ -143,7 +143,7 @@ export default function LeaguePage() {
       </div>
 
       {myTeam.length === 0 && (
-        <p className="text-center text-sm mt-6" style={{ color: '#9AA7BC' }}>Draft your squad to join the standings.</p>
+        <p className="text-center text-sm mt-6" style={{ color: 'var(--ink-3)' }}>Draft your squad to join the standings.</p>
       )}
       </>
       )}

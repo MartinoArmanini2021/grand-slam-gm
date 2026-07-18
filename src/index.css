@@ -13,14 +13,19 @@
   --surface:   #FFFFFF;
   --raised:    #F5F7FA;
   --navy:      #0a1f44;  /* brand navy — header + primary text */
+  --navy-2:    #123163;  /* navy gradient partner */
   --ink:       #0a1f44;
   --ink-2:     #5B6B84;
   --ink-3:     #9AA7BC;
   --blue:      #0e6fc4;  /* brand accent blue */
   --blue-light:#4aa8ea;
   --green:     #12A150;
+  --green-bright: #37D67A;
   --ember:     #E5472B;
   --gold:      #D99A00;
+  --gold-bright: #F0C24B;
+  --on-navy:   #AFBFDA;  /* muted text on a navy surface */
+  --on-navy-2: #8FA1BE;
   --line:      rgba(10,27,51,0.10);
   --line-soft: rgba(10,27,51,0.06);
 }

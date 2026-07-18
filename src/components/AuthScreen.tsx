@@ -34,11 +34,11 @@ export default function AuthScreen() {
   };
 
   const field = {
-    background: '#F5F7FA', border: '1px solid rgba(10,27,51,0.12)', color: '#0a1f44',
+    background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.12)', color: 'var(--ink)',
   } as const;
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'linear-gradient(150deg,#0a1f44 0%,#123163 55%,#0e2a52 100%)' }}>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'linear-gradient(150deg,var(--ink) 0%,var(--navy-2) 55%,#0e2a52 100%)' }}>
       <div className="w-full" style={{ maxWidth: 400 }}>
         <div className="flex justify-center mb-6"><Logo height={40} reversed /></div>
 
@@ -46,19 +46,19 @@ export default function AuthScreen() {
           {mode === 'verify' ? (
             <div className="text-center">
               <div className="text-4xl mb-3">📩</div>
-              <h1 className="text-lg font-extrabold mb-1" style={{ color: '#0a1f44' }}>Verify your email</h1>
-              <p className="text-sm mb-4" style={{ color: '#5B6B84' }}>
-                We sent a confirmation link to <b style={{ color: '#0a1f44' }}>{sentTo}</b>. Click it, then come back and log in.
+              <h1 className="text-lg font-extrabold mb-1" style={{ color: 'var(--ink)' }}>Verify your email</h1>
+              <p className="text-sm mb-4" style={{ color: 'var(--ink-2)' }}>
+                We sent a confirmation link to <b style={{ color: 'var(--ink)' }}>{sentTo}</b>. Click it, then come back and log in.
               </p>
               {error && <ErrBox msg={error} />}
               <button
                 onClick={async () => { setError(null); setBusy(true); try { await resend(sentTo); } catch (e) { setError(e instanceof Error ? e.message : 'Failed'); } finally { setBusy(false); } }}
                 disabled={busy}
-                className="w-full py-2.5 rounded-xl font-bold text-sm mb-2" style={{ background: 'rgba(14,111,196,0.1)', color: '#0e6fc4' }}
+                className="w-full py-2.5 rounded-xl font-bold text-sm mb-2" style={{ background: 'rgba(14,111,196,0.1)', color: 'var(--blue)' }}
               >
                 {busy ? 'Sending…' : 'Resend email'}
               </button>
-              <button onClick={() => { setMode('login'); setError(null); }} className="w-full py-2.5 rounded-xl font-bold text-sm text-white" style={{ background: '#0e6fc4' }}>
+              <button onClick={() => { setMode('login'); setError(null); }} className="w-full py-2.5 rounded-xl font-bold text-sm text-white" style={{ background: 'var(--blue)' }}>
                 Back to log in
               </button>
             </div>
@@ -71,17 +71,17 @@ export default function AuthScreen() {
                     key={m}
                     onClick={() => { setMode(m); setError(null); }}
                     className="flex-1 py-2.5 text-sm font-bold transition-colors"
-                    style={{ background: mode === m ? '#0a1f44' : '#FFFFFF', color: mode === m ? '#fff' : '#5B6B84' }}
+                    style={{ background: mode === m ? 'var(--ink)' : '#FFFFFF', color: mode === m ? '#fff' : 'var(--ink-2)' }}
                   >
                     {m === 'login' ? 'Log in' : 'Sign up'}
                   </button>
                 ))}
               </div>
 
-              <h1 className="text-xl font-extrabold mb-1" style={{ color: '#0a1f44' }}>
+              <h1 className="text-xl font-extrabold mb-1" style={{ color: 'var(--ink)' }}>
                 {mode === 'login' ? 'Welcome back' : 'Create your account'}
               </h1>
-              <p className="text-sm mb-4" style={{ color: '#5B6B84' }}>
+              <p className="text-sm mb-4" style={{ color: 'var(--ink-2)' }}>
                 {mode === 'login' ? 'Log in to manage your squad.' : 'Sign up to draft a squad and join a league.'}
               </p>
 
@@ -103,7 +103,7 @@ export default function AuthScreen() {
 
                 <button type="submit" disabled={busy || !enabled}
                   className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-opacity"
-                  style={{ background: enabled ? '#0e6fc4' : 'rgba(10,27,51,0.2)', cursor: enabled ? 'pointer' : 'not-allowed', opacity: busy ? 0.7 : 1 }}>
+                  style={{ background: enabled ? 'var(--blue)' : 'rgba(10,27,51,0.2)', cursor: enabled ? 'pointer' : 'not-allowed', opacity: busy ? 0.7 : 1 }}>
                   {busy ? 'Please wait…' : mode === 'login' ? 'Log in' : 'Create account'}
                 </button>
               </form>
@@ -111,13 +111,13 @@ export default function AuthScreen() {
           )}
 
           <div className="mt-4 pt-4 text-center" style={{ borderTop: '1px solid rgba(10,27,51,0.07)' }}>
-            <button onClick={continueAsGuest} className="text-sm font-semibold" style={{ color: '#5B6B84' }}>
+            <button onClick={continueAsGuest} className="text-sm font-semibold" style={{ color: 'var(--ink-2)' }}>
               Continue as guest →
             </button>
           </div>
         </div>
 
-        <p className="text-center text-xs mt-4" style={{ color: '#8FA1BE' }}>Grand Slam GM · Wimbledon 2026 fantasy</p>
+        <p className="text-center text-xs mt-4" style={{ color: 'var(--on-navy-2)' }}>Grand Slam GM · Wimbledon 2026 fantasy</p>
       </div>
     </div>
   );

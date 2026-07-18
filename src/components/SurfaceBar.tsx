@@ -7,9 +7,9 @@ interface Props {
 }
 
 const SURFACES = [
-  { key: 'grass', label: 'G', active: '#12A150', dim: '#9AA7BC', bar: '#12A150' },
-  { key: 'hard',  label: 'H', active: '#0e6fc4', dim: '#9AA7BC', bar: '#0e6fc4' },
-  { key: 'clay',  label: 'C', active: '#E5472B', dim: '#9AA7BC', bar: '#E5472B' },
+  { key: 'grass', label: 'G', active: 'var(--green)', dim: 'var(--ink-3)', bar: 'var(--green)' },
+  { key: 'hard',  label: 'H', active: 'var(--blue)', dim: 'var(--ink-3)', bar: 'var(--blue)' },
+  { key: 'clay',  label: 'C', active: 'var(--ember)', dim: 'var(--ink-3)', bar: 'var(--ember)' },
 ];
 
 export default function SurfaceBar({ hard, clay, grass, highlight = 'grass', compact }: Props) {
@@ -23,7 +23,7 @@ export default function SurfaceBar({ hard, clay, grass, highlight = 'grass', com
           return (
             <div key={s.key} className="flex flex-col items-center gap-0.5">
               <span className="text-[10px] font-bold" style={{ color: isHL ? s.active : s.dim }}>{s.label}</span>
-              <span className="font-num text-xs font-semibold" style={{ color: isHL ? s.active : '#5B6B84' }}>{vals[s.key]}%</span>
+              <span className="font-num text-xs font-semibold" style={{ color: isHL ? s.active : 'var(--ink-2)' }}>{vals[s.key]}%</span>
             </div>
           );
         })}
@@ -37,14 +37,14 @@ export default function SurfaceBar({ hard, clay, grass, highlight = 'grass', com
         const isHL = s.key === highlight;
         return (
           <div key={s.key} className="flex items-center gap-2">
-            <span className="text-[11px] w-4 font-bold" style={{ color: isHL ? s.active : '#5B6B84' }}>{s.label}</span>
+            <span className="text-[11px] w-4 font-bold" style={{ color: isHL ? s.active : 'var(--ink-2)' }}>{s.label}</span>
             <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(10,27,51,0.06)' }}>
               <div
                 className="h-full rounded-full transition-all"
                 style={{ width: `${vals[s.key]}%`, background: s.bar, opacity: isHL ? 1 : 0.3 }}
               />
             </div>
-            <span className="font-num text-xs w-7 text-right" style={{ color: isHL ? s.active : '#5B6B84' }}>{vals[s.key]}%</span>
+            <span className="font-num text-xs w-7 text-right" style={{ color: isHL ? s.active : 'var(--ink-2)' }}>{vals[s.key]}%</span>
           </div>
         );
       })}

@@ -40,9 +40,9 @@ export default function DraftPage() {
         {/* ── Left: Player table ── */}
         <div className="flex-1 min-w-0">
           {locked && (
-            <div className="rounded-2xl px-4 py-2.5 mb-3 flex items-center gap-2 text-sm" style={{ background: 'rgba(10,27,51,0.03)', border: '1px solid rgba(10,27,51,0.1)', color: '#5B6B84' }}>
+            <div className="rounded-2xl px-4 py-2.5 mb-3 flex items-center gap-2 text-sm" style={{ background: 'rgba(10,27,51,0.03)', border: '1px solid rgba(10,27,51,0.1)', color: 'var(--ink-2)' }}>
               <span>🔒</span>
-              <span>Squad locked for the tournament — make changes via <b style={{ color: '#0e6fc4' }}>transfers on the Bracket page</b>.</span>
+              <span>Squad locked for the tournament — make changes via <b style={{ color: 'var(--blue)' }}>transfers on the Bracket page</b>.</span>
             </div>
           )}
           {/* Controls */}
@@ -53,7 +53,7 @@ export default function DraftPage() {
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="text-sm outline-none px-3 py-2 rounded-xl w-44"
-              style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.09)', color: '#0a1f44' }}
+              style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.09)', color: 'var(--ink)' }}
             />
             <div className="flex rounded-xl overflow-hidden ml-auto" style={{ border: '1px solid rgba(10,27,51,0.07)' }}>
               {(['ranking', 'price', 'grass'] as SortKey[]).map(s => (
@@ -61,7 +61,7 @@ export default function DraftPage() {
                   key={s}
                   onClick={() => setSort(s)}
                   className="px-3 py-2 text-xs font-semibold transition-colors"
-                  style={{ background: sort === s ? 'rgba(10,27,51,0.08)' : 'transparent', color: sort === s ? '#0a1f44' : '#5B6B84' }}
+                  style={{ background: sort === s ? 'rgba(10,27,51,0.08)' : 'transparent', color: sort === s ? 'var(--ink)' : 'var(--ink-2)' }}
                 >
                   {SORT_LABEL[s]}
                 </button>
@@ -73,20 +73,20 @@ export default function DraftPage() {
           <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.08)' }}>
             <table className="w-full text-sm border-collapse bg-white">
               <thead>
-                <tr style={{ background: '#F5F7FA' }}>
-                  <th className={th} rowSpan={2} style={{ color: '#9AA7BC', textAlign: 'center', width: 54 }}><div style={{ lineHeight: 1.05 }}>ATP<br />Ranking</div></th>
-                  <th className={th} rowSpan={2} style={{ color: '#5B6B84' }}>Player</th>
-                  <th className={`${th} hidden sm:table-cell`} rowSpan={2} style={{ color: '#5B6B84', textAlign: 'center' }}>Age</th>
-                  <th className={`${th} hidden md:table-cell`} colSpan={3} style={{ color: '#5B6B84', textAlign: 'center', borderBottom: '1px solid rgba(10,27,51,0.08)' }}>Win&nbsp;%&nbsp;(YTD)</th>
-                  <th className={`${th} hidden md:table-cell`} rowSpan={2} style={{ color: '#5B6B84', textAlign: 'center' }}><div style={{ lineHeight: 1.05 }}>2026<br />W–L</div></th>
-                  <th className={`${th} hidden lg:table-cell`} rowSpan={2} style={{ color: '#D99A00', textAlign: 'center' }}><div style={{ lineHeight: 1.05 }}>2026<br />Titles</div></th>
-                  <th className={th} rowSpan={2} style={{ color: '#0e6fc4', textAlign: 'right' }}>Price</th>
+                <tr style={{ background: 'var(--raised)' }}>
+                  <th className={th} rowSpan={2} style={{ color: 'var(--ink-3)', textAlign: 'center', width: 54 }}><div style={{ lineHeight: 1.05 }}>ATP<br />Ranking</div></th>
+                  <th className={th} rowSpan={2} style={{ color: 'var(--ink-2)' }}>Player</th>
+                  <th className={`${th} hidden sm:table-cell`} rowSpan={2} style={{ color: 'var(--ink-2)', textAlign: 'center' }}>Age</th>
+                  <th className={`${th} hidden md:table-cell`} colSpan={3} style={{ color: 'var(--ink-2)', textAlign: 'center', borderBottom: '1px solid rgba(10,27,51,0.08)' }}>Win&nbsp;%&nbsp;(YTD)</th>
+                  <th className={`${th} hidden md:table-cell`} rowSpan={2} style={{ color: 'var(--ink-2)', textAlign: 'center' }}><div style={{ lineHeight: 1.05 }}>2026<br />W–L</div></th>
+                  <th className={`${th} hidden lg:table-cell`} rowSpan={2} style={{ color: 'var(--gold)', textAlign: 'center' }}><div style={{ lineHeight: 1.05 }}>2026<br />Titles</div></th>
+                  <th className={th} rowSpan={2} style={{ color: 'var(--blue)', textAlign: 'right' }}>Price</th>
                   <th className={th} rowSpan={2} style={{ width: 78 }}></th>
                 </tr>
-                <tr style={{ background: '#F5F7FA', borderBottom: '1px solid rgba(10,27,51,0.1)' }}>
-                  <th className={`${th} hidden md:table-cell`} style={{ color: '#12A150', textAlign: 'center' }}>Grass</th>
-                  <th className={`${th} hidden md:table-cell`} style={{ color: '#0e6fc4', textAlign: 'center' }}>Hard</th>
-                  <th className={`${th} hidden md:table-cell`} style={{ color: '#E5472B', textAlign: 'center' }}>Clay</th>
+                <tr style={{ background: 'var(--raised)', borderBottom: '1px solid rgba(10,27,51,0.1)' }}>
+                  <th className={`${th} hidden md:table-cell`} style={{ color: 'var(--green)', textAlign: 'center' }}>Grass</th>
+                  <th className={`${th} hidden md:table-cell`} style={{ color: 'var(--blue)', textAlign: 'center' }}>Hard</th>
+                  <th className={`${th} hidden md:table-cell`} style={{ color: 'var(--ember)', textAlign: 'center' }}>Clay</th>
                 </tr>
               </thead>
               <tbody>
@@ -116,25 +116,25 @@ export default function DraftPage() {
                         <div className="flex items-center gap-2 min-w-0">
                           <PlayerAvatar playerId={player.id} name={player.name} size="sm" onClick={e => { e.stopPropagation(); openPlayer(player.id); }} />
                           <div className="min-w-0">
-                            <div className="text-[13px] font-semibold leading-tight truncate flex items-center gap-1.5" style={{ color: '#0a1f44' }}>
+                            <div className="text-[13px] font-semibold leading-tight truncate flex items-center gap-1.5" style={{ color: 'var(--ink)' }}>
                               {player.name}
-                              {out && <span className="text-[9px] font-bold px-1 py-0.5 rounded" style={{ background: 'rgba(229,71,43,0.12)', color: '#E5472B' }}>OUT {getPlayerExit(player.id)}</span>}
+                              {out && <span className="text-[9px] font-bold px-1 py-0.5 rounded" style={{ background: 'rgba(229,71,43,0.12)', color: 'var(--ember)' }}>OUT {getPlayerExit(player.id)}</span>}
                             </div>
-                            <div className="text-[10px] leading-tight truncate" style={{ color: '#9AA7BC' }}>{player.style}</div>
+                            <div className="text-[10px] leading-tight truncate" style={{ color: 'var(--ink-3)' }}>{player.style}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-2 py-1.5 text-center font-num text-xs hidden sm:table-cell" style={{ color: '#5B6B84' }}>{player.age}</td>
-                      <td className="px-2 py-1.5 text-center font-num text-xs font-bold hidden md:table-cell" style={{ color: '#12A150' }}>{player.surface.grass}%</td>
-                      <td className="px-2 py-1.5 text-center font-num text-xs hidden md:table-cell" style={{ color: '#5B6B84' }}>{player.surface.hard}%</td>
-                      <td className="px-2 py-1.5 text-center font-num text-xs hidden md:table-cell" style={{ color: '#5B6B84' }}>{player.surface.clay}%</td>
-                      <td className="px-2 py-1.5 text-center font-num text-xs hidden md:table-cell" style={{ color: '#5B6B84' }}>{player.ytd.wins}–{player.ytd.losses}</td>
-                      <td className="px-2 py-1.5 text-center font-num text-xs hidden lg:table-cell" style={{ color: player.ytd.titles > 0 ? '#D99A00' : '#9AA7BC' }}>{player.ytd.titles}</td>
-                      <td className="px-2 py-1.5 text-right font-num text-sm font-bold" style={{ color: '#0e6fc4' }}>${player.price}M</td>
+                      <td className="px-2 py-1.5 text-center font-num text-xs hidden sm:table-cell" style={{ color: 'var(--ink-2)' }}>{player.age}</td>
+                      <td className="px-2 py-1.5 text-center font-num text-xs font-bold hidden md:table-cell" style={{ color: 'var(--green)' }}>{player.surface.grass}%</td>
+                      <td className="px-2 py-1.5 text-center font-num text-xs hidden md:table-cell" style={{ color: 'var(--ink-2)' }}>{player.surface.hard}%</td>
+                      <td className="px-2 py-1.5 text-center font-num text-xs hidden md:table-cell" style={{ color: 'var(--ink-2)' }}>{player.surface.clay}%</td>
+                      <td className="px-2 py-1.5 text-center font-num text-xs hidden md:table-cell" style={{ color: 'var(--ink-2)' }}>{player.ytd.wins}–{player.ytd.losses}</td>
+                      <td className="px-2 py-1.5 text-center font-num text-xs hidden lg:table-cell" style={{ color: player.ytd.titles > 0 ? 'var(--gold)' : 'var(--ink-3)' }}>{player.ytd.titles}</td>
+                      <td className="px-2 py-1.5 text-right font-num text-sm font-bold" style={{ color: 'var(--blue)' }}>${player.price}M</td>
                       <td className="px-2 py-1.5 text-right">
                         {locked ? (
                           isSelected
-                            ? <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg" style={{ background: 'rgba(18,161,80,0.1)', color: '#12A150' }}>In squad</span>
+                            ? <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg" style={{ background: 'rgba(18,161,80,0.1)', color: 'var(--green)' }}>In squad</span>
                             : <span className="text-[11px]" style={{ color: '#C7CFDA' }}>🔒</span>
                         ) : (
                           <button
@@ -148,7 +148,7 @@ export default function DraftPage() {
                             style={{
                               background: isSelected ? 'rgba(229,71,43,0.12)' : addable ? 'rgba(18,161,80,0.12)' : 'rgba(10,27,51,0.04)',
                               border: `1px solid ${isSelected ? 'rgba(229,71,43,0.25)' : addable ? 'rgba(18,161,80,0.25)' : 'rgba(10,27,51,0.06)'}`,
-                              color: isSelected ? '#E5472B' : addable ? '#12A150' : '#9AA7BC',
+                              color: isSelected ? 'var(--ember)' : addable ? 'var(--green)' : 'var(--ink-3)',
                               cursor: (!isSelected && !addable) ? 'not-allowed' : 'pointer',
                             }}
                           >
@@ -168,23 +168,23 @@ export default function DraftPage() {
         <div className="w-72 shrink-0 hidden lg:block">
           <div className="sticky top-20 rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.09)' }}>
             <div className="flex items-center justify-between mb-1">
-              <h2 className="font-bold text-sm" style={{ color: '#0a1f44' }}>My Squad</h2>
-              <span className="font-num text-xs" style={{ color: '#5B6B84' }}>{myTeam.length} / {TEAM_SIZE}</span>
+              <h2 className="font-bold text-sm" style={{ color: 'var(--ink)' }}>My Squad</h2>
+              <span className="font-num text-xs" style={{ color: 'var(--ink-2)' }}>{myTeam.length} / {TEAM_SIZE}</span>
             </div>
 
             <div className="mb-4 pt-3">
-              <div className="flex justify-between text-xs mb-1.5" style={{ color: '#5B6B84' }}>
+              <div className="flex justify-between text-xs mb-1.5" style={{ color: 'var(--ink-2)' }}>
                 <span>Budget</span>
-                <span className="font-num font-semibold" style={{ color: '#0e6fc4' }}>${budget.toFixed(1)}M</span>
+                <span className="font-num font-semibold" style={{ color: 'var(--blue)' }}>${budget.toFixed(1)}M</span>
               </div>
               <div className="h-1 rounded-full" style={{ background: 'rgba(10,27,51,0.07)' }}>
-                <div className="h-full rounded-full transition-all" style={{ width: `${budget}%`, background: '#0e6fc4' }} />
+                <div className="h-full rounded-full transition-all" style={{ width: `${budget}%`, background: 'var(--blue)' }} />
               </div>
             </div>
 
             <div className="space-y-1.5 mb-4">
               {myTeam.length === 0 && (
-                <div className="text-center py-6 text-sm" style={{ color: '#9AA7BC' }}>Pick 6 players</div>
+                <div className="text-center py-6 text-sm" style={{ color: 'var(--ink-3)' }}>Pick 6 players</div>
               )}
               {myTeam.map(id => {
                 const p = getPlayer(id);
@@ -193,32 +193,32 @@ export default function DraftPage() {
                   <div key={id} className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: isCap ? 'rgba(217,154,0,0.07)' : 'rgba(10,27,51,0.03)', border: `1px solid ${isCap ? 'rgba(217,154,0,0.2)' : 'rgba(10,27,51,0.06)'}` }}>
                     <PlayerAvatar playerId={id} name={p.name} size="sm" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium truncate" style={{ color: '#0a1f44' }}>{p.name}</div>
-                      <div className="font-num text-[10px]" style={{ color: '#5B6B84' }}>${p.price}M · 🌱{p.surface.grass}%</div>
+                      <div className="text-xs font-medium truncate" style={{ color: 'var(--ink)' }}>{p.name}</div>
+                      <div className="font-num text-[10px]" style={{ color: 'var(--ink-2)' }}>${p.price}M · 🌱{p.surface.grass}%</div>
                     </div>
-                    {isCap && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0" style={{ background: 'rgba(217,154,0,0.15)', color: '#D99A00', border: '1px solid rgba(217,154,0,0.25)' }}>C</span>}
-                    {!locked && <button onClick={() => setCaptain(id)} className="text-xs px-1.5 py-1 rounded-lg transition-all shrink-0" title="Set as captain" style={{ background: isCap ? 'rgba(217,154,0,0.15)' : 'rgba(10,27,51,0.05)', border: `1px solid ${isCap ? 'rgba(217,154,0,0.25)' : 'rgba(10,27,51,0.07)'}`, color: isCap ? '#D99A00' : '#5B6B84' }}>⭐</button>}
-                    {!locked && <button onClick={() => removePlayer(id)} className="text-xs px-1.5 py-1 rounded-lg transition-all shrink-0" style={{ background: 'rgba(10,27,51,0.04)', border: '1px solid rgba(10,27,51,0.06)', color: '#5B6B84' }}>✕</button>}
+                    {isCap && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0" style={{ background: 'rgba(217,154,0,0.15)', color: 'var(--gold)', border: '1px solid rgba(217,154,0,0.25)' }}>C</span>}
+                    {!locked && <button onClick={() => setCaptain(id)} className="text-xs px-1.5 py-1 rounded-lg transition-all shrink-0" title="Set as captain" style={{ background: isCap ? 'rgba(217,154,0,0.15)' : 'rgba(10,27,51,0.05)', border: `1px solid ${isCap ? 'rgba(217,154,0,0.25)' : 'rgba(10,27,51,0.07)'}`, color: isCap ? 'var(--gold)' : 'var(--ink-2)' }}>⭐</button>}
+                    {!locked && <button onClick={() => removePlayer(id)} className="text-xs px-1.5 py-1 rounded-lg transition-all shrink-0" style={{ background: 'rgba(10,27,51,0.04)', border: '1px solid rgba(10,27,51,0.06)', color: 'var(--ink-2)' }}>✕</button>}
                   </div>
                 );
               })}
               {!locked && Array.from({ length: TEAM_SIZE - myTeam.length }).map((_, i) => (
-                <div key={`e${i}`} className="px-3 py-2 rounded-xl text-xs text-center" style={{ border: '1px dashed rgba(10,27,51,0.06)', color: '#9AA7BC' }}>Empty slot</div>
+                <div key={`e${i}`} className="px-3 py-2 rounded-xl text-xs text-center" style={{ border: '1px dashed rgba(10,27,51,0.06)', color: 'var(--ink-3)' }}>Empty slot</div>
               ))}
             </div>
 
             {!locked && myTeam.length > 0 && !captain && (
-              <p className="text-xs mb-3" style={{ color: '#D99A00' }}>⭐ Tap ⭐ to pick a captain</p>
+              <p className="text-xs mb-3" style={{ color: 'var(--gold)' }}>⭐ Tap ⭐ to pick a captain</p>
             )}
 
             {locked ? (
-              <div className="w-full py-2.5 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(18,161,80,0.1)', color: '#12A150' }}>Squad locked ✓</div>
+              <div className="w-full py-2.5 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(18,161,80,0.1)', color: 'var(--green)' }}>Squad locked ✓</div>
             ) : (
               <button
                 onClick={() => { finalizeDraft(); toast('Squad locked in — good luck! 🎾', 'good'); }}
                 disabled={myTeam.length === 0}
                 className="w-full py-2.5 rounded-xl font-bold text-sm transition-all"
-                style={{ background: myTeam.length > 0 ? '#0e6fc4' : 'rgba(10,27,51,0.05)', color: myTeam.length > 0 ? '#fff' : '#9AA7BC', cursor: myTeam.length === 0 ? 'not-allowed' : 'pointer' }}
+                style={{ background: myTeam.length > 0 ? 'var(--blue)' : 'rgba(10,27,51,0.05)', color: myTeam.length > 0 ? '#fff' : 'var(--ink-3)', cursor: myTeam.length === 0 ? 'not-allowed' : 'pointer' }}
               >
                 {myTeam.length === 0 ? 'Pick players first' : 'Lock Squad →'}
               </button>
@@ -229,16 +229,16 @@ export default function DraftPage() {
 
       {/* Mobile squad + lock bar (the sidebar is desktop-only) */}
       {phase === 'draft' && (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 px-3 py-2.5 flex items-center gap-3" style={{ background: '#0a1f44', boxShadow: '0 -4px 20px rgba(0,0,0,0.25)' }}>
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 px-3 py-2.5 flex items-center gap-3" style={{ background: 'var(--ink)', boxShadow: '0 -4px 20px rgba(0,0,0,0.25)' }}>
           <div className="flex-1 min-w-0">
             <div className="text-white font-bold text-sm">{myTeam.length}/{TEAM_SIZE} picked</div>
-            <div className="text-[11px] font-num" style={{ color: '#8FA1BE' }}>${budget.toFixed(1)}M left</div>
+            <div className="text-[11px] font-num" style={{ color: 'var(--on-navy-2)' }}>${budget.toFixed(1)}M left</div>
           </div>
           <button
             onClick={() => { finalizeDraft(); toast('Squad locked in — good luck! 🎾', 'good'); }}
             disabled={myTeam.length === 0}
             className="px-5 py-2.5 rounded-xl font-bold text-sm shrink-0"
-            style={{ background: myTeam.length > 0 ? '#0e6fc4' : 'rgba(255,255,255,0.14)', color: myTeam.length > 0 ? '#fff' : '#8FA1BE' }}
+            style={{ background: myTeam.length > 0 ? 'var(--blue)' : 'rgba(255,255,255,0.14)', color: myTeam.length > 0 ? '#fff' : 'var(--on-navy-2)' }}
           >
             Lock Squad →
           </button>

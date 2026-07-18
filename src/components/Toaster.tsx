@@ -1,9 +1,9 @@
 import { useToasts } from '../store/toastStore';
 
 const STYLE: Record<string, { bg: string; color: string; icon: string }> = {
-  good: { bg: '#12A150', color: '#fff', icon: '✓' },
-  warn: { bg: '#E5472B', color: '#fff', icon: '!' },
-  info: { bg: '#0a1f44', color: '#fff', icon: '›' },
+  good: { bg: 'var(--green)', color: '#fff', icon: '✓' },
+  warn: { bg: 'var(--ember)', color: '#fff', icon: '!' },
+  info: { bg: 'var(--ink)', color: '#fff', icon: '›' },
 };
 
 export default function Toaster() {

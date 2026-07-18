@@ -1,6 +1,6 @@
 // Grand Slam GM logo — built to the brand handoff.
-// Navy #0a1f44 wordmark, blue #0e6fc4 ball + "GM", Urbanist 800.
-
+// Navy wordmark, blue ball + "GM", Urbanist 800.
+// Hex literals (not tokens): these feed SVG fill/stroke attributes, where var() does not resolve.
 const NAVY = '#0a1f44';
 const BLUE = '#0e6fc4';
 const LIGHT_BLUE = '#4aa8ea';

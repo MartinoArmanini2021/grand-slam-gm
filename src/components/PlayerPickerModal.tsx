@@ -23,11 +23,11 @@ export default function PlayerPickerModal({ open, onClose }: { open: boolean; on
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(10,27,51,0.55)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
         <div onClick={e => e.stopPropagation()} className="fade-in w-full" style={{ maxWidth: 520, background: '#FFFFFF', borderRadius: '18px 18px 0 0', maxHeight: '82vh', display: 'flex', flexDirection: 'column' }}>
           {/* Header */}
-          <div style={{ background: 'linear-gradient(120deg,#0a1f44,#123163)', padding: '16px 18px', borderRadius: '18px 18px 0 0' }}>
+          <div style={{ background: 'linear-gradient(120deg,var(--ink),var(--navy-2))', padding: '16px 18px', borderRadius: '18px 18px 0 0' }}>
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-white font-extrabold text-base">Add players</div>
-                <div className="text-xs" style={{ color: '#AFBFDA' }}>
+                <div className="text-xs" style={{ color: 'var(--on-navy)' }}>
                   <span className="font-num">${budget.toFixed(1)}M</span> left · {myTeam.length}/{TEAM_SIZE} picked
                 </div>
               </div>
@@ -55,10 +55,10 @@ export default function PlayerPickerModal({ open, onClose }: { open: boolean; on
                 <div key={p.id} className="flex items-center gap-3 px-2 py-2 rounded-xl" style={{ opacity: disabled ? 0.5 : 1 }}>
                   <PlayerAvatar playerId={p.id} name={p.name} size="sm" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold truncate" style={{ color: '#0a1f44' }}>{p.name}</div>
+                    <div className="text-sm font-semibold truncate" style={{ color: 'var(--ink)' }}>{p.name}</div>
                     <div className="text-[11px]" style={{ color: tm.color }}>{getTier(p.ranking)} · #{p.ranking}</div>
                   </div>
-                  <div className="font-num text-sm font-bold shrink-0 w-12 text-right" style={{ color: '#0e6fc4' }}>${p.price}M</div>
+                  <div className="font-num text-sm font-bold shrink-0 w-12 text-right" style={{ color: 'var(--blue)' }}>${p.price}M</div>
                   <button
                     onClick={() => {
                       if (owned) { removePlayer(p.id); return; }
@@ -68,8 +68,8 @@ export default function PlayerPickerModal({ open, onClose }: { open: boolean; on
                     disabled={disabled}
                     className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg"
                     style={{
-                      background: owned ? 'rgba(229,71,43,0.12)' : disabled ? 'rgba(10,27,51,0.05)' : '#0e6fc4',
-                      color: owned ? '#E5472B' : disabled ? '#9AA7BC' : '#fff',
+                      background: owned ? 'rgba(229,71,43,0.12)' : disabled ? 'rgba(10,27,51,0.05)' : 'var(--blue)',
+                      color: owned ? 'var(--ember)' : disabled ? 'var(--ink-3)' : '#fff',
                       cursor: disabled ? 'not-allowed' : 'pointer',
                     }}
                   >

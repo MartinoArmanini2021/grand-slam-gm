@@ -24,8 +24,8 @@ export default function TournamentPage() {
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-3 py-6 fade-in">
       <div className="mb-4">
-        <h1 className="text-lg font-extrabold" style={{ color: '#0a1f44' }}>Wimbledon 2026 — the draw</h1>
-        <p className="text-xs mt-0.5" style={{ color: '#5B6B84' }}>
+        <h1 className="text-lg font-extrabold" style={{ color: 'var(--ink)' }}>Wimbledon 2026 — the draw</h1>
+        <p className="text-xs mt-0.5" style={{ color: 'var(--ink-2)' }}>
           The real men's singles bracket. Highlight any team's players and tap anyone to trace their route to the final.
         </p>
       </div>
@@ -34,13 +34,13 @@ export default function TournamentPage() {
       {phase === 'finished' && (
         <div className="mb-6 px-6 py-5 rounded-2xl text-center" style={{ background: 'rgba(217,154,0,0.06)', border: '1px solid rgba(217,154,0,0.2)' }}>
           <div className="text-3xl mb-2">🏆</div>
-          <h2 className="text-xl font-bold mb-1" style={{ color: '#D99A00' }}>Tournament Complete</h2>
-          <div className="font-num text-2xl font-bold mb-3" style={{ color: '#0a1f44' }}>{myScore} pts</div>
+          <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--gold)' }}>Tournament Complete</h2>
+          <div className="font-num text-2xl font-bold mb-3" style={{ color: 'var(--ink)' }}>{myScore} pts</div>
           <div className="flex justify-center gap-4 flex-wrap">
             {roundScores.map(rs => (
               <div key={rs.round} className="text-center">
-                <div className="text-xs mb-1" style={{ color: '#5B6B84' }}>{rs.round}</div>
-                <div className="font-num text-sm font-bold" style={{ color: rs.points > 0 ? '#12A150' : '#9AA7BC' }}>+{rs.points}</div>
+                <div className="text-xs mb-1" style={{ color: 'var(--ink-2)' }}>{rs.round}</div>
+                <div className="font-num text-sm font-bold" style={{ color: rs.points > 0 ? 'var(--green)' : 'var(--ink-3)' }}>+{rs.points}</div>
               </div>
             ))}
           </div>
@@ -52,17 +52,17 @@ export default function TournamentPage() {
           <div className="px-5 py-4" style={{ borderBottom: '1px solid rgba(10,27,51,0.07)' }}>
             <div className="flex items-start justify-between">
               <div>
-                <div className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: '#5B6B84' }}>
+                <div className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: 'var(--ink-2)' }}>
                   {phase === 'pre_round' ? 'Up Next' : 'Round Complete'}
                 </div>
-                <div className="text-lg font-bold" style={{ color: '#0a1f44' }}>{currentRound.label}</div>
-                <div className="text-xs mt-0.5" style={{ color: '#5B6B84' }}>
+                <div className="text-lg font-bold" style={{ color: 'var(--ink)' }}>{currentRound.label}</div>
+                <div className="text-xs mt-0.5" style={{ color: 'var(--ink-2)' }}>
                   Win = +{currentRound.points} pts · Captain win = +{currentRound.points * 2} pts
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-xs mb-0.5" style={{ color: '#5B6B84' }}>Score</div>
-                <div className="font-num text-2xl font-bold" style={{ color: '#0e6fc4' }}>{myScore}</div>
+                <div className="text-xs mb-0.5" style={{ color: 'var(--ink-2)' }}>Score</div>
+                <div className="font-num text-2xl font-bold" style={{ color: 'var(--blue)' }}>{myScore}</div>
               </div>
             </div>
           </div>
@@ -70,7 +70,7 @@ export default function TournamentPage() {
           <div className="px-5 py-4">
             {phase === 'pre_round' && (
               <>
-                <p className="text-xs mb-3" style={{ color: '#D99A00' }}>
+                <p className="text-xs mb-3" style={{ color: 'var(--gold)' }}>
                   {aliveSquad.length === 0
                     ? 'All your players are out — play on to finish the tournament.'
                     : 'Choose your captain — they score 2× points if they win (eliminated players can\'t be captain)'}
@@ -87,7 +87,7 @@ export default function TournamentPage() {
                         style={{
                           background: isCap ? 'rgba(217,154,0,0.1)' : 'rgba(10,27,51,0.04)',
                           border: `1px solid ${isCap ? 'rgba(217,154,0,0.3)' : 'rgba(10,27,51,0.07)'}`,
-                          color: isCap ? '#D99A00' : '#0a1f44',
+                          color: isCap ? 'var(--gold)' : 'var(--ink)',
                           fontWeight: isCap ? 600 : 400,
                         }}
                       >
@@ -108,8 +108,8 @@ export default function TournamentPage() {
                   disabled={!canPlay}
                   className="px-6 py-2.5 rounded-xl font-bold text-sm transition-all"
                   style={{
-                    background: canPlay ? '#0e6fc4' : 'rgba(10,27,51,0.05)',
-                    color: canPlay ? '#fff' : '#9AA7BC',
+                    background: canPlay ? 'var(--blue)' : 'rgba(10,27,51,0.05)',
+                    color: canPlay ? '#fff' : 'var(--ink-3)',
                     cursor: canPlay ? 'pointer' : 'not-allowed',
                   }}
                 >
@@ -124,17 +124,17 @@ export default function TournamentPage() {
                   .filter(r => r.round === ROUNDS[currentRoundIndex - 1]?.id)
                   .map(ret => (
                     <div key={ret.playerId} className="text-sm mb-1.5 flex items-center gap-2">
-                      <span style={{ color: '#5B6B84' }}>💸</span>
-                      <span style={{ color: '#0a1f44' }}>{getPlayer(ret.playerId).name}</span>
-                      <span style={{ color: '#5B6B84' }}>eliminated →</span>
-                      <span className="font-num font-semibold" style={{ color: '#D99A00' }}>+${ret.amount}M returned</span>
+                      <span style={{ color: 'var(--ink-2)' }}>💸</span>
+                      <span style={{ color: 'var(--ink)' }}>{getPlayer(ret.playerId).name}</span>
+                      <span style={{ color: 'var(--ink-2)' }}>eliminated →</span>
+                      <span className="font-num font-semibold" style={{ color: 'var(--gold)' }}>+${ret.amount}M returned</span>
                     </div>
                   ))}
                 {currentRoundIndex < ROUNDS.length && (
                   <button
                     className="mt-3 px-5 py-2 rounded-xl text-sm font-semibold transition-all"
                     onClick={() => useGameStore.setState({ phase: 'pre_round' })}
-                    style={{ background: 'rgba(14,111,196,0.12)', border: '1px solid rgba(14,111,196,0.25)', color: '#0e6fc4' }}
+                    style={{ background: 'rgba(14,111,196,0.12)', border: '1px solid rgba(14,111,196,0.25)', color: 'var(--blue)' }}
                   >
                     Set Captain for {ROUNDS[currentRoundIndex]?.label} →
                   </button>
@@ -168,8 +168,8 @@ function TransfersPanel() {
       <div className="mb-6 rounded-2xl px-5 py-4 flex items-center gap-3" style={{ background: 'rgba(10,27,51,0.03)', border: '1px solid rgba(10,27,51,0.1)' }}>
         <div className="text-xl">🔒</div>
         <div>
-          <div className="text-sm font-bold" style={{ color: '#0a1f44' }}>Transfer window closed</div>
-          <div className="text-xs" style={{ color: '#5B6B84' }}>No purchases after the semi-finals — your squad is locked for the final.</div>
+          <div className="text-sm font-bold" style={{ color: 'var(--ink)' }}>Transfer window closed</div>
+          <div className="text-xs" style={{ color: 'var(--ink-2)' }}>No purchases after the semi-finals — your squad is locked for the final.</div>
         </div>
       </div>
     );
@@ -182,12 +182,12 @@ function TransfersPanel() {
     <div className="mb-6 rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid rgba(217,154,0,0.35)' }}>
       <div className="px-5 py-3 flex items-center justify-between" style={{ background: 'rgba(217,154,0,0.08)', borderBottom: '1px solid rgba(217,154,0,0.2)' }}>
         <div>
-          <div className="text-sm font-bold" style={{ color: '#0a1f44' }}>Transfers <span className="font-normal" style={{ color: '#9AA7BC' }}>· window closes after the SF</span></div>
-          <div className="text-xs" style={{ color: '#5B6B84' }}>Replace an eliminated player with anyone still in the draw · scores from {nextRound}</div>
+          <div className="text-sm font-bold" style={{ color: 'var(--ink)' }}>Transfers <span className="font-normal" style={{ color: 'var(--ink-3)' }}>· window closes after the SF</span></div>
+          <div className="text-xs" style={{ color: 'var(--ink-2)' }}>Replace an eliminated player with anyone still in the draw · scores from {nextRound}</div>
         </div>
         <div className="text-right shrink-0">
-          <div className="font-num text-lg font-extrabold" style={{ color: '#D99A00' }}>${budget.toFixed(1)}M</div>
-          <div className="text-[10px]" style={{ color: '#9AA7BC' }}>available</div>
+          <div className="font-num text-lg font-extrabold" style={{ color: 'var(--gold)' }}>${budget.toFixed(1)}M</div>
+          <div className="text-[10px]" style={{ color: 'var(--ink-3)' }}>available</div>
         </div>
       </div>
 
@@ -201,13 +201,13 @@ function TransfersPanel() {
               <div className="flex items-center gap-3 px-3 py-2.5">
                 <PlayerAvatar playerId={id} name={p.name} size="sm" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold truncate" style={{ color: '#0a1f44' }}>{p.name}</div>
-                  <div className="text-[11px]" style={{ color: '#E5472B' }}>OUT {exit} · <span className="font-num" style={{ color: '#5B6B84' }}>${p.price}M spent</span></div>
+                  <div className="text-sm font-semibold truncate" style={{ color: 'var(--ink)' }}>{p.name}</div>
+                  <div className="text-[11px]" style={{ color: 'var(--ember)' }}>OUT {exit} · <span className="font-num" style={{ color: 'var(--ink-2)' }}>${p.price}M spent</span></div>
                 </div>
                 <button
                   onClick={() => setOpenFor(isOpen ? null : id)}
                   className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg"
-                  style={{ background: isOpen ? 'rgba(10,27,51,0.06)' : '#0e6fc4', color: isOpen ? '#5B6B84' : '#fff' }}
+                  style={{ background: isOpen ? 'rgba(10,27,51,0.06)' : 'var(--blue)', color: isOpen ? 'var(--ink-2)' : '#fff' }}
                 >
                   {isOpen ? 'Cancel' : 'Replace →'}
                 </button>
@@ -216,7 +216,7 @@ function TransfersPanel() {
               {isOpen && (
                 <div className="px-3 pb-3 fade-in">
                   {candidates.length === 0 ? (
-                    <div className="text-xs text-center py-3" style={{ color: '#9AA7BC' }}>
+                    <div className="text-xs text-center py-3" style={{ color: 'var(--ink-3)' }}>
                       No affordable replacements left in the draw (budget ${budget.toFixed(1)}M).
                     </div>
                   ) : (
@@ -232,10 +232,10 @@ function TransfersPanel() {
                           >
                             <PlayerAvatar playerId={c.id} name={c.name} size="sm" />
                             <div className="flex-1 min-w-0">
-                              <div className="text-xs font-semibold truncate" style={{ color: '#0a1f44' }}>{c.name}</div>
+                              <div className="text-xs font-semibold truncate" style={{ color: 'var(--ink)' }}>{c.name}</div>
                               <div className="text-[10px]" style={{ color: tier.color }}>{getTier(c.ranking)} · #{c.ranking}</div>
                             </div>
-                            <div className="font-num text-sm font-bold shrink-0" style={{ color: '#0e6fc4' }}>${c.price}M</div>
+                            <div className="font-num text-sm font-bold shrink-0" style={{ color: 'var(--blue)' }}>${c.price}M</div>
                           </button>
                         );
                       })}

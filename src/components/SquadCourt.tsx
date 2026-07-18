@@ -128,7 +128,7 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
               <div className="relative" style={isCap ? { filter: 'drop-shadow(0 0 6px rgba(217,154,0,0.7))' } : undefined}>
                 <PlayerAvatar playerId={id} name={p.name} size="md" />
                 {isCap && (
-                  <span className="absolute -top-1 -right-1 rounded-full flex items-center justify-center text-[9px] font-extrabold" style={{ width: 16, height: 16, background: '#D99A00', color: '#fff', border: '1.5px solid #fff' }}>C</span>
+                  <span className="absolute -top-1 -right-1 rounded-full flex items-center justify-center text-[9px] font-extrabold" style={{ width: 16, height: 16, background: 'var(--gold)', color: '#fff', border: '1.5px solid #fff' }}>C</span>
                 )}
               </div>
               <div className="mt-1 px-1.5 py-0.5 rounded-md flex items-center gap-1 whitespace-nowrap" style={{ background: 'rgba(10,31,68,0.82)' }}>
