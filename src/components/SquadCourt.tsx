@@ -11,10 +11,11 @@ const SPOTS = [
   { x: 79, y: 30 }, { x: 69, y: 52 }, { x: 79, y: 74 }, // right half
 ];
 
-export default function SquadCourt({ squad, captainId, readOnly }: {
+export default function SquadCourt({ squad, captainId, readOnly, title }: {
   squad?: string[];        // when given, renders this squad instead of your own (read-only)
   captainId?: string;
   readOnly?: boolean;
+  title?: string;          // label shown inside the court (e.g. "My Squad")
 } = {}) {
   const { myTeam, captain, currentRoundIndex, phase, openPlayer } = useGameStore();
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -72,6 +73,13 @@ export default function SquadCourt({ squad, captainId, readOnly }: {
             <line x1="320" y1="52" x2="320" y2="308" stroke="#0a1f44" strokeWidth="1" strokeOpacity="0.22" strokeDasharray="3 3" />
           </g>
         </svg>
+
+        {/* In-court label */}
+        {title && (
+          <div className="absolute top-2.5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[11px] font-bold uppercase" style={{ background: 'rgba(10,31,68,0.72)', color: '#fff', letterSpacing: '0.14em' }}>
+            {title}
+          </div>
+        )}
 
         {/* Players / empty slots */}
         {SPOTS.map((spot, i) => {

@@ -10,7 +10,7 @@ const TEAM_TARGET = 6;
 
 export default function HomePage() {
   const {
-    phase, myTeam, captain, budget, myScore, currentRoundIndex,
+    phase, myTeam, budget, myScore, currentRoundIndex,
     roundScores, setActiveTab, openTeam,
   } = useGameStore();
 
@@ -40,20 +40,19 @@ export default function HomePage() {
 
       {/* ── Title + subtitle ── */}
       <div className="text-center mb-4">
-        <div className="text-xs font-bold uppercase tracking-[0.2em] mb-1.5" style={{ color: '#12A150' }}>
+        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight" style={{ color: '#0a1f44' }}>Wimbledon 2026</h1>
+        <div className="text-xs font-bold uppercase tracking-[0.2em] mt-1.5" style={{ color: '#12A150' }}>
           Grand Slam · Grass
         </div>
-        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight" style={{ color: '#0a1f44' }}>Wimbledon 2026</h1>
         <div className="text-sm mt-1.5" style={{ color: '#5B6B84' }}>
           {phase === 'draft' && 'Draft open — pick your 6 from the draw'}
           {phase === 'pre_round' && currentRound && `${currentRound.label} · set your captain to play`}
           {phase === 'round_complete' && currentRound && `${ROUNDS[currentRoundIndex - 1]?.label} complete · ${currentRound.label} up next`}
-          {phase === 'finished' && 'Tournament complete — final standings'}
         </div>
       </div>
 
       {/* ── The court ── */}
-      <SquadCourt />
+      <SquadCourt title="My Squad" />
       <div className="text-[11px] mt-2 mb-6 text-center" style={{ color: '#9AA7BC' }}>
         {phase === 'draft'
           ? 'Tap a + to add players · your squad lines up on court'
@@ -67,7 +66,7 @@ export default function HomePage() {
         <StatCard
           label="Squad"
           value={`${myTeam.length}/${TEAM_TARGET}`}
-          unit={myTeam.length === TEAM_TARGET ? 'complete' : 'pick 6'}
+          unit="Pick up to 6"
           color={myTeam.length === TEAM_TARGET ? '#12A150' : '#D99A00'}
         />
       </div>

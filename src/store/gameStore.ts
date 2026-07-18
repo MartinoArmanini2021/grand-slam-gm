@@ -20,7 +20,7 @@ interface GameStore {
   currentRoundIndex: number;
   myScore: number;
   roundScores: RoundScore[];
-  activeTab: 'home' | 'draft' | 'tournament' | 'players' | 'team' | 'league' | 'player';
+  activeTab: 'home' | 'draft' | 'tournament' | 'team' | 'league' | 'player';
   viewTeam: string; // which team the detail view shows: 'you' or a rival id
   viewPlayer: string; // which player the profile page shows
   playerReturnTab: GameStore['activeTab']; // where the profile's back button returns to
@@ -52,7 +52,7 @@ export const useGameStore = create<GameStore>()(
       activeTab: 'draft',
       viewTeam: 'you',
       viewPlayer: '',
-      playerReturnTab: 'players',
+      playerReturnTab: 'home',
 
       addPlayer: (id) => {
         const { myTeam, budget } = get();
@@ -182,7 +182,7 @@ export const useGameStore = create<GameStore>()(
         activeTab: 'home',
         viewTeam: 'you',
         viewPlayer: '',
-        playerReturnTab: 'players',
+        playerReturnTab: 'home',
       }),
     }),
     { name: 'grand-slam-gm-v1' }

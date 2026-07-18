@@ -5,13 +5,8 @@ import PlayerAvatar from '../components/PlayerAvatar';
 import { toast } from '../store/toastStore';
 
 type SortKey = 'ranking' | 'price' | 'grass';
-type FilterSurface = 'all' | 'grass' | 'hard' | 'clay';
 
 const TEAM_SIZE = 6;
-
-const SURFACE_LABEL: Record<FilterSurface, string> = {
-  all: 'All', grass: 'Grass', clay: 'Clay', hard: 'Hard',
-};
 
 const SORT_LABEL: Record<SortKey, string> = {
   ranking: '# Rank', price: '$ Price', grass: 'Grass %',
@@ -20,17 +15,10 @@ const SORT_LABEL: Record<SortKey, string> = {
 export default function DraftPage() {
   const { myTeam, captain, budget, addPlayer, removePlayer, setCaptain, finalizeDraft, openPlayer } = useGameStore();
   const [sort, setSort] = useState<SortKey>('ranking');
-  const [filter, setFilter] = useState<FilterSurface>('all');
   const [search, setSearch] = useState('');
 
   const sorted = [...PLAYERS]
-    .filter(p => {
-      if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
-      if (filter === 'grass') return p.surface.grass >= 75;
-      if (filter === 'clay') return p.surface.clay >= 75;
-      if (filter === 'hard') return p.surface.hard >= 82;
-      return true;
-    })
+    .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
       if (sort === 'ranking') return a.ranking - b.ranking;
       if (sort === 'price') return b.price - a.price;
@@ -60,32 +48,6 @@ export default function DraftPage() {
                 color: '#0a1f44',
               }}
             />
-            {/* Surface filter */}
-            <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.07)' }}>
-              {(['all','grass','clay','hard'] as FilterSurface[]).map(f => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className="px-3 py-2 text-xs font-semibold transition-colors"
-                  style={{
-                    background: filter === f
-                      ? f === 'grass' ? 'rgba(18,161,80,0.15)'
-                        : f === 'clay' ? 'rgba(229,71,43,0.15)'
-                        : f === 'hard' ? 'rgba(14,111,196,0.15)'
-                        : 'rgba(10,27,51,0.1)'
-                      : 'transparent',
-                    color: filter === f
-                      ? f === 'grass' ? '#12A150'
-                        : f === 'clay' ? '#E5472B'
-                        : f === 'hard' ? '#0e6fc4'
-                        : '#0a1f44'
-                      : '#5B6B84',
-                  }}
-                >
-                  {SURFACE_LABEL[f]}
-                </button>
-              ))}
-            </div>
             {/* Sort */}
             <div className="flex rounded-xl overflow-hidden ml-auto" style={{ border: '1px solid rgba(10,27,51,0.07)' }}>
               {(['ranking','price','grass'] as SortKey[]).map(s => (
@@ -146,11 +108,12 @@ export default function DraftPage() {
                       </div>
                     </div>
 
-                    {/* Surface nums */}
-                    <div className="hidden lg:flex gap-3 text-xs shrink-0">
-                      <span className="font-num font-semibold" style={{ color: '#12A150' }}>G {player.surface.grass}%</span>
-                      <span className="font-num" style={{ color: '#0e6fc4' }}>H {player.surface.hard}%</span>
-                      <span className="font-num" style={{ color: '#E5472B' }}>C {player.surface.clay}%</span>
+                    {/* At-a-glance stats */}
+                    <div className="flex items-center gap-2.5 text-xs shrink-0">
+                      <span className="font-num font-bold" style={{ color: '#12A150' }} title="Grass win rate">🌱 {player.surface.grass}%</span>
+                      <span className="hidden md:inline font-num" style={{ color: '#5B6B84' }} title="2026 win–loss">{player.ytd.wins}–{player.ytd.losses}</span>
+                      <span className="hidden lg:inline font-num" style={{ color: '#0e6fc4' }} title="Hard win rate">H {player.surface.hard}%</span>
+                      <span className="hidden lg:inline font-num" style={{ color: '#E5472B' }} title="Clay win rate">C {player.surface.clay}%</span>
                     </div>
 
                     {/* Price */}

@@ -4,14 +4,12 @@ import { ROUNDS } from './data/tournament';
 import HomePage from './pages/HomePage';
 import DraftPage from './pages/DraftPage';
 import TournamentPage from './pages/TournamentPage';
-import PlayersPage from './pages/PlayersPage';
 import TeamPage from './pages/TeamPage';
 import LeaguePage from './pages/LeaguePage';
 import PlayerPage from './pages/PlayerPage';
 import Toaster from './components/Toaster';
 import HowToPlay from './components/HowToPlay';
 import Logo from './components/Logo';
-import { toast } from './store/toastStore';
 
 const NAVY = '#0a1f44';
 const BLUE = '#0e6fc4';
@@ -24,17 +22,14 @@ const TABS = [
   { id: 'league',     label: 'League',  icon: '🏆', accent: '#F0C24B' },
   { id: 'draft',      label: 'Market',  icon: '💸', accent: '#4aa8ea' },
   { id: 'tournament', label: 'Bracket', icon: '🎯', accent: '#E5472B' },
-  { id: 'players',    label: 'Stats',   icon: '📊', accent: '#8EB6F5' },
 ] as const;
 
 export default function App() {
   const { activeTab, setActiveTab, phase, myScore, budget, currentRoundIndex, myTeam } = useGameStore();
   const currentRound = currentRoundIndex < ROUNDS.length ? ROUNDS[currentRoundIndex] : null;
   const [showRules, setShowRules] = useState(() => !seenRules());
-  const [confirmReset, setConfirmReset] = useState(false);
 
   const closeRules = () => { setShowRules(false); markSeen(); };
-  const doReset = () => { useGameStore.getState().resetGame(); setConfirmReset(false); toast('Game reset — draft a new squad', 'info'); };
 
   return (
     <div className="min-h-screen" style={{ background: '#EEF1F5' }}>
@@ -118,15 +113,6 @@ export default function App() {
               >
                 ?
               </button>
-              <button
-                onClick={() => setConfirmReset(true)}
-                className="text-xs transition-colors"
-                style={{ color: '#6B7E9C' }}
-                onMouseEnter={e => (e.currentTarget.style.color = '#B9C6DA')}
-                onMouseLeave={e => (e.currentTarget.style.color = '#6B7E9C')}
-              >
-                Reset
-              </button>
             </div>
           </div>
         </div>
@@ -137,44 +123,12 @@ export default function App() {
         {activeTab === 'draft'      && <DraftPage />}
         {activeTab === 'tournament' && <TournamentPage />}
         {activeTab === 'league'     && <LeaguePage />}
-        {activeTab === 'players'    && <PlayersPage />}
         {activeTab === 'team'       && <TeamPage />}
         {activeTab === 'player'     && <PlayerPage />}
       </main>
 
       <HowToPlay open={showRules} onClose={closeRules} />
       <Toaster />
-
-      {/* Reset confirmation */}
-      {confirmReset && (
-        <div
-          onClick={() => setConfirmReset(false)}
-          style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(10,27,51,0.55)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
-        >
-          <div onClick={e => e.stopPropagation()} className="fade-in card" style={{ maxWidth: 380, width: '100%', padding: 22, background: '#fff' }}>
-            <div className="text-lg font-bold" style={{ color: '#0a1f44' }}>Reset your game?</div>
-            <p className="text-sm mt-1 mb-4" style={{ color: '#5B6B84' }}>
-              This clears your squad, captain, score and transfers, and starts a fresh draft. This can’t be undone.
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setConfirmReset(false)}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
-                style={{ background: '#F0F3F7', color: '#0a1f44', border: '1px solid rgba(10,27,51,0.1)' }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={doReset}
-                className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white"
-                style={{ background: '#E5472B' }}
-              >
-                Reset game
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

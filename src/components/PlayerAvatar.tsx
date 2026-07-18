@@ -17,10 +17,15 @@ interface Props {
 const SIZE = { sm: 32, md: 40, lg: 56, xl: 96 } as const;
 const FONT = { sm: 11, md: 13, lg: 16, xl: 28 } as const;
 
-// Source priority: realistic online headshot (/avatars) → illustrated fallback → initials.
+// One uniform illustrated icon per player (customized to their real features) so
+// the whole roster reads as a single standardized set. Flip USE_PHOTOS on once a
+// COMPLETE set of real headshots exists at /public/avatars/{id}.png for all 52 —
+// a partial set would mix photos and illustrations, which is the look we avoid.
+const USE_PHOTOS = false;
+
 export default function PlayerAvatar({ playerId, name, size = 'md', className = '', ring = true, onClick }: Props) {
   const px = SIZE[size];
-  const [stage, setStage] = useState(0); // 0 photo, 1 illustration, 2 initials
+  const [stage, setStage] = useState(0);
 
   let ringColor = 'rgba(10,27,51,0.16)';
   try { ringColor = TIER_META[getTier(getPlayer(playerId).ranking)].color; } catch { /* unknown id */ }
@@ -29,8 +34,11 @@ export default function PlayerAvatar({ playerId, name, size = 'md', className = 
     : { boxShadow: 'inset 0 0 0 1px rgba(10,27,51,0.14)' };
   const clickable = onClick ? { cursor: 'pointer' } : {};
 
-  const svgUri = getAvatarUri(playerId);
-  const src = stage === 0 ? `/avatars/${playerId}.png` : stage === 1 ? svgUri : null;
+  const sources = [
+    ...(USE_PHOTOS ? [`/avatars/${playerId}.png`] : []),
+    getAvatarUri(playerId), // illustrated icon (data URI); may be null for unknown ids
+  ].filter(Boolean) as string[];
+  const src = sources[stage] ?? null; // exhausted → initials monogram
 
   if (src) {
     return (

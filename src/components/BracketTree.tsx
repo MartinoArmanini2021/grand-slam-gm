@@ -66,7 +66,7 @@ export default function BracketTree() {
               className="px-4 py-2 text-xs font-bold transition-colors"
               style={{ background: half === h ? 'rgba(14,111,196,0.1)' : '#FFFFFF', color: half === h ? '#0e6fc4' : '#5B6B84' }}
             >
-              {h === 'top' ? 'Top half' : 'Bottom half'}
+              {h === 'top' ? 'Left Half' : 'Right Half'}
             </button>
           ))}
         </div>

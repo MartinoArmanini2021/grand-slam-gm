@@ -1,6 +1,5 @@
 import { useGameStore } from '../store/gameStore';
 import { getPlayer } from '../data/players';
-import { ROUNDS } from '../data/tournament';
 import { getRivalTeams } from '../data/rivals';
 import PlayerAvatar from '../components/PlayerAvatar';
 
@@ -18,7 +17,7 @@ interface Row {
 }
 
 export default function LeaguePage() {
-  const { myTeam, myScore, budget, currentRoundIndex, phase, openTeam } = useGameStore();
+  const { myTeam, myScore, budget, currentRoundIndex, openTeam } = useGameStore();
 
   const rivalTeams = getRivalTeams(currentRoundIndex);
 
@@ -35,20 +34,13 @@ export default function LeaguePage() {
 
   rows.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
 
-  const roundLabel = phase === 'draft' ? 'Draft in progress'
-    : currentRoundIndex === 0 ? 'Before Round 1'
-    : `After ${ROUNDS[currentRoundIndex - 1]?.label ?? ''}`;
-
   const medal = (i: number) => (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`);
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 fade-in">
       {/* Header */}
       <div className="flex items-end justify-between mb-5 flex-wrap gap-2">
-        <div>
-          <h1 className="text-xl font-extrabold tracking-tight" style={{ color: '#0a1f44' }}>League Standings</h1>
-          <div className="text-xs" style={{ color: '#5B6B84' }}>Everyone gets $100M · pick any player · {roundLabel}</div>
-        </div>
+        <h1 className="text-xl font-extrabold tracking-tight" style={{ color: '#0a1f44' }}>League Standings</h1>
         <div className="text-xs px-3 py-1.5 rounded-full font-semibold" style={{ background: 'rgba(14,111,196,0.1)', color: '#0e6fc4' }}>
           {rows.length} managers
         </div>
@@ -84,17 +76,13 @@ export default function LeaguePage() {
               </div>
             </div>
 
-            {/* Players — immediately visible, with names */}
-            <div className="flex-1 min-w-0 hidden sm:flex flex-wrap gap-1 content-center">
-              {row.squad.slice(0, 6).map(id => {
-                const p = getPlayer(id);
-                return (
-                  <span key={id} className="inline-flex items-center gap-1 pl-0.5 pr-1.5 py-0.5 rounded-full" style={{ background: 'rgba(10,27,51,0.04)' }}>
-                    <PlayerAvatar playerId={id} name={p.name} size="sm" />
-                    <span className="text-[11px] font-semibold" style={{ color: '#5B6B84' }}>{p.name.split(' ').slice(-1)[0]}</span>
-                  </span>
-                );
-              })}
+            {/* Squad — a compact avatar stack that always fits (names on the team page) */}
+            <div className="flex-1 min-w-0 hidden sm:flex items-center justify-center">
+              <div className="flex -space-x-2.5">
+                {row.squad.slice(0, 6).map(id => (
+                  <PlayerAvatar key={id} playerId={id} name={getPlayer(id).name} size="sm" />
+                ))}
+              </div>
             </div>
 
             {/* Right: total score + available budget */}
