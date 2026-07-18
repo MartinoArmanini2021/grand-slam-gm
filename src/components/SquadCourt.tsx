@@ -11,11 +11,17 @@ const SPOTS = [
   { x: 79, y: 30 }, { x: 69, y: 52 }, { x: 79, y: 74 }, // right half
 ];
 
-export default function SquadCourt() {
+export default function SquadCourt({ squad, captainId, readOnly }: {
+  squad?: string[];        // when given, renders this squad instead of your own (read-only)
+  captainId?: string;
+  readOnly?: boolean;
+} = {}) {
   const { myTeam, captain, currentRoundIndex, phase, openPlayer } = useGameStore();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const team = squad ?? myTeam;
+  const cap = captainId ?? (squad ? undefined : captain);
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
-  const canEdit = phase === 'draft';
+  const canEdit = !readOnly && !squad && phase === 'draft';
 
   return (
     <>
@@ -69,7 +75,7 @@ export default function SquadCourt() {
 
         {/* Players / empty slots */}
         {SPOTS.map((spot, i) => {
-          const id = myTeam[i];
+          const id = team[i];
           if (!id) {
             return (
               <button
@@ -93,7 +99,7 @@ export default function SquadCourt() {
           const p = getPlayer(id);
           const exit = getPlayerExit(id);
           const out = exit !== null && revealed.includes(exit);
-          const isCap = captain === id;
+          const isCap = cap === id;
           return (
             <button
               key={i}
@@ -117,7 +123,7 @@ export default function SquadCourt() {
         })}
 
         {/* Empty-state hint */}
-        {myTeam.length === 0 && (
+        {team.length === 0 && (
           <div className="absolute inset-x-0 bottom-3 flex items-center justify-center pointer-events-none">
             <div className="px-4 py-1.5 rounded-full text-xs font-semibold" style={{ background: 'rgba(10,31,68,0.78)', color: '#fff' }}>
               {canEdit ? 'Tap a + to pick your squad' : 'No squad selected'}

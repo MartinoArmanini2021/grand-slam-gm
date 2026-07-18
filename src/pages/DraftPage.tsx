@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { PLAYERS, getPlayer } from '../data/players';
-import SurfaceBar from '../components/SurfaceBar';
 import PlayerAvatar from '../components/PlayerAvatar';
 import { toast } from '../store/toastStore';
 
@@ -23,7 +22,6 @@ export default function DraftPage() {
   const [sort, setSort] = useState<SortKey>('ranking');
   const [filter, setFilter] = useState<FilterSurface>('all');
   const [search, setSearch] = useState('');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const sorted = [...PLAYERS]
     .filter(p => {
@@ -110,13 +108,12 @@ export default function DraftPage() {
           <div className="space-y-1.5">
             {sorted.map(player => {
               const isSelected = myTeam.includes(player.id);
-              const isExpanded = expandedId === player.id;
               const disabled = !isSelected && !canAdd(player.price);
 
               return (
                 <div key={player.id}>
                   <div
-                    onClick={() => setExpandedId(isExpanded ? null : player.id)}
+                    onClick={() => openPlayer(player.id)}
                     className="flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer transition-all"
                     style={{
                       background: isSelected
@@ -183,34 +180,6 @@ export default function DraftPage() {
                       {isSelected ? 'Remove' : '+ Add'}
                     </button>
                   </div>
-
-                  {/* Expanded detail */}
-                  {isExpanded && (
-                    <div className="mx-1 mb-1.5 px-5 py-4 rounded-b-2xl" style={{ background: '#F5F7FA', border: '1px solid rgba(10,27,51,0.07)', borderTop: 'none' }}>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div>
-                          <div className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#5B6B84' }}>Surface Win Rate</div>
-                          <SurfaceBar hard={player.surface.hard} clay={player.surface.clay} grass={player.surface.grass} highlight="grass" />
-                        </div>
-                        <div>
-                          <div className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: '#5B6B84' }}>2026 Results</div>
-                          <div className="flex flex-wrap gap-2">
-                            {player.yearResults.map(r => (
-                              <div key={r.short} className="text-center">
-                                <div className="text-[9px] mb-1" style={{ color: '#5B6B84' }}>{r.short}</div>
-                                <ResultBadge result={r.result} />
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mt-4 pt-3 flex gap-4 text-xs" style={{ borderTop: '1px solid rgba(10,27,51,0.06)', color: '#5B6B84' }}>
-                        <span>YTD {player.ytd.wins}W–{player.ytd.losses}L</span>
-                        <span>{player.ytd.titles > 0 ? `${player.ytd.titles} title${player.ytd.titles > 1 ? 's' : ''}` : 'No titles'}</span>
-                        <span>{player.hand === 'R' ? 'RH' : 'LH'} · Age {player.age}</span>
-                      </div>
-                    </div>
-                  )}
                 </div>
               );
             })}
@@ -313,20 +282,3 @@ export default function DraftPage() {
   );
 }
 
-function ResultBadge({ result }: { result: string }) {
-  const cfg: Record<string, [string, string]> = {
-    W:   ['rgba(217,154,0,0.15)',  '#D99A00'],
-    F:   ['rgba(10,27,51,0.08)', '#0a1f44'],
-    SF:  ['rgba(14,111,196,0.12)',  '#0e6fc4'],
-    QF:  ['rgba(18,161,80,0.12)',    '#12A150'],
-    R16: ['rgba(10,27,51,0.05)', '#5B6B84'],
-    R32: ['rgba(10,27,51,0.04)', '#9AA7BC'],
-    DNS: ['transparent',           '#9AA7BC'],
-  };
-  const [bg, color] = cfg[result] ?? ['transparent', '#5B6B84'];
-  return (
-    <span className="font-num text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: bg, color, border: `1px solid ${color}22` }}>
-      {result}
-    </span>
-  );
-}

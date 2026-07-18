@@ -40,8 +40,9 @@ describe('static scoreSquad (reference)', () => {
     }
   });
 
-  it('a solo champion squad scores 154 over the full tournament', () => {
-    expect(scoreSquad(['alcaraz'], ROUNDS.length)).toBe(154);
+  it('a solo champion (#1) scores 92 — ranking-weighted, captained every round', () => {
+    // #1 → mult 0.6: round(2·.6)=1,5·.6=3,6,12,24 doubled = 2+6+12+24+48
+    expect(scoreSquad(['alcaraz'], ROUNDS.length)).toBe(92);
   });
 });
 

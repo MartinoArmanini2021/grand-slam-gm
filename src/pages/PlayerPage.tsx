@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
-import { getPlayer } from '../data/players';
+import { getPlayer, PLAYERS } from '../data/players';
 import { getTier, TIER_META } from '../data/tiers';
+import { WIMBLEDON_2026 } from '../data/wimbledon2026';
+import type { Player } from '../types';
 import PlayerAvatar from '../components/PlayerAvatar';
 import SurfaceBar from '../components/SurfaceBar';
 
@@ -114,7 +117,82 @@ export default function PlayerPage() {
           <span className="ml-auto">W = Champion · F = Final · SF/QF/R16 = round reached</span>
         </div>
       </Panel>
+
+      {/* Head-to-head */}
+      <div className="mt-4">
+        <H2HSection player={p} />
+      </div>
     </div>
+  );
+}
+
+function H2HSection({ player }: { player: Player }) {
+  const opponents = PLAYERS.filter(o => o.id !== player.id).sort((a, b) => a.ranking - b.ranking);
+  const [oppId, setOppId] = useState(opponents[0]?.id ?? '');
+  const opp = opponents.find(o => o.id === oppId) ?? opponents[0];
+  if (!opp) return null;
+
+  // Real Wimbledon 2026 meeting (if both are in the draw)
+  const meeting = WIMBLEDON_2026.find(m =>
+    (m.p1.name === player.name && m.p2.name === opp.name) ||
+    (m.p2.name === player.name && m.p1.name === opp.name));
+  const ROUND_FULL: Record<string, string> = { R32: 'Round of 32', R16: 'Round of 16', QF: 'Quarter-final', SF: 'Semi-final', F: 'Final' };
+
+  const rows: { label: string; a: number; b: number; higher: boolean; fmt: (n: number) => string }[] = [
+    { label: 'ATP ranking', a: player.ranking, b: opp.ranking, higher: false, fmt: n => `#${n}` },
+    { label: 'Grass win %', a: player.surface.grass, b: opp.surface.grass, higher: true, fmt: n => `${n}%` },
+    { label: 'Hard win %', a: player.surface.hard, b: opp.surface.hard, higher: true, fmt: n => `${n}%` },
+    { label: 'Clay win %', a: player.surface.clay, b: opp.surface.clay, higher: true, fmt: n => `${n}%` },
+    { label: '2026 wins', a: player.ytd.wins, b: opp.ytd.wins, higher: true, fmt: n => `${n}` },
+    { label: '2026 titles', a: player.ytd.titles, b: opp.ytd.titles, higher: true, fmt: n => `${n}` },
+  ];
+
+  return (
+    <Panel title="Head-to-head">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <PlayerAvatar playerId={player.id} name={player.name} size="sm" />
+          <span className="text-sm font-bold truncate" style={{ color: '#0a1f44' }}>{player.name.split(' ').slice(-1)[0]}</span>
+        </div>
+        <span className="text-xs font-bold" style={{ color: '#9AA7BC' }}>vs</span>
+        <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
+          <PlayerAvatar playerId={opp.id} name={opp.name} size="sm" />
+          <select
+            value={oppId}
+            onChange={e => setOppId(e.target.value)}
+            className="text-sm font-semibold rounded-lg px-2 py-1.5 outline-none max-w-[150px]"
+            style={{ background: '#F5F7FA', border: '1px solid rgba(10,27,51,0.12)', color: '#0a1f44' }}
+          >
+            {opponents.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* Real meeting at Wimbledon 2026 */}
+      <div className="rounded-xl px-3 py-2.5 mb-3 text-xs" style={{ background: meeting ? 'rgba(18,161,80,0.06)' : 'rgba(10,27,51,0.03)', border: `1px solid ${meeting ? 'rgba(18,161,80,0.18)' : 'rgba(10,27,51,0.06)'}` }}>
+        {meeting ? (
+          <span style={{ color: '#0a1f44' }}>
+            🎾 Met at Wimbledon 2026 · <b>{ROUND_FULL[meeting.round]}</b> — <b style={{ color: '#12A150' }}>{meeting.winner.split(' ').slice(-1)[0]}</b> won <span className="font-num" style={{ color: '#5B6B84' }}>{meeting.score}</span>
+          </span>
+        ) : (
+          <span style={{ color: '#9AA7BC' }}>They didn't meet in the Wimbledon 2026 draw. Full career H2H arrives with the live-data feed.</span>
+        )}
+      </div>
+
+      {/* Stat-by-stat */}
+      <div>
+        {rows.map((r, i) => {
+          const aWin = r.a === r.b ? null : (r.higher ? r.a > r.b : r.a < r.b);
+          return (
+            <div key={i} className="flex items-center py-1.5 text-sm" style={{ borderTop: i > 0 ? '1px solid rgba(10,27,51,0.05)' : 'none' }}>
+              <div className="flex-1 text-left font-num font-bold" style={{ color: aWin === true ? '#12A150' : '#0a1f44' }}>{r.fmt(r.a)}</div>
+              <div className="w-28 text-center text-[10px] uppercase tracking-wide" style={{ color: '#5B6B84' }}>{r.label}</div>
+              <div className="flex-1 text-right font-num font-bold" style={{ color: aWin === false ? '#12A150' : '#0a1f44' }}>{r.fmt(r.b)}</div>
+            </div>
+          );
+        })}
+      </div>
+    </Panel>
   );
 }
 

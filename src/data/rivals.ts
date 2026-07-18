@@ -1,5 +1,5 @@
 import { PLAYERS, getPlayer } from './players';
-import { ROUNDS, MATCHES, getOpponentId, upsetBonus, getPlayerExit, BUDGET_RETURN_RATES, transfersOpen } from './tournament';
+import { ROUNDS, MATCHES, getOpponentId, winPoints, getPlayerExit, BUDGET_RETURN_RATES, transfersOpen } from './tournament';
 import type { Player, RoundId } from '../types';
 
 // Simulated league managers. Everyone gets the same $100M and can pick ANY
@@ -68,7 +68,7 @@ export function scoreSquad(squadIds: string[], uptoRoundIndex: number): number {
     for (const id of squadIds) {
       if (!playerWon(id, round.id)) continue;
       const opp = getOpponentId(id, round.id);
-      const gross = round.points + (opp ? upsetBonus(id, opp) : 0);
+      const gross = opp ? winPoints(round.id, id, opp) : round.points;
       roundTotal += gross;
       if (gross > best) best = gross;
     }
@@ -112,7 +112,7 @@ export function simulateRival(rival: Rival, upto: number): RivalTeam {
     for (const id of squad) {
       if (!playerWon(id, round.id)) continue;
       const opp = getOpponentId(id, round.id);
-      const gross = round.points + (opp ? upsetBonus(id, opp) : 0);
+      const gross = opp ? winPoints(round.id, id, opp) : round.points;
       roundTotal += gross;
       if (gross > best) best = gross;
     }
