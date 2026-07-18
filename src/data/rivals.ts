@@ -118,9 +118,13 @@ export function simulateRival(rival: Rival, upto: number): RivalTeam {
     }
     score += roundTotal + best;
 
-    // 2) bank budget returns for players eliminated in this round
+    // 2) bank budget returns for players eliminated in this round. At the R32
+    //    reveal, also refund players who fell before the last 32 (R128/R64) — the
+    //    same rule the human squad uses.
     for (const id of squad) {
-      if (getPlayerExit(id) === round.id) budget += retAmount(getPlayer(id).price, round.id);
+      const exit = getPlayerExit(id);
+      if (exit === round.id) budget += retAmount(getPlayer(id).price, round.id);
+      else if (round.id === 'R32' && (exit === 'R128' || exit === 'R64')) budget += retAmount(getPlayer(id).price, 'R32');
     }
 
     // 3) transfer: replace eliminated slots with the best affordable alive player —

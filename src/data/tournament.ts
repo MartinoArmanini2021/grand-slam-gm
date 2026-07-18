@@ -59,7 +59,7 @@ export function getOpponentId(playerId: string, round: RoundId): string | null {
 }
 
 // Upset bonus: reward a lower-ranked player for beating a higher-ranked one.
-// The bigger the ranking gap, the bigger the bonus (capped at +12).
+// The bigger the ranking gap, the bigger the bonus (capped at +15).
 export function upsetBonus(winnerId: string, loserId: string): number {
   const w = getPlayer(winnerId)?.ranking;
   const l = getPlayer(loserId)?.ranking;

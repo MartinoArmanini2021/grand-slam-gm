@@ -2,9 +2,9 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { GamePhase, RoundId, RoundScore, BudgetReturn } from '../types';
 import {
-  ROUNDS, MATCHES, getMatchesForRound, isPlayerOut, BUDGET_RETURN_RATES, winPoints, transfersOpen,
+  ROUNDS, getMatchesForRound, isPlayerOut, BUDGET_RETURN_RATES, winPoints, transfersOpen,
 } from '../data/tournament';
-import { getPlayer, PLAYERS } from '../data/players';
+import { getPlayer, findPlayer, PLAYERS } from '../data/players';
 
 const STARTING_BUDGET = 100;
 const TEAM_SIZE = 6;
@@ -55,17 +55,19 @@ export const useGameStore = create<GameStore>()(
       playerReturnTab: 'home',
 
       addPlayer: (id) => {
-        const { myTeam, budget } = get();
+        const { myTeam, budget, phase } = get();
+        if (phase !== 'draft') return; // squad is locked after the draft — use transfers
         if (myTeam.length >= TEAM_SIZE) return;
         if (myTeam.includes(id)) return;
-        const player = getPlayer(id);
+        const player = findPlayer(id);
         if (!player || budget < player.price) return;
         set({ myTeam: [...myTeam, id], budget: budget - player.price });
       },
 
       removePlayer: (id) => {
-        const { myTeam, budget, captain } = get();
-        const player = getPlayer(id);
+        const { myTeam, budget, captain, phase } = get();
+        if (phase !== 'draft') return; // squad is locked after the draft
+        const player = findPlayer(id);
         if (!player) return;
         set({
           myTeam: myTeam.filter(pid => pid !== id),
@@ -81,7 +83,8 @@ export const useGameStore = create<GameStore>()(
       },
 
       finalizeDraft: () => {
-        const { myTeam, captain } = get();
+        const { myTeam, captain, phase } = get();
+        if (phase !== 'draft') return; // already locked in
         if (myTeam.length === 0) return;
         set({ phase: 'pre_round', captain: captain ?? myTeam[0] });
       },
@@ -123,7 +126,7 @@ export const useGameStore = create<GameStore>()(
             // No match this round. If it's the R32 and this player never reached
             // the last 32 (lost R128/R64), they're revealed as out now → one-time
             // refund at the R32 rate so every eliminated player returns something.
-            const player = getPlayer(playerId);
+            const player = findPlayer(playerId);
             if (round.id === 'R32' && player && (player.exit === 'R128' || player.exit === 'R64')) {
               const amt = Math.round(player.price * BUDGET_RETURN_RATES.R32 * 10) / 10;
               if (amt > 0) newReturns.push({ playerId, round: 'R32', amount: amt });
@@ -143,7 +146,8 @@ export const useGameStore = create<GameStore>()(
             }
           } else {
             // Player lost THIS round → eliminated now; refund by this round's rate.
-            const player = getPlayer(playerId);
+            const player = findPlayer(playerId);
+            if (!player) return;
             const returnAmt = Math.round(player.price * (BUDGET_RETURN_RATES[round.id] ?? 0) * 10) / 10;
             if (returnAmt > 0) newReturns.push({ playerId, round: round.id, amount: returnAmt });
           }
@@ -202,11 +206,13 @@ export const useGameStore = create<GameStore>()(
       // rehydrated squad can never dereference an undefined player and crash.
       migrate: (persisted) => {
         const s = persisted as Partial<GameStore> | undefined;
-        if (s && Array.isArray(s.myTeam)) {
+        if (s) {
           const ids = new Set(PLAYERS.map(p => p.id));
-          s.myTeam = s.myTeam.filter(id => ids.has(id));
+          if (Array.isArray(s.myTeam)) s.myTeam = s.myTeam.filter(id => ids.has(id));
           if (s.captain && !ids.has(s.captain)) s.captain = null;
           if (s.viewPlayer && !ids.has(s.viewPlayer)) s.viewPlayer = '';
+          if (Array.isArray(s.budgetReturns)) s.budgetReturns = s.budgetReturns.filter(r => ids.has(r.playerId));
+          if (Array.isArray(s.captainHistory)) s.captainHistory = s.captainHistory.filter(c => ids.has(c.playerId));
         }
         return s as GameStore;
       },
@@ -244,4 +250,3 @@ export const selectActivePlayers = (myTeam: string[], currentRoundIndex: number)
   return myTeam.filter(id => !isPlayerOut(id, playedRounds));
 };
 
-export const MATCHES_DATA = MATCHES;

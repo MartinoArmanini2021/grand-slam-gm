@@ -61,4 +61,16 @@ function toPlayer(r: RawPlayer): Player {
 
 export const PLAYERS: Player[] = (rawField as RawPlayer[]).map(toPlayer);
 
-export const getPlayer = (id: string) => PLAYERS.find(p => p.id === id)!;
+const BY_ID = new Map(PLAYERS.map(p => [p.id, p]));
+
+// Returns undefined for an unknown id — callers that can receive untrusted ids
+// (persisted state, bracket names) must handle it.
+export const findPlayer = (id: string): Player | undefined => BY_ID.get(id);
+
+// For ids that MUST exist by invariant (roster/bracket). Throws loudly on a bad
+// id instead of silently returning undefined and crashing on a deref later.
+export const getPlayer = (id: string): Player => {
+  const p = BY_ID.get(id);
+  if (!p) throw new Error(`Unknown player id: ${id}`);
+  return p;
+};

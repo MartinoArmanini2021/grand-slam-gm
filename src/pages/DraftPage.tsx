@@ -18,6 +18,7 @@ export default function DraftPage() {
   const [search, setSearch] = useState('');
   const [confirm, setConfirm] = useState<Player | null>(null);
 
+  const locked = phase !== 'draft'; // squad is locked after the draft — transfers happen on the Bracket page
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
 
   const sorted = [...PLAYERS]
@@ -37,6 +38,12 @@ export default function DraftPage() {
 
         {/* ── Left: Player table ── */}
         <div className="flex-1 min-w-0">
+          {locked && (
+            <div className="rounded-2xl px-4 py-2.5 mb-3 flex items-center gap-2 text-sm" style={{ background: 'rgba(10,27,51,0.03)', border: '1px solid rgba(10,27,51,0.1)', color: '#5B6B84' }}>
+              <span>🔒</span>
+              <span>Squad locked for the tournament — make changes via <b style={{ color: '#0e6fc4' }}>transfers on the Bracket page</b>.</span>
+            </div>
+          )}
           {/* Controls */}
           <div className="flex flex-wrap items-center gap-2 mb-3">
             <input
@@ -87,7 +94,7 @@ export default function DraftPage() {
                   const out = isPlayerOut(player.id, revealed);
                   const full = myTeam.length >= TEAM_SIZE;
                   const canAfford = budget >= player.price;
-                  const addable = !isSelected && !out && !full && canAfford;
+                  const addable = !locked && !isSelected && !out && !full && canAfford;
                   const tierColor = TIER_META[getTier(player.ranking)].color;
 
                   return (
@@ -124,23 +131,29 @@ export default function DraftPage() {
                       <td className="px-2 py-1.5 text-center font-num text-xs hidden lg:table-cell" style={{ color: player.ytd.titles > 0 ? '#D99A00' : '#9AA7BC' }}>{player.ytd.titles}</td>
                       <td className="px-2 py-1.5 text-right font-num text-sm font-bold" style={{ color: '#0e6fc4' }}>${player.price}M</td>
                       <td className="px-2 py-1.5 text-right">
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            if (isSelected) { removePlayer(player.id); return; }
-                            if (addable) setConfirm(player);
-                          }}
-                          disabled={!isSelected && !addable}
-                          className="text-[11px] font-bold px-2.5 py-1 rounded-lg transition-all whitespace-nowrap"
-                          style={{
-                            background: isSelected ? 'rgba(229,71,43,0.12)' : addable ? 'rgba(18,161,80,0.12)' : 'rgba(10,27,51,0.04)',
-                            border: `1px solid ${isSelected ? 'rgba(229,71,43,0.25)' : addable ? 'rgba(18,161,80,0.25)' : 'rgba(10,27,51,0.06)'}`,
-                            color: isSelected ? '#E5472B' : addable ? '#12A150' : '#9AA7BC',
-                            cursor: (!isSelected && !addable) ? 'not-allowed' : 'pointer',
-                          }}
-                        >
-                          {isSelected ? 'Remove' : out ? 'Out' : full ? 'Full' : !canAfford ? 'Too $' : '+ Add'}
-                        </button>
+                        {locked ? (
+                          isSelected
+                            ? <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg" style={{ background: 'rgba(18,161,80,0.1)', color: '#12A150' }}>In squad</span>
+                            : <span className="text-[11px]" style={{ color: '#C7CFDA' }}>🔒</span>
+                        ) : (
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              if (isSelected) { removePlayer(player.id); return; }
+                              if (addable) setConfirm(player);
+                            }}
+                            disabled={!isSelected && !addable}
+                            className="text-[11px] font-bold px-2.5 py-1 rounded-lg transition-all whitespace-nowrap"
+                            style={{
+                              background: isSelected ? 'rgba(229,71,43,0.12)' : addable ? 'rgba(18,161,80,0.12)' : 'rgba(10,27,51,0.04)',
+                              border: `1px solid ${isSelected ? 'rgba(229,71,43,0.25)' : addable ? 'rgba(18,161,80,0.25)' : 'rgba(10,27,51,0.06)'}`,
+                              color: isSelected ? '#E5472B' : addable ? '#12A150' : '#9AA7BC',
+                              cursor: (!isSelected && !addable) ? 'not-allowed' : 'pointer',
+                            }}
+                          >
+                            {isSelected ? 'Remove' : out ? 'Out' : full ? 'Full' : !canAfford ? 'Too $' : '+ Add'}
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
@@ -183,28 +196,32 @@ export default function DraftPage() {
                       <div className="font-num text-[10px]" style={{ color: '#5B6B84' }}>${p.price}M · 🌱{p.surface.grass}%</div>
                     </div>
                     {isCap && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0" style={{ background: 'rgba(217,154,0,0.15)', color: '#D99A00', border: '1px solid rgba(217,154,0,0.25)' }}>C</span>}
-                    <button onClick={() => setCaptain(id)} className="text-xs px-1.5 py-1 rounded-lg transition-all shrink-0" title="Set as captain" style={{ background: isCap ? 'rgba(217,154,0,0.15)' : 'rgba(10,27,51,0.05)', border: `1px solid ${isCap ? 'rgba(217,154,0,0.25)' : 'rgba(10,27,51,0.07)'}`, color: isCap ? '#D99A00' : '#5B6B84' }}>⭐</button>
-                    <button onClick={() => removePlayer(id)} className="text-xs px-1.5 py-1 rounded-lg transition-all shrink-0" style={{ background: 'rgba(10,27,51,0.04)', border: '1px solid rgba(10,27,51,0.06)', color: '#5B6B84' }}>✕</button>
+                    {!locked && <button onClick={() => setCaptain(id)} className="text-xs px-1.5 py-1 rounded-lg transition-all shrink-0" title="Set as captain" style={{ background: isCap ? 'rgba(217,154,0,0.15)' : 'rgba(10,27,51,0.05)', border: `1px solid ${isCap ? 'rgba(217,154,0,0.25)' : 'rgba(10,27,51,0.07)'}`, color: isCap ? '#D99A00' : '#5B6B84' }}>⭐</button>}
+                    {!locked && <button onClick={() => removePlayer(id)} className="text-xs px-1.5 py-1 rounded-lg transition-all shrink-0" style={{ background: 'rgba(10,27,51,0.04)', border: '1px solid rgba(10,27,51,0.06)', color: '#5B6B84' }}>✕</button>}
                   </div>
                 );
               })}
-              {Array.from({ length: TEAM_SIZE - myTeam.length }).map((_, i) => (
+              {!locked && Array.from({ length: TEAM_SIZE - myTeam.length }).map((_, i) => (
                 <div key={`e${i}`} className="px-3 py-2 rounded-xl text-xs text-center" style={{ border: '1px dashed rgba(10,27,51,0.06)', color: '#9AA7BC' }}>Empty slot</div>
               ))}
             </div>
 
-            {myTeam.length > 0 && !captain && (
+            {!locked && myTeam.length > 0 && !captain && (
               <p className="text-xs mb-3" style={{ color: '#D99A00' }}>⭐ Tap ⭐ to pick a captain</p>
             )}
 
-            <button
-              onClick={() => { finalizeDraft(); toast('Squad locked in — good luck! 🎾', 'good'); }}
-              disabled={myTeam.length === 0}
-              className="w-full py-2.5 rounded-xl font-bold text-sm transition-all"
-              style={{ background: myTeam.length > 0 ? '#0e6fc4' : 'rgba(10,27,51,0.05)', color: myTeam.length > 0 ? '#fff' : '#9AA7BC', cursor: myTeam.length === 0 ? 'not-allowed' : 'pointer' }}
-            >
-              {myTeam.length === 0 ? 'Pick players first' : 'Lock Squad →'}
-            </button>
+            {locked ? (
+              <div className="w-full py-2.5 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(18,161,80,0.1)', color: '#12A150' }}>Squad locked ✓</div>
+            ) : (
+              <button
+                onClick={() => { finalizeDraft(); toast('Squad locked in — good luck! 🎾', 'good'); }}
+                disabled={myTeam.length === 0}
+                className="w-full py-2.5 rounded-xl font-bold text-sm transition-all"
+                style={{ background: myTeam.length > 0 ? '#0e6fc4' : 'rgba(10,27,51,0.05)', color: myTeam.length > 0 ? '#fff' : '#9AA7BC', cursor: myTeam.length === 0 ? 'not-allowed' : 'pointer' }}
+              >
+                {myTeam.length === 0 ? 'Pick players first' : 'Lock Squad →'}
+              </button>
+            )}
           </div>
         </div>
       </div>
