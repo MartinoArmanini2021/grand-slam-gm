@@ -1,9 +1,9 @@
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { ROUNDS, isPlayerOut } from '../data/tournament';
-import { getRivalTeams } from '../data/rivals';
+import { useLeagueBoard } from '../data/leagueBoard';
 import SquadCourt from '../components/SquadCourt';
-import type { RoundId } from '../types';
+import type { GamePhase, RoundId } from '../types';
 
 const TEAM_TARGET = 6;
 
@@ -12,7 +12,7 @@ export default function HomePage() {
     phase, myTeam, budget, myScore, currentRoundIndex,
     roundScores, setActiveTab, openTeam,
   } = useGameStore();
-  const { teamName, teamEmblem, username } = useProfile();
+  const { teamName, teamEmblem } = useProfile();
 
   const currentRound = currentRoundIndex < ROUNDS.length ? ROUNDS[currentRoundIndex] : null;
   const revealedRounds = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
@@ -21,18 +21,7 @@ export default function HomePage() {
     ? Math.round(roundScores.reduce((a, b) => a + (b.points > 0 ? 1 : 0), 0) / roundScores.length * 100)
     : null;
 
-  // ── League leaderboard ──
-  const rivalTeams = getRivalTeams(currentRoundIndex);
-  const board = [
-    ...rivalTeams.map(rt => ({
-      id: rt.rival.id, name: rt.rival.name, emblem: rt.rival.emblem,
-      manager: rt.rival.manager, color: rt.rival.color, squad: rt.squad, score: rt.score, you: false,
-    })),
-    ...(myTeam.length > 0 ? [{
-      id: 'you', name: teamName, emblem: teamEmblem, manager: username ? `@${username}` : '@you', color: '#0e6fc4',
-      squad: myTeam, score: myScore, you: true,
-    }] : []),
-  ].sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+  const board = useLeagueBoard();
   const medal = (i: number) => (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`);
 
   return (
@@ -146,7 +135,7 @@ export default function HomePage() {
 }
 
 // Contextual status shown at the top of the court, driven by phase + round.
-function courtStatus(phase: string, currentRound: { short: string } | null, prevShort?: string): string {
+function courtStatus(phase: GamePhase, currentRound: { short: string } | null, prevShort?: string): string {
   if (phase === 'draft') return 'Tournament about to begin — choose your players';
   if (phase === 'pre_round' && currentRound) return `${currentRound.short} incoming — choose your captain`;
   if (phase === 'round_complete' && currentRound) return `${prevShort ?? ''} done — set your captain for ${currentRound.short}`;

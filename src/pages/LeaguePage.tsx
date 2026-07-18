@@ -1,24 +1,12 @@
 import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
-import { useProfile } from '../store/profileStore';
 import { getPlayer } from '../data/players';
-import { getRivalTeams } from '../data/rivals';
+import { useLeagueBoard } from '../data/leagueBoard';
+import { lastName } from '../data/format';
 import { ROUNDS, isPlayerOut, getPlayerExit } from '../data/tournament';
 import PlayerAvatar from '../components/PlayerAvatar';
 import { toast } from '../store/toastStore';
 import type { RoundId } from '../types';
-
-interface Row {
-  id: string;
-  name: string;
-  motto: string;
-  emblem: string;
-  color: string;
-  squad: string[];
-  budget: number;
-  score: number;
-  you: boolean;
-}
 
 const MEDAL = ['#E8B923', '#AEB6C2', '#C77B3B']; // gold, silver, bronze
 
@@ -41,27 +29,11 @@ function RankBadge({ i }: { i: number }) {
 }
 
 export default function LeaguePage() {
-  const { myTeam, myScore, budget, currentRoundIndex, openTeam } = useGameStore();
-  const { teamName, teamEmblem } = useProfile();
+  const { myTeam, currentRoundIndex, openTeam } = useGameStore();
   const [view, setView] = useState<'public' | 'private'>('public');
 
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
-  const rivalTeams = getRivalTeams(currentRoundIndex);
-
-  const rows: Row[] = [
-    ...rivalTeams.map(rt => ({
-      id: rt.rival.id, name: rt.rival.name, motto: rt.rival.tag,
-      emblem: rt.rival.emblem, color: rt.rival.color, squad: rt.squad, budget: rt.budget, score: rt.score, you: false,
-    })),
-    ...(myTeam.length > 0 ? [{
-      id: 'you', name: teamName, motto: 'Your squad', emblem: teamEmblem, color: '#0e6fc4',
-      squad: myTeam, budget, score: myScore, you: true,
-    }] : []),
-  ];
-
-  rows.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
-
-  const lastName = (id: string) => getPlayer(id).name.split(' ').slice(-1)[0];
+  const rows = useLeagueBoard();
 
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-3 py-6 fade-in">
@@ -159,7 +131,7 @@ export default function LeaguePage() {
                   >
                     <PlayerAvatar playerId={id} name={getPlayer(id).name} size="sm" />
                     <span className="text-[11px] font-semibold" style={{ color: out ? '#9AA7BC' : '#0a1f44', textDecoration: out ? 'line-through' : 'none' }}>
-                      {lastName(id)}
+                      {lastName(getPlayer(id).name)}
                     </span>
                     <span style={{ width: 6, height: 6, borderRadius: '50%', background: out ? '#E5472B' : '#12A150', display: 'inline-block' }} />
                   </span>

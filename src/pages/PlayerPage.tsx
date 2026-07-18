@@ -4,13 +4,13 @@ import { getPlayer, PLAYERS } from '../data/players';
 import { getTier, TIER_META } from '../data/tiers';
 import { WIMBLEDON_2026 } from '../data/wimbledon2026';
 import { ROUNDS, isPlayerOut, getPlayerExit } from '../data/tournament';
-import type { Player, RoundId } from '../types';
+import type { Player, RoundId, TournamentResult } from '../types';
 import PlayerAvatar from '../components/PlayerAvatar';
 import SurfaceBar from '../components/SurfaceBar';
 
 const SURFACE_DOT: Record<string, string> = { grass: '#12A150', clay: '#E5472B', hard: '#0e6fc4' };
 
-function resultStyle(r: string): [string, string] {
+function resultStyle(r: TournamentResult): [string, string] {
   if (r === 'W')   return ['rgba(217,154,0,0.16)',  '#D99A00'];
   if (r === 'F')   return ['rgba(10,27,51,0.08)',   '#0a1f44'];
   if (r === 'SF')  return ['rgba(14,111,196,0.12)',  '#0e6fc4'];

@@ -56,7 +56,7 @@ for (const m of MATCHES) {
   if (!wonRounds.has(m.winnerId)) wonRounds.set(m.winnerId, new Set());
   wonRounds.get(m.winnerId)!.add(m.round);
 }
-const playerWon = (id: string, roundId: string) => wonRounds.get(id)?.has(roundId) ?? false;
+const playerWon = (id: string, roundId: RoundId) => wonRounds.get(id)?.has(roundId) ?? false;
 
 // Score a fixed squad over the rounds played so far (optimal captaincy). Kept for
 // reference/tests; the live league uses the transfer-aware simulateRival below.
