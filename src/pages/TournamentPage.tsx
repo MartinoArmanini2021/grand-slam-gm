@@ -1,60 +1,34 @@
 import { useState } from 'react';
 import { useGameStore, eliminatedSquad, substitutionCandidates } from '../store/gameStore';
-import { ROUNDS, getMatchesForRound, getPlayerExit, transfersOpen } from '../data/tournament';
+import { ROUNDS, getPlayerExit, transfersOpen } from '../data/tournament';
 import { getPlayer } from '../data/players';
 import PlayerAvatar from '../components/PlayerAvatar';
 import BracketTree from '../components/BracketTree';
 import { getTier, TIER_META } from '../data/tiers';
 import { toast } from '../store/toastStore';
-import type { RoundId } from '../types';
 
 export default function TournamentPage() {
   const {
     phase, myTeam, captain, currentRoundIndex, roundScores, myScore,
-    setCaptain, playNextRound, budgetReturns, budget,
+    setCaptain, playNextRound, budgetReturns,
   } = useGameStore();
 
-  const captainHistory = useGameStore(s => s.captainHistory);
-  const [viewRound, setViewRound] = useState<RoundId>(ROUNDS[0].id);
-  const [view, setView] = useState<'rounds' | 'draw'>('rounds');
-
-  const revealedUpTo = phase === 'draft' ? -1 : currentRoundIndex - 1;
-  const isRoundRevealed = (idx: number) => idx <= revealedUpTo;
   const currentRound = phase !== 'draft' && phase !== 'finished' ? ROUNDS[currentRoundIndex] : null;
   const isCaptainSet = phase === 'pre_round' && !!captain;
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 fade-in">
-
-      {/* View toggle: my rounds (game) vs the real Wimbledon 2026 draw tree */}
-      <div className="flex rounded-xl overflow-hidden mb-5 w-full sm:w-auto" style={{ border: '1px solid rgba(10,27,51,0.1)' }}>
-        {([['rounds', 'My Rounds'], ['draw', 'Full Draw']] as const).map(([v, label]) => (
-          <button
-            key={v}
-            onClick={() => setView(v)}
-            className="flex-1 sm:flex-none px-5 py-2 text-sm font-bold transition-colors"
-            style={{ background: view === v ? 'rgba(14,111,196,0.1)' : '#FFFFFF', color: view === v ? '#0e6fc4' : '#5B6B84' }}
-          >
-            {label}
-          </button>
-        ))}
+      <div className="mb-5">
+        <h1 className="text-lg font-extrabold" style={{ color: '#0a1f44' }}>Wimbledon 2026 — the draw</h1>
+        <p className="text-xs mt-0.5" style={{ color: '#5B6B84' }}>
+          The real men's singles bracket. Your players are highlighted — tap anyone to trace their route to the final.
+        </p>
       </div>
 
-      {view === 'draw' && (
-        <div className="fade-in">
-          <h1 className="text-lg font-extrabold mb-1" style={{ color: '#0a1f44' }}>Wimbledon 2026 — Men's Singles draw</h1>
-          <p className="text-xs mb-4" style={{ color: '#5B6B84' }}>The real bracket. Toggle the two halves and tap a player to trace their route to the final.</p>
-          <BracketTree />
-        </div>
-      )}
-
-      {view === 'rounds' && (
-    <>
-
-      {/* ── Status card ── */}
+      {/* ── Game controls ── */}
       {phase === 'draft' && (
         <div className="mb-6 px-5 py-4 rounded-2xl text-sm" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.07)', color: '#5B6B84' }}>
-          Complete your draft to start playing the bracket.
+          Complete your draft in the Market to start playing the bracket.
         </div>
       )}
 
@@ -63,7 +37,7 @@ export default function TournamentPage() {
           <div className="text-3xl mb-2">🏆</div>
           <h2 className="text-xl font-bold mb-1" style={{ color: '#D99A00' }}>Tournament Complete</h2>
           <div className="font-num text-2xl font-bold mb-3" style={{ color: '#0a1f44' }}>{myScore} pts</div>
-          <div className="flex justify-center gap-4">
+          <div className="flex justify-center gap-4 flex-wrap">
             {roundScores.map(rs => (
               <div key={rs.round} className="text-center">
                 <div className="text-xs mb-1" style={{ color: '#5B6B84' }}>{rs.round}</div>
@@ -171,162 +145,8 @@ export default function TournamentPage() {
       {/* ── Transfers ── */}
       <TransfersPanel />
 
-      {/* ── Round tabs ── */}
-      <div className="flex gap-1 mb-5 p-1 rounded-2xl" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.07)' }}>
-        {ROUNDS.map((round, idx) => {
-          const revealed = isRoundRevealed(idx);
-          const isCurrent = phase !== 'draft' && currentRoundIndex === idx;
-          const active = viewRound === round.id;
-          return (
-            <button
-              key={round.id}
-              onClick={() => setViewRound(round.id)}
-              className="flex-1 py-2 px-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
-              style={{
-                background: active ? 'rgba(14,111,196,0.15)' : 'transparent',
-                color: active ? '#0e6fc4' : revealed ? '#5B6B84' : '#9AA7BC',
-              }}
-            >
-              {round.short}
-              {isCurrent && (
-                <span className="w-1.5 h-1.5 rounded-full pulse-dot inline-block" style={{ background: '#0e6fc4' }} />
-              )}
-              {revealed && !active && (
-                <span className="w-1 h-1 rounded-full inline-block" style={{ background: '#12A150' }} />
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ── Matches ── */}
-      <RoundMatches
-        roundId={viewRound}
-        myTeam={myTeam}
-        captain={captain}
-        roundIndex={ROUNDS.findIndex(r => r.id === viewRound)}
-        revealed={isRoundRevealed(ROUNDS.findIndex(r => r.id === viewRound))}
-        captainHistory={captainHistory}
-      />
-    </>
-      )}
-    </div>
-  );
-}
-
-function RoundMatches({
-  roundId, myTeam, captain, roundIndex, revealed, captainHistory,
-}: {
-  roundId: RoundId;
-  myTeam: string[];
-  captain: string | null;
-  roundIndex: number;
-  revealed: boolean;
-  captainHistory: { round: RoundId; playerId: string }[];
-}) {
-  const matches = getMatchesForRound(roundId);
-  const roundPts = ROUNDS[roundIndex]?.points ?? 0;
-  const roundCaptain = captainHistory.find(c => c.round === roundId)?.playerId ?? null;
-
-  return (
-    <div className="space-y-2">
-      {matches.length === 0 && (
-        <div className="text-center py-12 text-sm" style={{ color: '#9AA7BC' }}>No matches this round</div>
-      )}
-      {matches.map(match => {
-        const p1 = getPlayer(match.p1Id);
-        const p2 = getPlayer(match.p2Id);
-        const p1Mine = myTeam.includes(match.p1Id);
-        const p2Mine = myTeam.includes(match.p2Id);
-        const p1Cap = roundCaptain === match.p1Id;
-        const p2Cap = roundCaptain === match.p2Id;
-        const hasMyPlayer = p1Mine || p2Mine;
-
-        return (
-          <div
-            key={match.id}
-            className="flex items-center gap-2 px-3 py-2.5 rounded-2xl"
-            style={{
-              background: hasMyPlayer ? 'rgba(14,111,196,0.04)' : '#FFFFFF',
-              border: `1px solid ${hasMyPlayer ? 'rgba(14,111,196,0.12)' : 'rgba(10,27,51,0.07)'}`,
-            }}
-          >
-            <PlayerCell
-              player={p1} isMine={p1Mine} isCaptain={p1Cap}
-              isWinner={revealed ? match.winnerId === match.p1Id : undefined}
-            />
-
-            <div className="shrink-0 text-center w-14 py-1">
-              {revealed ? (
-                <>
-                  <div className="text-[9px] mb-0.5" style={{ color: '#9AA7BC' }}>vs</div>
-                  <div className="text-[9px] leading-tight" style={{ color: '#5B6B84' }}>
-                    {match.score.split(', ').join('\n')}
-                  </div>
-                </>
-              ) : (
-                <span className="text-xs font-bold" style={{ color: '#9AA7BC' }}>VS</span>
-              )}
-            </div>
-
-            <PlayerCell
-              player={p2} isMine={p2Mine} isCaptain={p2Cap}
-              isWinner={revealed ? match.winnerId === match.p2Id : undefined}
-            />
-
-            {/* Points */}
-            <div className="w-14 text-right shrink-0">
-              {revealed && p1Mine && (
-                <div className="font-num text-sm font-bold" style={{ color: match.winnerId === match.p1Id ? '#12A150' : '#E5472B' }}>
-                  {match.winnerId === match.p1Id ? `+${p1Cap ? roundPts * 2 : roundPts}${p1Cap ? '⭐' : ''}` : '✗'}
-                </div>
-              )}
-              {revealed && p2Mine && (
-                <div className="font-num text-sm font-bold" style={{ color: match.winnerId === match.p2Id ? '#12A150' : '#E5472B' }}>
-                  {match.winnerId === match.p2Id ? `+${p2Cap ? roundPts * 2 : roundPts}${p2Cap ? '⭐' : ''}` : '✗'}
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function PlayerCell({
-  player, isMine, isCaptain, isWinner,
-}: {
-  player: ReturnType<typeof getPlayer>;
-  isMine: boolean;
-  isCaptain: boolean;
-  isWinner: boolean | undefined;
-}) {
-  return (
-    <div
-      className="flex-1 flex items-center gap-2 px-2 py-1 rounded-xl min-w-0"
-      style={{
-        background: isMine && isWinner === true ? 'rgba(18,161,80,0.08)'
-          : isMine && isWinner === false ? 'rgba(229,71,43,0.06)'
-          : isMine ? 'rgba(10,27,51,0.04)'
-          : 'transparent',
-      }}
-    >
-      <PlayerAvatar playerId={player.id} name={player.name} size="sm" />
-      <div className="min-w-0 flex-1">
-        <div
-          className="text-xs font-medium leading-tight truncate"
-          style={{ color: isMine ? '#0a1f44' : '#5B6B84' }}
-        >
-          {player.name}
-          {isCaptain && <span className="ml-1" style={{ color: '#D99A00' }}>⭐</span>}
-        </div>
-        <div className="font-num text-[10px]" style={{ color: '#9AA7BC' }}>
-          {player.seed ? `[${player.seed}]` : `#${player.ranking}`}
-        </div>
-      </div>
-      {isWinner === true && <span className="text-xs shrink-0" style={{ color: '#12A150' }}>✓</span>}
-      {isWinner === false && <span className="text-xs shrink-0" style={{ color: '#E5472B' }}>✗</span>}
+      {/* ── The real Wimbledon 2026 draw ── */}
+      <BracketTree />
     </div>
   );
 }
