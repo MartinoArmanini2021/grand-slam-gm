@@ -21,19 +21,10 @@ export default function TeamPage() {
   const { teamName, teamEmblem, username } = useProfile();
 
   if (viewTeam === 'you') {
-    if (myTeam.length === 0) {
-      return (
-        <div className="max-w-4xl mx-auto px-4 py-20 text-center fade-in">
-          <div className="text-5xl mb-4">🎾</div>
-          <h2 className="text-xl font-bold mb-2" style={{ color: '#0a1f44' }}>No squad yet</h2>
-          <p className="text-sm" style={{ color: '#5B6B84' }}>Head to the Market tab to pick your 6 players.</p>
-        </div>
-      );
-    }
     return (
       <TeamView
         emblem={teamEmblem} name={teamName} manager={username ? `@${username}` : '@you'} color="#0e6fc4"
-        score={myScore} budget={budget} squad={myTeam} captainId={captain ?? myTeam[0]} editable
+        score={myScore} budget={budget} squad={myTeam} captainId={captain ?? myTeam[0] ?? ''} editable
       />
     );
   }
@@ -137,10 +128,13 @@ function TeamView({ emblem, name, manager, color, score, budget, squad, captainI
         </div>
       </div>
 
-      {/* The squad, laid out on court — names + values on each pill */}
-      <SquadCourt squad={squad} captainId={captainId} readOnly />
+      {/* The squad on court. Your own team is interactive (tap + to buy players
+          during the draft); rival teams are read-only. */}
+      {editable ? <SquadCourt /> : <SquadCourt squad={squad} captainId={captainId} readOnly />}
       <div className="text-[11px] mt-2 text-center" style={{ color: '#9AA7BC' }}>
-        Tap a player to see their profile · <span style={{ color: '#D99A00' }}>⭐ = captain</span>
+        {editable
+          ? <>Tap a <b>+</b> to buy players · tap a player for their profile · <span style={{ color: '#D99A00' }}>⭐ = captain</span></>
+          : <>Tap a player to see their profile · <span style={{ color: '#D99A00' }}>⭐ = captain</span></>}
       </div>
     </div>
   );

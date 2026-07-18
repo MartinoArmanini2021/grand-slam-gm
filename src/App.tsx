@@ -82,7 +82,7 @@ export default function App() {
                     onMouseLeave={e => { if (!active) e.currentTarget.style.color = '#9FB0CC'; }}
                   >
                     <Icon size={17} style={{ color: active ? tab.accent : 'currentColor' }} />
-                    {tab.label}
+                    <span className="hidden sm:inline">{tab.label}</span>
                     {tab.id === 'league' && myTeam.length > 0 && (
                       <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center" style={{ background: BLUE, color: '#fff' }}>
                         {myTeam.length}

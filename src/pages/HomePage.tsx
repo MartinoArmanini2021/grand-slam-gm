@@ -66,7 +66,7 @@ export default function HomePage() {
         <StatCard
           label="Squad"
           value={`${myTeam.length}/${TEAM_TARGET}`}
-          unit="Pick up to 6"
+          unit={myTeam.length >= TEAM_TARGET ? 'Squad complete' : `${TEAM_TARGET - myTeam.length} left to pick`}
           color={myTeam.length === TEAM_TARGET ? '#12A150' : '#D99A00'}
         />
       </div>

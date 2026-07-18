@@ -13,7 +13,7 @@ const TEAM_SIZE = 6;
 const SORT_LABEL: Record<SortKey, string> = { ranking: '# Rank', price: '$ Price', grass: 'Grass %' };
 
 export default function DraftPage() {
-  const { myTeam, captain, budget, currentRoundIndex, addPlayer, removePlayer, setCaptain, finalizeDraft, openPlayer } = useGameStore();
+  const { myTeam, captain, budget, phase, currentRoundIndex, addPlayer, removePlayer, setCaptain, finalizeDraft, openPlayer } = useGameStore();
   const [sort, setSort] = useState<SortKey>('ranking');
   const [search, setSearch] = useState('');
   const [confirm, setConfirm] = useState<Player | null>(null);
@@ -32,7 +32,7 @@ export default function DraftPage() {
   const th = 'text-left px-2 py-2 text-[11px] font-bold uppercase tracking-wide';
 
   return (
-    <div className="max-w-7xl mx-auto px-2 sm:px-3 py-6">
+    <div className="max-w-7xl mx-auto px-2 sm:px-3 pt-6 pb-24 lg:pb-6">
       <div className="flex gap-4 lg:gap-6 items-start">
 
         {/* ── Left: Player table ── */}
@@ -208,6 +208,24 @@ export default function DraftPage() {
           </div>
         </div>
       </div>
+
+      {/* Mobile squad + lock bar (the sidebar is desktop-only) */}
+      {phase === 'draft' && (
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 px-3 py-2.5 flex items-center gap-3" style={{ background: '#0a1f44', boxShadow: '0 -4px 20px rgba(0,0,0,0.25)' }}>
+          <div className="flex-1 min-w-0">
+            <div className="text-white font-bold text-sm">{myTeam.length}/{TEAM_SIZE} picked</div>
+            <div className="text-[11px] font-num" style={{ color: '#8FA1BE' }}>${budget.toFixed(1)}M left</div>
+          </div>
+          <button
+            onClick={() => { finalizeDraft(); toast('Squad locked in — good luck! 🎾', 'good'); }}
+            disabled={myTeam.length === 0}
+            className="px-5 py-2.5 rounded-xl font-bold text-sm shrink-0"
+            style={{ background: myTeam.length > 0 ? '#0e6fc4' : 'rgba(255,255,255,0.14)', color: myTeam.length > 0 ? '#fff' : '#8FA1BE' }}
+          >
+            Lock Squad →
+          </button>
+        </div>
+      )}
 
       {/* Purchase confirmation */}
       {confirm && (
