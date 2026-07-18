@@ -28,7 +28,7 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
 
   return (
     <>
-      <div className="relative w-full rounded-2xl overflow-hidden select-none" style={{ aspectRatio: '16 / 9', boxShadow: '0 10px 34px rgba(10,27,51,0.22)' }}>
+      <div className="relative w-full mx-auto rounded-2xl overflow-hidden select-none" style={{ aspectRatio: '16 / 9', maxWidth: 860, boxShadow: '0 10px 34px rgba(10,27,51,0.22)' }}>
         {/* Stadium + grass court (horizontal) */}
         <svg viewBox="0 0 640 360" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
           <defs>

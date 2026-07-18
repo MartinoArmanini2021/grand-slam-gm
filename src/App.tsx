@@ -52,7 +52,7 @@ export default function App() {
     <div className="min-h-screen" style={{ background: '#EEF1F5' }}>
       {/* ── ATP-style navy header ── */}
       <header className="sticky top-0 z-50" style={{ background: NAVY, boxShadow: '0 1px 0 rgba(255,255,255,0.06), 0 6px 20px rgba(10,27,51,0.18)' }}>
-        <div className="max-w-6xl mx-auto px-4">
+        <div className="w-full px-3 sm:px-5">
           <div className="flex items-center gap-4 h-16">
             {/* Brand logo (reversed lockup for the navy header) — the visual anchor.
                 Wrapper divs (not the Logo itself) carry the responsive show/hide, so the

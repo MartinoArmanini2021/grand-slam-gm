@@ -42,7 +42,7 @@ export default function PlayerPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 fade-in">
+    <div className="max-w-7xl mx-auto px-2 sm:px-3 py-6 fade-in">
       <button onClick={() => setActiveTab(playerReturnTab)} className="text-sm font-semibold mb-4" style={{ color: '#0e6fc4' }}>
         ‹ {backLabel[playerReturnTab] ?? 'Back'}
       </button>

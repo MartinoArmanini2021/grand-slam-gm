@@ -20,7 +20,7 @@ export default function TournamentPage() {
   const aliveSquad = myTeam.filter(id => !isPlayerOut(id, revealed));
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6 fade-in">
+    <div className="max-w-7xl mx-auto px-2 sm:px-3 py-6 fade-in">
       <div className="mb-4">
         <h1 className="text-lg font-extrabold" style={{ color: '#0a1f44' }}>Wimbledon 2026 — the draw</h1>
         <p className="text-xs mt-0.5" style={{ color: '#5B6B84' }}>

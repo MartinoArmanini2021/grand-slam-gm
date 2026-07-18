@@ -36,11 +36,11 @@ export default function HomePage() {
   const medal = (i: number) => (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 pt-3 pb-6 fade-in">
+    <div className="max-w-7xl mx-auto px-2 sm:px-3 pt-3 pb-6 fade-in">
 
       {/* ── Title + subtitle + status ── */}
       <div className="text-center mb-2">
-        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-none" style={{ color: '#0a1f44' }}>Wimbledon 2026</h1>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-none" style={{ color: '#0a1f44' }}>Wimbledon 2026</h1>
         <div className="text-xs font-bold uppercase tracking-[0.2em] mt-1" style={{ color: '#12A150' }}>
           Grand Slam · Grass
         </div>
@@ -49,7 +49,9 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ── The court ── */}
+      <div className="flex flex-col lg:flex-row gap-5 items-start">
+        {/* ── Left: court · stats · next action ── */}
+        <div className="w-full lg:flex-1 min-w-0">
       <SquadCourt teamName={teamName} emblem={teamEmblem} onTeamClick={() => openTeam('you')} />
       <div className="text-[11px] mt-1.5 mb-2 text-center" style={{ color: '#9AA7BC' }}>
         {phase === 'draft'
@@ -87,8 +89,10 @@ export default function HomePage() {
           body={`Final score ${myScore} pts${winRate !== null ? ` · ${winRate}% round win rate` : ''}`} cta="View Bracket" onClick={() => setActiveTab('tournament')} />
       )}
 
-      {/* ── League leaderboard ── */}
-      <div className="mt-6">
+        </div>
+
+        {/* ── Right: league leaderboard ── */}
+        <div className="w-full lg:w-[380px] shrink-0 mt-6 lg:mt-0">
         <div className="flex items-center justify-between mb-2.5 px-1">
           <h2 className="text-sm font-bold" style={{ color: '#0a1f44' }}>League leaderboard</h2>
           <button onClick={() => setActiveTab('league')} className="text-xs font-semibold" style={{ color: '#0e6fc4' }}>
@@ -135,7 +139,8 @@ export default function HomePage() {
             </table>
           </div>
         )}
-      </div>
+        </div>{/* /right */}
+      </div>{/* /flex row */}
     </div>
   );
 }

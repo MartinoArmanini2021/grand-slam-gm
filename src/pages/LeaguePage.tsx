@@ -64,7 +64,7 @@ export default function LeaguePage() {
   const lastName = (id: string) => getPlayer(id).name.split(' ').slice(-1)[0];
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 fade-in">
+    <div className="max-w-7xl mx-auto px-2 sm:px-3 py-6 fade-in">
       {/* Public / Private league selector */}
       <div className="grid grid-cols-2 gap-2 mb-5">
         {([['public', '🌍', 'Public Leagues', 'Play against everyone'], ['private', '🔒', 'Private Leagues', 'Invite-only friends']] as const).map(([v, icon, label, sub]) => {

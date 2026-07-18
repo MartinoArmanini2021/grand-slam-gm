@@ -56,7 +56,7 @@ function TeamView({ emblem, name, manager, color, score, budget, squad, captainI
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 fade-in">
+    <div className="max-w-7xl mx-auto px-2 sm:px-3 py-6 fade-in">
       <BackToLeague />
 
       {/* Club header: emblem + name + username, total score at the same level */}
