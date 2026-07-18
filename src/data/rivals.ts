@@ -1,5 +1,5 @@
 import { PLAYERS, getPlayer } from './players';
-import { ROUNDS, MATCHES, getOpponentId, winPoints, getPlayerExit, BUDGET_RETURN_RATES, transfersOpen } from './tournament';
+import { ROUNDS, MATCHES, getOpponentId, winPoints, getPlayerExit, isPlayerOut, BUDGET_RETURN_RATES, transfersOpen } from './tournament';
 import type { Player, RoundId } from '../types';
 
 // Simulated league managers. Everyone gets the same $100M and can pick ANY
@@ -127,7 +127,7 @@ export function simulateRival(rival: Rival, upto: number): RivalTeam {
     //    but only while the window is open (closes after the QF, i.e. before the SF)
     if (transfersOpen(i + 1)) {
       const revealed = ROUNDS.slice(0, i + 1).map(r => r.id) as RoundId[];
-      const alive = (id: string) => { const e = getPlayerExit(id); return e === null || !revealed.includes(e); };
+      const alive = (id: string) => !isPlayerOut(id, revealed);
       for (let idx = 0; idx < squad.length; idx++) {
         if (alive(squad[idx])) continue;
         const owned = new Set(squad);

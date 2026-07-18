@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { GamePhase, RoundId, RoundScore, BudgetReturn } from '../types';
 import {
-  ROUNDS, MATCHES, getMatchesForRound, getPlayerExit, BUDGET_RETURN_RATES, winPoints, transfersOpen,
+  ROUNDS, MATCHES, getMatchesForRound, isPlayerOut, BUDGET_RETURN_RATES, winPoints, transfersOpen,
 } from '../data/tournament';
 import { getPlayer, PLAYERS } from '../data/players';
 
@@ -20,7 +20,7 @@ interface GameStore {
   currentRoundIndex: number;
   myScore: number;
   roundScores: RoundScore[];
-  activeTab: 'home' | 'draft' | 'tournament' | 'players' | 'team' | 'league' | 'backtest' | 'player';
+  activeTab: 'home' | 'draft' | 'tournament' | 'players' | 'team' | 'league' | 'player';
   viewTeam: string; // which team the detail view shows: 'you' or a rival id
   viewPlayer: string; // which player the profile page shows
   playerReturnTab: GameStore['activeTab']; // where the profile's back button returns to
@@ -94,10 +94,8 @@ export const useGameStore = create<GameStore>()(
         if (!transfersOpen(currentRoundIndex)) return; // window shut after the QF
         if (!myTeam.includes(oldId) || myTeam.includes(newId)) return;
         const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
-        const oldExit = getPlayerExit(oldId);
-        if (!(oldExit && revealed.includes(oldExit))) return; // old player isn't eliminated yet
-        const newExit = getPlayerExit(newId);
-        if (newExit && revealed.includes(newExit)) return;    // replacement already knocked out
+        if (!isPlayerOut(oldId, revealed)) return; // old player isn't eliminated yet
+        if (isPlayerOut(newId, revealed)) return;  // replacement already knocked out
         const player = getPlayer(newId);
         if (!player || budget < player.price) return;         // can't afford
         set({
@@ -134,13 +132,10 @@ export const useGameStore = create<GameStore>()(
               roundPoints += pts;
             }
           } else {
-            // Player eliminated — calculate budget return
-            const exitRound = getPlayerExit(playerId);
-            if (exitRound) {
-              const player = getPlayer(playerId);
-              const returnAmt = Math.round(player.price * BUDGET_RETURN_RATES[exitRound] * 10) / 10;
-              if (returnAmt > 0) newReturns.push({ playerId, round: exitRound, amount: returnAmt });
-            }
+            // Player lost THIS round → eliminated now; refund by this round's rate.
+            const player = getPlayer(playerId);
+            const returnAmt = Math.round(player.price * (BUDGET_RETURN_RATES[round.id] ?? 0) * 10) / 10;
+            if (returnAmt > 0) newReturns.push({ playerId, round: round.id, amount: returnAmt });
           }
         });
 
@@ -197,19 +192,13 @@ export const useGameStore = create<GameStore>()(
 // Squad members who have been eliminated (their exit round is revealed).
 export function eliminatedSquad(myTeam: string[], currentRoundIndex: number) {
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
-  return myTeam.filter(id => {
-    const e = getPlayerExit(id);
-    return e !== null && revealed.includes(e);
-  });
+  return myTeam.filter(id => isPlayerOut(id, revealed));
 }
 
 // Still-alive players you don't own and can afford — valid substitutes.
 export function substitutionCandidates(myTeam: string[], budget: number, currentRoundIndex: number) {
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
-  const alive = (id: string) => {
-    const e = getPlayerExit(id);
-    return e === null || !revealed.includes(e);
-  };
+  const alive = (id: string) => !isPlayerOut(id, revealed);
   return PLAYERS
     .filter(p => !myTeam.includes(p.id) && alive(p.id) && p.price <= budget)
     .sort((a, b) => b.price - a.price);
@@ -223,18 +212,11 @@ export const selectRoundMatches = (round: RoundId) =>
   getMatchesForRound(round);
 
 export const selectEliminatedPlayers = (myTeam: string[], revealedRounds: RoundId[]) =>
-  myTeam.filter(id => {
-    const exit = getPlayerExit(id);
-    return exit && revealedRounds.includes(exit);
-  });
+  myTeam.filter(id => isPlayerOut(id, revealedRounds));
 
 export const selectActivePlayers = (myTeam: string[], currentRoundIndex: number) => {
   const playedRounds = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
-  return myTeam.filter(id => {
-    const exit = getPlayerExit(id);
-    if (!exit) return true; // winner
-    return !playedRounds.includes(exit);
-  });
+  return myTeam.filter(id => !isPlayerOut(id, playedRounds));
 };
 
 export const selectRevealedRounds = (currentRoundIndex: number, phase: GamePhase): RoundId[] => {

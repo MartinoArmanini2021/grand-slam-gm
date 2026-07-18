@@ -7,6 +7,9 @@ const play = (captain: string) => { store().setCaptain(captain); store().playNex
 
 beforeEach(() => { store().resetGame(); });
 
+// Real Wimbledon 2026 prices (priceFor by ranking): sinner 50, zverev 33,
+// augeraliassime 29, djokovic 23, fritz 22, cobolli 20, lehecka 17, fery 6.
+
 describe('draft mechanics', () => {
   it('starts with $100M, empty team, draft phase', () => {
     expect(store().budget).toBe(100);
@@ -14,98 +17,107 @@ describe('draft mechanics', () => {
     expect(store().phase).toBe('draft');
   });
 
-  it('adding a player reduces budget by their price', () => {
-    store().addPlayer('alcaraz'); // $48
-    expect(store().myTeam).toEqual(['alcaraz']);
-    expect(store().budget).toBe(52);
+  it('adding Sinner (#1) costs $50M', () => {
+    store().addPlayer('sinner');
+    expect(store().myTeam).toEqual(['sinner']);
+    expect(store().budget).toBe(50);
   });
 
   it('budget always equals 100 minus squad cost during draft', () => {
-    ['alcaraz', 'hurkacz', 'thompson'].forEach(id => store().addPlayer(id));
+    ['sinner', 'fery', 'cobolli'].forEach(id => store().addPlayer(id));
     const cost = store().myTeam.reduce((s, id) => s + getPlayer(id).price, 0);
     expect(store().budget).toBe(100 - cost);
   });
 
   it('rejects a 7th player', () => {
-    ['thompson', 'nakashima', 'sonego', 'davidovich', 'vandezandschulp', 'bautistaagut'].forEach(id => store().addPlayer(id));
+    ['fery', 'giron', 'munar', 'bergs', 'zheng', 'svajda'].forEach(id => store().addPlayer(id));
     expect(store().myTeam).toHaveLength(6);
-    store().addPlayer('cobolli');
+    store().addPlayer('cilic');
     expect(store().myTeam).toHaveLength(6);
   });
 
   it('rejects duplicate players', () => {
-    store().addPlayer('alcaraz');
-    store().addPlayer('alcaraz');
+    store().addPlayer('sinner');
+    store().addPlayer('sinner');
     expect(store().myTeam).toHaveLength(1);
   });
 
   it('rejects a player you cannot afford', () => {
-    store().addPlayer('alcaraz'); // 48
-    store().addPlayer('sinner');  // 44 → 92 spent, 8 left
-    store().addPlayer('zverev');  // 38 → unaffordable
-    expect(store().myTeam).toEqual(['alcaraz', 'sinner']);
-    expect(store().budget).toBe(8);
+    store().addPlayer('sinner');         // 50
+    store().addPlayer('zverev');         // 33 → 83 spent, 17 left
+    store().addPlayer('augeraliassime'); // 29 → unaffordable
+    expect(store().myTeam).toEqual(['sinner', 'zverev']);
+    expect(store().budget).toBe(17);
   });
 
   it('removing a player refunds budget and clears captain if needed', () => {
-    store().addPlayer('alcaraz');
-    store().setCaptain('alcaraz');
-    store().removePlayer('alcaraz');
+    store().addPlayer('sinner');
+    store().setCaptain('sinner');
+    store().removePlayer('sinner');
     expect(store().myTeam).toHaveLength(0);
     expect(store().budget).toBe(100);
     expect(store().captain).toBeNull();
   });
 
   it('setCaptain only works for players in the squad', () => {
-    store().setCaptain('alcaraz'); // not in team
+    store().setCaptain('sinner');
     expect(store().captain).toBeNull();
-    store().addPlayer('alcaraz');
-    store().setCaptain('alcaraz');
-    expect(store().captain).toBe('alcaraz');
+    store().addPlayer('sinner');
+    store().setCaptain('sinner');
+    expect(store().captain).toBe('sinner');
   });
 
   it('finalizeDraft moves to pre_round and defaults captain', () => {
-    store().addPlayer('alcaraz');
+    store().addPlayer('sinner');
     store().finalizeDraft();
     expect(store().phase).toBe('pre_round');
-    expect(store().captain).toBe('alcaraz');
+    expect(store().captain).toBe('sinner');
   });
 });
 
-describe('scoring — solo champion, captained every round', () => {
-  it('scores ranking-weighted base+captain across all 5 rounds with no upset (=92)', () => {
-    store().addPlayer('alcaraz'); // #1, wins the whole thing
+describe('scoring — champion, captained every round', () => {
+  it('Sinner (#1) captained wins the title for 92 pts, no upsets, no returns', () => {
+    store().addPlayer('sinner');
     store().finalizeDraft();
-    for (let i = 0; i < 5; i++) play('alcaraz');
-    // #1 → ranking mult 0.6. round(base*0.6) then captain ×2:
-    // R32 round(2*.6)=1→2 · R16 round(5*.6)=3→6 · QF 6→12 · SF 12→24 · F 24→48 = 92
+    for (let i = 0; i < 5; i++) play('sinner');
+    // #1 → mult 0.6: round(base·.6) then ×2 → 2+6+12+24+48
     expect(store().myScore).toBe(92);
     expect(store().phase).toBe('finished');
-    expect(store().roundScores).toHaveLength(5);
-    expect(store().budgetReturns).toHaveLength(0); // never eliminated
+    expect(store().budgetReturns).toHaveLength(0); // champion, never eliminated
   });
 });
 
-describe('scoring — upset bonus + budget return', () => {
-  it('captained underdog win adds upset bonus, then elimination returns budget', () => {
-    store().addPlayer('eubanks'); // #25, price 7
+describe('scoring — underdog captain earns multiplier + upset bonuses', () => {
+  it('Fery (#178) captained scores 142 over his run to the semis', () => {
+    store().addPlayer('fery'); // ranked 178 → mult 1.5
     store().finalizeDraft();
-    // R32: eubanks (#25, mult 1.15) beats rublev (#8) → round(2*1.15)=2 + upset 7 = 9, captain → 18
-    play('eubanks');
-    expect(store().myScore).toBe(18);
-    // R16: eubanks loses to rune → eliminated, no points, budget return round(7*0.25*10)/10 = 1.8
-    play('eubanks');
-    expect(store().myScore).toBe(18);
+    // R32 beat Bergs: round(2·1.5)=3 +15 upset =18 ×2 =36
+    // R16 beat Dimitrov: round(5·1.5)=8 +15 =23 ×2 =46
+    // QF beat Cobolli: round(10·1.5)=15 +15 =30 ×2 =60
+    // SF lost to Zverev → 0 (SF exit returns nothing)
+    for (let i = 0; i < 5; i++) play('fery');
+    expect(store().myScore).toBe(36 + 46 + 60);
+    expect(store().budgetReturns).toHaveLength(0); // out in the SF → no refund
+  });
+});
+
+describe('budget returns', () => {
+  it('a QF exit refunds 35% while the transfer window is still open', () => {
+    store().addPlayer('fritz'); // $22, reaches the QF
+    store().finalizeDraft();
+    // R32 beat Sonego: round(2·.7615)=2 ×2 =4 · R16 beat Bublik: round(5·.7615)=4 ×2 =8
+    play('fritz'); play('fritz');
+    expect(store().myScore).toBe(12);
+    play('fritz'); // QF: loses to Zverev → out, refund 22·0.35 = 7.7
     expect(store().budgetReturns).toHaveLength(1);
-    expect(store().budgetReturns[0]).toMatchObject({ playerId: 'eubanks', round: 'R16', amount: 1.8 });
-    // budget: 100 - 7 spent + 1.8 returned
-    expect(store().budget).toBeCloseTo(94.8, 5);
+    expect(store().budgetReturns[0]).toMatchObject({ playerId: 'fritz', round: 'QF', amount: 7.7 });
+    expect(store().budget).toBeCloseTo(100 - 22 + 7.7, 5);
   });
 });
 
 describe('scoring invariants over a mixed squad', () => {
-  it('score is monotonic non-decreasing and returns only for eliminated players', () => {
-    ['alcaraz', 'eubanks', 'draper', 'deminaur', 'zverev', 'thompson'].forEach(id => store().addPlayer(id));
+  it('score is monotonic and every refund is for an owned, eliminated player', () => {
+    ['sinner', 'zverev', 'fery', 'fritz', 'cobolli', 'lehecka'].forEach(id => store().addPlayer(id));
     store().finalizeDraft();
     let prev = 0;
     const cap = store().captain!;
@@ -115,7 +127,6 @@ describe('scoring invariants over a mixed squad', () => {
       prev = store().myScore;
     }
     expect(store().phase).toBe('finished');
-    // every budget return corresponds to a player who was actually eliminated
     for (const r of store().budgetReturns) {
       expect(store().myTeam).toContain(r.playerId);
       expect(r.amount).toBeGreaterThan(0);
@@ -124,31 +135,32 @@ describe('scoring invariants over a mixed squad', () => {
 });
 
 describe('mid-tournament substitutions', () => {
-  // helper: draft alcaraz(#1, champ) + eubanks(#25); play R32 then R16 so eubanks is out
+  // Draft Sinner (champ) + Lehecka (#14, $17, out in R16); play R32 then R16.
   const draftAndReachR16 = () => {
-    store().addPlayer('alcaraz'); // 48
-    store().addPlayer('eubanks'); // 7
+    store().addPlayer('sinner'); // 50
+    store().addPlayer('lehecka'); // 17
     store().finalizeDraft();
-    play('alcaraz'); // R32: both win
-    play('alcaraz'); // R16: alcaraz wins, eubanks loses → out R16
+    play('sinner'); // R32: both win
+    play('sinner'); // R16: sinner wins, lehecka loses to Zverev → out R16
   };
 
   it('an eliminated player can be replaced by an affordable, still-alive player', () => {
     draftAndReachR16();
-    expect(eliminatedSquad(store().myTeam, store().currentRoundIndex)).toEqual(['eubanks']);
-    const budgetBefore = store().budget; // 45 draft leftover + 1.8 return = 46.8
-    expect(budgetBefore).toBeCloseTo(46.8, 5);
+    expect(eliminatedSquad(store().myTeam, store().currentRoundIndex)).toEqual(['lehecka']);
+    // draft leftover 100-50-17=33, + Lehecka R16 refund 17·0.25 → round(42.5)=43 → 4.3
+    const budgetBefore = store().budget;
+    expect(budgetBefore).toBeCloseTo(37.3, 5);
 
-    store().replacePlayer('eubanks', 'zverev'); // #3, $38, still alive (reaches final)
+    store().replacePlayer('lehecka', 'zverev'); // $33, reaches the final
     expect(store().myTeam).toContain('zverev');
-    expect(store().myTeam).not.toContain('eubanks');
-    expect(store().budget).toBeCloseTo(46.8 - 38, 5);
+    expect(store().myTeam).not.toContain('lehecka');
+    expect(store().budget).toBeCloseTo(37.3 - 33, 5);
   });
 
   it('the replacement scores from the next round on', () => {
     draftAndReachR16();
-    store().replacePlayer('eubanks', 'zverev');
-    play('alcaraz'); // QF: alcaraz(cap #1) round(10*.6)=6 ×2 = 12; zverev(#3) round(10*.646)=6 → 18
+    store().replacePlayer('lehecka', 'zverev');
+    play('sinner'); // QF: sinner(cap) round(10·.6)=6 ×2 =12; zverev round(10·.646)=6 → 18
     const qf = store().roundScores.at(-1)!;
     expect(qf.round).toBe('QF');
     expect(qf.points).toBe(18);
@@ -156,41 +168,38 @@ describe('mid-tournament substitutions', () => {
 
   it('rejects replacing a player who is not eliminated', () => {
     draftAndReachR16();
-    store().replacePlayer('alcaraz', 'zverev'); // alcaraz still in
-    expect(store().myTeam).toContain('alcaraz');
+    store().replacePlayer('sinner', 'zverev'); // sinner still in
+    expect(store().myTeam).toContain('sinner');
     expect(store().myTeam).not.toContain('zverev');
   });
 
   it('rejects a replacement who is already knocked out', () => {
     draftAndReachR16();
-    // thompson lost in R32 → not a valid substitute
-    store().replacePlayer('eubanks', 'thompson');
-    expect(store().myTeam).not.toContain('thompson');
-    expect(store().myTeam).toContain('eubanks');
+    // brooksby lost in R32 → not a valid substitute
+    store().replacePlayer('lehecka', 'brooksby');
+    expect(store().myTeam).not.toContain('brooksby');
+    expect(store().myTeam).toContain('lehecka');
   });
 
   it('rejects an unaffordable replacement', () => {
     draftAndReachR16();
-    // spend the budget down so nothing pricey is affordable
-    // budget is ~47.8; alcaraz(#1) is out of the field anyway. Use a manual budget squeeze:
     useGameStore.setState({ budget: 5 });
-    store().replacePlayer('eubanks', 'zverev'); // $38 > $5
+    store().replacePlayer('lehecka', 'zverev'); // $33 > $5
     expect(store().myTeam).not.toContain('zverev');
-    expect(store().myTeam).toContain('eubanks');
+    expect(store().myTeam).toContain('lehecka');
   });
 
   it('the transfer window closes after the quarter-finals', () => {
-    store().addPlayer('alcaraz'); // champion
-    store().addPlayer('eubanks'); // out R16
+    store().addPlayer('sinner');
+    store().addPlayer('lehecka'); // out R16
     store().finalizeDraft();
-    play('alcaraz'); // R32
-    play('alcaraz'); // R16 → eubanks eliminated
-    play('alcaraz'); // QF → currentRoundIndex now 3 (SF up next)
+    play('sinner'); // R32
+    play('sinner'); // R16 → lehecka eliminated
+    play('sinner'); // QF → currentRoundIndex now 3 (SF up next)
     expect(store().currentRoundIndex).toBe(3);
-    // eubanks is still an un-replaced eliminated player, but transfers are now locked
-    expect(eliminatedSquad(store().myTeam, store().currentRoundIndex)).toContain('eubanks');
-    store().replacePlayer('eubanks', 'zverev'); // zverev still alive (reaches final) but window shut
-    expect(store().myTeam).toContain('eubanks');
+    expect(eliminatedSquad(store().myTeam, store().currentRoundIndex)).toContain('lehecka');
+    store().replacePlayer('lehecka', 'zverev'); // still alive but window shut
+    expect(store().myTeam).toContain('lehecka');
     expect(store().myTeam).not.toContain('zverev');
   });
 
@@ -200,21 +209,17 @@ describe('mid-tournament substitutions', () => {
     for (const c of cands) {
       expect(store().myTeam).not.toContain(c.id);
       expect(c.price).toBeLessThanOrEqual(store().budget);
-      // still alive: not eliminated in a revealed round
-      const exit = getPlayer(c.id) && (c as { id: string }).id;
-      expect(exit).toBeTruthy();
     }
-    // zverev (alive, $38, affordable) should be offered; thompson (out R32) should not
-    expect(cands.map(c => c.id)).toContain('zverev');
-    expect(cands.map(c => c.id)).not.toContain('thompson');
+    expect(cands.map(c => c.id)).toContain('zverev');    // alive, affordable
+    expect(cands.map(c => c.id)).not.toContain('brooksby'); // out R32
   });
 });
 
 describe('guards', () => {
   it('playNextRound past the final does nothing', () => {
-    store().addPlayer('alcaraz');
+    store().addPlayer('sinner');
     store().finalizeDraft();
-    for (let i = 0; i < 5; i++) play('alcaraz');
+    for (let i = 0; i < 5; i++) play('sinner');
     const before = store().myScore;
     store().playNextRound();
     store().playNextRound();
@@ -223,9 +228,9 @@ describe('guards', () => {
   });
 
   it('resetGame restores a clean slate', () => {
-    store().addPlayer('alcaraz');
+    store().addPlayer('sinner');
     store().finalizeDraft();
-    play('alcaraz');
+    play('sinner');
     store().resetGame();
     expect(store().budget).toBe(100);
     expect(store().myTeam).toHaveLength(0);

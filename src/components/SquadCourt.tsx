@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { getPlayer } from '../data/players';
-import { getPlayerExit, ROUNDS } from '../data/tournament';
+import { getPlayerExit, isPlayerOut, ROUNDS } from '../data/tournament';
 import PlayerAvatar from './PlayerAvatar';
 import PlayerPickerModal from './PlayerPickerModal';
 
@@ -97,8 +97,8 @@ export default function SquadCourt({ squad, captainId, readOnly }: {
             );
           }
           const p = getPlayer(id);
+          const out = isPlayerOut(id, revealed);
           const exit = getPlayerExit(id);
-          const out = exit !== null && revealed.includes(exit);
           const isCap = cap === id;
           return (
             <button

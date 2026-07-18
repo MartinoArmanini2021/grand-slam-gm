@@ -10,8 +10,8 @@ const cmp = (a: number, b: number, higherWins = true): Better =>
   a === b ? null : (higherWins ? a > b : a < b) ? 'a' : 'b';
 
 export default function PlayerCompare() {
-  const [aId, setAId] = useState('alcaraz');
-  const [bId, setBId] = useState('sinner');
+  const [aId, setAId] = useState('sinner');
+  const [bId, setBId] = useState('djokovic');
   const A = getPlayer(aId), B = getPlayer(bId);
   const winRate = (p: typeof A) => Math.round(p.ytd.wins / (p.ytd.wins + p.ytd.losses) * 100);
 

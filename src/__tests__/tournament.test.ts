@@ -1,13 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { ROUNDS, MATCHES, getMatchesForRound, getPlayerExit, getOpponentId, upsetBonus } from '../data/tournament';
+import { ROUNDS, MATCHES, getMatchesForRound, getPlayerExit, isPlayerOut, getOpponentId, upsetBonus, unmappedBracketNames } from '../data/tournament';
 import { getPlayer } from '../data/players';
 
-describe('tournament bracket integrity', () => {
+describe('real Wimbledon 2026 bracket integrity', () => {
+  it('every bracket name resolved to a roster id', () => {
+    expect(unmappedBracketNames).toEqual([]);
+  });
+
   it('round points are 2/5/10/20/40', () => {
     expect(ROUNDS.map(r => r.points)).toEqual([2, 5, 10, 20, 40]);
   });
 
-  it('each match has a winner that is one of its two players, and distinct players', () => {
+  it('each match has a winner among its two distinct players', () => {
     for (const m of MATCHES) {
       expect(m.p1Id).not.toBe(m.p2Id);
       expect([m.p1Id, m.p2Id]).toContain(m.winnerId);
@@ -36,19 +40,39 @@ describe('tournament bracket integrity', () => {
       expect(participants).toEqual(winners);
     });
   });
+
+  it('Sinner is the champion and Zverev the runner-up', () => {
+    const final = getMatchesForRound('F')[0];
+    expect(final.winnerId).toBe('sinner');
+    expect([final.p1Id, final.p2Id]).toContain('zverev');
+  });
 });
 
-describe('getPlayerExit', () => {
-  it('champion (alcaraz) has null exit', () => {
-    expect(getPlayerExit('alcaraz')).toBeNull();
+describe('getPlayerExit / isPlayerOut', () => {
+  it('champion Sinner has no exit and is never out', () => {
+    expect(getPlayerExit('sinner')).toBeNull();
+    expect(isPlayerOut('sinner', ['R32', 'R16', 'QF', 'SF', 'F'])).toBe(false);
   });
 
-  it('a first-round loser exits at R32', () => {
-    // thompson lost to alcaraz in R32
-    expect(getPlayerExit('thompson')).toBe('R32');
+  it('runner-up Zverev exits at the Final — out only once the Final is revealed', () => {
+    expect(getPlayerExit('zverev')).toBe('F');
+    expect(isPlayerOut('zverev', ['R32', 'R16', 'QF', 'SF'])).toBe(false);
+    expect(isPlayerOut('zverev', ['R32', 'R16', 'QF', 'SF', 'F'])).toBe(true);
   });
 
-  it('exit round matches where the player actually lost', () => {
+  it('wildcard Fery reached the semis — out when the SF is revealed', () => {
+    expect(getPlayerExit('fery')).toBe('SF');
+    expect(isPlayerOut('fery', ['R32', 'R16', 'QF'])).toBe(false);
+    expect(isPlayerOut('fery', ['R32', 'R16', 'QF', 'SF'])).toBe(true);
+  });
+
+  it('a pre-last-32 loser (Shelton, out R128) is eliminated the moment R32 is revealed', () => {
+    expect(getPlayerExit('shelton')).toBe('R128');
+    expect(isPlayerOut('shelton', [])).toBe(false);          // draft, nothing revealed
+    expect(isPlayerOut('shelton', ['R32'])).toBe(true);      // scored draw begins → already out
+  });
+
+  it("a scored-round exit matches where the player actually lost", () => {
     for (const p of getMatchesForRound('R32').flatMap(m => [m.p1Id, m.p2Id])) {
       const exit = getPlayerExit(p);
       if (exit === null) continue; // champion
@@ -60,11 +84,11 @@ describe('getPlayerExit', () => {
 
 describe('getOpponentId', () => {
   it('returns the other player in a match', () => {
-    expect(getOpponentId('alcaraz', 'R32')).toBe('thompson');
-    expect(getOpponentId('thompson', 'R32')).toBe('alcaraz');
+    expect(getOpponentId('sinner', 'F')).toBe('zverev');
+    expect(getOpponentId('zverev', 'F')).toBe('sinner');
   });
   it('returns null when the player is not in that round', () => {
-    expect(getOpponentId('thompson', 'F')).toBeNull();
+    expect(getOpponentId('fery', 'F')).toBeNull(); // Fery lost in the SF
   });
 });
 
@@ -72,24 +96,24 @@ describe('upsetBonus', () => {
   const rank = (id: string) => getPlayer(id).ranking;
 
   it('is zero when the winner is equal or higher ranked', () => {
-    expect(upsetBonus('alcaraz', 'thompson')).toBe(0); // #1 beats #32 → no upset
-    expect(rank('alcaraz')).toBeLessThan(rank('thompson'));
+    expect(upsetBonus('sinner', 'brooksby')).toBe(0); // #1 beats #82 → expected
+    expect(rank('sinner')).toBeLessThan(rank('brooksby'));
   });
 
   it('rewards a lower-ranked player beating a higher-ranked one', () => {
-    // eubanks (#25) beat rublev (#8): round((25-8)*0.4) = round(6.8) = 7
-    expect(upsetBonus('eubanks', 'rublev')).toBe(7);
+    // hurkacz (#41) beat paul (#25): round((41-25)*0.4) = round(6.4) = 6
+    expect(upsetBonus('hurkacz', 'paul')).toBe(6);
   });
 
-  it('is capped at 12', () => {
-    // biggest possible gap #32 over #1 = round(31*0.4)=round(12.4)=12
-    expect(upsetBonus('thompson', 'alcaraz')).toBe(12);
+  it('is capped at 15', () => {
+    // Fery (#178) over Cobolli (#10): round(168*0.4)=67 → capped at 15
+    expect(upsetBonus('fery', 'cobolli')).toBe(15);
   });
 
-  it('never exceeds 12 for any pair', () => {
+  it('never exceeds 15 for any pair in the draw', () => {
     const ids = MATCHES.flatMap(m => [m.p1Id, m.p2Id]);
     for (const a of ids) for (const b of ids) {
-      expect(upsetBonus(a, b)).toBeLessThanOrEqual(12);
+      expect(upsetBonus(a, b)).toBeLessThanOrEqual(15);
       expect(upsetBonus(a, b)).toBeGreaterThanOrEqual(0);
     }
   });

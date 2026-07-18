@@ -1,6 +1,6 @@
 export type Surface = 'hard' | 'clay' | 'grass';
 export type FormResult = 'W' | 'L';
-export type TournamentResult = 'W' | 'F' | 'SF' | 'QF' | 'R16' | 'R32' | 'R64' | 'DNS';
+export type TournamentResult = 'W' | 'F' | 'SF' | 'QF' | 'R16' | 'R32' | 'R64' | 'R128' | 'DNS';
 export type RoundId = 'R32' | 'R16' | 'QF' | 'SF' | 'F';
 
 export interface YearResult {
@@ -21,9 +21,10 @@ export interface Player {
   hand: 'R' | 'L';
   style: string;
   price: number; // in millions
+  exit: TournamentResult; // real Wimbledon 2026 exit round ('W' = champion)
   surface: { hard: number; clay: number; grass: number };
   ytd: { wins: number; losses: number; titles: number };
-  form: FormResult[]; // last 5
+  form: FormResult[]; // last 5 (retired from the UI; kept optional-empty)
   yearResults: YearResult[];
 }
 

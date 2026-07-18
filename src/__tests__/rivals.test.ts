@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { RIVALS, buildSquad, scoreSquad, getRivalTeams, simulateRival } from '../data/rivals';
 import { getPlayer } from '../data/players';
-import { ROUNDS, getPlayerExit } from '../data/tournament';
+import { ROUNDS, isPlayerOut } from '../data/tournament';
 
 describe('rivals squad building', () => {
   it('every rival strategy yields a legal 6-player squad within $100M', () => {
@@ -40,9 +40,9 @@ describe('static scoreSquad (reference)', () => {
     }
   });
 
-  it('a solo champion (#1) scores 92 — ranking-weighted, captained every round', () => {
+  it('a solo champion (Sinner, #1) scores 92 — ranking-weighted, captained every round', () => {
     // #1 → mult 0.6: round(2·.6)=1,5·.6=3,6,12,24 doubled = 2+6+12+24+48
-    expect(scoreSquad(['alcaraz'], ROUNDS.length)).toBe(92);
+    expect(scoreSquad(['sinner'], ROUNDS.length)).toBe(92);
   });
 });
 
@@ -78,11 +78,9 @@ describe('transfer-aware simulation', () => {
       };
       for (const tr of t.transfers) {
         // the player transferred OUT was eliminated by that round
-        const outExit = getPlayerExit(tr.out);
-        expect(outExit && revealedByRound(tr.round).includes(outExit)).toBeTruthy();
+        expect(isPlayerOut(tr.out, revealedByRound(tr.round))).toBe(true);
         // the player transferred IN was still alive at that round
-        const inExit = getPlayerExit(tr.in);
-        expect(inExit === null || !revealedByRound(tr.round).includes(inExit)).toBeTruthy();
+        expect(isPlayerOut(tr.in, revealedByRound(tr.round))).toBe(false);
       }
     }
   });

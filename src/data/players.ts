@@ -1,498 +1,64 @@
-import type { Player } from '../types';
+import type { Player, Surface, TournamentResult, YearResult } from '../types';
+import rawField from './wimbledon2026Field.json';
 
-export const PLAYERS: Player[] = [
-  {
-    id: 'alcaraz', name: 'Carlos Alcaraz', country: 'Spain', flag: '🇪🇸',
-    ranking: 1, seed: 1, age: 23, hand: 'R', style: 'All-Court Aggressor',
-    price: 22,
-    surface: { hard: 91, clay: 90, grass: 88 },
-    ytd: { wins: 28, losses: 5, titles: 3 },
-    form: ['W','W','W','W','L'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'SF' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'W' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'F' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'W' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'W' },
-    ],
-  },
-  {
-    id: 'sinner', name: 'Jannik Sinner', country: 'Italy', flag: '🇮🇹',
-    ranking: 2, seed: 2, age: 24, hand: 'R', style: 'Powerful Baseline',
-    price: 20,
-    surface: { hard: 93, clay: 82, grass: 84 },
-    ytd: { wins: 30, losses: 4, titles: 2 },
-    form: ['W','W','L','W','W'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'W' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'SF' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'QF' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'SF' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'F' },
-    ],
-  },
-  {
-    id: 'zverev', name: 'Alexander Zverev', country: 'Germany', flag: '🇩🇪',
-    ranking: 3, seed: 3, age: 29, hand: 'R', style: 'Big Serving Baseline',
-    price: 18,
-    surface: { hard: 86, clay: 84, grass: 76 },
-    ytd: { wins: 25, losses: 7, titles: 2 },
-    form: ['W','L','W','W','L'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'QF' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'QF' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'W' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'F' },
-      { tournament: 'Halle', surface: 'grass', short: 'HAL', result: 'QF' },
-    ],
-  },
-  {
-    id: 'djokovic', name: 'Novak Djokovic', country: 'Serbia', flag: '🇷🇸',
-    ranking: 4, seed: 4, age: 38, hand: 'R', style: 'Counter-Punching Master',
-    price: 17,
-    surface: { hard: 87, clay: 86, grass: 91 },
-    ytd: { wins: 15, losses: 5, titles: 0 },
-    form: ['W','W','L','W','L'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'QF' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'DNS' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'DNS' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'R16' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'SF' },
-    ],
-  },
-  {
-    id: 'fritz', name: 'Taylor Fritz', country: 'USA', flag: '🇺🇸',
-    ranking: 5, seed: 5, age: 28, hand: 'R', style: 'Big Server',
-    price: 15,
-    surface: { hard: 86, clay: 72, grass: 80 },
-    ytd: { wins: 22, losses: 8, titles: 1 },
-    form: ['W','L','W','W','L'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'R16' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'F' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'W' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'R32' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'R16' },
-    ],
-  },
-  {
-    id: 'medvedev', name: 'Daniil Medvedev', country: 'Russia', flag: '🇷🇺',
-    ranking: 6, seed: 6, age: 30, hand: 'R', style: 'Defensive Retriever',
-    price: 15,
-    surface: { hard: 89, clay: 73, grass: 74 },
-    ytd: { wins: 20, losses: 9, titles: 0 },
-    form: ['L','W','L','W','W'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'F' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'R32' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'SF' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'QF' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'R32' },
-    ],
-  },
-  {
-    id: 'ruud', name: 'Casper Ruud', country: 'Norway', flag: '🇳🇴',
-    ranking: 7, seed: 7, age: 27, hand: 'R', style: 'Clay Court Specialist',
-    price: 13,
-    surface: { hard: 78, clay: 89, grass: 68 },
-    ytd: { wins: 18, losses: 9, titles: 0 },
-    form: ['L','W','W','L','W'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'R32' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'R16' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'QF' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'SF' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'DNS' },
-    ],
-  },
-  {
-    id: 'rublev', name: 'Andrey Rublev', country: 'Russia', flag: '🇷🇺',
-    ranking: 8, seed: 8, age: 28, hand: 'R', style: 'Aggressive Baseliner',
-    price: 14,
-    surface: { hard: 83, clay: 79, grass: 74 },
-    ytd: { wins: 19, losses: 8, titles: 0 },
-    form: ['W','W','L','W','L'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'QF' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'R16' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'R16' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'R16' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'QF' },
-    ],
-  },
-  {
-    id: 'rune', name: 'Holger Rune', country: 'Denmark', flag: '🇩🇰',
-    ranking: 9, seed: 9, age: 23, hand: 'R', style: 'Aggressive All-Courter',
-    price: 13,
-    surface: { hard: 81, clay: 80, grass: 77 },
-    ytd: { wins: 17, losses: 10, titles: 0 },
-    form: ['W','W','W','L','W'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'R16' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'R32' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'R32' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'QF' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'SF' },
-    ],
-  },
-  {
-    id: 'paul', name: 'Tommy Paul', country: 'USA', flag: '🇺🇸',
-    ranking: 10, seed: 10, age: 28, hand: 'R', style: 'All-Court Player',
-    price: 12,
-    surface: { hard: 82, clay: 70, grass: 73 },
-    ytd: { wins: 17, losses: 9, titles: 0 },
-    form: ['W','L','W','W','L'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'R32' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'QF' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'R16' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'R32' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'QF' },
-    ],
-  },
-  {
-    id: 'shelton', name: 'Ben Shelton', country: 'USA', flag: '🇺🇸',
-    ranking: 11, seed: 11, age: 23, hand: 'L', style: 'Power Server',
-    price: 12,
-    surface: { hard: 83, clay: 65, grass: 75 },
-    ytd: { wins: 18, losses: 8, titles: 0 },
-    form: ['L','W','L','W','W'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'QF' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'SF' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'R16' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'R64' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'R16' },
-    ],
-  },
-  {
-    id: 'hurkacz', name: 'Hubert Hurkacz', country: 'Poland', flag: '🇵🇱',
-    ranking: 12, seed: 12, age: 27, hand: 'R', style: 'Serve & Volley',
-    price: 11,
-    surface: { hard: 81, clay: 70, grass: 84 },
-    ytd: { wins: 20, losses: 7, titles: 1 },
-    form: ['W','W','W','W','W'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'R16' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'R16' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'SF' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'R16' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'W' },
-    ],
-  },
-  {
-    id: 'kyrgios', name: 'Nick Kyrgios', country: 'Australia', flag: '🇦🇺',
-    ranking: 13, seed: 13, age: 31, hand: 'R', style: 'Serve & Volley',
-    price: 11,
-    surface: { hard: 79, clay: 61, grass: 86 },
-    ytd: { wins: 16, losses: 7, titles: 0 },
-    form: ['W','L','W','W','L'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'SF' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'R32' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'R16' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'DNS' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'SF' },
-    ],
-  },
-  {
-    id: 'dimitrov', name: 'Grigor Dimitrov', country: 'Bulgaria', flag: '🇧🇬',
-    ranking: 14, seed: 14, age: 33, hand: 'R', style: 'Elegant All-Courter',
-    price: 10,
-    surface: { hard: 79, clay: 73, grass: 81 },
-    ytd: { wins: 16, losses: 9, titles: 0 },
-    form: ['W','W','L','W','L'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'SF' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'R16' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'QF' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'R16' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'QF' },
-    ],
-  },
-  {
-    id: 'tiafoe', name: 'Frances Tiafoe', country: 'USA', flag: '🇺🇸',
-    ranking: 15, seed: 15, age: 27, hand: 'R', style: 'Athletic All-Courter',
-    price: 9,
-    surface: { hard: 78, clay: 68, grass: 70 },
-    ytd: { wins: 14, losses: 11, titles: 0 },
-    form: ['L','W','L','W','L'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'R16' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'R32' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'R32' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'R32' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'R32' },
-    ],
-  },
-  {
-    id: 'musetti', name: 'Lorenzo Musetti', country: 'Italy', flag: '🇮🇹',
-    ranking: 16, seed: 16, age: 22, hand: 'L', style: 'Creative Baseliner',
-    price: 9,
-    surface: { hard: 76, clay: 80, grass: 76 },
-    ytd: { wins: 14, losses: 10, titles: 0 },
-    form: ['W','L','W','L','W'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'R32' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'R16' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'R16' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'QF' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'R16' },
-    ],
-  },
-  {
-    id: 'korda', name: 'Sebastian Korda', country: 'USA', flag: '🇺🇸',
-    ranking: 17, seed: null, age: 24, hand: 'R', style: 'Serve & Groundstroke',
-    price: 8,
-    surface: { hard: 79, clay: 68, grass: 71 },
-    ytd: { wins: 12, losses: 9, titles: 0 },
-    form: ['L','L','W','W','L'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'R16' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'R32' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'R32' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'R64' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'R16' },
-    ],
-  },
-  {
-    id: 'draper', name: 'Jack Draper', country: 'Great Britain', flag: '🇬🇧',
-    ranking: 18, seed: null, age: 23, hand: 'L', style: 'Left-Handed Aggressor',
-    price: 8,
-    surface: { hard: 74, clay: 68, grass: 78 },
-    ytd: { wins: 13, losses: 9, titles: 0 },
-    form: ['W','W','L','W','L'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'R32' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'R32' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'R16' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'R64' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'QF' },
-    ],
-  },
-  {
-    id: 'tsitsipas', name: 'Stefanos Tsitsipas', country: 'Greece', flag: '🇬🇷',
-    ranking: 19, seed: null, age: 26, hand: 'R', style: 'Attacking Baseliner',
-    price: 8,
-    surface: { hard: 80, clay: 82, grass: 72 },
-    ytd: { wins: 16, losses: 9, titles: 0 },
-    form: ['L','W','W','L','W'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'QF' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'R16' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'R32' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'SF' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'R32' },
-    ],
-  },
-  {
-    id: 'khachanov', name: 'Karen Khachanov', country: 'Russia', flag: '🇷🇺',
-    ranking: 20, seed: null, age: 28, hand: 'R', style: 'Powerful Baseliner',
-    price: 7,
-    surface: { hard: 78, clay: 71, grass: 72 },
-    ytd: { wins: 12, losses: 10, titles: 0 },
-    form: ['L','W','L','L','W'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'R16' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'R32' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'R32' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'R16' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'R32' },
-    ],
-  },
-  {
-    id: 'lehecka', name: 'Jiří Lehečka', country: 'Czech Republic', flag: '🇨🇿',
-    ranking: 21, seed: null, age: 23, hand: 'R', style: 'Aggressive Baseliner',
-    price: 7,
-    surface: { hard: 77, clay: 66, grass: 73 },
-    ytd: { wins: 13, losses: 10, titles: 0 },
-    form: ['W','L','W','L','L'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'R32' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'R32' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'R16' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'R32' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'R16' },
-    ],
-  },
-  {
-    id: 'deminaur', name: 'Alex de Minaur', country: 'Australia', flag: '🇦🇺',
-    ranking: 22, seed: null, age: 25, hand: 'R', style: 'Speed & Defense',
-    price: 7,
-    surface: { hard: 80, clay: 72, grass: 75 },
-    ytd: { wins: 16, losses: 8, titles: 0 },
-    form: ['W','W','L','W','L'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'QF' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'SF' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'R32' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'R32' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'R16' },
-    ],
-  },
-  {
-    id: 'fils', name: 'Arthur Fils', country: 'France', flag: '🇫🇷',
-    ranking: 23, seed: null, age: 21, hand: 'R', style: 'Fearless Attacker',
-    price: 6,
-    surface: { hard: 76, clay: 78, grass: 67 },
-    ytd: { wins: 15, losses: 9, titles: 0 },
-    form: ['W','L','W','L','W'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'R32' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'R16' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'R32' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'SF' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'R32' },
-    ],
-  },
-  {
-    id: 'cobolli', name: 'Flavio Cobolli', country: 'Italy', flag: '🇮🇹',
-    ranking: 24, seed: null, age: 23, hand: 'R', style: 'Baseliner',
-    price: 6,
-    surface: { hard: 73, clay: 74, grass: 65 },
-    ytd: { wins: 11, losses: 11, titles: 0 },
-    form: ['L','W','L','W','L'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'R64' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'R32' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'R32' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'R16' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'R32' },
-    ],
-  },
-  {
-    id: 'eubanks', name: 'Christopher Eubanks', country: 'USA', flag: '🇺🇸',
-    ranking: 25, seed: null, age: 28, hand: 'R', style: 'Big Serving Net Rusher',
-    price: 6,
-    surface: { hard: 72, clay: 59, grass: 79 },
-    ytd: { wins: 11, losses: 10, titles: 0 },
-    form: ['W','W','L','W','W'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'R32' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'R32' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'R32' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'R64' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'SF' },
-    ],
-  },
-  {
-    id: 'berrettini', name: 'Matteo Berrettini', country: 'Italy', flag: '🇮🇹',
-    ranking: 26, seed: null, age: 30, hand: 'R', style: 'Serve & Forehand',
-    price: 6,
-    surface: { hard: 78, clay: 74, grass: 87 },
-    ytd: { wins: 14, losses: 8, titles: 0 },
-    form: ['W','W','W','L','W'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'R32' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'R16' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'R16' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'R32' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'F' },
-    ],
-  },
-  {
-    id: 'sonego', name: 'Lorenzo Sonego', country: 'Italy', flag: '🇮🇹',
-    ranking: 27, seed: null, age: 29, hand: 'R', style: 'Aggressive Baseliner',
-    price: 5,
-    surface: { hard: 72, clay: 71, grass: 70 },
-    ytd: { wins: 9, losses: 11, titles: 0 },
-    form: ['L','W','L','L','L'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'R32' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'R64' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'R64' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'R32' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'R16' },
-    ],
-  },
-  {
-    id: 'davidovich', name: 'Alejandro Davidovich', country: 'Spain', flag: '🇪🇸',
-    ranking: 28, seed: null, age: 25, hand: 'R', style: 'Defensive Baseliner',
-    price: 5,
-    surface: { hard: 69, clay: 76, grass: 62 },
-    ytd: { wins: 8, losses: 11, titles: 0 },
-    form: ['W','L','L','W','L'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'R32' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'R32' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'R64' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'R16' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'R32' },
-    ],
-  },
-  {
-    id: 'vandezandschulp', name: 'Botic van de Zandschulp', country: 'Netherlands', flag: '🇳🇱',
-    ranking: 29, seed: null, age: 29, hand: 'R', style: 'Consistent Baseliner',
-    price: 5,
-    surface: { hard: 70, clay: 68, grass: 69 },
-    ytd: { wins: 8, losses: 10, titles: 0 },
-    form: ['L','W','L','L','W'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'R32' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'R64' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'R64' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'R32' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'R32' },
-    ],
-  },
-  {
-    id: 'bautistaagut', name: 'Roberto Bautista Agut', country: 'Spain', flag: '🇪🇸',
-    ranking: 30, seed: null, age: 36, hand: 'R', style: 'Solid Baseliner',
-    price: 5,
-    surface: { hard: 74, clay: 76, grass: 72 },
-    ytd: { wins: 8, losses: 10, titles: 0 },
-    form: ['L','L','W','L','W'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'R32' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'R32' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'R32' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'R32' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'R32' },
-    ],
-  },
-  {
-    id: 'nakashima', name: 'Brandon Nakashima', country: 'USA', flag: '🇺🇸',
-    ranking: 31, seed: null, age: 23, hand: 'R', style: 'Flat Hitter',
-    price: 4,
-    surface: { hard: 74, clay: 62, grass: 67 },
-    ytd: { wins: 9, losses: 10, titles: 0 },
-    form: ['W','L','W','L','L'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'R32' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'R32' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'R32' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'R64' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'R32' },
-    ],
-  },
-  {
-    id: 'thompson', name: 'Jordan Thompson', country: 'Australia', flag: '🇦🇺',
-    ranking: 32, seed: null, age: 30, hand: 'R', style: 'Serve-First Player',
-    price: 4,
-    surface: { hard: 70, clay: 60, grass: 68 },
-    ytd: { wins: 8, losses: 12, titles: 0 },
-    form: ['L','L','W','L','L'],
-    yearResults: [
-      { tournament: 'Australian Open', surface: 'hard', short: 'AO', result: 'R32' },
-      { tournament: 'Indian Wells', surface: 'hard', short: 'IW', result: 'R64' },
-      { tournament: 'Miami Open', surface: 'hard', short: 'MIA', result: 'R64' },
-      { tournament: 'Roland Garros', surface: 'clay', short: 'RG', result: 'R64' },
-      { tournament: "Queen's Club", surface: 'grass', short: "Q's", result: 'R32' },
-    ],
-  },
-];
+// ── Real Wimbledon 2026 men's singles field ──────────────────────────────────
+// Every player, price, and result below is derived from the actual 2026 draw
+// (see wimbledon2026Field.json — sourced from Wikipedia; ages/surface%/YTD are
+// best-effort estimates where the live feed wasn't reachable). The game plays the
+// REAL bracket, so the field must contain everyone who reached the last 32.
 
-// Steep price curve by ranking — forces real budget trade-offs. With a $100M
-// budget and a 6-player squad you can afford at most ONE marquee name (and must
-// fill the rest with value picks), OR skip the stars for a balanced mid-tier
-// squad. Stacking the top two is impossible.
-export const PRICE_BY_RANK: Record<number, number> = {
-  1: 48, 2: 44, 3: 38, 4: 35, 5: 31, 6: 28,          // Platinum
-  7: 24, 8: 22, 9: 20, 10: 19, 11: 18, 12: 17, 13: 16, 14: 15, 15: 14, 16: 13, // Gold
-  17: 12, 18: 11, 19: 11, 20: 10, 21: 9, 22: 9, 23: 8, 24: 8, // Silver
-  25: 7, 26: 7, 27: 6, 28: 6, 29: 5, 30: 5, 31: 5, 32: 4,
+interface RawPlayer {
+  id: string; name: string; country: string; flag: string; age: number;
+  hand: 'R' | 'L'; ranking: number; seed: number | null;
+  surface: { grass: number; hard: number; clay: number };
+  ytd: { wins: number; losses: number; titles: number };
+  wimbledon2026Exit: string;
+  yearResults: { short: string; result: string }[];
+}
+
+const SLAM_META: Record<string, { short: string; surface: Surface; tournament: string }> = {
+  W:  { short: 'WIM', surface: 'grass', tournament: 'Wimbledon' },
+  RG: { short: 'RG',  surface: 'clay',  tournament: 'Roland Garros' },
+  AO: { short: 'AO',  surface: 'hard',  tournament: 'Australian Open' },
 };
-for (const p of PLAYERS) p.price = PRICE_BY_RANK[p.ranking] ?? p.price;
+
+// Price by ATP ranking. A steep curve so a $100M / 6-player squad forces real
+// trade-offs: one marquee name eats a third of the budget, deep value picks are
+// cheap (and a low-ranked deep run — like Fery — is where fortunes are made).
+export function priceFor(ranking: number): number {
+  return Math.max(4, Math.min(50, Math.round(52 * Math.pow(ranking, -0.42))));
+}
+
+function deriveStyle(p: RawPlayer): string {
+  const { grass, hard, clay } = p.surface;
+  const best = Math.max(grass, hard, clay);
+  const base = best === grass ? (grass >= 72 ? 'Grass-court threat' : 'Grass-court mover')
+    : best === hard ? 'Hard-court baseliner'
+    : 'Clay-court grinder';
+  return (p.hand === 'L' ? 'Left-handed ' : '') + base;
+}
+
+function toYearResults(rows: RawPlayer['yearResults']): YearResult[] {
+  return rows.map(r => {
+    const meta = SLAM_META[r.short] ?? { short: r.short, surface: 'grass' as Surface, tournament: r.short };
+    return { short: meta.short, surface: meta.surface, tournament: meta.tournament, result: r.result as TournamentResult };
+  });
+}
+
+function toPlayer(r: RawPlayer): Player {
+  return {
+    id: r.id, name: r.name, country: r.country, flag: r.flag,
+    ranking: r.ranking, seed: r.seed, age: r.age, hand: r.hand,
+    style: deriveStyle(r),
+    price: priceFor(r.ranking),
+    exit: r.wimbledon2026Exit as TournamentResult,
+    surface: { hard: r.surface.hard, clay: r.surface.clay, grass: r.surface.grass },
+    ytd: r.ytd,
+    form: [],
+    yearResults: toYearResults(r.yearResults),
+  };
+}
+
+export const PLAYERS: Player[] = (rawField as RawPlayer[]).map(toPlayer);
 
 export const getPlayer = (id: string) => PLAYERS.find(p => p.id === id)!;

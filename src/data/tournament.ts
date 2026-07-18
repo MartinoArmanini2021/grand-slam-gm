@@ -1,5 +1,6 @@
-import type { Match, RoundId } from '../types';
-import { getPlayer } from './players';
+import type { Match, RoundId, TournamentResult } from '../types';
+import { getPlayer, PLAYERS } from './players';
+import { WIMBLEDON_2026 } from './wimbledon2026';
 
 export const TOURNAMENT = {
   id: 'wimbledon_2026',
@@ -19,50 +20,26 @@ export const ROUNDS: { id: RoundId; label: string; short: string; points: number
   { id: 'F',   label: 'Final', short: 'F',   points: 40 },
 ];
 
-// Pre-determined bracket outcomes
-export const MATCHES: Match[] = [
-  // R32 — top half
-  { id: 'r32_1',  round: 'R32', p1Id: 'alcaraz',         p2Id: 'thompson',        winnerId: 'alcaraz',   score: '6-3, 6-2, 7-5' },
-  { id: 'r32_2',  round: 'R32', p1Id: 'musetti',          p2Id: 'korda',           winnerId: 'korda',     score: '3-6, 7-5, 6-4, 7-5' },
-  { id: 'r32_3',  round: 'R32', p1Id: 'rublev',           p2Id: 'eubanks',         winnerId: 'eubanks',   score: '4-6, 7-6, 6-3, 6-4' },
-  { id: 'r32_4',  round: 'R32', p1Id: 'rune',             p2Id: 'cobolli',         winnerId: 'rune',      score: '6-3, 6-4, 6-2' },
-  { id: 'r32_5',  round: 'R32', p1Id: 'fritz',            p2Id: 'davidovich',      winnerId: 'fritz',     score: '6-4, 7-5, 6-3' },
-  { id: 'r32_6',  round: 'R32', p1Id: 'hurkacz',          p2Id: 'lehecka',         winnerId: 'hurkacz',   score: '7-5, 6-4, 7-6' },
-  { id: 'r32_7',  round: 'R32', p1Id: 'djokovic',         p2Id: 'vandezandschulp', winnerId: 'djokovic',  score: '6-2, 6-3, 7-5' },
-  { id: 'r32_8',  round: 'R32', p1Id: 'kyrgios',          p2Id: 'khachanov',       winnerId: 'kyrgios',   score: '7-6, 7-5, 6-4' },
-  // R32 — bottom half
-  { id: 'r32_9',  round: 'R32', p1Id: 'sinner',           p2Id: 'nakashima',       winnerId: 'sinner',    score: '6-1, 6-3, 6-4' },
-  { id: 'r32_10', round: 'R32', p1Id: 'tiafoe',           p2Id: 'draper',          winnerId: 'draper',    score: '5-7, 6-4, 7-5, 6-4' },
-  { id: 'r32_11', round: 'R32', p1Id: 'ruud',             p2Id: 'berrettini',      winnerId: 'berrettini',score: '4-6, 6-4, 7-5, 6-3' },
-  { id: 'r32_12', round: 'R32', p1Id: 'paul',             p2Id: 'fils',            winnerId: 'paul',      score: '6-3, 6-4, 7-5' },
-  { id: 'r32_13', round: 'R32', p1Id: 'medvedev',         p2Id: 'sonego',          winnerId: 'medvedev',  score: '6-4, 6-2, 7-5' },
-  { id: 'r32_14', round: 'R32', p1Id: 'shelton',          p2Id: 'deminaur',        winnerId: 'deminaur',  score: '6-4, 7-6, 3-6, 7-5' },
-  { id: 'r32_15', round: 'R32', p1Id: 'zverev',           p2Id: 'bautistaagut',    winnerId: 'zverev',    score: '6-4, 6-3, 7-6' },
-  { id: 'r32_16', round: 'R32', p1Id: 'dimitrov',         p2Id: 'tsitsipas',       winnerId: 'dimitrov',  score: '6-3, 6-4, 6-2' },
+// ── The real Wimbledon 2026 draw (R32 → Final) ──────────────────────────────
+// Built from wimbledon2026.ts (Wikipedia-sourced). Names are matched to roster
+// ids accent-insensitively; every last-32 participant exists in PLAYERS.
+const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+const ID_BY_NAME = new Map(PLAYERS.map(p => [norm(p.name), p.id]));
+export const unmappedBracketNames: string[] = [];
+const toId = (name: string): string => {
+  const id = ID_BY_NAME.get(norm(name));
+  if (!id) { unmappedBracketNames.push(name); return norm(name); }
+  return id;
+};
 
-  // R16
-  { id: 'r16_1', round: 'R16', p1Id: 'alcaraz',   p2Id: 'korda',      winnerId: 'alcaraz',    score: '6-3, 7-5, 6-4' },
-  { id: 'r16_2', round: 'R16', p1Id: 'eubanks',   p2Id: 'rune',       winnerId: 'rune',       score: '3-6, 7-5, 6-4, 4-6, 6-3' },
-  { id: 'r16_3', round: 'R16', p1Id: 'fritz',     p2Id: 'hurkacz',    winnerId: 'hurkacz',    score: '6-4, 7-6, 6-3' },
-  { id: 'r16_4', round: 'R16', p1Id: 'djokovic',  p2Id: 'kyrgios',    winnerId: 'djokovic',   score: '6-4, 6-3, 7-5' },
-  { id: 'r16_5', round: 'R16', p1Id: 'sinner',    p2Id: 'draper',     winnerId: 'sinner',     score: '7-5, 6-4, 6-3' },
-  { id: 'r16_6', round: 'R16', p1Id: 'berrettini',p2Id: 'paul',       winnerId: 'berrettini', score: '6-4, 7-5, 6-4' },
-  { id: 'r16_7', round: 'R16', p1Id: 'medvedev',  p2Id: 'deminaur',   winnerId: 'deminaur',   score: '6-7, 7-5, 7-6, 7-5' },
-  { id: 'r16_8', round: 'R16', p1Id: 'zverev',    p2Id: 'dimitrov',   winnerId: 'zverev',     score: '7-6, 6-4, 6-3' },
-
-  // QF
-  { id: 'qf_1', round: 'QF', p1Id: 'alcaraz',    p2Id: 'rune',       winnerId: 'alcaraz',    score: '6-4, 7-6, 6-3' },
-  { id: 'qf_2', round: 'QF', p1Id: 'hurkacz',    p2Id: 'djokovic',   winnerId: 'djokovic',   score: '5-7, 7-5, 6-4, 7-5' },
-  { id: 'qf_3', round: 'QF', p1Id: 'sinner',     p2Id: 'berrettini', winnerId: 'sinner',     score: '6-4, 6-3, 7-5' },
-  { id: 'qf_4', round: 'QF', p1Id: 'deminaur',   p2Id: 'zverev',     winnerId: 'zverev',     score: '3-6, 7-5, 7-6, 6-3' },
-
-  // SF
-  { id: 'sf_1', round: 'SF', p1Id: 'alcaraz',  p2Id: 'djokovic', winnerId: 'alcaraz', score: '7-6, 3-6, 7-6, 6-3' },
-  { id: 'sf_2', round: 'SF', p1Id: 'sinner',   p2Id: 'zverev',   winnerId: 'zverev',  score: '4-6, 7-6, 6-3, 6-4' },
-
-  // F
-  { id: 'f_1', round: 'F', p1Id: 'alcaraz', p2Id: 'zverev', winnerId: 'alcaraz', score: '6-3, 6-4, 7-5' },
-];
+export const MATCHES: Match[] = WIMBLEDON_2026.map(m => ({
+  id: `${m.round.toLowerCase()}_${m.slot}`,
+  round: m.round as RoundId,
+  p1Id: toId(m.p1.name),
+  p2Id: toId(m.p2.name),
+  winnerId: toId(m.winner),
+  score: m.score,
+}));
 
 export const getMatchesForRound = (round: RoundId) =>
   MATCHES.filter(m => m.round === round);
@@ -105,16 +82,26 @@ export function winPoints(roundId: RoundId, winnerId: string, loserId: string): 
   return Math.round(base * rankingMultiplier(wRank)) + upsetBonus(winnerId, loserId);
 }
 
-// Map player → exit round (null if still in)
-export function getPlayerExit(playerId: string): RoundId | null {
-  const ROUND_ORDER: RoundId[] = ['R32', 'R16', 'QF', 'SF', 'F'];
-  for (const round of ROUND_ORDER) {
-    const match = MATCHES.find(
-      m => m.round === round && (m.p1Id === playerId || m.p2Id === playerId)
-    );
-    if (match && match.winnerId !== playerId) return round;
-  }
-  return null; // winner
+// Exit stage of each result, earliest → latest. Champion ('W') never exits.
+const EXIT_STAGE: Record<string, number> = { R128: 0, R64: 1, R32: 2, R16: 3, QF: 4, SF: 5, F: 6, W: 99 };
+
+// The round a player was knocked out in (their real Wimbledon 2026 exit), or
+// null for the champion. Pre-R32 exits (R128/R64) are returned as-is for display.
+export function getPlayerExit(playerId: string): TournamentResult | null {
+  const e = getPlayer(playerId)?.exit;
+  return !e || e === 'W' ? null : e;
+}
+
+// Is this player eliminated, given which scored rounds (R32→F) have been revealed?
+// Their exit stage ≤ the deepest revealed stage → out. Because pre-R32 stages are
+// below R32, anyone who fell before the last 32 is out the moment R32 is revealed.
+export function isPlayerOut(playerId: string, revealed: RoundId[]): boolean {
+  const e = getPlayer(playerId)?.exit;
+  if (!e || e === 'W') return false;
+  const stage = EXIT_STAGE[e];
+  if (stage === undefined) return false;
+  const deepest = revealed.reduce((mx, r) => Math.max(mx, EXIT_STAGE[r]), -1);
+  return stage <= deepest;
 }
 
 // Points returned when eliminated (based on how far they reached)

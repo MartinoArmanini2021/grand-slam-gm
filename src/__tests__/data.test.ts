@@ -3,43 +3,40 @@ import { PLAYERS, getPlayer } from '../data/players';
 import { getTier, TIER_ORDER } from '../data/tiers';
 
 describe('players data integrity', () => {
-  it('has exactly 32 players', () => {
-    expect(PLAYERS).toHaveLength(32);
+  it('is the full real Wimbledon 2026 field (52 players: last-32 + notable entrants)', () => {
+    expect(PLAYERS.length).toBe(52);
   });
 
-  it('has unique ids', () => {
-    const ids = new Set(PLAYERS.map(p => p.id));
-    expect(ids.size).toBe(32);
+  it('has unique ids and unique rankings', () => {
+    expect(new Set(PLAYERS.map(p => p.id)).size).toBe(PLAYERS.length);
+    expect(new Set(PLAYERS.map(p => p.ranking)).size).toBe(PLAYERS.length);
   });
 
-  it('has unique rankings 1..32', () => {
-    const ranks = PLAYERS.map(p => p.ranking).sort((a, b) => a - b);
-    expect(ranks).toEqual(Array.from({ length: 32 }, (_, i) => i + 1));
-  });
-
-  it('every player has valid stats', () => {
+  it('every player has valid stats and a real exit round', () => {
+    const EXITS = ['W', 'F', 'SF', 'QF', 'R16', 'R32', 'R64', 'R128'];
     for (const p of PLAYERS) {
-      expect(p.form).toHaveLength(5);
-      expect(p.form.every(f => f === 'W' || f === 'L')).toBe(true);
+      expect(Array.isArray(p.form)).toBe(true);
       for (const s of [p.surface.hard, p.surface.clay, p.surface.grass]) {
         expect(s).toBeGreaterThanOrEqual(0);
         expect(s).toBeLessThanOrEqual(100);
       }
       expect(p.yearResults.length).toBeGreaterThan(0);
       expect(p.price).toBeGreaterThan(0);
+      expect(EXITS).toContain(p.exit);
     }
   });
 
   it('getPlayer returns the right player', () => {
-    expect(getPlayer('alcaraz').ranking).toBe(1);
-    expect(getPlayer('thompson').ranking).toBe(32);
+    expect(getPlayer('sinner').ranking).toBe(1);   // champion
+    expect(getPlayer('fery').ranking).toBe(178);   // wildcard semi-finalist
   });
 });
 
 describe('pricing curve', () => {
-  it('#1 is $48M and #32 is $4M', () => {
-    expect(getPlayer('alcaraz').price).toBe(48);
-    expect(getPlayer('thompson').price).toBe(4);
+  it('the #1 is the $50M ceiling; deep-ranked entrants are single-digit value', () => {
+    expect(getPlayer('sinner').price).toBe(50);
+    expect(getPlayer('fery').price).toBe(6);
+    expect(Math.max(...PLAYERS.map(p => p.price))).toBe(50);
   });
 
   it('price is non-increasing as ranking worsens', () => {

@@ -1,5 +1,5 @@
 import { useGameStore } from '../store/gameStore';
-import { ROUNDS, getPlayerExit } from '../data/tournament';
+import { ROUNDS, isPlayerOut } from '../data/tournament';
 import { getPlayer } from '../data/players';
 import { getRivalTeams } from '../data/rivals';
 import SquadCourt from '../components/SquadCourt';
@@ -16,10 +16,7 @@ export default function HomePage() {
 
   const currentRound = currentRoundIndex < ROUNDS.length ? ROUNDS[currentRoundIndex] : null;
   const revealedRounds = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
-  const activePlayers = myTeam.filter(id => {
-    const exit = getPlayerExit(id);
-    return exit === null || !revealedRounds.includes(exit);
-  });
+  const activePlayers = myTeam.filter(id => !isPlayerOut(id, revealedRounds));
   const winRate = roundScores.length > 0
     ? Math.round(roundScores.reduce((a, b) => a + (b.points > 0 ? 1 : 0), 0) / roundScores.length * 100)
     : null;

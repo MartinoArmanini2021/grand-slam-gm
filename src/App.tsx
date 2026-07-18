@@ -7,7 +7,6 @@ import TournamentPage from './pages/TournamentPage';
 import PlayersPage from './pages/PlayersPage';
 import TeamPage from './pages/TeamPage';
 import LeaguePage from './pages/LeaguePage';
-import BacktestPage from './pages/BacktestPage';
 import PlayerPage from './pages/PlayerPage';
 import Toaster from './components/Toaster';
 import HowToPlay from './components/HowToPlay';
@@ -140,7 +139,6 @@ export default function App() {
         {activeTab === 'league'     && <LeaguePage />}
         {activeTab === 'players'    && <PlayersPage />}
         {activeTab === 'team'       && <TeamPage />}
-        {activeTab === 'backtest'   && <BacktestPage />}
         {activeTab === 'player'     && <PlayerPage />}
       </main>
 
