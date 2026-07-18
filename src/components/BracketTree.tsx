@@ -3,6 +3,7 @@ import { WIMBLEDON_2026, WIMBLEDON_2026_CHAMPION } from '../data/wimbledon2026';
 import type { WMatch, WRound } from '../data/wimbledon2026';
 import { useGameStore } from '../store/gameStore';
 import { getPlayer } from '../data/players';
+import { getRivalTeams } from '../data/rivals';
 
 const COLS: WRound[] = ['R32', 'R16', 'QF', 'SF'];
 const ROUND_LABEL: Record<WRound, string> = { R32: 'Round of 32', R16: 'Round of 16', QF: 'Quarter-finals', SF: 'Semi-finals', F: 'Final' };
@@ -10,15 +11,23 @@ const ROUND_LABEL: Record<WRound, string> = { R32: 'Round of 32', R16: 'Round of
 export default function BracketTree() {
   const [half, setHalf] = useState<'top' | 'bottom'>('top');
   const [focus, setFocus] = useState<string | null>(null);
-  const myTeam = useGameStore(s => s.myTeam);
-  const mine = new Set(myTeam.map(id => getPlayer(id).name));
+  const { myTeam, currentRoundIndex } = useGameStore();
+
+  // Teams you can highlight in the draw: your squad + every league rival.
+  const teams = [
+    ...(myTeam.length > 0 ? [{ id: 'you', name: 'Your squad', squad: myTeam }] : []),
+    ...getRivalTeams(currentRoundIndex).map(rt => ({ id: rt.rival.id, name: rt.rival.name, squad: rt.squad })),
+  ];
+  const [teamId, setTeamId] = useState('you');
+  const selected = teams.find(t => t.id === teamId) ?? teams[0];
+  const highlight = new Set((selected?.squad ?? []).map(id => getPlayer(id).name));
 
   const final = WIMBLEDON_2026.find(m => m.round === 'F')!;
   const onRoute = (m: WMatch) => focus !== null && (m.p1.name === focus || m.p2.name === focus);
 
   const PlayerRow = ({ name, seed, isWinner, dim }: { name: string; seed: number | null; isWinner: boolean; dim: boolean }) => {
     const focused = focus === name;
-    const isMine = mine.has(name);
+    const isMine = highlight.has(name);
     return (
       <button
         onClick={() => setFocus(focused ? null : name)}
@@ -58,26 +67,39 @@ export default function BracketTree() {
     <div>
       {/* Controls */}
       <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-        <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.1)' }}>
-          {(['top', 'bottom'] as const).map(h => (
-            <button
-              key={h}
-              onClick={() => setHalf(h)}
-              className="px-4 py-2 text-xs font-bold transition-colors"
-              style={{ background: half === h ? 'rgba(14,111,196,0.1)' : '#FFFFFF', color: half === h ? '#0e6fc4' : '#5B6B84' }}
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.1)' }}>
+            {(['top', 'bottom'] as const).map(h => (
+              <button
+                key={h}
+                onClick={() => setHalf(h)}
+                className="px-4 py-2 text-xs font-bold transition-colors"
+                style={{ background: half === h ? 'rgba(14,111,196,0.1)' : '#FFFFFF', color: half === h ? '#0e6fc4' : '#5B6B84' }}
+              >
+                {h === 'top' ? 'Left Half' : 'Right Half'}
+              </button>
+            ))}
+          </div>
+          {teams.length > 0 && (
+            <select
+              value={teamId}
+              onChange={e => setTeamId(e.target.value)}
+              className="text-xs font-bold rounded-xl px-2.5 py-2 outline-none"
+              style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.1)', color: '#0a1f44' }}
+              title="Highlight a team's players in the draw"
             >
-              {h === 'top' ? 'Left Half' : 'Right Half'}
-            </button>
-          ))}
+              {teams.map(t => <option key={t.id} value={t.id}>Highlight: {t.name}</option>)}
+            </select>
+          )}
         </div>
         <div className="flex items-center gap-3 text-[11px]" style={{ color: '#9AA7BC' }}>
-          {mine.size > 0 && (
+          {highlight.size > 0 && selected && (
             <span className="flex items-center gap-1 font-semibold" style={{ color: '#D99A00' }}>
-              <span style={{ width: 8, height: 8, borderRadius: 2, background: '#D99A00', display: 'inline-block' }} /> Your players
+              <span style={{ width: 8, height: 8, borderRadius: 2, background: '#D99A00', display: 'inline-block' }} /> {selected.name}
             </span>
           )}
           <span>
-            {focus ? <>Tracing <span className="font-bold" style={{ color: '#0e6fc4' }}>{focus}</span> · <button onClick={() => setFocus(null)} className="underline">clear</button></> : 'Tap a player to trace their route to the final'}
+            {focus ? <>Tracing <span className="font-bold" style={{ color: '#0e6fc4' }}>{focus}</span> · <button onClick={() => setFocus(null)} className="underline">clear</button></> : 'Tap a player to trace their route'}
           </span>
         </div>
       </div>

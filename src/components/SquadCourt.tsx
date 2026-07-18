@@ -11,11 +11,12 @@ const SPOTS = [
   { x: 79, y: 30 }, { x: 69, y: 52 }, { x: 79, y: 74 }, // right half
 ];
 
-export default function SquadCourt({ squad, captainId, readOnly, title }: {
+export default function SquadCourt({ squad, captainId, readOnly, teamName, emblem }: {
   squad?: string[];        // when given, renders this squad instead of your own (read-only)
   captainId?: string;
   readOnly?: boolean;
-  title?: string;          // label shown inside the court (e.g. "My Squad")
+  teamName?: string;       // team identity shown inside the court (top-left)
+  emblem?: string;
 } = {}) {
   const { myTeam, captain, currentRoundIndex, phase, openPlayer } = useGameStore();
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -74,11 +75,11 @@ export default function SquadCourt({ squad, captainId, readOnly, title }: {
           </g>
         </svg>
 
-        {/* In-court label — top-left */}
-        {title && (
-          <div className="absolute top-3 left-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-extrabold" style={{ background: 'rgba(10,31,68,0.92)', color: '#fff', boxShadow: '0 2px 10px rgba(0,0,0,0.28)' }}>
-            <span style={{ width: 7, height: 7, borderRadius: 2, background: '#37D67A', display: 'inline-block' }} />
-            {title}
+        {/* In-court team identity — logo + name, top-left */}
+        {teamName && (
+          <div className="absolute top-3 left-3 flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-xl" style={{ background: 'rgba(10,31,68,0.92)', boxShadow: '0 2px 10px rgba(0,0,0,0.28)' }}>
+            <span className="flex items-center justify-center rounded-lg text-base" style={{ width: 26, height: 26, background: 'rgba(255,255,255,0.15)' }}>{emblem}</span>
+            <span className="text-sm font-extrabold text-white">{teamName}</span>
           </div>
         )}
 

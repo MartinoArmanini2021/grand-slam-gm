@@ -36,23 +36,18 @@ export default function HomePage() {
   const medal = (i: number) => (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-7 fade-in">
+    <div className="max-w-4xl mx-auto px-4 pt-3 pb-6 fade-in">
 
       {/* ── Title + subtitle ── */}
-      <div className="text-center mb-3">
+      <div className="text-center mb-2">
         <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-none" style={{ color: '#0a1f44' }}>Wimbledon 2026</h1>
         <div className="text-xs font-bold uppercase tracking-[0.2em] mt-1" style={{ color: '#12A150' }}>
           Grand Slam · Grass
         </div>
-        <div className="text-sm mt-1" style={{ color: '#5B6B84' }}>
-          {phase === 'draft' && 'Draft open — pick your 6 from the draw'}
-          {phase === 'pre_round' && currentRound && `${currentRound.label} · set your captain to play`}
-          {phase === 'round_complete' && currentRound && `${ROUNDS[currentRoundIndex - 1]?.label} complete · ${currentRound.label} up next`}
-        </div>
       </div>
 
       {/* ── The court ── */}
-      <SquadCourt title="My Squad" />
+      <SquadCourt teamName="You" emblem="🎾" />
       <div className="text-[11px] mt-2 mb-6 text-center" style={{ color: '#9AA7BC' }}>
         {phase === 'draft'
           ? 'Tap a + to add players · your squad lines up on court'

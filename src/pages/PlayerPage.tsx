@@ -3,7 +3,8 @@ import { useGameStore } from '../store/gameStore';
 import { getPlayer, PLAYERS } from '../data/players';
 import { getTier, TIER_META } from '../data/tiers';
 import { WIMBLEDON_2026 } from '../data/wimbledon2026';
-import type { Player } from '../types';
+import { ROUNDS, isPlayerOut, getPlayerExit } from '../data/tournament';
+import type { Player, RoundId } from '../types';
 import PlayerAvatar from '../components/PlayerAvatar';
 import SurfaceBar from '../components/SurfaceBar';
 
@@ -20,9 +21,12 @@ function resultStyle(r: string): [string, string] {
 }
 
 export default function PlayerPage() {
-  const { viewPlayer, playerReturnTab, setActiveTab } = useGameStore();
+  const { viewPlayer, playerReturnTab, setActiveTab, currentRoundIndex } = useGameStore();
   const p = viewPlayer ? getPlayer(viewPlayer) : null;
   if (!p) return null;
+
+  const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
+  const isOut = isPlayerOut(p.id, revealed);
 
   const tier = getTier(p.ranking);
   const tm = TIER_META[tier];
@@ -54,6 +58,11 @@ export default function PlayerPage() {
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${tm.color}22`, color: tm.color, border: `1px solid ${tm.color}55` }}>
                 {tier}
               </span>
+              {isOut && (
+                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full" style={{ background: '#E5472B', color: '#fff' }}>
+                  ELIMINATED · {getPlayerExit(p.id)}
+                </span>
+              )}
             </div>
             <h1 className="text-2xl font-extrabold tracking-tight text-white leading-tight">{p.name}</h1>
             <div className="text-sm" style={{ color: '#AFBFDA' }}>
@@ -163,7 +172,11 @@ function H2HSection({ player }: { player: Player }) {
             className="text-sm font-semibold rounded-lg px-2 py-1.5 outline-none max-w-[150px]"
             style={{ background: '#F5F7FA', border: '1px solid rgba(10,27,51,0.12)', color: '#0a1f44' }}
           >
-            {opponents.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+            {opponents.map(o => (
+              <option key={o.id} value={o.id} style={{ color: TIER_META[getTier(o.ranking)].color, fontWeight: 600 }}>
+                #{o.ranking} · {o.name}
+              </option>
+            ))}
           </select>
         </div>
       </div>
