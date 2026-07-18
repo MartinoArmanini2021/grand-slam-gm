@@ -3,6 +3,7 @@ import { useGameStore, eliminatedSquad, substitutionCandidates } from '../store/
 import { ROUNDS, getMatchesForRound, getPlayerExit, transfersOpen } from '../data/tournament';
 import { getPlayer } from '../data/players';
 import PlayerAvatar from '../components/PlayerAvatar';
+import BracketTree from '../components/BracketTree';
 import { getTier, TIER_META } from '../data/tiers';
 import { toast } from '../store/toastStore';
 import type { RoundId } from '../types';
@@ -15,6 +16,7 @@ export default function TournamentPage() {
 
   const captainHistory = useGameStore(s => s.captainHistory);
   const [viewRound, setViewRound] = useState<RoundId>(ROUNDS[0].id);
+  const [view, setView] = useState<'rounds' | 'draw'>('rounds');
 
   const revealedUpTo = phase === 'draft' ? -1 : currentRoundIndex - 1;
   const isRoundRevealed = (idx: number) => idx <= revealedUpTo;
@@ -23,6 +25,31 @@ export default function TournamentPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 fade-in">
+
+      {/* View toggle: my rounds (game) vs the real Wimbledon 2026 draw tree */}
+      <div className="flex rounded-xl overflow-hidden mb-5 w-full sm:w-auto" style={{ border: '1px solid rgba(10,27,51,0.1)' }}>
+        {([['rounds', 'My Rounds'], ['draw', 'Full Draw']] as const).map(([v, label]) => (
+          <button
+            key={v}
+            onClick={() => setView(v)}
+            className="flex-1 sm:flex-none px-5 py-2 text-sm font-bold transition-colors"
+            style={{ background: view === v ? 'rgba(14,111,196,0.1)' : '#FFFFFF', color: view === v ? '#0e6fc4' : '#5B6B84' }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {view === 'draw' && (
+        <div className="fade-in">
+          <h1 className="text-lg font-extrabold mb-1" style={{ color: '#0a1f44' }}>Wimbledon 2026 — Men's Singles draw</h1>
+          <p className="text-xs mb-4" style={{ color: '#5B6B84' }}>The real bracket. Toggle the two halves and tap a player to trace their route to the final.</p>
+          <BracketTree />
+        </div>
+      )}
+
+      {view === 'rounds' && (
+    <>
 
       {/* ── Status card ── */}
       {phase === 'draft' && (
@@ -181,6 +208,8 @@ export default function TournamentPage() {
         revealed={isRoundRevealed(ROUNDS.findIndex(r => r.id === viewRound))}
         captainHistory={captainHistory}
       />
+    </>
+      )}
     </div>
   );
 }
