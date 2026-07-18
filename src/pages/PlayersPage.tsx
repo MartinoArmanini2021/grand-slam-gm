@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { PLAYERS } from '../data/players';
 import type { Player, TournamentResult } from '../types';
 import PlayerAvatar from '../components/PlayerAvatar';
+import PlayerCompare from '../components/PlayerCompare';
 import { getTier, TIER_META, TIER_ORDER } from '../data/tiers';
 import { useGameStore } from '../store/gameStore';
 
@@ -25,6 +26,7 @@ export default function PlayersPage() {
   const openPlayer = useGameStore(s => s.openPlayer);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<'ranking' | 'grass' | 'price'>('ranking');
+  const [compare, setCompare] = useState(false);
 
   const sorted = [...PLAYERS]
     .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()))
@@ -133,7 +135,20 @@ export default function PlayersPage() {
             </button>
           ))}
         </div>
+        <button
+          onClick={() => setCompare(c => !c)}
+          className="px-3 py-2 text-xs font-bold rounded-xl transition-colors"
+          style={{
+            background: compare ? '#0e6fc4' : '#FFFFFF',
+            color: compare ? '#fff' : '#0e6fc4',
+            border: '1px solid rgba(14,111,196,0.3)',
+          }}
+        >
+          ⇄ Compare
+        </button>
       </div>
+
+      {compare && <PlayerCompare />}
 
       {/* Tier-grouped tables */}
       {groups.map(g => (

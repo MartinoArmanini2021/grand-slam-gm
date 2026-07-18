@@ -1,7 +1,7 @@
 import { useGameStore } from '../store/gameStore';
 import { ROUNDS, getPlayerExit } from '../data/tournament';
 import { getPlayer } from '../data/players';
-import PlayerAvatar from '../components/PlayerAvatar';
+import SquadCourt from '../components/SquadCourt';
 import type { RoundId } from '../types';
 
 const ROUND_PTS: Record<RoundId, number> = { R32: 2, R16: 5, QF: 10, SF: 20, F: 40 };
@@ -147,48 +147,10 @@ export default function HomePage() {
               Full view →
             </button>
           </div>
-          {myTeam.length === 0 ? (
-            <div className="text-center py-8" style={{ color: '#9AA7BC' }}>
-              <div className="text-3xl mb-2">⬜</div>
-              <div className="text-sm">No players yet</div>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {myTeam.map(id => {
-                const p = getPlayer(id);
-                const exit = getPlayerExit(id);
-                const isOut = exit !== null && revealedRounds.includes(exit);
-                const isCap = captain === id;
-                const isWinner = exit === null && phase === 'finished';
-                return (
-                  <div
-                    key={id}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-                    style={{
-                      background: isCap ? 'rgba(217,154,0,0.05)' : 'rgba(10,27,51,0.03)',
-                      border: `1px solid ${isCap ? 'rgba(217,154,0,0.2)' : 'rgba(10,27,51,0.06)'}`,
-                      opacity: isOut ? 0.45 : 1,
-                    }}
-                  >
-                    <PlayerAvatar playerId={id} name={p.name} size="sm" />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate" style={{ color: '#0a1f44' }}>{p.name}</div>
-                      <div className="text-xs" style={{ color: '#5B6B84' }}>#{p.ranking} · 🌱 {p.surface.grass}%</div>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      {isCap && <span className="text-xs px-1.5 py-0.5 rounded font-bold" style={{ background: 'rgba(217,154,0,0.15)', color: '#D99A00', border: '1px solid rgba(217,154,0,0.25)' }}>C</span>}
-                      {isWinner && <span className="text-xs">🏆</span>}
-                      {isOut && <span className="text-xs" style={{ color: '#E5472B' }}>OUT {exit}</span>}
-                    </div>
-                    <div className="font-num text-xs font-semibold shrink-0" style={{ color: '#0e6fc4' }}>${p.price}M</div>
-                  </div>
-                );
-              })}
-              {Array.from({ length: 6 - myTeam.length }).map((_, i) => (
-                <div key={i} className="px-3 py-2.5 rounded-xl text-xs text-center" style={{ border: '1px dashed rgba(10,27,51,0.07)', color: '#9AA7BC' }}>
-                  Empty slot
-                </div>
-              ))}
+          <SquadCourt />
+          {captain && myTeam.length > 0 && (
+            <div className="text-[11px] mt-3 text-center" style={{ color: '#9AA7BC' }}>
+              Tap a player to see their profile · <span style={{ color: '#D99A00' }}>⭐ = captain (2× points)</span>
             </div>
           )}
         </div>
