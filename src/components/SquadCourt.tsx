@@ -106,11 +106,11 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
                 style={{ left: `${spot.x}%`, top: `${spot.y}%`, cursor: canEdit ? 'pointer' : 'default' }}
               >
                 <div className="rounded-full flex items-center justify-center transition-transform" style={{
-                  width: 46, height: 46,
+                  width: 60, height: 60,
                   background: 'rgba(12,26,46,0.42)',
                   border: canEdit ? '2px dashed rgba(255,255,255,0.5)' : '2px solid rgba(255,255,255,0.18)',
                 }}>
-                  {canEdit && <span className="text-white/80 text-xl leading-none font-light">+</span>}
+                  {canEdit && <span className="text-white/80 text-2xl leading-none font-light">+</span>}
                 </div>
                 {canEdit && <span className="mt-1 text-[9px] font-semibold text-white/70">Add</span>}
               </button>
@@ -128,9 +128,9 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
               style={{ left: `${spot.x}%`, top: `${spot.y}%`, opacity: out ? 0.5 : 1 }}
             >
               <div className="relative" style={isCap ? { filter: 'drop-shadow(0 0 6px rgba(217,154,0,0.7))' } : undefined}>
-                <PlayerAvatar playerId={id} name={p.name} size="md" />
+                <PlayerAvatar playerId={id} name={p.name} size="lg" />
                 {isCap && (
-                  <span className="absolute -top-1 -right-1 rounded-full flex items-center justify-center text-[9px] font-extrabold" style={{ width: 16, height: 16, background: 'var(--gold)', color: '#fff', border: '1.5px solid #fff' }}>C</span>
+                  <span className="absolute -top-1 -right-1 rounded-full flex items-center justify-center text-[10px] font-extrabold" style={{ width: 20, height: 20, background: 'var(--gold)', color: '#fff', border: '2px solid #fff' }}>C</span>
                 )}
               </div>
               <div className="mt-1 px-1.5 py-0.5 rounded-md flex items-center gap-1 whitespace-nowrap" style={{ background: 'rgba(10,31,68,0.82)' }}>
