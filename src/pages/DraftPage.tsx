@@ -3,6 +3,7 @@ import { useGameStore } from '../store/gameStore';
 import { PLAYERS, getPlayer } from '../data/players';
 import { ROUNDS, isPlayerOut, getPlayerExit } from '../data/tournament';
 import { getTier, TIER_META } from '../data/tiers';
+import { tierCounts, squadShortfall, isSquadValid, TIER_MINIMUMS } from '../data/squadRules';
 import PlayerAvatar from '../components/PlayerAvatar';
 import PurchaseConfirmModal from '../components/PurchaseConfirmModal';
 import { toast } from '../store/toastStore';
@@ -21,6 +22,9 @@ export default function DraftPage() {
 
   const locked = phase !== 'draft'; // squad is locked after the draft — transfers happen on the Bracket page
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
+  const counts = tierCounts(myTeam);
+  const valid = isSquadValid(myTeam);
+  const shortfall = squadShortfall(myTeam);
 
   const sorted = [...PLAYERS]
     .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()))
@@ -199,9 +203,23 @@ export default function DraftPage() {
               </div>
             </div>
 
+            {/* Tier requirement: ≥4 Silver, ≥2 Gold of your 8. */}
+            <div className="flex gap-2 mb-4">
+              {TIER_MINIMUMS.map(({ tier, min }) => {
+                const have = counts[tier];
+                const ok = have >= min;
+                return (
+                  <div key={tier} className="flex-1 rounded-lg px-2 py-1.5 text-center" style={{ background: ok ? 'rgba(18,161,80,0.08)' : 'var(--raised)', border: `1px solid ${ok ? 'rgba(18,161,80,0.28)' : 'rgba(10,27,51,0.08)'}` }}>
+                    <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: TIER_META[tier].color }}>{tier}</div>
+                    <div className="font-num text-sm font-bold" style={{ color: ok ? 'var(--green)' : 'var(--ink)' }}>{have}/{min}{ok ? ' ✓' : ''}</div>
+                  </div>
+                );
+              })}
+            </div>
+
             <div className="space-y-1.5 mb-4">
               {myTeam.length === 0 && (
-                <div className="text-center py-6 text-sm" style={{ color: 'var(--ink-3)' }}>Pick 6 players</div>
+                <div className="text-center py-6 text-sm" style={{ color: 'var(--ink-3)' }}>Pick {TEAM_SIZE} players</div>
               )}
               {myTeam.map(id => {
                 const p = getPlayer(id);
@@ -233,16 +251,18 @@ export default function DraftPage() {
             ) : (
               <button
                 onClick={() => { finalizeDraft(); toast('Squad locked in — good luck! 🎾', 'good'); }}
-                disabled={myTeam.length === 0}
+                disabled={!valid}
                 className="w-full py-2.5 rounded-xl font-bold text-sm transition-all"
-                style={{ background: myTeam.length > 0 ? 'var(--blue)' : 'rgba(10,27,51,0.05)', color: myTeam.length > 0 ? '#fff' : 'var(--ink-3)', cursor: myTeam.length === 0 ? 'not-allowed' : 'pointer' }}
+                style={{ background: valid ? 'var(--blue)' : 'rgba(10,27,51,0.05)', color: valid ? '#fff' : 'var(--ink-3)', cursor: valid ? 'pointer' : 'not-allowed' }}
               >
-                {myTeam.length === 0 ? 'Pick at least one player' : myTeam.length < TEAM_SIZE ? `Lock ${myTeam.length}/${TEAM_SIZE} squad →` : 'Lock Squad →'}
+                {valid ? 'Lock Squad →'
+                  : myTeam.length < TEAM_SIZE ? `Pick ${TEAM_SIZE - myTeam.length} more`
+                  : `Need ${shortfall.map(s => `${s.missing} ${s.tier}`).join(', ')}`}
               </button>
             )}
-            {!locked && myTeam.length > 0 && myTeam.length < TEAM_SIZE && (
+            {!locked && !valid && myTeam.length > 0 && (
               <p className="text-[11px] text-center mt-2" style={{ color: 'var(--ink-3)' }}>
-                You can lock fewer than {TEAM_SIZE} — but a full squad always scores more.
+                A valid squad is {TEAM_SIZE} players with at least {TIER_MINIMUMS.map(t => `${t.min} ${t.tier}`).join(' & ')}.
               </p>
             )}
           </div>
@@ -258,11 +278,11 @@ export default function DraftPage() {
           </div>
           <button
             onClick={() => { finalizeDraft(); toast('Squad locked in — good luck! 🎾', 'good'); }}
-            disabled={myTeam.length === 0}
+            disabled={!valid}
             className="px-5 py-2.5 rounded-xl font-bold text-sm shrink-0"
-            style={{ background: myTeam.length > 0 ? 'var(--blue)' : 'rgba(255,255,255,0.14)', color: myTeam.length > 0 ? '#fff' : 'var(--on-navy-2)' }}
+            style={{ background: valid ? 'var(--blue)' : 'rgba(255,255,255,0.14)', color: valid ? '#fff' : 'var(--on-navy-2)' }}
           >
-            Lock Squad →
+            {valid ? 'Lock Squad →' : myTeam.length < TEAM_SIZE ? `${TEAM_SIZE - myTeam.length} to pick` : `Need ${shortfall.map(s => `${s.missing} ${s.tier[0]}`).join(', ')}`}
           </button>
         </div>
       )}

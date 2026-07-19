@@ -133,21 +133,25 @@ export default function BracketTree() {
     </div>
   );
 
-  // Connector column: for each child match, an elbow joining its two feeders.
+  // Connector column: for each child match, an elbow joining its two feeders. It
+  // grows to absorb spare width, so the columns spread evenly and the Final lands
+  // flush against the right edge.
   const Connector = ({ count, single }: { count: number; single?: boolean }) => (
-    <div className="flex flex-col" style={{ width: CONN_W }}>
+    <div className="flex flex-col" style={{ flex: `1 0 ${CONN_W}px`, minWidth: CONN_W }}>
       <ColHeader label="" />
       <div className="flex-1 flex flex-col">
         {Array.from({ length: count }).map((_, i) => (
           <div key={i} className="flex-1 relative">
             {single ? (
+              // one feeder → straight line across to the child
               <div style={{ position: 'absolute', left: 0, right: 0, top: '50%', borderTop: `1.5px solid ${LINE}` }} />
             ) : (
               <>
+                {/* vertical spine spanning the two feeder centres (25%–75%) */}
                 <div style={{ position: 'absolute', right: 0, top: '25%', height: '50%', borderRight: `1.5px solid ${LINE}` }} />
+                {/* horizontal stub from each feeder into the spine */}
                 <div style={{ position: 'absolute', left: 0, right: 0, top: '25%', borderTop: `1.5px solid ${LINE}` }} />
                 <div style={{ position: 'absolute', left: 0, right: 0, top: '75%', borderTop: `1.5px solid ${LINE}` }} />
-                <div style={{ position: 'absolute', right: `-${CONN_W}px`, width: CONN_W, top: '50%', borderTop: `1.5px solid ${LINE}` }} />
               </>
             )}
           </div>
@@ -174,7 +178,7 @@ export default function BracketTree() {
             ))}
           </div>
           <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.1)' }}>
-            {([['last32', 'Last 32'], ['full', 'Full draw (128)']] as const).map(([d, label]) => (
+            {([['full', 'Full draw (128)'], ['last32', 'Last 32']] as const).map(([d, label]) => (
               <button
                 key={d}
                 onClick={() => setDepth(d)}
@@ -217,7 +221,7 @@ export default function BracketTree() {
 
       {/* Tree */}
       <div className="overflow-auto rounded-2xl p-3" style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.07)', maxHeight: depth === 'full' ? '78vh' : undefined }}>
-        <div className="flex items-stretch" style={{ minWidth: 'min-content' }}>
+        <div className="flex items-stretch w-full" style={{ minWidth: 'min-content' }}>
           {cols.map((round, ci) => {
             const matches = FULL_DRAW.filter(m => m.round === round && m.half === half);
             const nextRound = cols[ci + 1];

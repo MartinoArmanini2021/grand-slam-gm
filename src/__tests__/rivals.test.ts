@@ -2,15 +2,21 @@ import { describe, it, expect } from 'vitest';
 import { RIVALS, buildSquad, scoreSquad, getRivalTeams, simulateRival } from '../data/rivals';
 import { getPlayer } from '../data/players';
 import { ROUNDS, isPlayerOut } from '../data/tournament';
+import { isSquadValid, tierCounts } from '../data/squadRules';
 
 describe('rivals squad building', () => {
-  it('every rival strategy yields a legal 8-player squad within $100M', () => {
+  it('every rival strategy yields a legal 8-player squad within $100M meeting the tier rule', () => {
     for (const r of RIVALS) {
       const squad = buildSquad(r.rank);
       expect(squad).toHaveLength(8);
       expect(new Set(squad).size).toBe(8);
       const spent = squad.reduce((s, id) => s + getPlayer(id).price, 0);
       expect(spent).toBeLessThanOrEqual(100);
+      // ≥4 Silver, ≥2 Gold
+      expect(isSquadValid(squad)).toBe(true);
+      const c = tierCounts(squad);
+      expect(c.Silver).toBeGreaterThanOrEqual(4);
+      expect(c.Gold).toBeGreaterThanOrEqual(2);
     }
   });
 

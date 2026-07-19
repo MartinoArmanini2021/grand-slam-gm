@@ -1,5 +1,7 @@
 import { PLAYERS, getPlayer } from './players';
 import { ROUNDS, MATCHES, getOpponentId, winPoints, getPlayerExit, isPlayerOut, BUDGET_RETURN_RATES, transfersOpen } from './tournament';
+import { getTier, type Tier } from './tiers';
+import { SQUAD_SIZE, TIER_MINIMUMS } from './squadRules';
 import type { Player, RoundId, Transfer } from '../types';
 
 // Simulated league managers. Everyone gets the same $100M and can pick ANY
@@ -18,7 +20,7 @@ export interface Rival {
 }
 
 const BUDGET = 100;
-const SQUAD = 8;
+const SQUAD = SQUAD_SIZE;
 // Season form proxy: year-to-date win rate (0–1). A real, populated signal —
 // unlike `form`, which is empty, so strategies must not depend on it.
 const ytdRate = (p: Player) => {
@@ -38,19 +40,53 @@ function balancedScore(p: Player) {
   return p.surface.grass + ytdRate(p) * 25 - Math.abs(p.price - 12) * 2;
 }
 
-// Greedy squad build: follow the strategy order but always keep 6 affordable.
+// Greedy squad build that follows the strategy order while always keeping a legal
+// squad reachable: it never spends so much it can't afford to complete the tier
+// minimums (≥4 Silver, ≥2 Gold), and reserves the final slots for any still-unmet
+// minimum. So Galácticos still splurges — but on a legal, balanced eight.
 export function buildSquad(rank: (a: Player, b: Player) => number): string[] {
   const ranked = [...PLAYERS].sort(rank);
+  const byPrice = [...PLAYERS].sort((a, b) => a.price - b.price);
+  const need: Record<Tier, number> = { Platinum: 0, Gold: 0, Silver: 0 };
+  for (const { tier, min } of TIER_MINIMUMS) need[tier] = min;
+
+  // Cheapest way to fill `slots` more players, still meeting `needLeft` per tier,
+  // avoiding `owned`. Returns Infinity if it can't be done.
+  const cheapestCompletion = (owned: Set<string>, slots: number, needLeft: Record<Tier, number>) => {
+    const used = new Set(owned);
+    let cost = 0, filled = 0;
+    for (const { tier } of TIER_MINIMUMS) {
+      for (let k = 0; k < needLeft[tier]; k++) {
+        const pick = byPrice.find(p => !used.has(p.id) && getTier(p.ranking) === tier);
+        if (!pick) return Infinity;
+        used.add(pick.id); cost += pick.price; filled++;
+      }
+    }
+    for (; filled < slots; filled++) {
+      const pick = byPrice.find(p => !used.has(p.id));
+      if (!pick) return Infinity;
+      used.add(pick.id); cost += pick.price;
+    }
+    return cost;
+  };
+
   const squad: Player[] = [];
+  const owned = new Set<string>();
   let spent = 0;
   for (const p of ranked) {
     if (squad.length === SQUAD) break;
-    const slotsAfter = SQUAD - squad.length - 1;
-    const cheapestRest = ranked
-      .filter(x => x !== p && !squad.includes(x))
-      .map(x => x.price).sort((a, b) => a - b)
-      .slice(0, slotsAfter).reduce((s, v) => s + v, 0);
-    if (spent + p.price + cheapestRest <= BUDGET) { squad.push(p); spent += p.price; }
+    if (owned.has(p.id)) continue;
+    const tier = getTier(p.ranking);
+    const slotsLeft = SQUAD - squad.length;
+    const sumNeed = TIER_MINIMUMS.reduce((s, { tier: t }) => s + need[t], 0);
+    // If every remaining slot is spoken for by a minimum, only take needed tiers.
+    if (slotsLeft <= sumNeed && need[tier] <= 0) continue;
+    const needAfter = { ...need }; if (needAfter[tier] > 0) needAfter[tier]--;
+    const completion = cheapestCompletion(new Set([...owned, p.id]), slotsLeft - 1, needAfter);
+    if (spent + p.price + completion <= BUDGET) {
+      squad.push(p); owned.add(p.id); spent += p.price;
+      if (need[tier] > 0) need[tier]--;
+    }
   }
   return squad.map(p => p.id);
 }

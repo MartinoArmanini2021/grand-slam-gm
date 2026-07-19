@@ -1,6 +1,7 @@
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { ROUNDS, isPlayerOut } from '../data/tournament';
+import { isSquadValid } from '../data/squadRules';
 import { useLeagueBoard } from '../data/leagueBoard';
 import SquadCourt from '../components/SquadCourt';
 import type { GamePhase, RoundId } from '../types';
@@ -14,6 +15,7 @@ export default function HomePage() {
   } = useGameStore();
   const { teamName, teamEmblem } = useProfile();
 
+  const squadReady = isSquadValid(myTeam);
   const currentRound = currentRoundIndex < ROUNDS.length ? ROUNDS[currentRoundIndex] : null;
   const revealedRounds = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
   const activePlayers = myTeam.filter(id => !isPlayerOut(id, revealedRounds));
@@ -45,8 +47,8 @@ export default function HomePage() {
           <StatCard
             label="Squad"
             value={`${myTeam.length}/${TEAM_TARGET}`}
-            unit={myTeam.length >= TEAM_TARGET ? 'Complete' : `${TEAM_TARGET - myTeam.length} to pick`}
-            color={myTeam.length === TEAM_TARGET ? 'var(--green)' : 'var(--gold)'}
+            unit={squadReady ? 'Ready ✓' : myTeam.length < TEAM_TARGET ? `${TEAM_TARGET - myTeam.length} to pick` : 'Check tiers'}
+            color={squadReady ? 'var(--green)' : 'var(--gold)'}
           />
         </div>
       </div>
@@ -55,14 +57,14 @@ export default function HomePage() {
       <SquadCourt fluid teamName={teamName} emblem={teamEmblem} onTeamClick={() => openTeam('you')} />
       <div className="text-[11px] mt-1.5 mb-3 text-center" style={{ color: 'var(--ink-3)' }}>
         {phase === 'draft'
-          ? 'Tap a + to add players · tap a player on court to manage your squad'
-          : <>Tap a player for their profile · <span style={{ color: 'var(--gold)' }}>⭐ = captain (2× points)</span></>}
+          ? 'Tap a + to add players · tap a player to manage your squad'
+          : <>Tap a player to manage or view their profile · <span style={{ color: 'var(--gold)' }}>⭐ = captain (2× points)</span></>}
       </div>
 
       {/* ── Action callout ── */}
       {phase === 'draft' && (
-        <ActionBanner color="var(--blue)" title={myTeam.length < TEAM_TARGET ? 'Build your squad' : 'Squad ready — lock it in'}
-          body={`$${budget.toFixed(1)}M budget · ${myTeam.length}/${TEAM_TARGET} picked`} cta="Go to Market" onClick={() => setActiveTab('draft')} />
+        <ActionBanner color="var(--blue)" title={squadReady ? 'Squad ready — lock it in' : 'Build your squad'}
+          body={`$${budget.toFixed(1)}M budget · ${myTeam.length}/${TEAM_TARGET} picked · ≥4 Silver, ≥2 Gold`} cta="Go to Market" onClick={() => setActiveTab('draft')} />
       )}
       {phase === 'pre_round' && currentRound && (
         <ActionBanner color="var(--gold)" title={`Set captain for ${currentRound.label}`}

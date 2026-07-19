@@ -29,7 +29,7 @@ function RankBadge({ i }: { i: number }) {
 }
 
 export default function LeaguePage() {
-  const { myTeam, currentRoundIndex, openTeam } = useGameStore();
+  const { myTeam, currentRoundIndex, openTeam, openPlayer } = useGameStore();
   const [view, setView] = useState<'public' | 'private'>('public');
 
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
@@ -126,7 +126,9 @@ export default function LeaguePage() {
                         return (
                           <span
                             key={id}
-                            className="inline-flex items-center gap-1.5 pl-0.5 pr-2 py-0.5 rounded-full"
+                            role="button"
+                            onClick={e => { e.stopPropagation(); openPlayer(id); }}
+                            className="inline-flex items-center gap-1.5 pl-0.5 pr-2 py-0.5 rounded-full cursor-pointer transition-transform hover:-translate-y-px"
                             style={{
                               background: out ? 'rgba(229,71,43,0.08)' : 'rgba(18,161,80,0.08)',
                               border: `1px solid ${out ? 'rgba(229,71,43,0.22)' : 'rgba(18,161,80,0.22)'}`,

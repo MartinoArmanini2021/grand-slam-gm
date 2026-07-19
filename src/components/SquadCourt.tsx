@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, substitutionCandidates } from '../store/gameStore';
 import { getPlayer } from '../data/players';
-import { getPlayerExit, isPlayerOut, ROUNDS } from '../data/tournament';
+import { getPlayerExit, isPlayerOut, ROUNDS, transfersOpen } from '../data/tournament';
+import { lastName } from '../data/format';
 import PlayerAvatar from './PlayerAvatar';
 import PlayerPickerModal from './PlayerPickerModal';
 
@@ -21,13 +22,15 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
   onTeamClick?: () => void; // makes the team label a link (e.g. to your team page)
   fluid?: boolean;         // fill the container width instead of the 860px cap
 } = {}) {
-  const { myTeam, captain, currentRoundIndex, phase, openPlayer, removePlayer } = useGameStore();
+  const { myTeam, captain, currentRoundIndex, phase, budget, openPlayer, removePlayer, replacePlayer } = useGameStore();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [manageId, setManageId] = useState<string | null>(null);
+  const [subFor, setSubFor] = useState<string | null>(null); // eliminated player being transferred out
   const team = squad ?? myTeam;
   const cap = captainId ?? (squad ? undefined : captain);
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
-  const canEdit = !readOnly && !squad && phase === 'draft';
+  const isOwnTeam = !readOnly && !squad; // your own court (home / your team page)
+  const canEdit = isOwnTeam && phase === 'draft';
 
   return (
     <>
@@ -124,7 +127,7 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
           return (
             <button
               key={i}
-              onClick={() => (canEdit ? setManageId(id) : openPlayer(id))}
+              onClick={() => (isOwnTeam ? setManageId(id) : openPlayer(id))}
               className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center"
               style={{ left: `${spot.x}%`, top: `${spot.y}%`, opacity: out ? 0.5 : 1 }}
             >
@@ -171,16 +174,35 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
                 </div>
               </div>
               <div className="p-2">
-                <button
-                  onClick={() => { removePlayer(id); setManageId(null); setPickerOpen(true); }}
-                  className="w-full text-left px-3 py-3 rounded-xl text-sm font-bold flex items-center gap-2.5 transition-colors hover:bg-black/5"
-                  style={{ color: 'var(--ink)' }}
-                >🔁 Replace player</button>
-                <button
-                  onClick={() => { removePlayer(id); setManageId(null); }}
-                  className="w-full text-left px-3 py-3 rounded-xl text-sm font-bold flex items-center gap-2.5 transition-colors hover:bg-black/5"
-                  style={{ color: 'var(--ember)' }}
-                >✕ Remove from squad</button>
+                {phase === 'draft' ? (
+                  <>
+                    <button
+                      onClick={() => { removePlayer(id); setManageId(null); setPickerOpen(true); }}
+                      className="w-full text-left px-3 py-3 rounded-xl text-sm font-bold flex items-center gap-2.5 transition-colors hover:bg-black/5"
+                      style={{ color: 'var(--ink)' }}
+                    >🔁 Replace player</button>
+                    <button
+                      onClick={() => { removePlayer(id); setManageId(null); }}
+                      className="w-full text-left px-3 py-3 rounded-xl text-sm font-bold flex items-center gap-2.5 transition-colors hover:bg-black/5"
+                      style={{ color: 'var(--ember)' }}
+                    >✕ Remove from squad</button>
+                  </>
+                ) : (() => {
+                  const out = isPlayerOut(id, revealed);
+                  const windowOpen = transfersOpen(currentRoundIndex);
+                  if (out && windowOpen) return (
+                    <button
+                      onClick={() => { setManageId(null); setSubFor(id); }}
+                      className="w-full text-left px-3 py-3 rounded-xl text-sm font-bold flex items-center gap-2.5 transition-colors hover:bg-black/5"
+                      style={{ color: 'var(--ember)' }}
+                    >🔁 Transfer out — replace {lastName(mp.name)}</button>
+                  );
+                  return (
+                    <div className="px-3 py-2 text-xs" style={{ color: 'var(--ink-3)' }}>
+                      {out ? 'Eliminated — the transfer window has closed.' : 'Still in the draw — locked into your squad.'}
+                    </div>
+                  );
+                })()}
                 <button
                   onClick={() => { openPlayer(id); setManageId(null); }}
                   className="w-full text-left px-3 py-3 rounded-xl text-sm font-semibold flex items-center gap-2.5 transition-colors hover:bg-black/5"
@@ -191,6 +213,51 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
                   className="w-full text-center px-3 py-2.5 mt-1 rounded-xl text-xs font-semibold transition-colors hover:bg-black/5"
                   style={{ color: 'var(--ink-3)' }}
                 >Cancel</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Transfer-out picker: choose a still-alive, affordable replacement */}
+      {subFor && (() => {
+        const outP = getPlayer(subFor);
+        const candidates = substitutionCandidates(myTeam, budget, currentRoundIndex);
+        return (
+          <div
+            onClick={() => setSubFor(null)}
+            style={{ position: 'fixed', inset: 0, zIndex: 220, background: 'rgba(10,27,51,0.55)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+          >
+            <div onClick={e => e.stopPropagation()} className="fade-in w-full" style={{ maxWidth: 520, background: '#FFFFFF', borderRadius: '18px 18px 0 0', maxHeight: '82vh', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ background: 'linear-gradient(120deg,var(--ink),var(--navy-2))', padding: '16px 18px', borderRadius: '18px 18px 0 0' }}>
+                <div className="flex items-center justify-between">
+                  <div className="min-w-0">
+                    <div className="text-white font-extrabold text-base">Replace {lastName(outP.name)}</div>
+                    <div className="text-xs" style={{ color: 'var(--on-navy)' }}>
+                      <span className="font-num">${budget.toFixed(1)}M</span> to spend · still-alive players only
+                    </div>
+                  </div>
+                  <button onClick={() => setSubFor(null)} className="text-white text-sm font-bold px-3 py-1.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.15)' }}>Cancel</button>
+                </div>
+              </div>
+              <div className="overflow-y-auto p-2" style={{ flex: 1 }}>
+                {candidates.length === 0 ? (
+                  <div className="text-center py-8 text-sm" style={{ color: 'var(--ink-3)' }}>No affordable, still-alive replacements.</div>
+                ) : candidates.map(p => (
+                  <div key={p.id} className="flex items-center gap-3 px-2 py-2 rounded-xl">
+                    <PlayerAvatar playerId={p.id} name={p.name} size="sm" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold truncate" style={{ color: 'var(--ink)' }}>{p.name}</div>
+                      <div className="text-[11px]" style={{ color: 'var(--ink-3)' }}>#{p.ranking} · 🌱{p.surface.grass}%</div>
+                    </div>
+                    <div className="font-num text-sm font-bold shrink-0 w-12 text-right" style={{ color: 'var(--blue)' }}>${p.price}M</div>
+                    <button
+                      onClick={() => { replacePlayer(subFor, p.id); setSubFor(null); }}
+                      className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg text-white"
+                      style={{ background: 'var(--green)' }}
+                    >Sign</button>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

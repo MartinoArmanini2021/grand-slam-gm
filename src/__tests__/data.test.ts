@@ -1,6 +1,28 @@
 import { describe, it, expect } from 'vitest';
 import { PLAYERS, getPlayer } from '../data/players';
 import { getTier, TIER_ORDER } from '../data/tiers';
+import { isSquadValid, tierCounts, SQUAD_SIZE } from '../data/squadRules';
+
+describe('squad composition rule (≥4 Silver, ≥2 Gold of 8)', () => {
+  // 4 Silver (rank ≥17), 2 Gold (7–16), 2 Platinum (≤6)
+  const valid = ['munar', 'giron', 'safiullin', 'mochizuki', 'cobolli', 'lehecka', 'sinner', 'zverev'];
+  it('accepts a squad meeting every minimum', () => {
+    expect(valid).toHaveLength(SQUAD_SIZE);
+    const c = tierCounts(valid);
+    expect(c.Silver).toBeGreaterThanOrEqual(4);
+    expect(c.Gold).toBeGreaterThanOrEqual(2);
+    expect(isSquadValid(valid)).toBe(true);
+  });
+  it('rejects too few Gold', () => {
+    // swap a Gold (cobolli #10) for a Silver (brooksby #82) → only 1 Gold left
+    const oneGold = ['munar', 'giron', 'safiullin', 'mochizuki', 'brooksby', 'lehecka', 'sinner', 'zverev'];
+    expect(tierCounts(oneGold).Gold).toBe(1);
+    expect(isSquadValid(oneGold)).toBe(false);
+  });
+  it('rejects an under-size squad even if tiers are met', () => {
+    expect(isSquadValid(valid.slice(0, 7))).toBe(false);
+  });
+});
 
 describe('players data integrity', () => {
   it('is the full real Wimbledon 2026 field (52 players: last-32 + notable entrants)', () => {

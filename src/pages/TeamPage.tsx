@@ -155,51 +155,67 @@ function TeamView({ emblem, name, manager, color, score, budget, squad, captainI
 }
 
 // Who they signed at the draft, and every mid-tournament swap since — visible on
-// any team so the whole league can see who bought whom, and when.
+// any team so the whole league can see who bought whom, and when. Chips open the
+// player's profile.
 function TransferHistory({ initialSquad, transfers }: { initialSquad: string[]; transfers: Transfer[] }) {
+  const openPlayer = useGameStore(s => s.openPlayer);
+  const draftSpend = initialSquad.reduce((s, id) => s + getPlayer(id).price, 0);
+
   const chip = (id: string, tone: 'in' | 'out' | 'neutral') => {
     const p = getPlayer(id);
     const color = tone === 'out' ? 'var(--ember)' : tone === 'in' ? 'var(--green)' : 'var(--ink)';
     const bg = tone === 'out' ? 'rgba(229,71,43,0.08)' : tone === 'in' ? 'rgba(18,161,80,0.08)' : 'var(--raised)';
     const border = tone === 'out' ? 'rgba(229,71,43,0.22)' : tone === 'in' ? 'rgba(18,161,80,0.22)' : 'rgba(10,27,51,0.1)';
     return (
-      <span className="inline-flex items-center gap-1.5 pl-0.5 pr-2 py-0.5 rounded-full whitespace-nowrap" style={{ background: bg, border: `1px solid ${border}` }}>
-        <PlayerAvatar playerId={id} name={p.name} size="sm" />
+      <button
+        onClick={() => openPlayer(id)}
+        className="inline-flex items-center gap-1.5 pl-0.5 pr-2 py-0.5 rounded-full whitespace-nowrap transition-transform hover:-translate-y-px"
+        style={{ background: bg, border: `1px solid ${border}` }}
+        title={`View ${p.name}`}
+      >
+        <PlayerAvatar playerId={id} name={p.name} size="sm" ring={false} />
         <span className="text-[11px] font-semibold" style={{ color, textDecoration: tone === 'out' ? 'line-through' : 'none' }}>{lastName(p.name)}</span>
         <span className="font-num text-[10px]" style={{ color: 'var(--ink-3)' }}>${p.price}M</span>
-      </span>
+      </button>
     );
   };
 
   return (
-    <div className="rounded-2xl p-4 mt-5" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.08)' }}>
-      <div className="flex items-center justify-between mb-3">
+    <div className="rounded-2xl mt-5 overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.08)' }}>
+      <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid rgba(10,27,51,0.06)' }}>
         <h2 className="text-sm font-bold" style={{ color: 'var(--ink)' }}>Transfer history</h2>
-        <span className="text-[11px] font-num" style={{ color: 'var(--ink-3)' }}>{transfers.length} move{transfers.length === 1 ? '' : 's'}</span>
+        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(14,111,196,0.1)', color: 'var(--blue)' }}>{transfers.length} transfer{transfers.length === 1 ? '' : 's'}</span>
       </div>
 
-      {/* Draft signings */}
-      <div className="text-[10px] font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--ink-3)' }}>Signed at the draft</div>
-      <div className="flex flex-wrap gap-1.5 mb-4">
-        {initialSquad.map(id => <span key={id}>{chip(id, 'neutral')}</span>)}
-      </div>
-
-      {/* In-tournament moves */}
-      <div className="text-[10px] font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--ink-3)' }}>Transfers</div>
-      {transfers.length === 0 ? (
-        <div className="text-[12px]" style={{ color: 'var(--ink-3)' }}>No transfers yet — the squad is as drafted.</div>
-      ) : (
-        <div className="space-y-2">
-          {transfers.map((t, i) => (
-            <div key={i} className="flex items-center gap-2 flex-wrap">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md shrink-0" style={{ background: 'rgba(14,111,196,0.1)', color: 'var(--blue)' }}>{roundShort(t.round)}</span>
-              {chip(t.out, 'out')}
-              <span style={{ color: 'var(--ink-3)' }}>→</span>
-              {chip(t.in, 'in')}
-            </div>
-          ))}
+      <div className="p-4">
+        {/* Draft signings */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-3)' }}>Signed at the draft</div>
+          <div className="font-num text-[11px]" style={{ color: 'var(--ink-3)' }}>${draftSpend}M spent</div>
         </div>
-      )}
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {initialSquad.map(id => <span key={id}>{chip(id, 'neutral')}</span>)}
+        </div>
+
+        {/* In-tournament moves — a timeline */}
+        <div className="text-[10px] font-bold uppercase tracking-wide mb-2.5" style={{ color: 'var(--ink-3)' }}>In-tournament moves</div>
+        {transfers.length === 0 ? (
+          <div className="rounded-xl px-3 py-4 text-center text-[12px]" style={{ background: 'var(--raised)', color: 'var(--ink-3)' }}>
+            No transfers yet — this squad is exactly as drafted.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {transfers.map((t, i) => (
+              <div key={i} className="flex items-center gap-2.5 flex-wrap rounded-xl px-3 py-2" style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.06)' }}>
+                <span className="text-[10px] font-extrabold px-2 py-1 rounded-md shrink-0 font-num" style={{ background: 'var(--blue)', color: '#fff' }}>{roundShort(t.round)}</span>
+                {chip(t.out, 'out')}
+                <span className="text-xs" style={{ color: 'var(--ink-3)' }}>→</span>
+                {chip(t.in, 'in')}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
