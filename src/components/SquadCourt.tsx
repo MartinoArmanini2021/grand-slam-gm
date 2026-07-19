@@ -190,7 +190,8 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
                 ) : (() => {
                   const out = isPlayerOut(id, revealed);
                   const windowOpen = transfersOpen(currentRoundIndex);
-                  if (out && windowOpen) return (
+                  const hasSubs = out && windowOpen && substitutionCandidates(myTeam, budget, currentRoundIndex).length > 0;
+                  if (hasSubs) return (
                     <button
                       onClick={() => { setManageId(null); setSubFor(id); }}
                       className="w-full text-left px-3 py-3 rounded-xl text-sm font-bold flex items-center gap-2.5 transition-colors hover:bg-black/5"
@@ -199,7 +200,9 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
                   );
                   return (
                     <div className="px-3 py-2 text-xs" style={{ color: 'var(--ink-3)' }}>
-                      {out ? 'Eliminated — the transfer window has closed.' : 'Still in the draw — locked into your squad.'}
+                      {!out ? 'Still in the draw — locked into your squad.'
+                        : !windowOpen ? 'Eliminated — the transfer window has closed.'
+                        : 'Eliminated — no affordable, still-alive replacement available.'}
                     </div>
                   );
                 })()}

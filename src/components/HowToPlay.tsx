@@ -1,10 +1,10 @@
 const RULES: { icon: string; title: string; body: string }[] = [
-  { icon: '🎾', title: 'Draft 8 players', body: 'You get $100M to sign an 8-player squad from the draw. Stars cost more — so you must choose: a couple of galácticos, or a deeper balanced squad.' },
-  { icon: '📈', title: 'Win rounds, score points', body: 'Each time one of your players wins, you score: R32 +2, R16 +5, QF +10, SF +20, Final +40.' },
+  { icon: '🎾', title: 'Draft 8 players', body: 'You get $100M to sign an 8-player squad — at least 4 Silver and 2 Gold, the other 2 free. Stars cost more, so choose: a couple of galácticos, or a deeper balanced squad.' },
+  { icon: '📈', title: 'Win rounds, score points', body: 'Every round your player wins scores — from the Round of 128 (+1) up through R64 +1, R32 +2, R16 +5, QF +10, SF +20, Final +40.' },
   { icon: '⭐', title: 'Pick a captain', body: 'Each round, name a captain — they score double. Change them round to round to chase the points.' },
-  { icon: '🔥', title: 'Upset bonus', body: 'When a lower-ranked player beats a higher seed, you earn bonus points. Backing the right underdog pays off.' },
-  { icon: '💸', title: 'Elimination = money back', body: 'When your player is knocked out you get part of their price back — and can spend it to transfer in someone still alive.' },
-  { icon: '🔒', title: 'Transfers lock after the QF', body: 'You can reinforce your squad up to the quarter-finals. After that it’s locked for the semis and final — so plan ahead.' },
+  { icon: '🔥', title: 'Upset bonus', body: 'When a lower-ranked player beats a higher seed, you earn bonus points (bigger in the later rounds). Backing the right underdog pays off.' },
+  { icon: '💸', title: 'Elimination = money back', body: 'When your player is knocked out you get part of their price back — more the further they reached — and can spend it to transfer in someone still alive.' },
+  { icon: '🔒', title: 'Transfers close before the final', body: 'Reinforce your squad through the semi-finals — a quarter-final casualty can still be replaced for the semis. Only the final squad is locked, so plan ahead.' },
   { icon: '🏆', title: 'Beat your league', body: 'Everyone gets the same $100M. Climb the League standings and be crowned Grand Slam GM.' },
 ];
 

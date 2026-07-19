@@ -33,7 +33,10 @@ function ColHeader({ label, gold }: { label: string; gold?: boolean }) {
 export default function BracketTree() {
   const [half, setHalf] = useState<'top' | 'bottom'>('top');
   const [focus, setFocus] = useState<string | null>(null);
-  const [depth, setDepth] = useState<'full' | 'last32'>('last32');
+  // Default to the full draw: the Round of 128 is known from the start, whereas the
+  // Last-32 participants stay hidden (no spoilers) until R64 is played — so Last-32
+  // would look empty on a first visit.
+  const [depth, setDepth] = useState<'full' | 'last32'>('full');
   const cols = depth === 'full' ? ALL_COLS : SCORED_COLS;
   const { myTeam, currentRoundIndex } = useGameStore();
   const { teamName, username } = useProfile();

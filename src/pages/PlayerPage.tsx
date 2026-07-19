@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
-import { getPlayer, PLAYERS } from '../data/players';
+import { findPlayer, PLAYERS } from '../data/players';
 import { getTier, TIER_META } from '../data/tiers';
 import { WIMBLEDON_2026 } from '../data/wimbledon2026';
 import { ROUNDS, isPlayerOut, getPlayerExit } from '../data/tournament';
@@ -22,7 +22,7 @@ function resultStyle(r: TournamentResult): [string, string] {
 
 export default function PlayerPage() {
   const { viewPlayer, playerReturnTab, setActiveTab, currentRoundIndex } = useGameStore();
-  const p = viewPlayer ? getPlayer(viewPlayer) : null;
+  const p = viewPlayer ? findPlayer(viewPlayer) ?? null : null;
   if (!p) return null;
 
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];

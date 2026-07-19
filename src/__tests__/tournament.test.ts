@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ROUNDS, MATCHES, getMatchesForRound, getPlayerExit, isPlayerOut, getOpponentId, upsetBonus, unmappedBracketNames } from '../data/tournament';
-import { getPlayer } from '../data/players';
+import { getPlayer, PLAYERS } from '../data/players';
 
 describe('real Wimbledon 2026 bracket integrity', () => {
   it('every roster player is a real participant in the opening round (R128)', () => {
@@ -86,6 +86,17 @@ describe('getPlayerExit / isPlayerOut', () => {
       if (exit === null) continue; // champion
       const lostMatch = MATCHES.find(m => m.round === exit && (m.p1Id === p || m.p2Id === p));
       expect(lostMatch?.winnerId).not.toBe(p);
+    }
+  });
+
+  // Covers the WHOLE draw (R128 → Final), not just the last 32 — the exit field
+  // drives elimination/refunds, so it must match where each player actually lost.
+  it("every roster player's exit matches the round they lost in the full bracket", () => {
+    for (const p of PLAYERS) {
+      const played = MATCHES.filter(m => m.p1Id === p.id || m.p2Id === p.id);
+      const lost = played.find(m => m.winnerId !== p.id);
+      const expected = lost ? lost.round : 'W'; // never lost → champion
+      expect(p.exit, `${p.name} (#${p.ranking})`).toBe(expected);
     }
   });
 });

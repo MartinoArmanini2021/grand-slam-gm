@@ -100,10 +100,11 @@ for (const m of MATCHES) {
 const playerWon = (id: string, roundId: RoundId) => wonRounds.get(id)?.has(roundId) ?? false;
 
 // A manager captains their star — the priciest still-alive player they drafted —
-// declared BEFORE the round, no hindsight, exactly the constraint the human plays
-// under. Doubled only if that player wins. `preferred` (their original draft) is
-// captained ahead of any mid-tournament panic-buy, so reacting never costs the
-// captaincy; falls back to any alive player, then anyone.
+// declared BEFORE the round, no hindsight (the same pre-commit discipline the human
+// plays under; the human may additionally captain a mid-tournament buy, a small
+// edge in their favour). Doubled only if that player wins. `preferred` (the original
+// draft) is captained ahead of any panic-buy, so reacting never costs the captaincy;
+// falls back to any alive player, then anyone.
 function captainOf(squad: string[], aliveAtStart: (id: string) => boolean, preferred?: string[]): string | undefined {
   const priciest = (ids: string[]) => ids.slice().sort((a, b) => getPlayer(b).price - getPlayer(a).price)[0];
   const pool = preferred ?? squad;
