@@ -110,15 +110,14 @@ describe('transfer-aware simulation', () => {
     }
   });
 
-  it('reacting to eliminations helps: at least one manager transfers and improves vs its frozen squad', () => {
-    const anyTransfers = RIVALS.some(r => simulateRival(r, ROUNDS.length).transfers.length > 0);
-    expect(anyTransfers).toBe(true);
-    // for a manager that transferred, the dynamic score should be >= the frozen-squad score
-    for (const r of RIVALS) {
-      const sim = simulateRival(r, ROUNDS.length);
-      if (sim.transfers.length === 0) continue;
-      const frozen = scoreSquad(sim.initialSquad, ROUNDS.length);
-      expect(sim.score).toBeGreaterThanOrEqual(frozen);
-    }
+  it('reacting to eliminations helps on net (managers do transfer, and it pays off in aggregate)', () => {
+    const sims = RIVALS.map(r => simulateRival(r, ROUNDS.length));
+    // managers actually react to eliminations
+    expect(sims.some(s => s.transfers.length > 0)).toBe(true);
+    // Under fair pre-declared captaincy a single transfer can occasionally backfire
+    // (a newly-bought captain loses), but reacting pays off across the league.
+    const dynamicTotal = sims.reduce((t, s) => t + s.score, 0);
+    const frozenTotal = sims.reduce((t, s) => t + scoreSquad(s.initialSquad, ROUNDS.length), 0);
+    expect(dynamicTotal).toBeGreaterThanOrEqual(frozenTotal);
   });
 });

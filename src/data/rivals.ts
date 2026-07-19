@@ -63,21 +63,41 @@ for (const m of MATCHES) {
 }
 const playerWon = (id: string, roundId: RoundId) => wonRounds.get(id)?.has(roundId) ?? false;
 
-// Score a fixed squad over the rounds played so far (optimal captaincy). Kept for
-// reference/tests; the live league uses the transfer-aware simulateRival below.
+// A manager captains their star — the priciest still-alive player they drafted —
+// declared BEFORE the round, no hindsight, exactly the constraint the human plays
+// under. Doubled only if that player wins. `preferred` (their original draft) is
+// captained ahead of any mid-tournament panic-buy, so reacting never costs the
+// captaincy; falls back to any alive player, then anyone.
+function captainOf(squad: string[], aliveAtStart: (id: string) => boolean, preferred?: string[]): string | undefined {
+  const priciest = (ids: string[]) => ids.slice().sort((a, b) => getPlayer(b).price - getPlayer(a).price)[0];
+  const pool = preferred ?? squad;
+  const aliveOriginal = pool.filter(id => squad.includes(id) && aliveAtStart(id));
+  if (aliveOriginal.length) return priciest(aliveOriginal);
+  const aliveAny = squad.filter(aliveAtStart);
+  return priciest(aliveAny.length ? aliveAny : squad);
+}
+
+function scoreRound(squad: string[], round: { id: RoundId; points: number }, captain: string | undefined): number {
+  let roundTotal = 0, captainBonus = 0;
+  for (const id of squad) {
+    if (!playerWon(id, round.id)) continue;
+    const opp = getOpponentId(id, round.id);
+    const gross = opp ? winPoints(round.id, id, opp) : round.points;
+    roundTotal += gross;
+    if (id === captain) captainBonus = gross; // captain wins → doubled
+  }
+  return roundTotal + captainBonus;
+}
+
+// Score a fixed squad over the rounds played so far — same pre-declared captaincy
+// as the human (priciest alive player each round). Kept for reference/tests; the
+// live league uses the transfer-aware simulateRival below.
 export function scoreSquad(squadIds: string[], uptoRoundIndex: number): number {
   let total = 0;
   for (let i = 0; i < uptoRoundIndex; i++) {
-    const round = ROUNDS[i];
-    let roundTotal = 0, best = 0;
-    for (const id of squadIds) {
-      if (!playerWon(id, round.id)) continue;
-      const opp = getOpponentId(id, round.id);
-      const gross = opp ? winPoints(round.id, id, opp) : round.points;
-      roundTotal += gross;
-      if (gross > best) best = gross;
-    }
-    total += roundTotal + best;
+    const revealedBefore = ROUNDS.slice(0, i).map(r => r.id) as RoundId[];
+    const alive = (id: string) => !isPlayerOut(id, revealedBefore);
+    total += scoreRound(squadIds, ROUNDS[i], captainOf(squadIds, alive));
   }
   return total;
 }
@@ -111,25 +131,16 @@ export function simulateRival(rival: Rival, upto: number): RivalTeam {
 
   for (let i = 0; i < upto; i++) {
     const round = ROUNDS[i];
+    const revealedBefore = ROUNDS.slice(0, i).map(r => r.id) as RoundId[];
 
-    // 1) score this round over the current squad (optimal captaincy)
-    let roundTotal = 0, best = 0;
-    for (const id of squad) {
-      if (!playerWon(id, round.id)) continue;
-      const opp = getOpponentId(id, round.id);
-      const gross = opp ? winPoints(round.id, id, opp) : round.points;
-      roundTotal += gross;
-      if (gross > best) best = gross;
-    }
-    score += roundTotal + best;
+    // 1) score this round with a pre-declared captain (priciest alive drafted
+    //    player), doubled only if they win — the same rule the human plays under.
+    score += scoreRound(squad, round, captainOf(squad, id => !isPlayerOut(id, revealedBefore), initialSquad));
 
-    // 2) bank budget returns for players eliminated in this round. At the R32
-    //    reveal, also refund players who fell before the last 32 (R128/R64) — the
-    //    same rule the human squad uses.
+    // 2) bank budget returns for players eliminated in this round (once, in the
+    //    round of their loss — matching the human refund logic exactly).
     for (const id of squad) {
-      const exit = getPlayerExit(id);
-      if (exit === round.id) budget += retAmount(getPlayer(id).price, round.id);
-      else if (round.id === 'R32' && (exit === 'R128' || exit === 'R64')) budget += retAmount(getPlayer(id).price, 'R32');
+      if (getPlayerExit(id) === round.id) budget += retAmount(getPlayer(id).price, round.id);
     }
 
     // 3) transfer: replace eliminated slots with the best affordable alive player —
@@ -153,7 +164,10 @@ export function simulateRival(rival: Rival, upto: number): RivalTeam {
     }
   }
 
-  const captainId = [...squad].sort((a, b) => getPlayer(b).price - getPlayer(a).price)[0];
+  // Displayed captain = the one they'd double next round (priciest alive), so the
+  // UI matches how they actually score.
+  const revealedNow = ROUNDS.slice(0, upto).map(r => r.id) as RoundId[];
+  const captainId = captainOf(squad, id => !isPlayerOut(id, revealedNow), initialSquad) ?? squad[0];
   const bought = initialSquad.length + transfers.length;
   return { rival, squad, initialSquad, budget, spent, bought, captainId, score, transfers };
 }

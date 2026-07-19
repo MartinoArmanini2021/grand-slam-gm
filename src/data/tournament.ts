@@ -112,9 +112,10 @@ export function isPlayerOut(playerId: string, revealed: RoundId[]): boolean {
   return stage <= deepest;
 }
 
-// Points returned when eliminated (based on how far they reached)
-// Refunds only arrive while you can still spend them — the transfer window shuts
-// after the QF, so SF/Final eliminations return nothing.
+// Points returned when eliminated (based on how far they reached).
+// Refunds only arrive while you can still spend them: the window stays open
+// through the QF (a QF loser can be replaced for the SF), then locks — so SF and
+// Final eliminations return nothing.
 export const BUDGET_RETURN_RATES: Record<RoundId, number> = {
   R128: 0.10,
   R64:  0.12,
