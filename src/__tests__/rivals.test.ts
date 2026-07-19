@@ -4,11 +4,11 @@ import { getPlayer } from '../data/players';
 import { ROUNDS, isPlayerOut } from '../data/tournament';
 
 describe('rivals squad building', () => {
-  it('every rival strategy yields a legal 6-player squad within $100M', () => {
+  it('every rival strategy yields a legal 8-player squad within $100M', () => {
     for (const r of RIVALS) {
       const squad = buildSquad(r.rank);
-      expect(squad).toHaveLength(6);
-      expect(new Set(squad).size).toBe(6);
+      expect(squad).toHaveLength(8);
+      expect(new Set(squad).size).toBe(8);
       const spent = squad.reduce((s, id) => s + getPlayer(id).price, 0);
       expect(spent).toBeLessThanOrEqual(100);
     }
@@ -52,12 +52,12 @@ describe('static scoreSquad (reference)', () => {
 });
 
 describe('transfer-aware simulation', () => {
-  it('always keeps a legal 6-player squad and non-negative budget at every round', () => {
+  it('always keeps a legal 8-player squad and non-negative budget at every round', () => {
     for (const r of RIVALS) {
       for (let upto = 0; upto <= ROUNDS.length; upto++) {
         const t = simulateRival(r, upto);
-        expect(t.squad).toHaveLength(6);
-        expect(new Set(t.squad).size).toBe(6);
+        expect(t.squad).toHaveLength(8);
+        expect(new Set(t.squad).size).toBe(8);
         expect(t.budget).toBeGreaterThanOrEqual(0);
       }
     }

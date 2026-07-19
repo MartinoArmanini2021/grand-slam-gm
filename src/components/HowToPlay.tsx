@@ -1,5 +1,5 @@
 const RULES: { icon: string; title: string; body: string }[] = [
-  { icon: '🎾', title: 'Draft 6 players', body: 'You get $100M to sign a 6-player squad from the draw. Stars cost more — so you must choose: a couple of galácticos, or a deeper balanced squad.' },
+  { icon: '🎾', title: 'Draft 8 players', body: 'You get $100M to sign an 8-player squad from the draw. Stars cost more — so you must choose: a couple of galácticos, or a deeper balanced squad.' },
   { icon: '📈', title: 'Win rounds, score points', body: 'Each time one of your players wins, you score: R32 +2, R16 +5, QF +10, SF +20, Final +40.' },
   { icon: '⭐', title: 'Pick a captain', body: 'Each round, name a captain — they score double. Change them round to round to chase the points.' },
   { icon: '🔥', title: 'Upset bonus', body: 'When a lower-ranked player beats a higher seed, you earn bonus points. Backing the right underdog pays off.' },

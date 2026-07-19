@@ -22,7 +22,7 @@ const SLAM_META: Record<string, { short: string; surface: Surface; tournament: s
   AO: { short: 'AO',  surface: 'hard',  tournament: 'Australian Open' },
 };
 
-// Price by ATP ranking. A steep curve so a $100M / 6-player squad forces real
+// Price by ATP ranking. A steep curve so a $100M / 8-player squad forces real
 // trade-offs: one marquee name eats a third of the budget, deep value picks are
 // cheap (and a low-ranked deep run — like Fery — is where fortunes are made).
 export function priceFor(ranking: number): number {

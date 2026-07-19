@@ -10,7 +10,7 @@ import type { RoundId, Player } from '../types';
 
 type SortKey = 'ranking' | 'price' | 'grass';
 
-const TEAM_SIZE = 6;
+const TEAM_SIZE = 8;
 const SORT_LABEL: Record<SortKey, string> = { ranking: '# Rank', price: '$ Price', grass: 'Grass %' };
 
 export default function DraftPage() {

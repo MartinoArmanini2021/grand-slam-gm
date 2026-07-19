@@ -46,11 +46,11 @@ describe('pricing curve', () => {
     }
   });
 
-  it('you cannot field 6 with the two most expensive (budget tension)', () => {
+  it('you cannot field 8 with the two most expensive (budget tension)', () => {
     const byPrice = [...PLAYERS].sort((a, b) => b.price - a.price);
     const topTwo = byPrice[0].price + byPrice[1].price;
-    const cheapest4 = byPrice.slice(-4).reduce((s, p) => s + p.price, 0);
-    expect(topTwo + cheapest4).toBeGreaterThan(100); // infeasible → real trade-off
+    const cheapest6 = byPrice.slice(-6).reduce((s, p) => s + p.price, 0);
+    expect(topTwo + cheapest6).toBeGreaterThan(100); // infeasible → real trade-off
   });
 });
 

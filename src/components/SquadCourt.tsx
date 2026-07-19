@@ -5,10 +5,11 @@ import { getPlayerExit, isPlayerOut, ROUNDS } from '../data/tournament';
 import PlayerAvatar from './PlayerAvatar';
 import PlayerPickerModal from './PlayerPickerModal';
 
-// Six on-court positions (as % of the whole box). 3 per half, net down the middle.
+// Eight on-court positions (as % of the whole box). 4 per half in an arc, net down
+// the middle — outer players top/bottom, inner pair pushed toward the net.
 const SPOTS = [
-  { x: 21, y: 30 }, { x: 31, y: 52 }, { x: 21, y: 74 }, // left half
-  { x: 79, y: 30 }, { x: 69, y: 52 }, { x: 79, y: 74 }, // right half
+  { x: 18, y: 24 }, { x: 30, y: 42 }, { x: 30, y: 60 }, { x: 18, y: 78 }, // left half
+  { x: 82, y: 24 }, { x: 70, y: 42 }, { x: 70, y: 60 }, { x: 82, y: 78 }, // right half
 ];
 
 export default function SquadCourt({ squad, captainId, readOnly, teamName, emblem, onTeamClick, fluid }: {

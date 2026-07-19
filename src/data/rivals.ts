@@ -1,6 +1,6 @@
 import { PLAYERS, getPlayer } from './players';
 import { ROUNDS, MATCHES, getOpponentId, winPoints, getPlayerExit, isPlayerOut, BUDGET_RETURN_RATES, transfersOpen } from './tournament';
-import type { Player, RoundId } from '../types';
+import type { Player, RoundId, Transfer } from '../types';
 
 // Simulated league managers. Everyone gets the same $100M and can pick ANY
 // player (overlaps allowed). Each manager follows a different budget strategy —
@@ -18,7 +18,7 @@ export interface Rival {
 }
 
 const BUDGET = 100;
-const SQUAD = 6;
+const SQUAD = 8;
 // Season form proxy: year-to-date win rate (0–1). A real, populated signal —
 // unlike `form`, which is empty, so strategies must not depend on it.
 const ytdRate = (p: Player) => {
@@ -104,8 +104,6 @@ export function scoreSquad(squadIds: string[], uptoRoundIndex: number): number {
 
 const retAmount = (price: number, exit: RoundId) =>
   Math.round(price * (BUDGET_RETURN_RATES[exit] ?? 0) * 10) / 10;
-
-export interface Transfer { out: string; in: string; round: RoundId; }
 
 export interface RivalTeam {
   rival: Rival;

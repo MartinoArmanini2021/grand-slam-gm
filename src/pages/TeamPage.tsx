@@ -2,8 +2,15 @@ import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { getRivalTeams } from '../data/rivals';
+import { getPlayer } from '../data/players';
+import { ROUNDS } from '../data/tournament';
+import { lastName } from '../data/format';
 import SquadCourt from '../components/SquadCourt';
+import PlayerAvatar from '../components/PlayerAvatar';
 import { toast } from '../store/toastStore';
+import type { Transfer } from '../types';
+
+const roundShort = (id: string) => ROUNDS.find(r => r.id === id)?.short ?? id;
 
 const EMBLEMS = ['🎾', '🏆', '🔥', '⚡', '⭐', '🦅', '🦁', '🐉', '🐺', '🦈', '🌌', '🌱', '⚔️', '🛡️', '👑', '🚀', '💎', '🎯', '🏹', '⚜️', '🌊', '☄️', '🐯', '🍀'];
 
@@ -17,7 +24,7 @@ function BackToLeague() {
 }
 
 export default function TeamPage() {
-  const { myTeam, captain, budget, myScore, currentRoundIndex, viewTeam } = useGameStore();
+  const { myTeam, initialSquad, transfers, captain, budget, myScore, currentRoundIndex, viewTeam } = useGameStore();
   const { teamName, teamEmblem, username } = useProfile();
 
   if (viewTeam === 'you') {
@@ -26,6 +33,7 @@ export default function TeamPage() {
         key="you"
         emblem={teamEmblem} name={teamName} manager={username ? `@${username}` : '@you'} color="var(--blue)"
         score={myScore} budget={budget} squad={myTeam} captainId={captain ?? myTeam[0] ?? ''} editable
+        initialSquad={initialSquad} transfers={transfers}
       />
     );
   }
@@ -37,13 +45,15 @@ export default function TeamPage() {
       key={team.rival.id}
       emblem={team.rival.emblem} name={team.rival.name} manager={team.rival.manager} color={team.rival.color}
       score={team.score} budget={team.budget} squad={team.squad} captainId={team.captainId}
+      initialSquad={team.initialSquad} transfers={team.transfers}
     />
   );
 }
 
-function TeamView({ emblem, name, manager, color, score, budget, squad, captainId, editable }: {
+function TeamView({ emblem, name, manager, color, score, budget, squad, captainId, editable, initialSquad = [], transfers = [] }: {
   emblem: string; name: string; manager: string; color: string;
   score: number; budget: number; squad: string[]; captainId: string; editable?: boolean;
+  initialSquad?: string[]; transfers?: Transfer[];
 }) {
   const setProfile = useProfile(s => s.set);
   const [editing, setEditing] = useState(false);
@@ -138,6 +148,58 @@ function TeamView({ emblem, name, manager, color, score, budget, squad, captainI
           ? <>Tap a <b>+</b> to buy players · tap a player for their profile · <span style={{ color: 'var(--gold)' }}>⭐ = captain</span></>
           : <>Tap a player to see their profile · <span style={{ color: 'var(--gold)' }}>⭐ = captain</span></>}
       </div>
+
+      <TransferHistory initialSquad={initialSquad.length ? initialSquad : squad} transfers={transfers} />
+    </div>
+  );
+}
+
+// Who they signed at the draft, and every mid-tournament swap since — visible on
+// any team so the whole league can see who bought whom, and when.
+function TransferHistory({ initialSquad, transfers }: { initialSquad: string[]; transfers: Transfer[] }) {
+  const chip = (id: string, tone: 'in' | 'out' | 'neutral') => {
+    const p = getPlayer(id);
+    const color = tone === 'out' ? 'var(--ember)' : tone === 'in' ? 'var(--green)' : 'var(--ink)';
+    const bg = tone === 'out' ? 'rgba(229,71,43,0.08)' : tone === 'in' ? 'rgba(18,161,80,0.08)' : 'var(--raised)';
+    const border = tone === 'out' ? 'rgba(229,71,43,0.22)' : tone === 'in' ? 'rgba(18,161,80,0.22)' : 'rgba(10,27,51,0.1)';
+    return (
+      <span className="inline-flex items-center gap-1.5 pl-0.5 pr-2 py-0.5 rounded-full whitespace-nowrap" style={{ background: bg, border: `1px solid ${border}` }}>
+        <PlayerAvatar playerId={id} name={p.name} size="sm" />
+        <span className="text-[11px] font-semibold" style={{ color, textDecoration: tone === 'out' ? 'line-through' : 'none' }}>{lastName(p.name)}</span>
+        <span className="font-num text-[10px]" style={{ color: 'var(--ink-3)' }}>${p.price}M</span>
+      </span>
+    );
+  };
+
+  return (
+    <div className="rounded-2xl p-4 mt-5" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.08)' }}>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-sm font-bold" style={{ color: 'var(--ink)' }}>Transfer history</h2>
+        <span className="text-[11px] font-num" style={{ color: 'var(--ink-3)' }}>{transfers.length} move{transfers.length === 1 ? '' : 's'}</span>
+      </div>
+
+      {/* Draft signings */}
+      <div className="text-[10px] font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--ink-3)' }}>Signed at the draft</div>
+      <div className="flex flex-wrap gap-1.5 mb-4">
+        {initialSquad.map(id => <span key={id}>{chip(id, 'neutral')}</span>)}
+      </div>
+
+      {/* In-tournament moves */}
+      <div className="text-[10px] font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--ink-3)' }}>Transfers</div>
+      {transfers.length === 0 ? (
+        <div className="text-[12px]" style={{ color: 'var(--ink-3)' }}>No transfers yet — the squad is as drafted.</div>
+      ) : (
+        <div className="space-y-2">
+          {transfers.map((t, i) => (
+            <div key={i} className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md shrink-0" style={{ background: 'rgba(14,111,196,0.1)', color: 'var(--blue)' }}>{roundShort(t.round)}</span>
+              {chip(t.out, 'out')}
+              <span style={{ color: 'var(--ink-3)' }}>→</span>
+              {chip(t.in, 'in')}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

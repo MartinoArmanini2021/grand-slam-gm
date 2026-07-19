@@ -5,7 +5,7 @@ import { useLeagueBoard } from '../data/leagueBoard';
 import SquadCourt from '../components/SquadCourt';
 import type { GamePhase, RoundId } from '../types';
 
-const TEAM_TARGET = 6;
+const TEAM_TARGET = 8;
 
 export default function HomePage() {
   const {

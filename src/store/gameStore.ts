@@ -1,18 +1,20 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { GamePhase, RoundId, RoundScore, BudgetReturn } from '../types';
+import type { GamePhase, RoundId, RoundScore, BudgetReturn, Transfer } from '../types';
 import {
   ROUNDS, getMatchesForRound, isPlayerOut, BUDGET_RETURN_RATES, winPoints, transfersOpen,
 } from '../data/tournament';
 import { getPlayer, findPlayer, PLAYERS } from '../data/players';
 
 const STARTING_BUDGET = 100;
-const TEAM_SIZE = 6;
+const TEAM_SIZE = 8;
 const CAPTAIN_MULTIPLIER = 2;
 
 interface GameStore {
   phase: GamePhase;
   myTeam: string[];
+  initialSquad: string[]; // the squad as drafted (before any transfers) — for history
+  transfers: Transfer[];  // mid-tournament replacements you've made, in order
   captain: string | null;
   captainHistory: { round: RoundId; playerId: string }[];
   budget: number;
@@ -42,6 +44,8 @@ export const useGameStore = create<GameStore>()(
     (set, get) => ({
       phase: 'draft',
       myTeam: [],
+      initialSquad: [],
+      transfers: [],
       captain: null,
       captainHistory: [],
       budget: STARTING_BUDGET,
@@ -89,7 +93,8 @@ export const useGameStore = create<GameStore>()(
         const { myTeam, captain, phase } = get();
         if (phase !== 'draft') return; // already locked in
         if (myTeam.length === 0) return;
-        set({ phase: 'pre_round', captain: captain ?? myTeam[0] });
+        // Snapshot the drafted squad so the transfer history can show who you signed.
+        set({ phase: 'pre_round', captain: captain ?? myTeam[0], initialSquad: [...myTeam] });
       },
 
       // Mid-tournament substitution: swap an eliminated squad member for a
@@ -104,10 +109,13 @@ export const useGameStore = create<GameStore>()(
         if (isPlayerOut(newId, revealed)) return;  // replacement already knocked out
         const player = getPlayer(newId);
         if (!player || budget < player.price) return;         // can't afford
+        // Log the move against the round just played, for the transfer history.
+        const round = ROUNDS[currentRoundIndex - 1]?.id ?? ROUNDS[0].id;
         set({
           myTeam: myTeam.map(id => (id === oldId ? newId : id)),
           budget: budget - player.price,
           captain: captain === oldId ? null : captain,
+          transfers: [...get().transfers, { out: oldId, in: newId, round }],
         });
       },
 
@@ -184,6 +192,8 @@ export const useGameStore = create<GameStore>()(
       resetGame: () => set({
         phase: 'draft',
         myTeam: [],
+        initialSquad: [],
+        transfers: [],
         captain: null,
         captainHistory: [],
         budget: STARTING_BUDGET,
@@ -209,6 +219,8 @@ export const useGameStore = create<GameStore>()(
           const ids = new Set(PLAYERS.map(p => p.id));
           const priceById = new Map(PLAYERS.map(p => [p.id, p.price]));
           if (Array.isArray(s.myTeam)) s.myTeam = s.myTeam.filter(id => ids.has(id));
+          if (Array.isArray(s.initialSquad)) s.initialSquad = s.initialSquad.filter(id => ids.has(id));
+          if (Array.isArray(s.transfers)) s.transfers = s.transfers.filter(t => ids.has(t.in) && ids.has(t.out));
           if (s.captain && !ids.has(s.captain)) s.captain = null;
           if (s.viewPlayer && !ids.has(s.viewPlayer)) s.viewPlayer = '';
           if (Array.isArray(s.budgetReturns)) s.budgetReturns = s.budgetReturns.filter(r => ids.has(r.playerId));

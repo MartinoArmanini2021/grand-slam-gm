@@ -45,11 +45,11 @@ describe('draft mechanics', () => {
     expect(store().budget).toBe(100 - cost);
   });
 
-  it('rejects a 7th player', () => {
-    ['fery', 'giron', 'munar', 'bergs', 'zheng', 'svajda'].forEach(id => store().addPlayer(id));
-    expect(store().myTeam).toHaveLength(6);
+  it('rejects a 9th player', () => {
+    ['fery', 'giron', 'munar', 'bergs', 'zheng', 'svajda', 'mochizuki', 'safiullin'].forEach(id => store().addPlayer(id));
+    expect(store().myTeam).toHaveLength(8);
     store().addPlayer('cilic');
-    expect(store().myTeam).toHaveLength(6);
+    expect(store().myTeam).toHaveLength(8);
   });
 
   it('rejects duplicate players', () => {
@@ -118,24 +118,24 @@ describe('scoring — underdog captain earns multiplier + upset bonuses', () => 
 });
 
 describe('budget returns', () => {
-  it('a QF exit refunds 35% while the transfer window is still open', () => {
+  it('a QF exit refunds 70% while the transfer window is still open', () => {
     store().addPlayer('fritz'); // $22, reaches the QF
     store().finalizeDraft();
     for (let i = 0; i < 5; i++) play('fritz'); // R128,R64,R32,R16 won; QF lost → out
     expect(store().myScore).toBe(captainScore('fritz'));
     const ret = store().budgetReturns.find(r => r.playerId === 'fritz');
-    expect(ret).toMatchObject({ playerId: 'fritz', round: 'QF', amount: 7.7 });
-    expect(store().budget).toBeCloseTo(100 - 22 + 7.7, 5);
+    expect(ret).toMatchObject({ playerId: 'fritz', round: 'QF', amount: 15.4 }); // 22 · 0.70
+    expect(store().budget).toBeCloseTo(100 - 22 + 15.4, 5);
   });
 
   it('a player who lost in the first round is refunded when R128 is played', () => {
     store().addPlayer('sinner');
     store().addPlayer('ruud'); // $18, lost in R128
     store().finalizeDraft();
-    play('sinner'); // R128 → ruud loses, refunded at the R128 rate 18·0.10 = 1.8
+    play('sinner'); // R128 → ruud loses, refunded at the R128 rate 18·0.40 = 7.2
     const ret = store().budgetReturns.find(r => r.playerId === 'ruud');
-    expect(ret).toMatchObject({ round: 'R128', amount: 1.8 });
-    expect(store().budget).toBeCloseTo(100 - 50 - 18 + 1.8, 5);
+    expect(ret).toMatchObject({ round: 'R128', amount: 7.2 });
+    expect(store().budget).toBeCloseTo(100 - 50 - 18 + 7.2, 5);
   });
 });
 
@@ -173,14 +173,14 @@ describe('mid-tournament substitutions', () => {
   it('an eliminated player can be replaced by an affordable, still-alive player', () => {
     draftAndReachR16();
     expect(eliminatedSquad(store().myTeam, store().currentRoundIndex)).toEqual(['lehecka']);
-    // draft leftover 100-50-17=33, + Lehecka R16 refund 17·0.25 → round(42.5)=43 → 4.3
+    // draft leftover 100-50-17=33, + Lehecka R16 refund 17·0.60 = 10.2 → 43.2
     const budgetBefore = store().budget;
-    expect(budgetBefore).toBeCloseTo(37.3, 5);
+    expect(budgetBefore).toBeCloseTo(43.2, 5);
 
     store().replacePlayer('lehecka', 'zverev'); // $33, reaches the final
     expect(store().myTeam).toContain('zverev');
     expect(store().myTeam).not.toContain('lehecka');
-    expect(store().budget).toBeCloseTo(37.3 - 33, 5);
+    expect(store().budget).toBeCloseTo(43.2 - 33, 5);
   });
 
   it('the replacement scores from the next round on', () => {

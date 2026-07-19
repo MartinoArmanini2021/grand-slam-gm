@@ -50,3 +50,11 @@ export interface BudgetReturn {
   round: RoundId;
   amount: number;
 }
+
+// A squad move: a mid-tournament replacement (out → in) tagged with the round it
+// happened in. Used for the per-team transfer history.
+export interface Transfer {
+  out: string;
+  in: string;
+  round: RoundId;
+}

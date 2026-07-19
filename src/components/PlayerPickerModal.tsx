@@ -6,7 +6,7 @@ import PlayerAvatar from './PlayerAvatar';
 import PurchaseConfirmModal from './PurchaseConfirmModal';
 import type { Player } from '../types';
 
-const TEAM_SIZE = 6;
+const TEAM_SIZE = 8;
 
 export default function PlayerPickerModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { myTeam, budget, removePlayer } = useGameStore();

@@ -122,12 +122,17 @@ export function isPlayerOut(playerId: string, revealed: RoundId[]): boolean {
 // Refunds only arrive while you can still spend them: the window stays open
 // through the QF (a QF loser can be replaced for the SF), then locks — so SF and
 // Final eliminations return nothing.
+// A meaningful chunk of an eliminated player's price comes back, rising with how
+// far they reached — enough that losing, say, a Gold pick funds a Silver-tier
+// replacement rather than a token refund. Deep exits (QF ≈ two-thirds back) reward
+// players who nearly went the distance. SF/Final return nothing: the window is
+// shut, so there'd be nothing to spend it on.
 export const BUDGET_RETURN_RATES: Record<RoundId, number> = {
-  R128: 0.10,
-  R64:  0.12,
-  R32:  0.15,
-  R16:  0.25,
-  QF:   0.35,
+  R128: 0.40,
+  R64:  0.45,
+  R32:  0.50,
+  R16:  0.60,
+  QF:   0.70,
   SF:   0,
   F:    0,
 };

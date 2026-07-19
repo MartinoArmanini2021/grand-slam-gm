@@ -5,7 +5,7 @@ import { toast } from '../store/toastStore';
 import PlayerAvatar from './PlayerAvatar';
 import type { Player } from '../types';
 
-const TEAM_SIZE = 6;
+const TEAM_SIZE = 8;
 
 // Shared purchase confirmation — used by the Market table and the on-court picker.
 export default function PurchaseConfirmModal({ player, onClose }: { player: Player | null; onClose: () => void }) {
@@ -15,7 +15,7 @@ export default function PurchaseConfirmModal({ player, onClose }: { player: Play
   const buy = () => {
     addPlayer(player.id);
     toast(`${lastName(player.name)} added to your squad`, 'good');
-    if (myTeam.length + 1 >= TEAM_SIZE) toast('Squad full — 6 players picked', 'good');
+    if (myTeam.length + 1 >= TEAM_SIZE) toast(`Squad full — ${TEAM_SIZE} players picked`, 'good');
     onClose();
   };
 
