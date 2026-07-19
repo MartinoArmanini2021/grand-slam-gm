@@ -11,13 +11,14 @@ const SPOTS = [
   { x: 79, y: 30 }, { x: 69, y: 52 }, { x: 79, y: 74 }, // right half
 ];
 
-export default function SquadCourt({ squad, captainId, readOnly, teamName, emblem, onTeamClick }: {
+export default function SquadCourt({ squad, captainId, readOnly, teamName, emblem, onTeamClick, fluid }: {
   squad?: string[];        // when given, renders this squad instead of your own (read-only)
   captainId?: string;
   readOnly?: boolean;
   teamName?: string;       // team identity shown inside the court (top-left)
   emblem?: string;
   onTeamClick?: () => void; // makes the team label a link (e.g. to your team page)
+  fluid?: boolean;         // fill the container width instead of the 860px cap
 } = {}) {
   const { myTeam, captain, currentRoundIndex, phase, openPlayer, removePlayer } = useGameStore();
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -29,7 +30,7 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
 
   return (
     <>
-      <div className="relative w-full mx-auto rounded-2xl overflow-hidden select-none" style={{ aspectRatio: '16 / 9', maxWidth: 860, boxShadow: '0 10px 34px rgba(10,27,51,0.22)' }}>
+      <div className="relative w-full mx-auto rounded-2xl overflow-hidden select-none" style={{ aspectRatio: '16 / 9', maxWidth: fluid ? undefined : 860, boxShadow: '0 10px 34px rgba(10,27,51,0.22)' }}>
         {/* Stadium + grass court (horizontal) */}
         <svg viewBox="0 0 640 360" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
           <defs>

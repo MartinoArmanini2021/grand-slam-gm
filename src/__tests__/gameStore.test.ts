@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useGameStore, eliminatedSquad, substitutionCandidates } from '../store/gameStore';
 import { getPlayer } from '../data/players';
+import { ROUNDS, MATCHES, winPoints } from '../data/tournament';
 
 const store = () => useGameStore.getState();
 // Mirror the real UI flow: a completed round returns to pre_round (via the
@@ -10,6 +11,15 @@ const play = (captain: string) => {
   store().setCaptain(captain);
   store().playNextRound();
 };
+const NUM_ROUNDS = ROUNDS.length; // R128 → Final (7)
+// Points a player earns if captained in every round they win (captain doubles).
+const captainScore = (id: string) => ROUNDS.reduce((s, r) => {
+  const m = MATCHES.find(x => x.round === r.id && (x.p1Id === id || x.p2Id === id));
+  if (!m || m.winnerId !== id) return s;
+  const opp = m.p1Id === id ? m.p2Id : m.p1Id;
+  return s + winPoints(r.id, id, opp) * 2;
+}, 0);
+const playAll = (captain: string) => { for (let i = 0; i < NUM_ROUNDS; i++) play(captain); };
 
 beforeEach(() => { store().resetGame(); });
 
@@ -82,28 +92,25 @@ describe('draft mechanics', () => {
 });
 
 describe('scoring — champion, captained every round', () => {
-  it('Sinner (#1) captained wins the title for 92 pts, no upsets, no returns', () => {
+  it('Sinner (#1) captained wins the title, captained every round, no returns', () => {
     store().addPlayer('sinner');
     store().finalizeDraft();
-    for (let i = 0; i < 5; i++) play('sinner');
-    // #1 → mult 0.6: round(base·.6) then ×2 → 2+6+12+24+48
-    expect(store().myScore).toBe(92);
+    playAll('sinner'); // plays all 7 rounds R128 → F
+    // #1 → mult 0.6, no upsets; each round's points doubled by captaincy.
+    expect(store().myScore).toBe(captainScore('sinner'));
     expect(store().phase).toBe('finished');
     expect(store().budgetReturns).toHaveLength(0); // champion, never eliminated
   });
 });
 
 describe('scoring — underdog captain earns multiplier + upset bonuses', () => {
-  it('Fery (#178) captained scores 142 over his run to the semis', () => {
-    store().addPlayer('fery'); // ranked 178 → mult 1.5
+  it('Fery (#178) captained scores big over his run to the semis', () => {
+    store().addPlayer('fery'); // ranked 178 → mult 1.5, upset bonuses along the way
     store().finalizeDraft();
-    // R32 beat Bergs: round(2·1.5)=3 +15 upset =18 ×2 =36
-    // R16 beat Dimitrov: round(5·1.5)=8 +15 =23 ×2 =46
-    // QF beat Cobolli: round(10·1.5)=15 +15 =30 ×2 =60
-    // SF lost to Zverev → 0 (SF exit returns nothing)
-    for (let i = 0; i < 5; i++) play('fery');
-    expect(store().myScore).toBe(36 + 46 + 60);
-    expect(store().budgetReturns).toHaveLength(0); // out in the SF → no refund
+    playAll('fery'); // R128..QF wins, out in the SF
+    expect(store().myScore).toBe(captainScore('fery'));
+    expect(store().myScore).toBeGreaterThan(captainScore('sinner')); // underdog beats the #1's tally
+    expect(store().budgetReturns).toHaveLength(0); // out in the SF → no refund (window shut)
   });
 });
 
@@ -111,23 +118,21 @@ describe('budget returns', () => {
   it('a QF exit refunds 35% while the transfer window is still open', () => {
     store().addPlayer('fritz'); // $22, reaches the QF
     store().finalizeDraft();
-    // R32 beat Sonego: round(2·.7615)=2 ×2 =4 · R16 beat Bublik: round(5·.7615)=4 ×2 =8
-    play('fritz'); play('fritz');
-    expect(store().myScore).toBe(12);
-    play('fritz'); // QF: loses to Zverev → out, refund 22·0.35 = 7.7
-    expect(store().budgetReturns).toHaveLength(1);
-    expect(store().budgetReturns[0]).toMatchObject({ playerId: 'fritz', round: 'QF', amount: 7.7 });
+    for (let i = 0; i < 5; i++) play('fritz'); // R128,R64,R32,R16 won; QF lost → out
+    expect(store().myScore).toBe(captainScore('fritz'));
+    const ret = store().budgetReturns.find(r => r.playerId === 'fritz');
+    expect(ret).toMatchObject({ playerId: 'fritz', round: 'QF', amount: 7.7 });
     expect(store().budget).toBeCloseTo(100 - 22 + 7.7, 5);
   });
 
-  it('a player who lost before the last 32 is still refunded at the R32 reveal', () => {
+  it('a player who lost in the first round is refunded when R128 is played', () => {
     store().addPlayer('sinner');
-    store().addPlayer('ruud'); // $18, lost in R128 (never reached the scored draw)
+    store().addPlayer('ruud'); // $18, lost in R128
     store().finalizeDraft();
-    play('sinner'); // R32 → ruud revealed as out, refunded at the R32 rate 18·0.15 = 2.7
+    play('sinner'); // R128 → ruud loses, refunded at the R128 rate 18·0.10 = 1.8
     const ret = store().budgetReturns.find(r => r.playerId === 'ruud');
-    expect(ret).toMatchObject({ round: 'R32', amount: 2.7 });
-    expect(store().budget).toBeCloseTo(100 - 50 - 18 + 2.7, 5);
+    expect(ret).toMatchObject({ round: 'R128', amount: 1.8 });
+    expect(store().budget).toBeCloseTo(100 - 50 - 18 + 1.8, 5);
   });
 });
 
@@ -137,7 +142,7 @@ describe('scoring invariants over a mixed squad', () => {
     store().finalizeDraft();
     let prev = 0;
     const cap = store().captain!;
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < NUM_ROUNDS; i++) {
       play(cap);
       expect(store().myScore).toBeGreaterThanOrEqual(prev);
       prev = store().myScore;
@@ -156,7 +161,9 @@ describe('mid-tournament substitutions', () => {
     store().addPlayer('sinner'); // 50
     store().addPlayer('lehecka'); // 17
     store().finalizeDraft();
-    play('sinner'); // R32: both win
+    play('sinner'); // R128
+    play('sinner'); // R64
+    play('sinner'); // R32
     play('sinner'); // R16: sinner wins, lehecka loses to Zverev → out R16
   };
 
@@ -209,10 +216,8 @@ describe('mid-tournament substitutions', () => {
     store().addPlayer('sinner');
     store().addPlayer('lehecka'); // out R16
     store().finalizeDraft();
-    play('sinner'); // R32
-    play('sinner'); // R16 → lehecka eliminated
-    play('sinner'); // QF → currentRoundIndex now 3 (SF up next) — window still open
-    expect(store().currentRoundIndex).toBe(3);
+    for (let i = 0; i < 5; i++) play('sinner'); // R128,R64,R32,R16,QF → index 5 (SF up next)
+    expect(store().currentRoundIndex).toBe(5);
     store().replacePlayer('lehecka', 'zverev'); // zverev alive; window OPEN for the SF
     expect(store().myTeam).toContain('zverev');
     expect(store().myTeam).not.toContain('lehecka');
@@ -222,11 +227,8 @@ describe('mid-tournament substitutions', () => {
     store().addPlayer('sinner');
     store().addPlayer('lehecka'); // out R16
     store().finalizeDraft();
-    play('sinner'); // R32
-    play('sinner'); // R16 → lehecka eliminated
-    play('sinner'); // QF
-    play('sinner'); // SF → currentRoundIndex now 4 (Final up next) — window shut
-    expect(store().currentRoundIndex).toBe(4);
+    for (let i = 0; i < 6; i++) play('sinner'); // R128..SF → index 6 (Final up next) — window shut
+    expect(store().currentRoundIndex).toBe(6);
     expect(eliminatedSquad(store().myTeam, store().currentRoundIndex)).toContain('lehecka');
     store().replacePlayer('lehecka', 'zverev'); // still alive but window shut for the final
     expect(store().myTeam).toContain('lehecka');
@@ -249,12 +251,12 @@ describe('guards', () => {
   it('playNextRound past the final does nothing', () => {
     store().addPlayer('sinner');
     store().finalizeDraft();
-    for (let i = 0; i < 5; i++) play('sinner');
+    playAll('sinner');
     const before = store().myScore;
     store().playNextRound();
     store().playNextRound();
     expect(store().myScore).toBe(before);
-    expect(store().currentRoundIndex).toBe(5);
+    expect(store().currentRoundIndex).toBe(NUM_ROUNDS);
   });
 
   it('resetGame restores a clean slate', () => {

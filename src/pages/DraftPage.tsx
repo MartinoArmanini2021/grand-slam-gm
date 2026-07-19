@@ -33,8 +33,25 @@ export default function DraftPage() {
 
   const th = 'text-left px-2 py-2 text-[11px] font-bold uppercase tracking-wide';
 
+  const roundLabel = currentRoundIndex < ROUNDS.length ? ROUNDS[currentRoundIndex].label : 'Tournament complete';
+
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-3 pt-6 pb-24 lg:pb-6">
+      {/* Status header */}
+      <div className="mb-4">
+        <div className="flex items-baseline gap-x-3 gap-y-1 flex-wrap">
+          <h1 className="text-lg font-extrabold" style={{ color: 'var(--ink)' }}>Transfer Market</h1>
+          <span className="text-xs font-bold uppercase tracking-[0.15em]" style={{ color: phase === 'draft' ? 'var(--green)' : 'var(--ember)' }}>
+            {phase === 'draft' ? 'Draft open' : roundLabel}
+          </span>
+        </div>
+        <p className="text-xs mt-0.5" style={{ color: 'var(--ink-2)' }}>
+          {phase === 'draft'
+            ? `Build your squad — $${budget.toFixed(1)}M to spend · ${myTeam.length}/${TEAM_SIZE} picked`
+            : 'Squad locked for the tournament — swap eliminated players via transfers on the Bracket page.'}
+        </p>
+      </div>
+
       <div className="flex gap-4 lg:gap-6 items-start">
 
         {/* ── Left: Player table ── */}
@@ -81,7 +98,7 @@ export default function DraftPage() {
                   <th className={`${th} hidden md:table-cell`} rowSpan={2} style={{ color: 'var(--ink-2)', textAlign: 'center' }}><div style={{ lineHeight: 1.05 }}>2026<br />W–L</div></th>
                   <th className={`${th} hidden lg:table-cell`} rowSpan={2} style={{ color: 'var(--gold)', textAlign: 'center' }}><div style={{ lineHeight: 1.05 }}>2026<br />Titles</div></th>
                   <th className={th} rowSpan={2} style={{ color: 'var(--blue)', textAlign: 'right' }}>Price</th>
-                  <th className={th} rowSpan={2} style={{ width: 78 }}></th>
+                  <th className={th} rowSpan={2} style={{ width: 96 }}></th>
                 </tr>
                 <tr style={{ background: 'var(--raised)', borderBottom: '1px solid rgba(10,27,51,0.1)' }}>
                   <th className={`${th} hidden md:table-cell`} style={{ color: 'var(--green)', textAlign: 'center' }}>Grass</th>
@@ -134,7 +151,7 @@ export default function DraftPage() {
                       <td className="px-2 py-1.5 text-right">
                         {locked ? (
                           isSelected
-                            ? <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg" style={{ background: 'rgba(18,161,80,0.1)', color: 'var(--green)' }}>In squad</span>
+                            ? <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg whitespace-nowrap" style={{ background: 'rgba(18,161,80,0.1)', color: 'var(--green)' }}>In squad</span>
                             : <span className="text-[11px]" style={{ color: '#C7CFDA' }}>🔒</span>
                         ) : (
                           <button
@@ -216,12 +233,17 @@ export default function DraftPage() {
             ) : (
               <button
                 onClick={() => { finalizeDraft(); toast('Squad locked in — good luck! 🎾', 'good'); }}
-                disabled={myTeam.length < TEAM_SIZE}
+                disabled={myTeam.length === 0}
                 className="w-full py-2.5 rounded-xl font-bold text-sm transition-all"
-                style={{ background: myTeam.length === TEAM_SIZE ? 'var(--blue)' : 'rgba(10,27,51,0.05)', color: myTeam.length === TEAM_SIZE ? '#fff' : 'var(--ink-3)', cursor: myTeam.length === TEAM_SIZE ? 'pointer' : 'not-allowed' }}
+                style={{ background: myTeam.length > 0 ? 'var(--blue)' : 'rgba(10,27,51,0.05)', color: myTeam.length > 0 ? '#fff' : 'var(--ink-3)', cursor: myTeam.length === 0 ? 'not-allowed' : 'pointer' }}
               >
-                {myTeam.length === TEAM_SIZE ? 'Lock Squad →' : `Pick ${TEAM_SIZE - myTeam.length} more player${TEAM_SIZE - myTeam.length === 1 ? '' : 's'}`}
+                {myTeam.length === 0 ? 'Pick at least one player' : myTeam.length < TEAM_SIZE ? `Lock ${myTeam.length}/${TEAM_SIZE} squad →` : 'Lock Squad →'}
               </button>
+            )}
+            {!locked && myTeam.length > 0 && myTeam.length < TEAM_SIZE && (
+              <p className="text-[11px] text-center mt-2" style={{ color: 'var(--ink-3)' }}>
+                You can lock fewer than {TEAM_SIZE} — but a full squad always scores more.
+              </p>
             )}
           </div>
         </div>
@@ -236,11 +258,11 @@ export default function DraftPage() {
           </div>
           <button
             onClick={() => { finalizeDraft(); toast('Squad locked in — good luck! 🎾', 'good'); }}
-            disabled={myTeam.length < TEAM_SIZE}
+            disabled={myTeam.length === 0}
             className="px-5 py-2.5 rounded-xl font-bold text-sm shrink-0"
-            style={{ background: myTeam.length === TEAM_SIZE ? 'var(--blue)' : 'rgba(255,255,255,0.14)', color: myTeam.length === TEAM_SIZE ? '#fff' : 'var(--on-navy-2)' }}
+            style={{ background: myTeam.length > 0 ? 'var(--blue)' : 'rgba(255,255,255,0.14)', color: myTeam.length > 0 ? '#fff' : 'var(--on-navy-2)' }}
           >
-            {myTeam.length === TEAM_SIZE ? 'Lock Squad →' : `${TEAM_SIZE - myTeam.length} to pick`}
+            Lock Squad →
           </button>
         </div>
       )}

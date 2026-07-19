@@ -45,9 +45,9 @@ describe('static scoreSquad (reference)', () => {
     }
   });
 
-  it('a solo champion (Sinner, #1) scores 92 — ranking-weighted, captained every round', () => {
-    // #1 → mult 0.6: round(2·.6)=1,5·.6=3,6,12,24 doubled = 2+6+12+24+48
-    expect(scoreSquad(['sinner'], ROUNDS.length)).toBe(92);
+  it('a solo champion (Sinner, #1) scores 96 across all seven rounds, captained', () => {
+    // #1 → mult 0.6, no upsets; R128..F gross 1+1+1+3+6+12+24 = 48, doubled = 96
+    expect(scoreSquad(['sinner'], ROUNDS.length)).toBe(96);
   });
 });
 
@@ -104,8 +104,8 @@ describe('transfer-aware simulation', () => {
     for (const r of RIVALS) {
       const t = simulateRival(r, ROUNDS.length);
       for (const tr of t.transfers) {
-        // transfers can react to R32/R16/QF eliminations (prep for R16/QF/SF); never SF/F
-        expect(['R32', 'R16', 'QF']).toContain(tr.round);
+        // transfers react to R128..QF eliminations (prep for the next round); never SF/F
+        expect(['R128', 'R64', 'R32', 'R16', 'QF']).toContain(tr.round);
       }
     }
   });

@@ -1,7 +1,7 @@
 export type Surface = 'hard' | 'clay' | 'grass';
 export type FormResult = 'W' | 'L';
 export type TournamentResult = 'W' | 'F' | 'SF' | 'QF' | 'R16' | 'R32' | 'R64' | 'R128' | 'DNS';
-export type RoundId = 'R32' | 'R16' | 'QF' | 'SF' | 'F';
+export type RoundId = 'R128' | 'R64' | 'R32' | 'R16' | 'QF' | 'SF' | 'F';
 
 export interface YearResult {
   tournament: string;

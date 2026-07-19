@@ -128,17 +128,9 @@ export const useGameStore = create<GameStore>()(
 
         myTeam.forEach(playerId => {
           const match = roundMatches.find(m => m.p1Id === playerId || m.p2Id === playerId);
-          if (!match) {
-            // No match this round. If it's the R32 and this player never reached
-            // the last 32 (lost R128/R64), they're revealed as out now → one-time
-            // refund at the R32 rate so every eliminated player returns something.
-            const player = findPlayer(playerId);
-            if (round.id === 'R32' && player && (player.exit === 'R128' || player.exit === 'R64')) {
-              const amt = Math.round(player.price * BUDGET_RETURN_RATES.R32 * 10) / 10;
-              if (amt > 0) newReturns.push({ playerId, round: 'R32', amount: amt });
-            }
-            return;
-          }
+          // No match this round → already eliminated in an earlier round (and
+          // refunded then). Nothing to score.
+          if (!match) return;
 
           const won = match.winnerId === playerId;
           if (won) {

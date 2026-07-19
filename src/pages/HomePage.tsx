@@ -51,8 +51,8 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ── Court ── */}
-      <SquadCourt teamName={teamName} emblem={teamEmblem} onTeamClick={() => openTeam('you')} />
+      {/* ── Court (full width, matching the other page elements) ── */}
+      <SquadCourt fluid teamName={teamName} emblem={teamEmblem} onTeamClick={() => openTeam('you')} />
       <div className="text-[11px] mt-1.5 mb-3 text-center" style={{ color: 'var(--ink-3)' }}>
         {phase === 'draft'
           ? 'Tap a + to add players · tap a player on court to manage your squad'

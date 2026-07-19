@@ -1,6 +1,6 @@
 import type { Match, RoundId, TournamentResult } from '../types';
-import { getPlayer, PLAYERS } from './players';
-import { WIMBLEDON_2026 } from './wimbledon2026';
+import { findPlayer, PLAYERS } from './players';
+import { WIMBLEDON_2026, WIMBLEDON_2026_EARLY } from './wimbledon2026';
 
 export const TOURNAMENT = {
   id: 'wimbledon_2026',
@@ -13,11 +13,13 @@ export const TOURNAMENT = {
 };
 
 export const ROUNDS: { id: RoundId; label: string; short: string; points: number }[] = [
-  { id: 'R32', label: 'Round of 32', short: 'R32', points: 2 },
-  { id: 'R16', label: 'Round of 16', short: 'R16', points: 5 },
-  { id: 'QF',  label: 'Quarter-Final', short: 'QF',  points: 10 },
-  { id: 'SF',  label: 'Semi-Final', short: 'SF',  points: 20 },
-  { id: 'F',   label: 'Final', short: 'F',   points: 40 },
+  { id: 'R128', label: 'Round of 128', short: 'R128', points: 1 },
+  { id: 'R64',  label: 'Round of 64',  short: 'R64',  points: 1 },
+  { id: 'R32',  label: 'Round of 32',  short: 'R32',  points: 2 },
+  { id: 'R16',  label: 'Round of 16',  short: 'R16',  points: 5 },
+  { id: 'QF',   label: 'Quarter-Final', short: 'QF',  points: 10 },
+  { id: 'SF',   label: 'Semi-Final', short: 'SF',  points: 20 },
+  { id: 'F',    label: 'Final', short: 'F',   points: 40 },
 ];
 
 // ── The real Wimbledon 2026 draw (R32 → Final) ──────────────────────────────
@@ -32,7 +34,10 @@ const toId = (name: string): string => {
   return id;
 };
 
-export const MATCHES: Match[] = WIMBLEDON_2026.map(m => ({
+// The whole draw is now scored — R128 → Final. Early-round opponents who aren't
+// in the 52-player roster map to a synthetic id (they're never drafted); scoring
+// tolerates that (see winPoints/upsetBonus, which use the safe findPlayer).
+export const MATCHES: Match[] = [...WIMBLEDON_2026_EARLY, ...WIMBLEDON_2026].map(m => ({
   id: `${m.round.toLowerCase()}_${m.slot}`,
   round: m.round as RoundId,
   p1Id: toId(m.p1.name),
@@ -46,9 +51,9 @@ export const getMatchesForRound = (round: RoundId) =>
 
 // Transfer window closes after the semi-finals: the final squad is locked, but a
 // QF-round elimination CAN still be replaced for the semis (so the QF refund is
-// spendable). ROUNDS index — R32=0, R16=1, QF=2, SF=3, F=4 — so once
-// currentRoundIndex reaches 4 (the Final is up next), the squad is locked.
-export const TRANSFER_LOCK_INDEX = 4;
+// spendable). ROUNDS index — R128=0, R64=1, R32=2, R16=3, QF=4, SF=5, F=6 — so
+// once currentRoundIndex reaches 6 (the Final is up next), the squad is locked.
+export const TRANSFER_LOCK_INDEX = 6;
 export const transfersOpen = (currentRoundIndex: number) => currentRoundIndex < TRANSFER_LOCK_INDEX;
 
 // A player's opponent in a given round (null if they weren't in it).
@@ -61,8 +66,10 @@ export function getOpponentId(playerId: string, round: RoundId): string | null {
 // Upset bonus: reward a lower-ranked player for beating a higher-ranked one.
 // The bigger the ranking gap, the bigger the bonus (capped at +15).
 export function upsetBonus(winnerId: string, loserId: string): number {
-  const w = getPlayer(winnerId)?.ranking;
-  const l = getPlayer(loserId)?.ranking;
+  // findPlayer (not getPlayer) — an early-round opponent may be off-roster and
+  // have no ranking; treat that as "no upset" rather than throwing.
+  const w = findPlayer(winnerId)?.ranking;
+  const l = findPlayer(loserId)?.ranking;
   if (!w || !l || w <= l) return 0; // winner is equal/higher-ranked → no upset
   return Math.min(15, Math.round((w - l) * 0.4));
 }
@@ -79,7 +86,7 @@ export function rankingMultiplier(rank: number): number {
 // ranked above them.
 export function winPoints(roundId: RoundId, winnerId: string, loserId: string): number {
   const base = ROUNDS.find(r => r.id === roundId)?.points ?? 0;
-  const wRank = getPlayer(winnerId)?.ranking ?? 40;
+  const wRank = findPlayer(winnerId)?.ranking ?? 40;
   return Math.round(base * rankingMultiplier(wRank)) + upsetBonus(winnerId, loserId);
 }
 
@@ -89,7 +96,7 @@ const EXIT_STAGE: Record<string, number> = { R128: 0, R64: 1, R32: 2, R16: 3, QF
 // The round a player was knocked out in (their real Wimbledon 2026 exit), or
 // null for the champion. Pre-R32 exits (R128/R64) are returned as-is for display.
 export function getPlayerExit(playerId: string): TournamentResult | null {
-  const e = getPlayer(playerId)?.exit;
+  const e = findPlayer(playerId)?.exit;
   return !e || e === 'W' ? null : e;
 }
 
@@ -97,7 +104,7 @@ export function getPlayerExit(playerId: string): TournamentResult | null {
 // Their exit stage ≤ the deepest revealed stage → out. Because pre-R32 stages are
 // below R32, anyone who fell before the last 32 is out the moment R32 is revealed.
 export function isPlayerOut(playerId: string, revealed: RoundId[]): boolean {
-  const e = getPlayer(playerId)?.exit;
+  const e = findPlayer(playerId)?.exit;
   if (!e || e === 'W') return false;
   const stage = EXIT_STAGE[e];
   if (stage === undefined) return false;
@@ -109,9 +116,11 @@ export function isPlayerOut(playerId: string, revealed: RoundId[]): boolean {
 // Refunds only arrive while you can still spend them — the transfer window shuts
 // after the QF, so SF/Final eliminations return nothing.
 export const BUDGET_RETURN_RATES: Record<RoundId, number> = {
-  R32: 0.15,
-  R16: 0.25,
-  QF:  0.35,
-  SF:  0,
-  F:   0,
+  R128: 0.10,
+  R64:  0.12,
+  R32:  0.15,
+  R16:  0.25,
+  QF:   0.35,
+  SF:   0,
+  F:    0,
 };
