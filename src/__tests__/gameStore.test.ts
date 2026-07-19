@@ -104,12 +104,15 @@ describe('scoring — champion, captained every round', () => {
 });
 
 describe('scoring — underdog captain earns multiplier + upset bonuses', () => {
-  it('Fery (#178) captained scores big over his run to the semis', () => {
-    store().addPlayer('fery'); // ranked 178 → mult 1.5, upset bonuses along the way
+  it('Fery (#178) captained banks a big return for a $6M pick over his run to the semis', () => {
+    store().addPlayer('fery'); // ranked 178 → mult 1.3 + capped upset bonuses along the way
     store().finalizeDraft();
     playAll('fery'); // R128..QF wins, out in the SF
     expect(store().myScore).toBe(captainScore('fery'));
-    expect(store().myScore).toBeGreaterThan(captainScore('sinner')); // underdog beats the #1's tally
+    // A deep underdog run is a strong return on a cheap pick, but no longer out-scores
+    // the champion's full title run (the rebalance made "going further" worth more).
+    expect(store().myScore).toBeGreaterThan(80);
+    expect(store().myScore).toBeLessThan(captainScore('sinner'));
     expect(store().budgetReturns).toHaveLength(0); // out in the SF → no refund (window shut)
   });
 });
@@ -183,10 +186,10 @@ describe('mid-tournament substitutions', () => {
   it('the replacement scores from the next round on', () => {
     draftAndReachR16();
     store().replacePlayer('lehecka', 'zverev');
-    play('sinner'); // QF: sinner(cap) round(10·.6)=6 ×2 =12; zverev round(10·.646)=6 → 18
+    play('sinner'); // QF: sinner(cap) round(10·.8)=8 ×2 =16; zverev round(10·.826)=8 → 24
     const qf = store().roundScores.at(-1)!;
     expect(qf.round).toBe('QF');
-    expect(qf.points).toBe(18);
+    expect(qf.points).toBe(24);
   });
 
   it('rejects replacing a player who is not eliminated', () => {

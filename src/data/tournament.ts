@@ -74,20 +74,26 @@ export function upsetBonus(winnerId: string, loserId: string): number {
   return Math.min(15, Math.round((w - l) * 0.4));
 }
 
-// A win by a lower-ranked player is worth more; a top seed winning is "expected"
-// and worth less. Rank 1 → ×0.6, rank ~40 → ×1.5.
+// A win by a lower-ranked player is worth a little more; a top seed winning is
+// "expected" and worth a little less. Rank 1 → ×0.8, rank ~40 → ×1.3. The spread
+// is deliberately mild: expected points must still rise with a player's strength,
+// so a favourite is worth drafting and the budget is a real trade-off. (A wider
+// spread made cheap underdogs strictly the best value in expectation — see the
+// Monte-Carlo pricing study.)
 export function rankingMultiplier(rank: number): number {
   const r = Math.max(1, Math.min(40, rank));
-  return 0.6 + 0.9 * ((r - 1) / 39);
+  return 0.8 + 0.5 * ((r - 1) / 39);
 }
 
 // Total points a player earns for winning a match: round stakes scaled by the
-// winner's ranking (underdogs earn more) plus an upset bonus for beating someone
-// ranked above them.
+// winner's ranking, plus an upset bonus — but the upset is capped by the round's
+// importance (≤ 1.5× its base), so a first-round shock can never out-earn a deep
+// run. Early upsets are small; a giant-killing in the QF/SF is worth real points.
 export function winPoints(roundId: RoundId, winnerId: string, loserId: string): number {
   const base = ROUNDS.find(r => r.id === roundId)?.points ?? 0;
   const wRank = findPlayer(winnerId)?.ranking ?? 40;
-  return Math.round(base * rankingMultiplier(wRank)) + upsetBonus(winnerId, loserId);
+  const upset = Math.min(upsetBonus(winnerId, loserId), Math.round(base * 1.5));
+  return Math.round(base * rankingMultiplier(wRank)) + upset;
 }
 
 // Exit stage of each result, earliest → latest. Champion ('W') never exits.

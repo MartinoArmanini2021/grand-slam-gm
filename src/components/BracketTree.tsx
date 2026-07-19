@@ -11,6 +11,9 @@ const FULL_DRAW: WMatch[] = [...WIMBLEDON_2026_EARLY, ...WIMBLEDON_2026];
 const ALL_COLS: WRound[] = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF'];
 const SCORED_COLS: WRound[] = ['R32', 'R16', 'QF', 'SF'];
 const ROUND_LABEL: Record<WRound, string> = { R128: 'Round of 128', R64: 'Round of 64', R32: 'Round of 32', R16: 'Round of 16', QF: 'Quarter-finals', SF: 'Semi-finals', F: 'Final' };
+// Position of each round in the played sequence — used to gate spoilers: a round's
+// results are hidden until you've played it.
+const ROUND_IDX: Record<WRound, number> = { R128: 0, R64: 1, R32: 2, R16: 3, QF: 4, SF: 5, F: 6 };
 
 // Bracket geometry — cards share a fixed width; connector columns carry the tree lines.
 const CARD_W = 176;
@@ -72,23 +75,45 @@ export default function BracketTree() {
     );
   };
 
+  // A blank slot for a match whose participants aren't decided yet (its feeder
+  // round hasn't been played) — keeps the tree shape without spoiling anything.
+  const TbdRow = () => (
+    <div className="w-full flex items-center gap-1.5 px-2 py-1.5" style={{ borderLeft: '3px solid transparent' }}>
+      <span className="text-[11px] italic" style={{ color: 'var(--ink-3)' }}>—</span>
+    </div>
+  );
+
   const MatchCard = ({ m }: { m: WMatch }) => {
     const route = onRoute(m);
+    const ri = ROUND_IDX[m.round];
+    const resultRevealed = ri < currentRoundIndex;   // round has been played
+    const participantsKnown = ri <= currentRoundIndex; // its feeders have been played
     return (
       <div className="rounded-lg overflow-hidden shrink-0" style={{
         width: CARD_W,
         background: '#FFFFFF',
         border: `1.5px solid ${route ? 'var(--blue)' : 'rgba(10,27,51,0.1)'}`,
         boxShadow: route ? '0 0 0 3px rgba(14,111,196,0.12)' : '0 1px 2px rgba(10,27,51,0.04)',
+        opacity: participantsKnown ? 1 : 0.6,
       }}>
-        <PlayerRow name={m.p1.name} seed={m.p1.seed} isWinner={m.winner === m.p1.name} dim={m.winner !== m.p1.name} />
-        <div style={{ height: 1, background: 'rgba(10,27,51,0.06)' }} />
-        <PlayerRow name={m.p2.name} seed={m.p2.seed} isWinner={m.winner === m.p2.name} dim={m.winner !== m.p2.name} />
+        {participantsKnown ? (
+          <>
+            <PlayerRow name={m.p1.name} seed={m.p1.seed} isWinner={resultRevealed && m.winner === m.p1.name} dim={resultRevealed && m.winner !== m.p1.name} />
+            <div style={{ height: 1, background: 'rgba(10,27,51,0.06)' }} />
+            <PlayerRow name={m.p2.name} seed={m.p2.seed} isWinner={resultRevealed && m.winner === m.p2.name} dim={resultRevealed && m.winner !== m.p2.name} />
+          </>
+        ) : (
+          <>
+            <TbdRow />
+            <div style={{ height: 1, background: 'rgba(10,27,51,0.06)' }} />
+            <TbdRow />
+          </>
+        )}
         <div
           className="font-num text-center whitespace-nowrap overflow-hidden text-ellipsis"
-          title={m.score}
-          style={{ fontSize: 9, lineHeight: '15px', color: 'var(--ink-2)', background: 'var(--raised)', borderTop: '1px solid rgba(10,27,51,0.06)', padding: '0 6px' }}
-        >{m.score}</div>
+          title={resultRevealed ? m.score : undefined}
+          style={{ fontSize: 9, lineHeight: '15px', color: 'var(--ink-3)', background: 'var(--raised)', borderTop: '1px solid rgba(10,27,51,0.06)', padding: '0 6px' }}
+        >{resultRevealed ? m.score : participantsKnown ? 'to be played' : ''}</div>
       </div>
     );
   };
@@ -185,6 +210,9 @@ export default function BracketTree() {
         <span>
           {focus ? <>Tracing <span className="font-bold" style={{ color: 'var(--blue)' }}>{focus}</span> · <button onClick={() => setFocus(null)} className="underline">clear</button></> : 'Tap a player to trace their route'}
         </span>
+        <span className="flex items-center gap-1 font-semibold" style={{ color: 'var(--blue)' }}>
+          🔒 {currentRoundIndex === 0 ? 'Results hidden — no spoilers. Play a round to reveal it.' : `Revealed through ${ROUND_LABEL[(['R128','R64','R32','R16','QF','SF','F'] as WRound[])[currentRoundIndex - 1]]}`}
+        </span>
       </div>
 
       {/* Tree */}
@@ -209,7 +237,7 @@ export default function BracketTree() {
             <div className="flex-1 flex flex-col justify-center">
               <MatchCard m={final} />
               <div className="text-[10px] text-center font-semibold mt-2" style={{ color: 'var(--ink-2)' }}>
-                Champion: <span style={{ color: 'var(--ink)' }}>{WIMBLEDON_2026_CHAMPION}</span>
+                Champion: <span style={{ color: 'var(--ink)' }}>{currentRoundIndex > ROUND_IDX.F ? WIMBLEDON_2026_CHAMPION : '—'}</span>
               </div>
             </div>
           </div>

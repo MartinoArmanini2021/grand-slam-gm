@@ -45,9 +45,9 @@ describe('static scoreSquad (reference)', () => {
     }
   });
 
-  it('a solo champion (Sinner, #1) scores 96 across all seven rounds, captained', () => {
-    // #1 → mult 0.6, no upsets; R128..F gross 1+1+1+3+6+12+24 = 48, doubled = 96
-    expect(scoreSquad(['sinner'], ROUNDS.length)).toBe(96);
+    it('a solo champion (Sinner, #1) scores 128 across all seven rounds, captained', () => {
+    // #1 → mult 0.8, no upsets; R128..F gross 1+1+2+4+8+16+32 = 64, doubled = 128
+    expect(scoreSquad(['sinner'], ROUNDS.length)).toBe(128);
   });
 });
 
