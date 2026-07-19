@@ -19,18 +19,23 @@ export interface Rival {
 
 const BUDGET = 100;
 const SQUAD = 6;
-const formWins = (p: Player) => p.form.filter(r => r === 'W').length;
+// Season form proxy: year-to-date win rate (0–1). A real, populated signal —
+// unlike `form`, which is empty, so strategies must not depend on it.
+const ytdRate = (p: Player) => {
+  const g = p.ytd.wins + p.ytd.losses;
+  return g > 0 ? p.ytd.wins / g : 0;
+};
 
 export const RIVALS: Rival[] = [
   { id: 'stars',    name: 'Galácticos FC',   manager: '@carlosdeluxe', emblem: '🌌', tag: 'Stars & scrubs',        color: '#0e6fc4', rank: (a, b) => b.price - a.price },
   { id: 'value',    name: 'Value Vultures',  manager: '@moneyball_m',  emblem: '🦅', tag: 'Best grass per $',      color: '#12A150', rank: (a, b) => (b.surface.grass / b.price) - (a.surface.grass / a.price) },
   { id: 'grass',    name: 'Grass Gods',      manager: '@sw19_sam',     emblem: '🌱', tag: 'Grass-court merchants',  color: '#37B24D', rank: (a, b) => b.surface.grass - a.surface.grass },
-  { id: 'form',     name: 'Momentum FC',     manager: '@hot_streak',   emblem: '🔥', tag: 'Chasing hot form',      color: '#E5472B', rank: (a, b) => (formWins(b) - formWins(a)) || (b.surface.grass - a.surface.grass) },
+  { id: 'form',     name: 'Momentum FC',     manager: '@hot_streak',   emblem: '🔥', tag: 'Chasing hot form',      color: '#E5472B', rank: (a, b) => (ytdRate(b) - ytdRate(a)) || (b.surface.grass - a.surface.grass) },
   { id: 'balanced', name: 'The Allrounders', manager: '@steady_eddie', emblem: '⚖️', tag: 'Balanced build',        color: '#D99A00', rank: (a, b) => balancedScore(b) - balancedScore(a) },
 ];
 
 function balancedScore(p: Player) {
-  return p.surface.grass + formWins(p) * 5 - Math.abs(p.price - 12) * 2;
+  return p.surface.grass + ytdRate(p) * 25 - Math.abs(p.price - 12) * 2;
 }
 
 // Greedy squad build: follow the strategy order but always keep 6 affordable.

@@ -26,6 +26,11 @@ describe('rivals squad building', () => {
   it('getRivalTeams is cached per round index', () => {
     expect(getRivalTeams(3)).toBe(getRivalTeams(3));
   });
+
+  it('each rival strategy drafts a distinct squad (no dead/duplicate strategies)', () => {
+    const squads = RIVALS.map(r => buildSquad(r.rank).join(','));
+    expect(new Set(squads).size).toBe(RIVALS.length);
+  });
 });
 
 describe('static scoreSquad (reference)', () => {

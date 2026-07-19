@@ -3,7 +3,13 @@ import { useGameStore, eliminatedSquad, substitutionCandidates } from '../store/
 import { getPlayer } from '../data/players';
 
 const store = () => useGameStore.getState();
-const play = (captain: string) => { store().setCaptain(captain); store().playNextRound(); };
+// Mirror the real UI flow: a completed round returns to pre_round (via the
+// "Set Captain" step) before the next round can be played.
+const play = (captain: string) => {
+  if (store().phase === 'round_complete') useGameStore.setState({ phase: 'pre_round' });
+  store().setCaptain(captain);
+  store().playNextRound();
+};
 
 beforeEach(() => { store().resetGame(); });
 

@@ -13,6 +13,7 @@ import Logo from './components/Logo';
 import { NAV_ICONS } from './components/NavIcons';
 import AuthScreen from './components/AuthScreen';
 import UserProfile from './components/UserProfile';
+import ErrorBoundary from './components/ErrorBoundary';
 import { useAuth } from './auth/AuthProvider';
 
 const NAVY = 'var(--ink)';
@@ -148,12 +149,14 @@ export default function App() {
       </header>
 
       <main className="fade-in">
-        {activeTab === 'home'       && <HomePage />}
-        {activeTab === 'draft'      && <DraftPage />}
-        {activeTab === 'tournament' && <TournamentPage />}
-        {activeTab === 'league'     && <LeaguePage />}
-        {activeTab === 'team'       && <TeamPage />}
-        {activeTab === 'player'     && <PlayerPage />}
+        <ErrorBoundary>
+          {activeTab === 'home'       && <HomePage />}
+          {activeTab === 'draft'      && <DraftPage />}
+          {activeTab === 'tournament' && <TournamentPage />}
+          {activeTab === 'league'     && <LeaguePage />}
+          {activeTab === 'team'       && <TeamPage />}
+          {activeTab === 'player'     && <PlayerPage />}
+        </ErrorBoundary>
       </main>
 
       <HowToPlay open={showRules} onClose={closeRules} />

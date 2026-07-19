@@ -77,8 +77,11 @@ export const useGameStore = create<GameStore>()(
       },
 
       setCaptain: (id) => {
-        const { myTeam } = get();
+        const { myTeam, currentRoundIndex } = get();
         if (!myTeam.includes(id)) return;
+        // An eliminated player can't captain (guards callers that don't pre-filter).
+        const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
+        if (isPlayerOut(id, revealed)) return;
         set({ captain: id });
       },
 
@@ -109,8 +112,11 @@ export const useGameStore = create<GameStore>()(
       },
 
       playNextRound: () => {
-        const { currentRoundIndex, myTeam, captain, captainHistory, budgetReturns, myScore, roundScores } = get();
+        const { currentRoundIndex, myTeam, captain, captainHistory, budgetReturns, myScore, roundScores, phase } = get();
         if (currentRoundIndex >= ROUNDS.length) return;
+        // Only playable from pre_round. Guards a double-tap that would otherwise
+        // burn the next round with no captain and skip its transfer window.
+        if (phase !== 'pre_round') return;
 
         const round = ROUNDS[currentRoundIndex];
         const roundMatches = getMatchesForRound(round.id);

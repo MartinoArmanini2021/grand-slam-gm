@@ -27,35 +27,36 @@ export default function HomePage() {
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-3 pt-3 pb-6 fade-in">
 
-      {/* ── Title + subtitle + status ── */}
-      <div className="text-center mb-2">
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-none" style={{ color: 'var(--ink)' }}>Wimbledon 2026</h1>
-        <div className="text-xs font-bold uppercase tracking-[0.2em] mt-1" style={{ color: 'var(--green)' }}>
-          Grand Slam · Grass
+      {/* ── Header: title + meta (left) · your stats (top-right) ── */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
+        <div className="min-w-0">
+          <div className="flex items-baseline gap-x-3 gap-y-1 flex-wrap">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-none" style={{ color: 'var(--ink)' }}>Wimbledon 2026</h1>
+            <span className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: 'var(--green)' }}>Grand Slam · Grass</span>
+          </div>
+          <div className="text-xs font-bold uppercase tracking-[0.2em] mt-1.5" style={{ color: 'var(--ember)' }}>
+            {courtStatus(phase, currentRound, ROUNDS[currentRoundIndex - 1]?.short)}
+          </div>
         </div>
-        <div className="text-xs font-bold uppercase tracking-[0.2em] mt-1" style={{ color: 'var(--ember)' }}>
-          {courtStatus(phase, currentRound, ROUNDS[currentRoundIndex - 1]?.short)}
+
+        <div className="grid grid-cols-3 gap-2 shrink-0">
+          <StatCard label="Score" value={`${myScore}`} unit="points" color="var(--blue)" />
+          <StatCard label="Budget" value={`$${budget.toFixed(1)}M`} unit="to spend" color="var(--ink)" />
+          <StatCard
+            label="Squad"
+            value={`${myTeam.length}/${TEAM_TARGET}`}
+            unit={myTeam.length >= TEAM_TARGET ? 'Complete' : `${TEAM_TARGET - myTeam.length} to pick`}
+            color={myTeam.length === TEAM_TARGET ? 'var(--green)' : 'var(--gold)'}
+          />
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto">
+      {/* ── Court ── */}
       <SquadCourt teamName={teamName} emblem={teamEmblem} onTeamClick={() => openTeam('you')} />
-      <div className="text-[11px] mt-1.5 mb-2 text-center" style={{ color: 'var(--ink-3)' }}>
+      <div className="text-[11px] mt-1.5 mb-3 text-center" style={{ color: 'var(--ink-3)' }}>
         {phase === 'draft'
-          ? 'Tap a + to add players · your squad lines up on court'
+          ? 'Tap a + to add players · tap a player on court to manage your squad'
           : <>Tap a player for their profile · <span style={{ color: 'var(--gold)' }}>⭐ = captain (2× points)</span></>}
-      </div>
-
-      {/* ── Your stats ── */}
-      <div className="grid grid-cols-3 gap-3 mb-3">
-        <StatCard label="Score" value={`${myScore}`} unit="points" color="var(--blue)" />
-        <StatCard label="Budget" value={`$${budget.toFixed(1)}M`} unit="to spend" color="var(--ink)" />
-        <StatCard
-          label="Squad"
-          value={`${myTeam.length}/${TEAM_TARGET}`}
-          unit={myTeam.length >= TEAM_TARGET ? 'Squad complete' : `${TEAM_TARGET - myTeam.length} left to pick`}
-          color={myTeam.length === TEAM_TARGET ? 'var(--green)' : 'var(--gold)'}
-        />
       </div>
 
       {/* ── Action callout ── */}
@@ -125,7 +126,6 @@ export default function HomePage() {
           </div>
         )}
         </div>{/* /leaderboard */}
-      </div>{/* /content column */}
     </div>
   );
 }
@@ -141,10 +141,10 @@ function courtStatus(phase: GamePhase, currentRound: { short: string } | null, p
 
 function StatCard({ label, value, unit, color }: { label: string; value: string; unit: string; color: string }) {
   return (
-    <div className="rounded-2xl p-4 text-center sm:text-left" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.07)' }}>
-      <div className="text-xs mb-1" style={{ color: 'var(--ink-2)' }}>{label}</div>
-      <div className="font-num text-2xl font-bold leading-none" style={{ color }}>{value}</div>
-      <div className="text-xs mt-1" style={{ color: 'var(--ink-3)' }}>{unit}</div>
+    <div className="rounded-xl px-3 py-2 text-center sm:min-w-[96px]" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.07)' }}>
+      <div className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-2)' }}>{label}</div>
+      <div className="font-num text-xl font-bold leading-tight" style={{ color }}>{value}</div>
+      <div className="text-[10px] leading-tight" style={{ color: 'var(--ink-3)' }}>{unit}</div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import { WIMBLEDON_2026, WIMBLEDON_2026_EARLY, WIMBLEDON_2026_CHAMPION } from '../data/wimbledon2026';
 import type { WMatch, WRound } from '../data/wimbledon2026';
 import { useGameStore } from '../store/gameStore';
@@ -11,6 +11,21 @@ const FULL_DRAW: WMatch[] = [...WIMBLEDON_2026_EARLY, ...WIMBLEDON_2026];
 const ALL_COLS: WRound[] = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF'];
 const SCORED_COLS: WRound[] = ['R32', 'R16', 'QF', 'SF'];
 const ROUND_LABEL: Record<WRound, string> = { R128: 'Round of 128', R64: 'Round of 64', R32: 'Round of 32', R16: 'Round of 16', QF: 'Quarter-finals', SF: 'Semi-finals', F: 'Final' };
+
+// Bracket geometry — cards share a fixed width; connector columns carry the tree lines.
+const CARD_W = 176;
+const CONN_W = 22;
+const LINE = 'rgba(10,27,51,0.22)';
+
+// Round label sitting atop each column; empty label keeps connector columns aligned.
+function ColHeader({ label, gold }: { label: string; gold?: boolean }) {
+  return (
+    <div
+      className="text-[10px] font-bold uppercase tracking-wider mb-2 text-center sticky top-0"
+      style={{ color: gold ? 'var(--gold)' : 'var(--ink-2)', background: 'var(--raised)', zIndex: 1, paddingBottom: 4 }}
+    >{label || ' '}</div>
+  );
+}
 
 export default function BracketTree() {
   const [half, setHalf] = useState<'top' | 'bottom'>('top');
@@ -27,6 +42,9 @@ export default function BracketTree() {
   ];
   const [teamId, setTeamId] = useState('you');
   const selected = teams.find(t => t.id === teamId) ?? teams[0];
+  // Keep the dropdown's value in sync with what's actually highlighted (e.g. when
+  // 'you' isn't in the list because no squad is drafted yet).
+  const selectedId = selected?.id ?? '';
   const highlight = new Set((selected?.squad ?? []).map(id => getPlayer(id).name));
 
   const final = WIMBLEDON_2026.find(m => m.round === 'F')!;
@@ -58,7 +76,7 @@ export default function BracketTree() {
     const route = onRoute(m);
     return (
       <div className="rounded-lg overflow-hidden shrink-0" style={{
-        width: 158,
+        width: CARD_W,
         background: '#FFFFFF',
         border: `1.5px solid ${route ? 'var(--blue)' : 'rgba(10,27,51,0.1)'}`,
         boxShadow: route ? '0 0 0 3px rgba(14,111,196,0.12)' : '0 1px 2px rgba(10,27,51,0.04)',
@@ -66,9 +84,52 @@ export default function BracketTree() {
         <PlayerRow name={m.p1.name} seed={m.p1.seed} isWinner={m.winner === m.p1.name} dim={m.winner !== m.p1.name} />
         <div style={{ height: 1, background: 'rgba(10,27,51,0.06)' }} />
         <PlayerRow name={m.p2.name} seed={m.p2.seed} isWinner={m.winner === m.p2.name} dim={m.winner !== m.p2.name} />
+        <div
+          className="font-num text-center whitespace-nowrap overflow-hidden text-ellipsis"
+          title={m.score}
+          style={{ fontSize: 9, lineHeight: '15px', color: 'var(--ink-2)', background: 'var(--raised)', borderTop: '1px solid rgba(10,27,51,0.06)', padding: '0 6px' }}
+        >{m.score}</div>
       </div>
     );
   };
+
+  // One round of matches — each match sits in an equal flex slot so later rounds
+  // line up on the midpoint of their two feeders (a true, proportional bracket).
+  const Column = ({ round, matches }: { round: WRound; matches: WMatch[] }) => (
+    <div className="flex flex-col" style={{ width: CARD_W }}>
+      <ColHeader label={ROUND_LABEL[round]} />
+      <div className="flex-1 flex flex-col">
+        {matches.map(m => (
+          <div key={`${round}-${m.slot}`} className="flex-1 flex items-center">
+            <MatchCard m={m} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Connector column: for each child match, an elbow joining its two feeders.
+  const Connector = ({ count, single }: { count: number; single?: boolean }) => (
+    <div className="flex flex-col" style={{ width: CONN_W }}>
+      <ColHeader label="" />
+      <div className="flex-1 flex flex-col">
+        {Array.from({ length: count }).map((_, i) => (
+          <div key={i} className="flex-1 relative">
+            {single ? (
+              <div style={{ position: 'absolute', left: 0, right: 0, top: '50%', borderTop: `1.5px solid ${LINE}` }} />
+            ) : (
+              <>
+                <div style={{ position: 'absolute', right: 0, top: '25%', height: '50%', borderRight: `1.5px solid ${LINE}` }} />
+                <div style={{ position: 'absolute', left: 0, right: 0, top: '25%', borderTop: `1.5px solid ${LINE}` }} />
+                <div style={{ position: 'absolute', left: 0, right: 0, top: '75%', borderTop: `1.5px solid ${LINE}` }} />
+                <div style={{ position: 'absolute', right: `-${CONN_W}px`, width: CONN_W, top: '50%', borderTop: `1.5px solid ${LINE}` }} />
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div>
@@ -104,7 +165,7 @@ export default function BracketTree() {
           <div className="flex items-center gap-1.5">
             <span className="text-xs font-bold" style={{ color: 'var(--ink-2)' }}>Highlight team:</span>
             <select
-              value={teamId}
+              value={selectedId}
               onChange={e => setTeamId(e.target.value)}
               className="text-xs font-bold rounded-xl px-2.5 py-2 outline-none"
               style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.1)', color: 'var(--ink)' }}
@@ -128,24 +189,26 @@ export default function BracketTree() {
 
       {/* Tree */}
       <div className="overflow-auto rounded-2xl p-3" style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.07)', maxHeight: depth === 'full' ? '78vh' : undefined }}>
-        <div className="flex gap-3 items-stretch" style={{ minWidth: 'min-content' }}>
-          {cols.map(round => {
+        <div className="flex items-stretch" style={{ minWidth: 'min-content' }}>
+          {cols.map((round, ci) => {
             const matches = FULL_DRAW.filter(m => m.round === round && m.half === half);
+            const nextRound = cols[ci + 1];
+            const nextCount = nextRound ? FULL_DRAW.filter(m => m.round === nextRound && m.half === half).length : 0;
             return (
-              <div key={round} className="flex flex-col" style={{ minWidth: 158 }}>
-                <div className="text-[10px] font-bold uppercase tracking-wider mb-2 text-center sticky top-0" style={{ color: 'var(--ink-2)', background: 'var(--raised)', zIndex: 1, paddingBottom: 4 }}>{ROUND_LABEL[round]}</div>
-                <div className="flex-1 flex flex-col justify-around gap-2">
-                  {matches.map(m => <MatchCard key={`${round}-${m.slot}`} m={m} />)}
-                </div>
-              </div>
+              <Fragment key={round}>
+                <Column round={round} matches={matches} />
+                {nextRound && <Connector count={nextCount} />}
+              </Fragment>
             );
           })}
+          {/* SF → Final: a single straight join (the other finalist comes from the other half) */}
+          <Connector count={1} single />
           {/* Final */}
-          <div className="flex flex-col" style={{ minWidth: 158 }}>
-            <div className="text-[10px] font-bold uppercase tracking-wider mb-2 text-center" style={{ color: 'var(--gold)' }}>Final 🏆</div>
-            <div className="flex-1 flex flex-col justify-center gap-2">
+          <div className="flex flex-col" style={{ width: CARD_W }}>
+            <ColHeader label="Final 🏆" gold />
+            <div className="flex-1 flex flex-col justify-center">
               <MatchCard m={final} />
-              <div className="text-[10px] text-center font-semibold" style={{ color: 'var(--ink-2)' }}>
+              <div className="text-[10px] text-center font-semibold mt-2" style={{ color: 'var(--ink-2)' }}>
                 Champion: <span style={{ color: 'var(--ink)' }}>{WIMBLEDON_2026_CHAMPION}</span>
               </div>
             </div>

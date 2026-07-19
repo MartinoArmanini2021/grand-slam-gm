@@ -23,6 +23,7 @@ export default function TeamPage() {
   if (viewTeam === 'you') {
     return (
       <TeamView
+        key="you"
         emblem={teamEmblem} name={teamName} manager={username ? `@${username}` : '@you'} color="var(--blue)"
         score={myScore} budget={budget} squad={myTeam} captainId={captain ?? myTeam[0] ?? ''} editable
       />
@@ -33,6 +34,7 @@ export default function TeamPage() {
   if (!team) return null;
   return (
     <TeamView
+      key={team.rival.id}
       emblem={team.rival.emblem} name={team.rival.name} manager={team.rival.manager} color={team.rival.color}
       score={team.score} budget={team.budget} squad={team.squad} captainId={team.captainId}
     />

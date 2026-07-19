@@ -30,7 +30,8 @@ export default function PlayerPage() {
 
   const tier = getTier(p.ranking);
   const tm = TIER_META[tier];
-  const winRate = Math.round(p.ytd.wins / (p.ytd.wins + p.ytd.losses) * 100);
+  const ytdPlayed = p.ytd.wins + p.ytd.losses;
+  const winRate = ytdPlayed > 0 ? Math.round(p.ytd.wins / ytdPlayed * 100) : 0;
   const first = p.name.split(' ')[0];
   const hand = p.hand === 'R' ? 'right' : 'left';
   const article = /^[aeiou]/i.test(p.style) ? 'an' : 'a';

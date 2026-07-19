@@ -19,8 +19,9 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
   emblem?: string;
   onTeamClick?: () => void; // makes the team label a link (e.g. to your team page)
 } = {}) {
-  const { myTeam, captain, currentRoundIndex, phase, openPlayer } = useGameStore();
+  const { myTeam, captain, currentRoundIndex, phase, openPlayer, removePlayer } = useGameStore();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [manageId, setManageId] = useState<string | null>(null);
   const team = squad ?? myTeam;
   const cap = captainId ?? (squad ? undefined : captain);
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
@@ -121,7 +122,7 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
           return (
             <button
               key={i}
-              onClick={() => openPlayer(id)}
+              onClick={() => (canEdit ? setManageId(id) : openPlayer(id))}
               className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center"
               style={{ left: `${spot.x}%`, top: `${spot.y}%`, opacity: out ? 0.5 : 1 }}
             >
@@ -149,6 +150,50 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
           </div>
         )}
       </div>
+
+      {/* Manage a drafted player — tapping your court player opens this, not the profile */}
+      {manageId && (() => {
+        const id = manageId;
+        const mp = getPlayer(id);
+        return (
+          <div
+            onClick={() => setManageId(null)}
+            style={{ position: 'fixed', inset: 0, zIndex: 210, background: 'rgba(10,27,51,0.55)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+          >
+            <div onClick={e => e.stopPropagation()} className="fade-in w-full" style={{ maxWidth: 340, background: '#FFFFFF', borderRadius: 18, overflow: 'hidden', boxShadow: '0 20px 60px rgba(10,27,51,0.4)' }}>
+              <div className="flex items-center gap-3 px-4 py-4" style={{ background: 'linear-gradient(120deg,var(--ink),var(--navy-2))' }}>
+                <PlayerAvatar playerId={id} name={mp.name} size="sm" />
+                <div className="min-w-0">
+                  <div className="text-white font-extrabold text-base truncate">{mp.name}</div>
+                  <div className="text-xs" style={{ color: 'var(--on-navy)' }}>{mp.flag} #{mp.ranking} · ${mp.price}M</div>
+                </div>
+              </div>
+              <div className="p-2">
+                <button
+                  onClick={() => { removePlayer(id); setManageId(null); setPickerOpen(true); }}
+                  className="w-full text-left px-3 py-3 rounded-xl text-sm font-bold flex items-center gap-2.5 transition-colors hover:bg-black/5"
+                  style={{ color: 'var(--ink)' }}
+                >🔁 Replace player</button>
+                <button
+                  onClick={() => { removePlayer(id); setManageId(null); }}
+                  className="w-full text-left px-3 py-3 rounded-xl text-sm font-bold flex items-center gap-2.5 transition-colors hover:bg-black/5"
+                  style={{ color: 'var(--ember)' }}
+                >✕ Remove from squad</button>
+                <button
+                  onClick={() => { openPlayer(id); setManageId(null); }}
+                  className="w-full text-left px-3 py-3 rounded-xl text-sm font-semibold flex items-center gap-2.5 transition-colors hover:bg-black/5"
+                  style={{ color: 'var(--ink-2)' }}
+                >👤 View profile</button>
+                <button
+                  onClick={() => setManageId(null)}
+                  className="w-full text-center px-3 py-2.5 mt-1 rounded-xl text-xs font-semibold transition-colors hover:bg-black/5"
+                  style={{ color: 'var(--ink-3)' }}
+                >Cancel</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       <PlayerPickerModal open={pickerOpen} onClose={() => setPickerOpen(false)} />
     </>

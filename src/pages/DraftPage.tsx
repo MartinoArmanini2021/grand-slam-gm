@@ -216,11 +216,11 @@ export default function DraftPage() {
             ) : (
               <button
                 onClick={() => { finalizeDraft(); toast('Squad locked in — good luck! 🎾', 'good'); }}
-                disabled={myTeam.length === 0}
+                disabled={myTeam.length < TEAM_SIZE}
                 className="w-full py-2.5 rounded-xl font-bold text-sm transition-all"
-                style={{ background: myTeam.length > 0 ? 'var(--blue)' : 'rgba(10,27,51,0.05)', color: myTeam.length > 0 ? '#fff' : 'var(--ink-3)', cursor: myTeam.length === 0 ? 'not-allowed' : 'pointer' }}
+                style={{ background: myTeam.length === TEAM_SIZE ? 'var(--blue)' : 'rgba(10,27,51,0.05)', color: myTeam.length === TEAM_SIZE ? '#fff' : 'var(--ink-3)', cursor: myTeam.length === TEAM_SIZE ? 'pointer' : 'not-allowed' }}
               >
-                {myTeam.length === 0 ? 'Pick players first' : 'Lock Squad →'}
+                {myTeam.length === TEAM_SIZE ? 'Lock Squad →' : `Pick ${TEAM_SIZE - myTeam.length} more player${TEAM_SIZE - myTeam.length === 1 ? '' : 's'}`}
               </button>
             )}
           </div>
@@ -236,11 +236,11 @@ export default function DraftPage() {
           </div>
           <button
             onClick={() => { finalizeDraft(); toast('Squad locked in — good luck! 🎾', 'good'); }}
-            disabled={myTeam.length === 0}
+            disabled={myTeam.length < TEAM_SIZE}
             className="px-5 py-2.5 rounded-xl font-bold text-sm shrink-0"
-            style={{ background: myTeam.length > 0 ? 'var(--blue)' : 'rgba(255,255,255,0.14)', color: myTeam.length > 0 ? '#fff' : 'var(--on-navy-2)' }}
+            style={{ background: myTeam.length === TEAM_SIZE ? 'var(--blue)' : 'rgba(255,255,255,0.14)', color: myTeam.length === TEAM_SIZE ? '#fff' : 'var(--on-navy-2)' }}
           >
-            Lock Squad →
+            {myTeam.length === TEAM_SIZE ? 'Lock Squad →' : `${TEAM_SIZE - myTeam.length} to pick`}
           </button>
         </div>
       )}
