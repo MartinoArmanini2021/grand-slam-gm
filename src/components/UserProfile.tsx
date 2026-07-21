@@ -2,12 +2,15 @@ import { useState } from 'react';
 import { useProfile } from '../store/profileStore';
 import { useAuth } from '../auth/AuthProvider';
 import { useGameStore } from '../store/gameStore';
+import { toast } from '../store/toastStore';
 
 export default function UserProfile({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { firstName, lastName, username, phone, country, email, teamName, teamEmblem, set } = useProfile();
   const { user, guest, enabled, signOut, updatePassword } = useAuth();
   const openTeam = useGameStore(s => s.openTeam);
+  const resetGame = useGameStore(s => s.resetGame);
 
+  const [confirmReset, setConfirmReset] = useState(false);
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
   const [pwBusy, setPwBusy] = useState(false);
@@ -116,6 +119,23 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
           </div>
 
           <p className="text-[11px] pt-1" style={{ color: 'var(--ink-3)' }}>Saved on this device. It'll sync to your account once accounts go live.</p>
+
+          {/* Start over — wipes the squad and score so you can draft again.
+              Two-step so it can't be hit by accident. Your team name/logo is kept. */}
+          <div>
+            <button
+              onClick={() => { if (confirmReset) { resetGame(); setConfirmReset(false); onClose(); toast('New tournament — draft your squad 🎾', 'good'); } else setConfirmReset(true); }}
+              className="w-full py-2.5 rounded-xl text-sm font-bold transition-colors"
+              style={confirmReset
+                ? { background: 'var(--ember)', color: '#fff' }
+                : { background: 'rgba(10,27,51,0.04)', color: 'var(--ink-2)', border: '1px solid rgba(10,27,51,0.12)' }}
+            >
+              {confirmReset ? 'Tap again to confirm — this wipes your squad' : '↻ Restart tournament'}
+            </button>
+            {confirmReset && (
+              <button onClick={() => setConfirmReset(false)} className="w-full text-center text-[11px] mt-1.5 font-semibold" style={{ color: 'var(--ink-3)' }}>Cancel</button>
+            )}
+          </div>
 
           {(user || guest) && (
             <button onClick={() => { signOut(); onClose(); }} className="w-full py-2.5 rounded-xl text-sm font-bold" style={{ background: 'rgba(229,71,43,0.1)', color: 'var(--ember)', border: '1px solid rgba(229,71,43,0.25)' }}>
