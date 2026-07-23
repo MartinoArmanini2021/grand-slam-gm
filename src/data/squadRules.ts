@@ -6,6 +6,7 @@ import { getTier, type Tier } from './tiers';
 // This forces a balanced build: you can't stack the draw with cheap wildcards, nor
 // blow the budget on marquee names only.
 export const SQUAD_SIZE = 8;
+export const STARTING_BUDGET = 100; // $M each manager gets to draft their squad
 export const TIER_MINIMUMS: { tier: Tier; min: number }[] = [
   { tier: 'Silver', min: 4 },
   { tier: 'Gold', min: 2 },
@@ -28,7 +29,7 @@ export function squadShortfall(ids: string[]): { tier: Tier; missing: number }[]
     .filter(x => x.missing > 0);
 }
 
-// A valid, lockable squad: exactly SQUAD_SIZE players meeting every tier minimum.
+// A valid, lockable squad: exactly SQUAD_SIZE distinct players meeting every minimum.
 export function isSquadValid(ids: string[]): boolean {
-  return ids.length === SQUAD_SIZE && squadShortfall(ids).length === 0;
+  return ids.length === SQUAD_SIZE && new Set(ids).size === SQUAD_SIZE && squadShortfall(ids).length === 0;
 }

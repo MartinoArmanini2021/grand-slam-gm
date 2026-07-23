@@ -5,9 +5,12 @@ interface IconProps { size?: number; style?: CSSProperties }
 const svg = (size = 18): {
   width: number; height: number; viewBox: string; fill: 'none';
   stroke: 'currentColor'; strokeWidth: number; strokeLinecap: 'round'; strokeLinejoin: 'round';
+  'aria-hidden': true;
 } => ({
   width: size, height: size, viewBox: '0 0 24 24', fill: 'none',
   stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round',
+  // decorative — the nav button carries the aria-label
+  'aria-hidden': true,
 });
 
 // Home → tennis ball with its seam

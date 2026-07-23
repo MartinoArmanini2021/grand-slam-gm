@@ -15,8 +15,11 @@
 // Until then getLiveBracket() returns the baked, verified results so the rest of
 // the app has one stable contract to build on.
 
-import { WIMBLEDON_2026 } from './wimbledon2026';
+import { WIMBLEDON_2026, WIMBLEDON_2026_EARLY } from './wimbledon2026';
 import type { WMatch } from './wimbledon2026';
+
+// The full played draw (R128 → Final) — the same source tournament.ts scores from.
+const FULL_DRAW: WMatch[] = [...WIMBLEDON_2026_EARLY, ...WIMBLEDON_2026];
 
 export const LIVE = {
   enabled: false,
@@ -36,11 +39,12 @@ export async function fetchWikipediaWikitext(page = LIVE.wikipediaPage): Promise
 // this is the one function to write when wiring a live tournament. For now it
 // returns the verified baked draw so callers get a stable shape.
 export function parseDrawFromWikitext(_wikitext: string): WMatch[] {
-  return WIMBLEDON_2026;
+  return FULL_DRAW;
 }
 
-// The bracket the game plays. Swap in the polled result once parseDrawFromWikitext
-// is implemented and LIVE.enabled is flipped on.
+// The bracket the game plays — the FULL draw R128→F, matching what tournament.ts
+// scores. Swap in the polled result once parseDrawFromWikitext is implemented and
+// LIVE.enabled is flipped on.
 export function getLiveBracket(): WMatch[] {
-  return WIMBLEDON_2026;
+  return FULL_DRAW;
 }

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useProfile } from '../store/profileStore';
 import { useAuth } from '../auth/AuthProvider';
 import { useGameStore } from '../store/gameStore';
 import { toast } from '../store/toastStore';
+import { useEscapeToClose } from '../hooks';
 
 export default function UserProfile({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { firstName, lastName, username, phone, country, email, teamName, teamEmblem, set } = useProfile();
@@ -15,6 +16,14 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
   const [confirmPw, setConfirmPw] = useState('');
   const [pwBusy, setPwBusy] = useState(false);
   const [pwMsg, setPwMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  // Clear transient state whenever the panel closes, so the two-step "Restart"
+  // confirm can't be left armed (a data-loss trap) and stale password text/messages
+  // don't linger into the next open.
+  useEffect(() => {
+    if (!open) { setConfirmReset(false); setPwMsg(null); setNewPw(''); setConfirmPw(''); }
+  }, [open]);
+  useEscapeToClose(onClose, open);
 
   if (!open) return null;
 

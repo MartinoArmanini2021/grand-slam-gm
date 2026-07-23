@@ -97,7 +97,8 @@ export function winPoints(roundId: RoundId, winnerId: string, loserId: string): 
 }
 
 // Exit stage of each result, earliest → latest. Champion ('W') never exits.
-const EXIT_STAGE: Record<string, number> = { R128: 0, R64: 1, R32: 2, R16: 3, QF: 4, SF: 5, F: 6, W: 99 };
+// DNS (did not start) → out from the very beginning; W (champion) → never out.
+const EXIT_STAGE: Record<string, number> = { DNS: -1, R128: 0, R64: 1, R32: 2, R16: 3, QF: 4, SF: 5, F: 6, W: 99 };
 
 // The round a player was knocked out in (their real Wimbledon 2026 exit), or
 // null for the champion. Pre-R32 exits (R128/R64) are returned as-is for display.

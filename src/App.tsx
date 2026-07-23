@@ -73,6 +73,8 @@ export default function App() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
+                    aria-label={tab.label}
+                    aria-current={active ? 'page' : undefined}
                     className="relative flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-all shrink-0 whitespace-nowrap"
                     style={{
                       color: active ? '#fff' : '#9FB0CC',

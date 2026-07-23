@@ -1,17 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { PLAYERS } from '../data/players';
 import { getTier, TIER_META } from '../data/tiers';
+import { SQUAD_SIZE } from '../data/squadRules';
+import { useEscapeToClose } from '../hooks';
 import PlayerAvatar from './PlayerAvatar';
 import PurchaseConfirmModal from './PurchaseConfirmModal';
 import type { Player } from '../types';
 
-const TEAM_SIZE = 8;
+const TEAM_SIZE = SQUAD_SIZE;
 
 export default function PlayerPickerModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { myTeam, budget, removePlayer } = useGameStore();
   const [search, setSearch] = useState('');
   const [confirm, setConfirm] = useState<Player | null>(null);
+  // Reset the filter and any pending confirm each time the picker opens, so the
+  // Replace flow doesn't reopen still filtered by the last search.
+  useEffect(() => { if (open) { setSearch(''); setConfirm(null); } }, [open]);
+  useEscapeToClose(onClose, open);
   if (!open) return null;
 
   const list = [...PLAYERS]
@@ -21,7 +27,7 @@ export default function PlayerPickerModal({ open, onClose }: { open: boolean; on
   return (
     <>
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(10,27,51,0.55)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-        <div onClick={e => e.stopPropagation()} className="fade-in w-full" style={{ maxWidth: 520, background: '#FFFFFF', borderRadius: '18px 18px 0 0', maxHeight: '82vh', display: 'flex', flexDirection: 'column' }}>
+        <div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Add players" className="fade-in w-full" style={{ maxWidth: 520, background: '#FFFFFF', borderRadius: '18px 18px 0 0', maxHeight: '82vh', display: 'flex', flexDirection: 'column' }}>
           {/* Header */}
           <div style={{ background: 'linear-gradient(120deg,var(--ink),var(--navy-2))', padding: '16px 18px', borderRadius: '18px 18px 0 0' }}>
             <div className="flex items-center justify-between">

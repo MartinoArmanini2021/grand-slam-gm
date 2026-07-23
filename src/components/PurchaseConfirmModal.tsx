@@ -1,27 +1,37 @@
 import { useGameStore } from '../store/gameStore';
 import { getTier } from '../data/tiers';
 import { lastName } from '../data/format';
+import { SQUAD_SIZE } from '../data/squadRules';
 import { toast } from '../store/toastStore';
+import { useEscapeToClose } from '../hooks';
 import PlayerAvatar from './PlayerAvatar';
 import type { Player } from '../types';
 
-const TEAM_SIZE = 8;
+const TEAM_SIZE = SQUAD_SIZE;
 
 // Shared purchase confirmation — used by the Market table and the on-court picker.
 export default function PurchaseConfirmModal({ player, onClose }: { player: Player | null; onClose: () => void }) {
-  const { myTeam, budget, addPlayer } = useGameStore();
+  const { budget, addPlayer } = useGameStore();
+  useEscapeToClose(onClose, !!player);
   if (!player) return null;
 
   const buy = () => {
+    const before = useGameStore.getState().myTeam.length;
     addPlayer(player.id);
-    toast(`${lastName(player.name)} added to your squad`, 'good');
-    if (myTeam.length + 1 >= TEAM_SIZE) toast(`Squad full — ${TEAM_SIZE} players picked`, 'good');
+    const team = useGameStore.getState().myTeam;
+    // addPlayer guards on phase/full/duplicate/budget — only confirm if it took.
+    if (team.includes(player.id) && team.length > before) {
+      toast(`${lastName(player.name)} added to your squad`, 'good');
+      if (team.length >= TEAM_SIZE) toast(`Squad full — ${TEAM_SIZE} players picked`, 'good');
+    } else {
+      toast(`Couldn't add ${lastName(player.name)} — over budget or squad full`, 'warn');
+    }
     onClose();
   };
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 210, background: 'rgba(10,27,51,0.6)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div onClick={e => e.stopPropagation()} className="fade-in rounded-2xl w-full" style={{ maxWidth: 360, padding: 20, background: '#fff' }}>
+      <div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={`Confirm signing ${player.name}`} className="fade-in rounded-2xl w-full" style={{ maxWidth: 360, padding: 20, background: '#fff' }}>
         <div className="flex items-center gap-3 mb-3">
           <PlayerAvatar playerId={player.id} name={player.name} size="lg" />
           <div>

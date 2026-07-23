@@ -6,6 +6,7 @@ import { lastName } from '../data/format';
 import { ROUNDS, isPlayerOut, getPlayerExit } from '../data/tournament';
 import PlayerAvatar from '../components/PlayerAvatar';
 import { toast } from '../store/toastStore';
+import { onActivate } from '../hooks';
 import type { RoundId } from '../types';
 
 const MEDAL = ['#E8B923', '#AEB6C2', '#C77B3B']; // gold, silver, bronze
@@ -99,6 +100,9 @@ export default function LeaguePage() {
                 <tr
                   key={row.id}
                   onClick={() => openTeam(row.id)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={onActivate(() => openTeam(row.id))}
                   className="cursor-pointer transition-colors align-middle"
                   style={{ borderBottom: '1px solid rgba(10,27,51,0.05)', background: row.you ? 'rgba(14,111,196,0.05)' : 'transparent' }}
                   onMouseEnter={e => { if (!row.you) (e.currentTarget as HTMLElement).style.background = 'rgba(10,27,51,0.02)'; }}
@@ -127,7 +131,9 @@ export default function LeaguePage() {
                           <span
                             key={id}
                             role="button"
+                            tabIndex={0}
                             onClick={e => { e.stopPropagation(); openPlayer(id); }}
+                            onKeyDown={onActivate(() => openPlayer(id))}
                             className="inline-flex items-center gap-1.5 pl-0.5 pr-2 py-0.5 rounded-full cursor-pointer transition-transform hover:-translate-y-px"
                             style={{
                               background: out ? 'rgba(229,71,43,0.08)' : 'rgba(18,161,80,0.08)',

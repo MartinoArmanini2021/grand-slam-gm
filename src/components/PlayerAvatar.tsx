@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getAvatarUri } from '../data/playerAvatars';
 import { getPlayer } from '../data/players';
 import { getTier, TIER_META } from '../data/tiers';
@@ -26,6 +26,10 @@ const USE_PHOTOS = false;
 export default function PlayerAvatar({ playerId, name, size = 'md', className = '', ring = true, onClick }: Props) {
   const px = SIZE[size];
   const [stage, setStage] = useState(0);
+  // Reset the image-source fallback when the player changes on a reused instance
+  // (e.g. a court slot keyed by index after a transfer), so a new player isn't
+  // stuck on the previous one's exhausted/errored source.
+  useEffect(() => { setStage(0); }, [playerId]);
 
   let ringColor = 'rgba(10,27,51,0.16)';
   try { ringColor = TIER_META[getTier(getPlayer(playerId).ranking)].color; } catch { /* unknown id */ }

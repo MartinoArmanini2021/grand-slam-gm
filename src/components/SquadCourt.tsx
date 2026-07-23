@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useGameStore, substitutionCandidates } from '../store/gameStore';
-import { getPlayer } from '../data/players';
+import { findPlayer } from '../data/players';
 import { getPlayerExit, isPlayerOut, ROUNDS, transfersOpen } from '../data/tournament';
 import { lastName } from '../data/format';
+import { useEscapeToClose } from '../hooks';
 import PlayerAvatar from './PlayerAvatar';
 import PlayerPickerModal from './PlayerPickerModal';
 
@@ -31,6 +32,7 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
   const isOwnTeam = !readOnly && !squad; // your own court (home / your team page)
   const canEdit = isOwnTeam && phase === 'draft';
+  useEscapeToClose(() => { setManageId(null); setSubFor(null); }, !!(manageId || subFor));
 
   return (
     <>
@@ -120,7 +122,8 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
               </button>
             );
           }
-          const p = getPlayer(id);
+          const p = findPlayer(id);
+          if (!p) return null; // stale id (e.g. roster change) → skip rather than crash
           const out = isPlayerOut(id, revealed);
           const exit = getPlayerExit(id);
           const isCap = cap === id;
@@ -138,7 +141,7 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
                 )}
               </div>
               <div className="mt-1 px-1.5 py-0.5 rounded-md flex items-center gap-1 whitespace-nowrap" style={{ background: 'rgba(10,31,68,0.82)' }}>
-                <span className="text-[10px] font-bold text-white leading-none">{p.name.split(' ').slice(-1)[0]}</span>
+                <span className="text-[10px] font-bold text-white leading-none">{lastName(p.name)}</span>
                 <span className="font-num text-[9px] leading-none" style={{ color: '#7DE2FC' }}>${p.price}M</span>
               </div>
               {out && <div className="text-[8px] font-bold mt-0.5" style={{ color: '#ffd0c6' }}>OUT {exit}</div>}
@@ -159,7 +162,8 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
       {/* Manage a drafted player — tapping your court player opens this, not the profile */}
       {manageId && (() => {
         const id = manageId;
-        const mp = getPlayer(id);
+        const mp = findPlayer(id);
+        if (!mp) return null;
         return (
           <div
             onClick={() => setManageId(null)}
@@ -224,7 +228,8 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
 
       {/* Transfer-out picker: choose a still-alive, affordable replacement */}
       {subFor && (() => {
-        const outP = getPlayer(subFor);
+        const outP = findPlayer(subFor);
+        if (!outP) return null;
         const candidates = substitutionCandidates(myTeam, budget, currentRoundIndex);
         return (
           <div

@@ -1,12 +1,13 @@
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { ROUNDS, isPlayerOut } from '../data/tournament';
-import { isSquadValid } from '../data/squadRules';
+import { isSquadValid, SQUAD_SIZE } from '../data/squadRules';
+import { onActivate } from '../hooks';
 import { useLeagueBoard } from '../data/leagueBoard';
 import SquadCourt from '../components/SquadCourt';
 import type { GamePhase, RoundId } from '../types';
 
-const TEAM_TARGET = 8;
+const TEAM_TARGET = SQUAD_SIZE;
 
 export default function HomePage() {
   const {
@@ -107,6 +108,9 @@ export default function HomePage() {
                   <tr
                     key={row.id}
                     onClick={() => openTeam(row.id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={onActivate(() => openTeam(row.id))}
                     className="cursor-pointer transition-colors"
                     style={{ borderBottom: '1px solid rgba(10,27,51,0.05)', background: row.you ? 'rgba(14,111,196,0.05)' : 'transparent' }}
                     onMouseEnter={e => { if (!row.you) (e.currentTarget as HTMLElement).style.background = 'rgba(10,27,51,0.02)'; }}

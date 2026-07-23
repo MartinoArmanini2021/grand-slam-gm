@@ -1,5 +1,5 @@
 import { Component } from 'react';
-import type { ReactNode } from 'react';
+import type { ReactNode, ErrorInfo } from 'react';
 import { useGameStore } from '../store/gameStore';
 
 // Safety net: if a render ever throws (e.g. persisted state referencing a player
@@ -10,6 +10,12 @@ export default class ErrorBoundary extends Component<{ children: ReactNode }, { 
 
   static getDerivedStateFromError(error: Error) {
     return { error };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    // Surface the crash so a field failure isn't silent (and is available to any
+    // error-reporting integration added later).
+    console.error('[GrandSlamGM] render error caught by ErrorBoundary:', error, info.componentStack);
   }
 
   handleReset = () => {

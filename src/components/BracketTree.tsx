@@ -3,7 +3,7 @@ import { WIMBLEDON_2026, WIMBLEDON_2026_EARLY, WIMBLEDON_2026_CHAMPION } from '.
 import type { WMatch, WRound } from '../data/wimbledon2026';
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
-import { getPlayer } from '../data/players';
+import { findPlayer } from '../data/players';
 import { getRivalTeams } from '../data/rivals';
 
 // The full draw for display (first two rounds + the scored bracket).
@@ -51,7 +51,7 @@ export default function BracketTree() {
   // Keep the dropdown's value in sync with what's actually highlighted (e.g. when
   // 'you' isn't in the list because no squad is drafted yet).
   const selectedId = selected?.id ?? '';
-  const highlight = new Set((selected?.squad ?? []).map(id => getPlayer(id).name));
+  const highlight = new Set((selected?.squad ?? []).map(id => findPlayer(id)?.name).filter((n): n is string => !!n));
 
   const final = WIMBLEDON_2026.find(m => m.round === 'F')!;
   const onRoute = (m: WMatch) => focus !== null && (m.p1.name === focus || m.p2.name === focus);

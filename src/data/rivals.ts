@@ -1,7 +1,8 @@
 import { PLAYERS, getPlayer } from './players';
 import { ROUNDS, MATCHES, getOpponentId, winPoints, getPlayerExit, isPlayerOut, BUDGET_RETURN_RATES, transfersOpen } from './tournament';
 import { getTier, type Tier } from './tiers';
-import { SQUAD_SIZE, TIER_MINIMUMS } from './squadRules';
+import { SQUAD_SIZE, STARTING_BUDGET, TIER_MINIMUMS } from './squadRules';
+import { round1 } from './format';
 import type { Player, RoundId, Transfer } from '../types';
 
 // Simulated league managers. Everyone gets the same $100M and can pick ANY
@@ -19,7 +20,7 @@ export interface Rival {
   rank: (a: Player, b: Player) => number;
 }
 
-const BUDGET = 100;
+const BUDGET = STARTING_BUDGET;
 const SQUAD = SQUAD_SIZE;
 // Season form proxy: year-to-date win rate (0–1). A real, populated signal —
 // unlike `form`, which is empty, so strategies must not depend on it.
@@ -139,8 +140,7 @@ export function scoreSquad(squadIds: string[], uptoRoundIndex: number): number {
   return total;
 }
 
-const retAmount = (price: number, exit: RoundId) =>
-  Math.round(price * (BUDGET_RETURN_RATES[exit] ?? 0) * 10) / 10;
+const retAmount = (price: number, exit: RoundId) => round1(price * BUDGET_RETURN_RATES[exit]);
 
 export interface RivalTeam {
   rival: Rival;
@@ -191,8 +191,8 @@ export function simulateRival(rival: Rival, upto: number): RivalTeam {
           .sort(rival.rank)[0];
         if (pick) {
           transfers.push({ out: squad[idx], in: pick.id, round: round.id });
-          budget = Math.round((budget - pick.price) * 10) / 10;
-          spent = Math.round((spent + pick.price) * 10) / 10;
+          budget = round1(budget - pick.price);
+          spent = round1(spent + pick.price);
           squad[idx] = pick.id;
         }
       }

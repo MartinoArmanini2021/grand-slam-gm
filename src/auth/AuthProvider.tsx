@@ -56,10 +56,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    if (supabase) await supabase.auth.signOut();
-    setUser(null);
-    setGuest(false);
-    try { localStorage.removeItem(GUEST_KEY); } catch { /* ignore */ }
+    // Always clear local state, even if the network sign-out fails (offline) —
+    // otherwise the user appears stuck signed in.
+    try { if (supabase) await supabase.auth.signOut(); } catch { /* ignore network error */ }
+    finally {
+      setUser(null);
+      setGuest(false);
+      try { localStorage.removeItem(GUEST_KEY); } catch { /* ignore */ }
+    }
   };
 
   const resend: AuthCtx['resend'] = async (email) => {

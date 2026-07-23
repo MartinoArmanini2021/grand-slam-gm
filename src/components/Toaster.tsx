@@ -12,6 +12,8 @@ export default function Toaster() {
 
   return (
     <div
+      role="status"
+      aria-live="polite"
       style={{
         position: 'fixed', left: 0, right: 0, bottom: 20, zIndex: 100,
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
@@ -19,7 +21,7 @@ export default function Toaster() {
       }}
     >
       {toasts.map(t => {
-        const s = STYLE[t.kind];
+        const s = STYLE[t.kind] ?? STYLE.info;
         return (
           <button
             key={t.id}

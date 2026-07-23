@@ -1,3 +1,5 @@
+import { useEscapeToClose } from '../hooks';
+
 const RULES: { icon: string; title: string; body: string }[] = [
   { icon: '🎾', title: 'Draft 8 players', body: 'You get $100M to sign an 8-player squad — at least 4 Silver and 2 Gold, the other 2 free. Stars cost more, so choose: a couple of galácticos, or a deeper balanced squad.' },
   { icon: '📈', title: 'Win rounds, score points', body: 'Every round your player wins scores — from the Round of 128 (+1) up through R64 +1, R32 +2, R16 +5, QF +10, SF +20, Final +40.' },
@@ -9,6 +11,7 @@ const RULES: { icon: string; title: string; body: string }[] = [
 ];
 
 export default function HowToPlay({ open, onClose }: { open: boolean; onClose: () => void }) {
+  useEscapeToClose(onClose, open);
   if (!open) return null;
   return (
     <div

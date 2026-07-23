@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useGameStore, eliminatedSquad, substitutionCandidates } from '../store/gameStore';
 import { ROUNDS, getPlayerExit, isPlayerOut, transfersOpen } from '../data/tournament';
 import { getPlayer } from '../data/players';
+import { lastName } from '../data/format';
 import type { RoundId } from '../types';
 import PlayerAvatar from '../components/PlayerAvatar';
 import BracketTree from '../components/BracketTree';
@@ -11,7 +12,7 @@ import { toast } from '../store/toastStore';
 export default function TournamentPage() {
   const {
     phase, myTeam, captain, currentRoundIndex, roundScores, myScore,
-    setCaptain, playNextRound, budgetReturns,
+    setCaptain, playNextRound, continueToNextRound, budgetReturns,
   } = useGameStore();
 
   const currentRound = phase !== 'draft' && phase !== 'finished' ? ROUNDS[currentRoundIndex] : null;
@@ -60,7 +61,7 @@ export default function TournamentPage() {
                 </div>
                 <div className="text-lg font-bold" style={{ color: 'var(--ink)' }}>{(headerRound ?? currentRound).label}</div>
                 <div className="text-xs mt-0.5" style={{ color: 'var(--ink-2)' }}>
-                  Win = +{(headerRound ?? currentRound).points} pts · Captain win = +{(headerRound ?? currentRound).points * 2} pts
+                  Base +{(headerRound ?? currentRound).points} pts · ×ranking &amp; upset bonus · captain doubles
                 </div>
               </div>
               <div className="text-right">
@@ -85,7 +86,7 @@ export default function TournamentPage() {
                     return (
                       <button
                         key={id}
-                        onClick={() => { setCaptain(id); toast(`${p.name.split(' ').slice(-1)[0]} is your captain ⭐`, 'info'); }}
+                        onClick={() => { setCaptain(id); toast(`${lastName(p.name)} is your captain ⭐`, 'info'); }}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all"
                         style={{
                           background: isCap ? 'rgba(217,154,0,0.1)' : 'rgba(10,27,51,0.04)',
@@ -94,7 +95,7 @@ export default function TournamentPage() {
                           fontWeight: isCap ? 600 : 400,
                         }}
                       >
-                        {p.flag} {p.name.split(' ').slice(-1)[0]}
+                        {p.flag} {lastName(p.name)}
                         {isCap && <span>⭐</span>}
                       </button>
                     );
@@ -136,7 +137,7 @@ export default function TournamentPage() {
                 {currentRoundIndex < ROUNDS.length && (
                   <button
                     className="mt-3 px-5 py-2 rounded-xl text-sm font-semibold transition-all"
-                    onClick={() => useGameStore.setState({ phase: 'pre_round' })}
+                    onClick={continueToNextRound}
                     style={{ background: 'rgba(14,111,196,0.12)', border: '1px solid rgba(14,111,196,0.25)', color: 'var(--blue)' }}
                   >
                     Set Captain for {ROUNDS[currentRoundIndex]?.label} →

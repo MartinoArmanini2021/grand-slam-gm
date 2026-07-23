@@ -1,17 +1,18 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { PLAYERS, getPlayer } from '../data/players';
 import { ROUNDS, isPlayerOut, getPlayerExit } from '../data/tournament';
 import { getTier, TIER_META } from '../data/tiers';
-import { tierCounts, squadShortfall, isSquadValid, TIER_MINIMUMS } from '../data/squadRules';
+import { tierCounts, squadShortfall, isSquadValid, TIER_MINIMUMS, SQUAD_SIZE, STARTING_BUDGET } from '../data/squadRules';
 import PlayerAvatar from '../components/PlayerAvatar';
 import PurchaseConfirmModal from '../components/PurchaseConfirmModal';
 import { toast } from '../store/toastStore';
+import { onActivate } from '../hooks';
 import type { RoundId, Player } from '../types';
 
 type SortKey = 'ranking' | 'price' | 'grass';
 
-const TEAM_SIZE = 8;
+const TEAM_SIZE = SQUAD_SIZE;
 const SORT_LABEL: Record<SortKey, string> = { ranking: '# Rank', price: '$ Price', grass: 'Grass %' };
 
 export default function DraftPage() {
@@ -26,14 +27,14 @@ export default function DraftPage() {
   const valid = isSquadValid(myTeam);
   const shortfall = squadShortfall(myTeam);
 
-  const sorted = [...PLAYERS]
+  const sorted = useMemo(() => [...PLAYERS]
     .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
       if (sort === 'ranking') return a.ranking - b.ranking;
       if (sort === 'price') return b.price - a.price;
       if (sort === 'grass') return b.surface.grass - a.surface.grass;
       return 0;
-    });
+    }), [sort, search]);
 
   const th = 'text-left px-2 py-2 text-[11px] font-bold uppercase tracking-wide';
 
@@ -71,6 +72,7 @@ export default function DraftPage() {
             <input
               type="text"
               placeholder="Search player…"
+              aria-label="Search players"
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="text-sm outline-none px-3 py-2 rounded-xl w-44"
@@ -123,6 +125,9 @@ export default function DraftPage() {
                     <tr
                       key={player.id}
                       onClick={() => openPlayer(player.id)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={onActivate(() => openPlayer(player.id))}
                       className="cursor-pointer transition-colors"
                       style={{
                         borderBottom: '1px solid rgba(10,27,51,0.05)',
@@ -199,7 +204,7 @@ export default function DraftPage() {
                 <span className="font-num font-semibold" style={{ color: 'var(--blue)' }}>${budget.toFixed(1)}M</span>
               </div>
               <div className="h-1 rounded-full" style={{ background: 'rgba(10,27,51,0.07)' }}>
-                <div className="h-full rounded-full transition-all" style={{ width: `${budget}%`, background: 'var(--blue)' }} />
+                <div className="h-full rounded-full transition-all" style={{ width: `${(budget / STARTING_BUDGET) * 100}%`, background: 'var(--blue)' }} />
               </div>
             </div>
 

@@ -30,6 +30,7 @@ export const useProfile = create<ProfileState>()(
     }),
     {
       name: 'gsgm-profile',
+      version: 1,
       partialize: (s) => ({
         firstName: s.firstName, lastName: s.lastName, username: s.username,
         phone: s.phone, country: s.country, email: s.email,

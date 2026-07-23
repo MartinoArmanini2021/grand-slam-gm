@@ -92,11 +92,11 @@ export default function AuthScreen() {
               )}
 
               <form onSubmit={submit} className="space-y-3">
-                <input type="email" autoComplete="email" placeholder="Email" value={email}
+                <input type="email" autoComplete="email" placeholder="Email" aria-label="Email" value={email}
                   onChange={e => setEmail(e.target.value)} disabled={!enabled}
                   className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={field} />
                 <input type="password" autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                  placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} disabled={!enabled}
+                  placeholder="Password" aria-label="Password" value={password} onChange={e => setPassword(e.target.value)} disabled={!enabled}
                   className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={field} />
 
                 {error && <ErrBox msg={error} />}

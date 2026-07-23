@@ -4,10 +4,10 @@ import type { GamePhase, RoundId, RoundScore, BudgetReturn, Transfer } from '../
 import {
   ROUNDS, getMatchesForRound, isPlayerOut, BUDGET_RETURN_RATES, winPoints, transfersOpen,
 } from '../data/tournament';
-import { getPlayer, findPlayer, PLAYERS } from '../data/players';
+import { findPlayer, PLAYERS } from '../data/players';
+import { SQUAD_SIZE, STARTING_BUDGET } from '../data/squadRules';
+import { round1 } from '../data/format';
 
-const STARTING_BUDGET = 100;
-const TEAM_SIZE = 8;
 const CAPTAIN_MULTIPLIER = 2;
 
 interface GameStore {
@@ -33,6 +33,7 @@ interface GameStore {
   finalizeDraft: () => void;
   replacePlayer: (oldId: string, newId: string) => void;
   playNextRound: () => void;
+  continueToNextRound: () => void;
   setActiveTab: (tab: GameStore['activeTab']) => void;
   openTeam: (teamId: string) => void;
   openPlayer: (playerId: string) => void;
@@ -53,7 +54,7 @@ export const useGameStore = create<GameStore>()(
       currentRoundIndex: 0,
       myScore: 0,
       roundScores: [],
-      activeTab: 'draft',
+      activeTab: 'home',
       viewTeam: 'you',
       viewPlayer: '',
       playerReturnTab: 'home',
@@ -61,7 +62,7 @@ export const useGameStore = create<GameStore>()(
       addPlayer: (id) => {
         const { myTeam, budget, phase } = get();
         if (phase !== 'draft') return; // squad is locked after the draft — use transfers
-        if (myTeam.length >= TEAM_SIZE) return;
+        if (myTeam.length >= SQUAD_SIZE) return;
         if (myTeam.includes(id)) return;
         const player = findPlayer(id);
         if (!player || budget < player.price) return;
@@ -92,6 +93,10 @@ export const useGameStore = create<GameStore>()(
       finalizeDraft: () => {
         const { myTeam, captain, phase } = get();
         if (phase !== 'draft') return; // already locked in
+        // The full composition rule (8 · ≥4 Silver · ≥2 Gold) is enforced at the
+        // UI (the Lock button is gated on isSquadValid). The store stays permissive
+        // so unit tests can lock a small squad to isolate scoring; no production
+        // caller ever passes an illegal squad.
         if (myTeam.length === 0) return;
         // Snapshot the drafted squad so the transfer history can show who you signed.
         set({ phase: 'pre_round', captain: captain ?? myTeam[0], initialSquad: [...myTeam] });
@@ -107,8 +112,8 @@ export const useGameStore = create<GameStore>()(
         const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
         if (!isPlayerOut(oldId, revealed)) return; // old player isn't eliminated yet
         if (isPlayerOut(newId, revealed)) return;  // replacement already knocked out
-        const player = getPlayer(newId);
-        if (!player || budget < player.price) return;         // can't afford
+        const player = findPlayer(newId);
+        if (!player || budget < player.price) return;         // unknown id or can't afford
         // Log the move against the round just played, for the transfer history.
         const round = ROUNDS[currentRoundIndex - 1]?.id ?? ROUNDS[0].id;
         set({
@@ -154,7 +159,7 @@ export const useGameStore = create<GameStore>()(
             // Player lost THIS round → eliminated now; refund by this round's rate.
             const player = findPlayer(playerId);
             if (!player) return;
-            const returnAmt = Math.round(player.price * (BUDGET_RETURN_RATES[round.id] ?? 0) * 10) / 10;
+            const returnAmt = round1(player.price * BUDGET_RETURN_RATES[round.id]);
             if (returnAmt > 0) newReturns.push({ playerId, round: round.id, amount: returnAmt });
           }
         });
@@ -171,12 +176,19 @@ export const useGameStore = create<GameStore>()(
           myScore: myScore + roundPoints,
           roundScores: [...roundScores, { round: round.id, points: roundPoints, captainBonus }],
           budgetReturns: [...budgetReturns, ...newReturns],
-          budget: get().budget + totalReturn,
+          budget: round1(get().budget + totalReturn),
           currentRoundIndex: currentRoundIndex + 1,
           captainHistory: newCaptainHistory,
           captain: null,
           phase: isLastRound ? 'finished' : 'round_complete',
         });
+      },
+
+      // Move from the results screen to captain-picking for the next round. Guarded
+      // so it can only advance from round_complete (never re-open a finished game).
+      continueToNextRound: () => {
+        if (get().phase !== 'round_complete') return;
+        set({ phase: 'pre_round' });
       },
 
       setActiveTab: (tab) => set({ activeTab: tab }),
@@ -210,6 +222,15 @@ export const useGameStore = create<GameStore>()(
     {
       name: 'grand-slam-gm-v1',
       version: 2,
+      // Persist only game data — never the transient navigation state (activeTab /
+      // viewTeam / viewPlayer / playerReturnTab), so a reload always lands on Home
+      // rather than restoring a deep player/team detail view.
+      partialize: (s) => ({
+        phase: s.phase, myTeam: s.myTeam, initialSquad: s.initialSquad, transfers: s.transfers,
+        captain: s.captain, captainHistory: s.captainHistory, budget: s.budget,
+        budgetReturns: s.budgetReturns, currentRoundIndex: s.currentRoundIndex,
+        myScore: s.myScore, roundScores: s.roundScores,
+      }),
       // Drop any persisted player id that no longer exists in the roster (so a
       // rehydrated squad can never dereference an undefined player and crash), and
       // re-derive a stale draft budget after roster/price changes.

@@ -4,6 +4,7 @@ import { findPlayer, PLAYERS } from '../data/players';
 import { getTier, TIER_META } from '../data/tiers';
 import { WIMBLEDON_2026 } from '../data/wimbledon2026';
 import { ROUNDS, isPlayerOut, getPlayerExit } from '../data/tournament';
+import { lastName } from '../data/format';
 import type { Player, RoundId, TournamentResult } from '../types';
 import PlayerAvatar from '../components/PlayerAvatar';
 import SurfaceBar from '../components/SurfaceBar';
@@ -36,20 +37,20 @@ export default function PlayerPage() {
   const hand = p.hand === 'R' ? 'right' : 'left';
   const article = /^[aeiou]/i.test(p.style) ? 'an' : 'a';
   const bio = `${first} is ${article} ${p.style.toLowerCase()} from ${p.country}, currently ranked #${p.ranking} on the ATP Tour. ` +
-    `Aged ${p.age} and ${hand}-handed, ${p.ytd.titles > 0 ? `with ${p.ytd.titles} title${p.ytd.titles > 1 ? 's' : ''} in 2026.` : 'still chasing a first title in 2026.'}`;
+    `At ${p.age} and ${hand}-handed, ${first} ${p.ytd.titles > 0 ? `has ${p.ytd.titles} title${p.ytd.titles > 1 ? 's' : ''} in 2026.` : 'is still chasing a first title in 2026.'}`;
 
   const backLabel: Record<string, string> = {
-    players: 'Stats', draft: 'Market', team: 'My Squad', league: 'League', home: 'Home', tournament: 'Bracket',
+    draft: 'Market', team: 'My Squad', league: 'League', home: 'Home', tournament: 'Bracket',
   };
 
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-3 py-6 fade-in">
-      <button onClick={() => setActiveTab(playerReturnTab)} className="text-sm font-semibold mb-4" style={{ color: '#0e6fc4' }}>
+      <button onClick={() => setActiveTab(playerReturnTab)} className="text-sm font-semibold mb-4" style={{ color: 'var(--blue)' }}>
         ‹ {backLabel[playerReturnTab] ?? 'Back'}
       </button>
 
       {/* Hero */}
-      <div className="relative rounded-2xl overflow-hidden mb-4 p-6" style={{ background: 'linear-gradient(120deg,#0a1f44,#123163)' }}>
+      <div className="relative rounded-2xl overflow-hidden mb-4 p-6" style={{ background: 'linear-gradient(120deg,var(--ink),var(--navy-2))' }}>
         <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 50% 90% at 88% 40%, ${tm.color}22 0%, transparent 70%)` }} />
         <div className="relative flex items-center gap-5">
           <PlayerAvatar playerId={p.id} name={p.name} size="xl" />
@@ -60,22 +61,22 @@ export default function PlayerPage() {
                 {tier}
               </span>
               {isOut && (
-                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full" style={{ background: '#E5472B', color: '#fff' }}>
+                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full" style={{ background: 'var(--ember)', color: '#fff' }}>
                   ELIMINATED · {getPlayerExit(p.id)}
                 </span>
               )}
             </div>
             <h1 className="text-2xl font-extrabold tracking-tight text-white leading-tight">{p.name}</h1>
-            <div className="text-sm" style={{ color: '#AFBFDA' }}>
+            <div className="text-sm" style={{ color: 'var(--on-navy)' }}>
               #{p.ranking} ATP{p.seed ? ` · Seed ${p.seed}` : ''} · {p.style}
             </div>
           </div>
           <div className="text-right shrink-0">
-            <div className="font-num text-3xl font-extrabold" style={{ color: '#F0C24B' }}>${p.price}M</div>
-            <div className="text-[10px]" style={{ color: '#8FA1BE' }}>price</div>
+            <div className="font-num text-3xl font-extrabold" style={{ color: 'var(--gold-bright)' }}>${p.price}M</div>
+            <div className="text-[10px]" style={{ color: 'var(--on-navy-2)' }}>price</div>
           </div>
         </div>
-        <p className="relative text-sm mt-4 leading-relaxed" style={{ color: '#C8D4E8' }}>{bio}</p>
+        <p className="relative text-sm mt-4 leading-relaxed" style={{ color: 'var(--on-navy)' }}>{bio}</p>
       </div>
 
       {/* Quick facts */}
@@ -89,8 +90,8 @@ export default function PlayerPage() {
           { label: 'Record', value: `${p.ytd.wins}-${p.ytd.losses}` },
         ].map((f, i) => (
           <div key={i} className="rounded-xl p-3 text-center" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.08)' }}>
-            <div className="font-num text-lg font-bold" style={{ color: '#0a1f44' }}>{f.value}</div>
-            <div className="text-[10px] mt-0.5" style={{ color: '#5B6B84' }}>{f.label}</div>
+            <div className="font-num text-lg font-bold" style={{ color: 'var(--ink)' }}>{f.value}</div>
+            <div className="text-[10px] mt-0.5" style={{ color: 'var(--ink-2)' }}>{f.label}</div>
           </div>
         ))}
       </div>
@@ -104,23 +105,23 @@ export default function PlayerPage() {
       {/* 2026 tournament results */}
       <Panel title="2026 tournament results">
         <div className="flex gap-3 flex-wrap">
-          {p.yearResults.map(r => {
+          {p.yearResults.map((r, i) => {
             const [bg, color] = resultStyle(r.result);
             return (
-              <div key={r.short} className="text-center min-w-[3.5rem]">
-                <div className="flex items-center justify-center gap-1 text-[11px] mb-1.5" style={{ color: '#5B6B84' }}>
+              <div key={i} className="text-center min-w-[3.5rem]">
+                <div className="flex items-center justify-center gap-1 text-[11px] mb-1.5" style={{ color: 'var(--ink-2)' }}>
                   {r.short}
                   <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: SURFACE_DOT[r.surface] }} />
                 </div>
                 <span className="font-num text-sm font-bold px-2.5 py-1 rounded inline-block" style={{ background: bg, color, border: `1px solid ${color}30` }}>
                   {r.result}
                 </span>
-                <div className="text-[9px] mt-1" style={{ color: '#9AA7BC' }}>{r.tournament}</div>
+                <div className="text-[9px] mt-1" style={{ color: 'var(--ink-3)' }}>{r.tournament}</div>
               </div>
             );
           })}
         </div>
-        <div className="flex gap-4 mt-4 pt-3 text-[11px]" style={{ borderTop: '1px solid rgba(10,27,51,0.06)', color: '#9AA7BC' }}>
+        <div className="flex gap-4 mt-4 pt-3 text-[11px]" style={{ borderTop: '1px solid rgba(10,27,51,0.06)', color: 'var(--ink-3)' }}>
           <span><span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: SURFACE_DOT.hard }} />Hard</span>
           <span><span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: SURFACE_DOT.clay }} />Clay</span>
           <span><span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: SURFACE_DOT.grass }} />Grass</span>
@@ -162,16 +163,17 @@ function H2HSection({ player }: { player: Player }) {
       <div className="flex items-center gap-3 mb-3">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <PlayerAvatar playerId={player.id} name={player.name} size="sm" />
-          <span className="text-sm font-bold truncate" style={{ color: '#0a1f44' }}>{player.name.split(' ').slice(-1)[0]}</span>
+          <span className="text-sm font-bold truncate" style={{ color: 'var(--ink)' }}>{lastName(player.name)}</span>
         </div>
-        <span className="text-xs font-bold" style={{ color: '#9AA7BC' }}>vs</span>
+        <span className="text-xs font-bold" style={{ color: 'var(--ink-3)' }}>vs</span>
         <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
           <PlayerAvatar playerId={opp.id} name={opp.name} size="sm" />
           <select
             value={oppId}
             onChange={e => setOppId(e.target.value)}
+            aria-label="Compare with player"
             className="text-sm font-semibold rounded-lg px-2 py-1.5 outline-none max-w-[150px]"
-            style={{ background: '#F5F7FA', border: '1px solid rgba(10,27,51,0.12)', color: '#0a1f44' }}
+            style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.12)', color: 'var(--ink)' }}
           >
             {opponents.map(o => (
               <option key={o.id} value={o.id} style={{ color: TIER_META[getTier(o.ranking)].color, fontWeight: 600 }}>
@@ -185,11 +187,11 @@ function H2HSection({ player }: { player: Player }) {
       {/* Real meeting at Wimbledon 2026 */}
       <div className="rounded-xl px-3 py-2.5 mb-3 text-xs" style={{ background: meeting ? 'rgba(18,161,80,0.06)' : 'rgba(10,27,51,0.03)', border: `1px solid ${meeting ? 'rgba(18,161,80,0.18)' : 'rgba(10,27,51,0.06)'}` }}>
         {meeting ? (
-          <span style={{ color: '#0a1f44' }}>
-            🎾 Met at Wimbledon 2026 · <b>{ROUND_FULL[meeting.round]}</b> — <b style={{ color: '#12A150' }}>{meeting.winner.split(' ').slice(-1)[0]}</b> won <span className="font-num" style={{ color: '#5B6B84' }}>{meeting.score}</span>
+          <span style={{ color: 'var(--ink)' }}>
+            🎾 Met at Wimbledon 2026 · <b>{ROUND_FULL[meeting.round]}</b> — <b style={{ color: 'var(--green)' }}>{lastName(meeting.winner)}</b> won <span className="font-num" style={{ color: 'var(--ink-2)' }}>{meeting.score}</span>
           </span>
         ) : (
-          <span style={{ color: '#9AA7BC' }}>They didn't meet in the Wimbledon 2026 draw. Full career H2H arrives with the live-data feed.</span>
+          <span style={{ color: 'var(--ink-3)' }}>They didn't meet in the Wimbledon 2026 draw. Full career H2H arrives with the live-data feed.</span>
         )}
       </div>
 
@@ -199,9 +201,9 @@ function H2HSection({ player }: { player: Player }) {
           const aWin = r.a === r.b ? null : (r.higher ? r.a > r.b : r.a < r.b);
           return (
             <div key={i} className="flex items-center py-1.5 text-sm" style={{ borderTop: i > 0 ? '1px solid rgba(10,27,51,0.05)' : 'none' }}>
-              <div className="flex-1 text-left font-num font-bold" style={{ color: aWin === true ? '#12A150' : '#0a1f44' }}>{r.fmt(r.a)}</div>
-              <div className="w-28 text-center text-[10px] uppercase tracking-wide" style={{ color: '#5B6B84' }}>{r.label}</div>
-              <div className="flex-1 text-right font-num font-bold" style={{ color: aWin === false ? '#12A150' : '#0a1f44' }}>{r.fmt(r.b)}</div>
+              <div className="flex-1 text-left font-num font-bold" style={{ color: aWin === true ? 'var(--green)' : 'var(--ink)' }}>{r.fmt(r.a)}</div>
+              <div className="w-28 text-center text-[10px] uppercase tracking-wide" style={{ color: 'var(--ink-2)' }}>{r.label}</div>
+              <div className="flex-1 text-right font-num font-bold" style={{ color: aWin === false ? 'var(--green)' : 'var(--ink)' }}>{r.fmt(r.b)}</div>
             </div>
           );
         })}
@@ -213,7 +215,7 @@ function H2HSection({ player }: { player: Player }) {
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-2xl p-4" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.08)', boxShadow: '0 1px 2px rgba(10,27,51,0.04)' }}>
-      <h3 className="text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: '#5B6B84' }}>{title}</h3>
+      <h3 className="text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--ink-2)' }}>{title}</h3>
       {children}
     </div>
   );
