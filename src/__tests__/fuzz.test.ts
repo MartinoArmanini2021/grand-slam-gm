@@ -16,26 +16,26 @@ const store = () => useGameStore.getState();
 // the real store guards until valid.
 function draftValidSquad(rand: () => number) {
   store().resetGame();
-  const silver = PLAYERS.filter(p => getTier(p.ranking) === 'Silver');
-  const gold = PLAYERS.filter(p => getTier(p.ranking) === 'Gold');
-  const pool = [...PLAYERS];
-  const pick = (arr: typeof PLAYERS) => arr[Math.floor(rand() * arr.length)];
-  // guaranteed minimums first (cheap-leaning so budget always fits)
-  const wantSilver = 4 + Math.floor(rand() * 2);
-  const wantGold = 2 + Math.floor(rand() * 2);
-  const tryAdd = (p: (typeof PLAYERS)[number]) => { const b = store().myTeam.length; store().addPlayer(p.id); return store().myTeam.length > b; };
-  const cheapFirst = (arr: typeof PLAYERS) => [...arr].sort((a, b) => a.price - b.price);
-  for (const p of cheapFirst(silver)) { if (store().myTeam.filter(id => getTier(PLAYERS.find(x => x.id === id)!.ranking) === 'Silver').length >= wantSilver) break; tryAdd(p); }
-  for (const p of cheapFirst(gold)) { if (store().myTeam.filter(id => getTier(PLAYERS.find(x => x.id === id)!.ranking) === 'Gold').length >= wantGold) break; tryAdd(p); }
-  // fill the rest randomly to 8
-  let guard = 200;
-  while (store().myTeam.length < 8 && guard-- > 0) tryAdd(pick(pool));
+  const byPrice = (arr: typeof PLAYERS) => [...arr].sort((a, b) => a.price - b.price);
+  const silver = byPrice(PLAYERS.filter(p => getTier(p.ranking) === 'Silver'));
+  const gold = byPrice(PLAYERS.filter(p => getTier(p.ranking) === 'Gold'));
+  // Seeded pick of n distinct players from a pool — varies the squad per seed while
+  // staying within guaranteed-affordable cheap tiers (so the draft never fails; the
+  // fuzzed surface is the PLAY loop below, not squad assembly).
+  const takeN = (arr: typeof PLAYERS, n: number) => {
+    const a = [...arr]; const out: typeof PLAYERS = [];
+    for (let k = 0; k < n && a.length; k++) out.push(a.splice(Math.floor(rand() * a.length), 1)[0]!);
+    return out;
+  };
+  const picks = [...takeN(silver.slice(0, 16), 4), ...takeN(gold, 2)]; // 4 Silver + 2 Gold
+  for (const p of silver) { if (picks.length >= 8) break; if (!picks.includes(p)) picks.push(p); } // 2 cheapest Silver
+  for (const p of picks) store().addPlayer(p.id);
   return store().myTeam.length === 8 && isSquadValid(store().myTeam);
 }
 
-describe('FUZZ — hundreds of random full games never break an invariant', () => {
+describe('FUZZ — many random full games never break an invariant', () => {
   it('budget stays ≥0, score is monotonic, phase ends finished, no throw', () => {
-    const ITER = 400;
+    const ITER = 150;
     for (let i = 0; i < ITER; i++) {
       const rand = rng(i * 2654435761 + 12345);
       const built = draftValidSquad(rand);

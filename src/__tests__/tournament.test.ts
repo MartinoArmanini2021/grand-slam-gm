@@ -130,10 +130,14 @@ describe('upsetBonus', () => {
   });
 
   it('never exceeds 15 for any pair in the draw', () => {
-    const ids = MATCHES.flatMap(m => [m.p1Id, m.p2Id]);
+    const ids = [...new Set(MATCHES.flatMap(m => [m.p1Id, m.p2Id]))]; // distinct participants
+    let min = Infinity, max = -Infinity;
     for (const a of ids) for (const b of ids) {
-      expect(upsetBonus(a, b)).toBeLessThanOrEqual(15);
-      expect(upsetBonus(a, b)).toBeGreaterThanOrEqual(0);
+      const bonus = upsetBonus(a, b);
+      if (bonus < min) min = bonus;
+      if (bonus > max) max = bonus;
     }
+    expect(min).toBeGreaterThanOrEqual(0);
+    expect(max).toBeLessThanOrEqual(15);
   });
 });
