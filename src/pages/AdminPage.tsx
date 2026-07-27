@@ -4,6 +4,7 @@ import { TOURNAMENT } from '../data/tournamentConfig';
 import { ROUNDS } from '../data/tournament';
 import { roundComplete, matchKey, type LiveMatch } from '../data/liveResults';
 import { PLAYERS, findPlayer } from '../data/players';
+import { useLiveFeed } from '../data/useLiveFeed';
 
 // ── Match Admin ──────────────────────────────────────────────────────────────
 // The operator's console for a LIVE tournament: enter or correct each match's
@@ -40,6 +41,8 @@ function relTime(ms: number | null): string {
 export default function AdminPage() {
   const { draw, results, overrides, lastSync, setDraw, recordResult, clearResult, resetLive } = useLiveStore();
   const [confirmReset, setConfirmReset] = useState(false);
+  const [autoPoll, setAutoPoll] = useState(false);
+  const { sync, busy, error } = useLiveFeed(autoPoll);
 
   const isLive = TOURNAMENT.mode === 'live';
   // Only the rounds this tournament actually has, in order, that have pairings yet.
@@ -74,17 +77,35 @@ export default function AdminPage() {
         </div>
       ) : (
         <>
-          {/* Feed status */}
-          <div className="rounded-2xl px-4 py-3 mb-4 flex items-center justify-between gap-3 flex-wrap" style={{ background: '#fff', border: '1px solid rgba(10,27,51,0.08)' }}>
-            <div className="text-sm">
-              <div className="font-bold" style={{ color: 'var(--ink)' }}>Automated feed</div>
-              <div className="text-xs mt-0.5" style={{ color: 'var(--ink-3)' }}>
-                Last synced {relTime(lastSync)} · your edits below always override the feed
+          {/* Feed status + controls */}
+          <div className="rounded-2xl px-4 py-3 mb-4" style={{ background: '#fff', border: '1px solid rgba(10,27,51,0.08)' }}>
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="text-sm">
+                <div className="font-bold" style={{ color: 'var(--ink)' }}>Automated feed</div>
+                <div className="text-xs mt-0.5" style={{ color: 'var(--ink-3)' }}>
+                  Last synced {relTime(lastSync)} · your edits below always override the feed
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <label className="flex items-center gap-1.5 text-xs font-semibold cursor-pointer" style={{ color: 'var(--ink-2)' }}>
+                  <input type="checkbox" checked={autoPoll} onChange={e => setAutoPoll(e.target.checked)} className="w-4 h-4" />
+                  Auto
+                </label>
+                <button
+                  onClick={() => void sync()}
+                  disabled={busy}
+                  className="px-3 py-1.5 rounded-xl text-sm font-bold text-white disabled:opacity-60"
+                  style={{ background: 'var(--blue)' }}
+                >
+                  {busy ? 'Syncing…' : 'Sync now'}
+                </button>
               </div>
             </div>
-            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ background: 'rgba(217,154,0,0.12)', color: 'var(--gold)' }}>
-              Auto-sync wiring — next step
-            </span>
+            {error && (
+              <div className="text-xs rounded-lg px-2.5 py-1.5 mt-2" style={{ background: 'rgba(229,71,43,0.08)', color: '#c0341c', border: '1px solid rgba(229,71,43,0.2)' }}>
+                {error} — the draw page may not be published yet; enter results manually below.
+              </div>
+            )}
           </div>
 
           {draw.length === 0 ? (
