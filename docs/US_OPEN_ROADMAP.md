@@ -34,15 +34,15 @@ run.
 Seven work packages. Today the app is hard-coded to Wimbledon/grass and plays a
 completed bracket; these are the gaps between that and a live US Open.
 
-| # | Work package | Why it's needed | Rough size |
+| # | Work package | Why it's needed | Status |
 |---|---|---|---|
-| **W1** | **Tournament-agnostic engine** — parameterize everything now hard-coded to "Wimbledon"/grass/128-draw; handle variable draw sizes & round counts (Masters ≠ Slam) | The lead-up events aren't 128-draws; the engine must run any of them | 2–3 days |
-| **W2** | **Surface-aware branding & court** — hard = US-Open blue, clay = orange, grass = green; drive the court SVG, accent, subtitle, and surface emphasis from the tournament config | The court is a green grass court today; US Open must *look* like the US Open | 1 day |
-| **W3** | **Live results pipeline** — **automated** feed (API/scraping via the `liveData.ts` seam) that advances rounds as matches finish, **plus an admin edit/override** to correct any bad scrape | Results no longer come from a baked file — they happen live, and a wrong result must be fixable | 2–3 days |
-| **W4** | **Per-tournament data** — the **full participant list** for each event (every player, ATP rank → price, surface %, seeds) + the draw structure | Every tournament needs its complete field & bracket | ~1 day per event |
-| **W5** | **Backend + multiplayer** (Supabase) — real accounts, cloud-stored squads, a shared league. Full plan already in [`GO_LIVE.md`](GO_LIVE.md) | Friends must see each other's squads & scores | 3–4 days |
-| **W6** | **Deploy** — Cloudflare Pages + custom domain + env/redirect config | A shareable link; needed even to hand the trial to a remote friend | ½ day |
-| **W7** | **Prod-readiness** — Resend SMTP for emails, forgot-password, privacy/terms, account deletion (GDPR, you're in the EU) | Required before real people sign up | 1 day |
+| **W1** | **Tournament-agnostic engine** — parameterize everything now hard-coded to "Wimbledon"/grass/128-draw; handle variable draw sizes & round counts (Masters ≠ Slam) | The lead-up events aren't 128-draws; the engine must run any of them | 🟢 **Core done** — rounds/scoring/exit-staging/transfer-lock all config-driven |
+| **W2** | **Surface-aware branding & court** — hard = US-Open blue, clay = orange, grass = green; drive the court SVG, accent, subtitle from the tournament config | The court is a green grass court today; US Open must *look* like the US Open | 🟢 **Done** — flipping the active tournament re-skins branding + court |
+| **W3** | **Live results pipeline** — **automated** feed (Wikipedia via `liveData.ts`) that advances rounds as matches finish, **plus an admin edit/override** | Results no longer come from a baked file — they happen live, and a wrong result must be fixable | 🟡 **Core built, not live-ready** — store/admin/feed/parser done & tested; multi-section 96-draw assembly + live reactivity remain (see review) |
+| **W4** | **Per-tournament data** — the **full participant list** per event (rank → price, stats, seeds) + the draw structure | Every tournament needs its complete field & bracket | 🟡 **Pool built** — 300-player master pool + real photos shipped; per-tournament *field wiring* (draftable subset, name→id vs pool, mode-aware bracket) remains |
+| **W5** | **Backend + multiplayer** (Supabase) — real accounts, cloud-stored squads, a shared league | Friends must see each other's squads & scores | 🟡 **Core live** — accounts, profile+squad cloud sync, shared leaderboard working on a real project; **server-authoritative scoring + private leagues remain**; security hardened (run `harden_rls.sql`) |
+| **W6** | **Deploy** — Cloudflare Pages + custom domain + env/redirect config | A shareable link; needed even to hand the trial to a remote friend | 🔴 **Not started** |
+| **W7** | **Prod-readiness** — Resend SMTP for emails, forgot-password, privacy/terms, account deletion (GDPR, you're in the EU) | Required before real people sign up | 🔴 **Not started** |
 
 ---
 
@@ -153,12 +153,46 @@ the US Open is then execution, not discovery.
      CORS (must use `api.php?…&origin=*`, not `index.php?action=raw`), the winner is
      marked by `'''bold'''`, and identity must use the wikilink target (later-round
      labels get abbreviated). All handled.
-- **Remaining before a live Montréal run (~Aug 1):**
-  - **W4 field** — the Montréal entry list as draftable players (deferred: the field
-    is volatile — Sinner/Djokovic/Alcaraz already out; the draw isn't out till ~Aug 1).
-  - **Feed assembly** — a 96-draw is 8×`{{16TeamBracket-…-Byes}}` sections + one
-    `{{8TeamBracket}}` finals; stitch those into R64→F and confirm the 2026 page title.
-  - Draft against the real field and run a round through the live pipeline.
+- ✅ **Backend + multiplayer core (W5) live on a real Supabase project.** Accounts
+  (email verify), profile + squad **cloud sync** (cross-device restore proven),
+  RLS-secured, and a **shared leaderboard** merging real players with AI bots. Schema
+  in [`schema.sql`](../supabase/schema.sql). An RLS infinite-recursion bug was caught
+  the moment a real user authenticated and fixed via a `SECURITY DEFINER` helper.
+- ✅ **300-player master pool + real photos (W4 foundation).** `atp300.json` (ATP
+  top-300, generated by `scripts/gen-atp300.mjs`, all 52 roster ids preserved); real
+  ATP headshots **hotlinked** (a self-host attempt was reverted — `curl` and the
+  browser get *different* images from the same URL, which broke consistency). Plus
+  per-player **flag + nickname**.
+- ✅ **End-of-day hardening (Day 2).** A three-agent review (game engine / backend /
+  live mode) plus a 150-game fuzz pass. Fixed a **critical cross-account data leak**
+  (sign-out now wipes local stores), a **stale-id white-screen** vector (sanitize on
+  every rehydrate), budget float drift, PII exposure + duplicate-entry risks in RLS
+  (`harden_rls.sql`), a username-collision that broke profile sync, and several engine
+  guards. 95/95 tests.
+
+### Remaining before a live Montréal run (~Aug 1)
+- **W4 field** — the Montréal entry list as the draftable field (deferred: volatile —
+  Sinner/Djokovic/Alcaraz already out; draw not published till ~Aug 1). Also wire
+  `PLAYERS` + the live name→id map to the **active tournament's field / the 300-pool**
+  (today both are hard-bound to the 52 Wimbledon players).
+- **W3 live-readiness** (from the review, all dormant until Canada is activated):
+  - **Feed assembly** — `parseBracket` currently merges all sections into one map; a
+    96-draw is 8×`{{16TeamBracket-…-Byes}}` + one `{{8TeamBracket}}` finals — split &
+    stitch into R64→F, and confirm the 2026 page title.
+  - **Mode-aware bracket** — `BracketTree` is hard-coded to the Wimbledon draw; source
+    it from `activeMatches()`/the live draw and derive columns from `TOURNAMENT.rounds`.
+  - **Live reactivity** — components read the live store via `getState()` (non-reactive);
+    subscribe so feed/admin updates refresh views, and re-score corrected rounds.
+  - **Per-tournament game-store key** — `gameStore` persists under one key; namespace
+    it by tournament (like `liveStore`) so switching events doesn't strand a squad.
+- **Server-authoritative scoring (W5)** — the `recompute-score` Edge Function (client
+  can't be trusted for the leaderboard number). Until then the board uses the client
+  score for the friends alpha.
+- **Private leagues (W5)** — join-by-code + a real membership table (today a client
+  could self-assign any `league_id`; safe now because only the public league exists).
+- ⚠️ **Action for you:** run [`harden_rls.sql`](../supabase/harden_rls.sql) in the
+  Supabase SQL editor (PII lockdown + duplicate-entry fix). The leaderboard shows
+  other players' names only after it's applied.
 
 ---
 
