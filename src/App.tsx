@@ -16,6 +16,7 @@ import { NAV_ICONS } from './components/NavIcons';
 import AuthScreen from './components/AuthScreen';
 import UserProfile from './components/UserProfile';
 import ErrorBoundary from './components/ErrorBoundary';
+import CloudSync from './components/CloudSync';
 import { useAuth } from './auth/AuthProvider';
 
 const NAVY = 'var(--ink)';
@@ -58,6 +59,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
+      <CloudSync />
       {/* ── ATP-style navy header ── */}
       <header className="sticky top-0 z-50" style={{ background: NAVY, boxShadow: '0 1px 0 rgba(255,255,255,0.06), 0 6px 20px rgba(10,27,51,0.18)' }}>
         <div className="w-full px-3 sm:px-5">
