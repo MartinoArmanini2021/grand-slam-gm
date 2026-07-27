@@ -5,6 +5,7 @@ import { ROUNDS, isPlayerOut, getPlayerExit } from '../data/tournament';
 import { getTier, TIER_META } from '../data/tiers';
 import { tierCounts, squadShortfall, isSquadValid, TIER_MINIMUMS, SQUAD_SIZE, STARTING_BUDGET } from '../data/squadRules';
 import PlayerAvatar from '../components/PlayerAvatar';
+import PlayerTag from '../components/PlayerTag';
 import PurchaseConfirmModal from '../components/PurchaseConfirmModal';
 import { toast } from '../store/toastStore';
 import { onActivate } from '../hooks';
@@ -142,6 +143,7 @@ export default function DraftPage() {
                         <div className="flex items-center gap-2 min-w-0">
                           <PlayerAvatar playerId={player.id} name={player.name} size="sm" onClick={e => { e.stopPropagation(); openPlayer(player.id); }} />
                           <div className="min-w-0">
+                            <PlayerTag playerId={player.id} flag={player.flag} className="text-[9px] font-bold uppercase tracking-wide leading-tight truncate" style={{ color: 'var(--blue)' }} />
                             <div className="text-[13px] font-semibold leading-tight truncate flex items-center gap-1.5" style={{ color: 'var(--ink)' }}>
                               {player.name}
                               {out && <span className="text-[9px] font-bold px-1 py-0.5 rounded" style={{ background: 'rgba(229,71,43,0.12)', color: 'var(--ember)' }}>OUT {getPlayerExit(player.id)}</span>}
@@ -233,6 +235,7 @@ export default function DraftPage() {
                   <div key={id} className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: isCap ? 'rgba(217,154,0,0.07)' : 'rgba(10,27,51,0.03)', border: `1px solid ${isCap ? 'rgba(217,154,0,0.2)' : 'rgba(10,27,51,0.06)'}` }}>
                     <PlayerAvatar playerId={id} name={p.name} size="sm" />
                     <div className="flex-1 min-w-0">
+                      <PlayerTag playerId={id} flag={p.flag} className="text-[8px] font-bold uppercase tracking-wide leading-tight truncate" style={{ color: 'var(--blue)' }} />
                       <div className="text-xs font-medium truncate" style={{ color: 'var(--ink)' }}>{p.name}</div>
                       <div className="font-num text-[10px]" style={{ color: 'var(--ink-2)' }}>${p.price}M · 🌱{p.surface.grass}%</div>
                     </div>

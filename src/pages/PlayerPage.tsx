@@ -5,6 +5,7 @@ import { getTier, TIER_META } from '../data/tiers';
 import { WIMBLEDON_2026 } from '../data/wimbledon2026';
 import { ROUNDS, isPlayerOut, getPlayerExit } from '../data/tournament';
 import { lastName } from '../data/format';
+import { nickOf } from '../data/nicknames';
 import type { Player, RoundId, TournamentResult } from '../types';
 import PlayerAvatar from '../components/PlayerAvatar';
 import SurfaceBar from '../components/SurfaceBar';
@@ -66,6 +67,9 @@ export default function PlayerPage() {
                 </span>
               )}
             </div>
+            {nickOf(p.id) && (
+              <div className="text-sm font-bold tracking-wide leading-tight" style={{ color: 'var(--gold-bright)' }}>“{nickOf(p.id)}”</div>
+            )}
             <h1 className="text-2xl font-extrabold tracking-tight text-white leading-tight">{p.name}</h1>
             <div className="text-sm" style={{ color: 'var(--on-navy)' }}>
               #{p.ranking} ATP{p.seed ? ` · Seed ${p.seed}` : ''} · {p.style}

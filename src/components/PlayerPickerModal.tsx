@@ -5,6 +5,7 @@ import { getTier, TIER_META } from '../data/tiers';
 import { SQUAD_SIZE } from '../data/squadRules';
 import { useEscapeToClose } from '../hooks';
 import PlayerAvatar from './PlayerAvatar';
+import PlayerTag from './PlayerTag';
 import PurchaseConfirmModal from './PurchaseConfirmModal';
 import type { Player } from '../types';
 
@@ -61,6 +62,7 @@ export default function PlayerPickerModal({ open, onClose }: { open: boolean; on
                 <div key={p.id} className="flex items-center gap-3 px-2 py-2 rounded-xl" style={{ opacity: disabled ? 0.5 : 1 }}>
                   <PlayerAvatar playerId={p.id} name={p.name} size="sm" />
                   <div className="flex-1 min-w-0">
+                    <PlayerTag playerId={p.id} flag={p.flag} className="text-[9px] font-bold uppercase tracking-wide leading-tight truncate" style={{ color: 'var(--blue)' }} />
                     <div className="text-sm font-semibold truncate" style={{ color: 'var(--ink)' }}>{p.name}</div>
                     <div className="text-[11px]" style={{ color: tm.color }}>{getTier(p.ranking)} · #{p.ranking}</div>
                   </div>
