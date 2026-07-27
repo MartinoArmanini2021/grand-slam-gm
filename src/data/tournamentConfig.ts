@@ -6,7 +6,29 @@
 // Roadmap: this is the W1/W2 foundation. Draw size / round structure (for Masters
 // vs Slam), the full field, and the live-results feed build on top of this.
 
+import type { RoundId } from '../types';
+
 export type Surface = 'grass' | 'hard' | 'clay';
+
+// ── Shared round metadata ────────────────────────────────────────────────────
+// One canonical curve by round name: a given round is worth the same points in
+// every tournament (a Masters final scores like a Slam final). A tournament just
+// declares WHICH of these rounds it plays (its `rounds` list) — the engine derives
+// everything else (exit staging, transfer lock, bracket columns) from that.
+export const ROUND_META: Record<RoundId, { label: string; short: string; points: number }> = {
+  R128: { label: 'Round of 128', short: 'R128', points: 1 },
+  R64:  { label: 'Round of 64',  short: 'R64',  points: 1 },
+  R32:  { label: 'Round of 32',  short: 'R32',  points: 2 },
+  R16:  { label: 'Round of 16',  short: 'R16',  points: 5 },
+  QF:   { label: 'Quarter-Final', short: 'QF',  points: 10 },
+  SF:   { label: 'Semi-Final', short: 'SF',  points: 20 },
+  F:    { label: 'Final', short: 'F',   points: 40 },
+};
+
+// Canonical earliest→latest ordering of every possible round — the basis for
+// "how far did a player get" (exit staging), independent of which subset a given
+// tournament scores.
+export const ROUND_ORDER: RoundId[] = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'];
 
 export interface SurfaceTheme {
   label: string;   // "Grass" / "Hard" / "Clay" — shown in the header
@@ -57,7 +79,8 @@ export interface Tournament {
   year: number;
   surface: Surface;
   location: string;
-  drawSize: number;  // 128 for a Slam (Masters events differ — used later by W1)
+  drawSize: number;  // 128 for a Slam; Masters draws differ
+  rounds: RoundId[]; // the ordered rounds this tournament plays & scores
 }
 
 // The tournament the app is currently running. Change this object (and add the
@@ -70,6 +93,7 @@ export const TOURNAMENT: Tournament = {
   surface: 'grass',
   location: 'London, UK',
   drawSize: 128,
+  rounds: ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'],
 };
 
 // Convenience: the active surface's theme.

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { ROUNDS, MATCHES, getMatchesForRound, getPlayerExit, isPlayerOut, getOpponentId, upsetBonus, unmappedBracketNames } from '../data/tournament';
+import { ROUNDS, MATCHES, TRANSFER_LOCK_INDEX, getMatchesForRound, getPlayerExit, isPlayerOut, getOpponentId, upsetBonus, unmappedBracketNames } from '../data/tournament';
 import { getPlayer, PLAYERS } from '../data/players';
+import { TOURNAMENT, ROUND_META, ROUND_ORDER } from '../data/tournamentConfig';
 
 describe('real Wimbledon 2026 bracket integrity', () => {
   it('every roster player is a real participant in the opening round (R128)', () => {
@@ -53,6 +54,35 @@ describe('real Wimbledon 2026 bracket integrity', () => {
     const final = getMatchesForRound('F')[0];
     expect(final.winnerId).toBe('sinner');
     expect([final.p1Id, final.p2Id]).toContain('zverev');
+  });
+});
+
+// W1: the engine is config-driven — ROUNDS, the transfer lock, and exit staging
+// are DERIVED from the tournament's declared rounds + the shared points curve, not
+// hard-coded. These guard that derivation so a new tournament (a Masters draw with a
+// different round count) can't silently desync the engine.
+describe('config-driven round structure', () => {
+  it('ROUNDS is exactly the tournament’s declared rounds, in order', () => {
+    expect(ROUNDS.map(r => r.id)).toEqual(TOURNAMENT.rounds);
+  });
+
+  it('every round’s points come from the one shared curve (ROUND_META)', () => {
+    for (const r of ROUNDS) {
+      expect(r.points).toBe(ROUND_META[r.id].points);
+      expect(r.label).toBe(ROUND_META[r.id].label);
+    }
+  });
+
+  it('the transfer lock is the last round’s index (penultimate round still swappable)', () => {
+    expect(TRANSFER_LOCK_INDEX).toBe(ROUNDS.length - 1);
+  });
+
+  it('declared rounds are a subset of the canonical ordering, and in canonical order', () => {
+    const orderPos = new Map(ROUND_ORDER.map((r, i) => [r, i]));
+    const positions = TOURNAMENT.rounds.map(r => orderPos.get(r));
+    expect(positions.every(p => p !== undefined)).toBe(true);
+    // strictly increasing → the tournament plays its rounds earliest → latest
+    expect(positions).toEqual([...positions].sort((a, b) => (a! - b!)));
   });
 });
 

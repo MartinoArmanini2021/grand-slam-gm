@@ -1,18 +1,15 @@
 import type { Match, RoundId, TournamentResult } from '../types';
 import { findPlayer, PLAYERS } from './players';
 import { WIMBLEDON_2026, WIMBLEDON_2026_EARLY } from './wimbledon2026';
+import { TOURNAMENT, ROUND_META, ROUND_ORDER } from './tournamentConfig';
 
 // Tournament identity + per-surface theming now live in ./tournamentConfig.
 
-export const ROUNDS: { id: RoundId; label: string; short: string; points: number }[] = [
-  { id: 'R128', label: 'Round of 128', short: 'R128', points: 1 },
-  { id: 'R64',  label: 'Round of 64',  short: 'R64',  points: 1 },
-  { id: 'R32',  label: 'Round of 32',  short: 'R32',  points: 2 },
-  { id: 'R16',  label: 'Round of 16',  short: 'R16',  points: 5 },
-  { id: 'QF',   label: 'Quarter-Final', short: 'QF',  points: 10 },
-  { id: 'SF',   label: 'Semi-Final', short: 'SF',  points: 20 },
-  { id: 'F',    label: 'Final', short: 'F',   points: 40 },
-];
+// The active tournament's rounds, in order — derived from which rounds it plays
+// (TOURNAMENT.rounds) and the shared, one-curve-per-round-name metadata. Adding a
+// tournament with a different round count (a Masters draw) needs no change here.
+export const ROUNDS: { id: RoundId; label: string; short: string; points: number }[] =
+  TOURNAMENT.rounds.map(id => ({ id, ...ROUND_META[id] }));
 
 // ── The real Wimbledon 2026 draw (R32 → Final) ──────────────────────────────
 // Built from wimbledon2026.ts (Wikipedia-sourced). Names are matched to roster
@@ -41,11 +38,12 @@ export const MATCHES: Match[] = [...WIMBLEDON_2026_EARLY, ...WIMBLEDON_2026].map
 export const getMatchesForRound = (round: RoundId) =>
   MATCHES.filter(m => m.round === round);
 
-// Transfer window closes after the semi-finals: the final squad is locked, but a
-// QF-round elimination CAN still be replaced for the semis (so the QF refund is
-// spendable). ROUNDS index — R128=0, R64=1, R32=2, R16=3, QF=4, SF=5, F=6 — so
-// once currentRoundIndex reaches 6 (the Final is up next), the squad is locked.
-export const TRANSFER_LOCK_INDEX = 6;
+// Transfer window closes when the last round is up next: the final squad is locked,
+// but the penultimate-round elimination CAN still be replaced (so its refund is
+// spendable). Derived as the index of the last round — for a 7-round Slam that's 6
+// (R128=0 … F=6), so once currentRoundIndex reaches it (the Final is up next), the
+// squad is locked. A shorter Masters draw locks proportionally later in its own list.
+export const TRANSFER_LOCK_INDEX = ROUNDS.length - 1;
 export const transfersOpen = (currentRoundIndex: number) => currentRoundIndex < TRANSFER_LOCK_INDEX;
 
 // A player's opponent in a given round (null if they weren't in it).
@@ -90,7 +88,13 @@ export function winPoints(roundId: RoundId, winnerId: string, loserId: string): 
 
 // Exit stage of each result, earliest → latest. Champion ('W') never exits.
 // DNS (did not start) → out from the very beginning; W (champion) → never out.
-const EXIT_STAGE: Record<string, number> = { DNS: -1, R128: 0, R64: 1, R32: 2, R16: 3, QF: 4, SF: 5, F: 6, W: 99 };
+// The middle stages come from the canonical round ordering, so an exit's rank is
+// well-defined regardless of which subset of rounds this tournament scores.
+const EXIT_STAGE: Record<string, number> = {
+  DNS: -1,
+  ...Object.fromEntries(ROUND_ORDER.map((r, i) => [r, i])),
+  W: 99,
+};
 
 // The round a player was knocked out in (their real Wimbledon 2026 exit), or
 // null for the champion. Pre-R32 exits (R128/R64) are returned as-is for display.

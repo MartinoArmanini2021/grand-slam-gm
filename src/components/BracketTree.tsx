@@ -5,15 +5,19 @@ import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { findPlayer } from '../data/players';
 import { getRivalTeams } from '../data/rivals';
+import { ROUNDS } from '../data/tournament';
+import { ROUND_META, ROUND_ORDER, TOURNAMENT } from '../data/tournamentConfig';
 
 // The full draw for display (first two rounds + the scored bracket).
 const FULL_DRAW: WMatch[] = [...WIMBLEDON_2026_EARLY, ...WIMBLEDON_2026];
 const ALL_COLS: WRound[] = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF'];
 const SCORED_COLS: WRound[] = ['R32', 'R16', 'QF', 'SF'];
-const ROUND_LABEL: Record<WRound, string> = { R128: 'Round of 128', R64: 'Round of 64', R32: 'Round of 32', R16: 'Round of 16', QF: 'Quarter-finals', SF: 'Semi-finals', F: 'Final' };
+// Round labels + play-order come straight from the shared config, so a change to
+// the tournament's rounds (or their names) flows through the bracket automatically.
+const ROUND_LABEL = Object.fromEntries(ROUND_ORDER.map(r => [r, ROUND_META[r].label])) as Record<WRound, string>;
 // Position of each round in the played sequence — used to gate spoilers: a round's
 // results are hidden until you've played it.
-const ROUND_IDX: Record<WRound, number> = { R128: 0, R64: 1, R32: 2, R16: 3, QF: 4, SF: 5, F: 6 };
+const ROUND_IDX = Object.fromEntries(ROUND_ORDER.map((r, i) => [r, i])) as Record<WRound, number>;
 
 // Bracket geometry — cards share a fixed width; connector columns carry the tree lines.
 const CARD_W = 176;
@@ -181,7 +185,7 @@ export default function BracketTree() {
             ))}
           </div>
           <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.1)' }}>
-            {([['full', 'Full draw (128)'], ['last32', 'Last 32']] as const).map(([d, label]) => (
+            {([['full', `Full draw (${TOURNAMENT.drawSize})`], ['last32', 'Last 32']] as const).map(([d, label]) => (
               <button
                 key={d}
                 onClick={() => setDepth(d)}
@@ -218,7 +222,7 @@ export default function BracketTree() {
           {focus ? <>Tracing <span className="font-bold" style={{ color: 'var(--blue)' }}>{focus}</span> · <button onClick={() => setFocus(null)} className="underline">clear</button></> : 'Tap a player to trace their route'}
         </span>
         <span className="flex items-center gap-1 font-semibold" style={{ color: 'var(--blue)' }}>
-          🔒 {currentRoundIndex === 0 ? 'Results hidden — no spoilers. Play a round to reveal it.' : `Revealed through ${ROUND_LABEL[(['R128','R64','R32','R16','QF','SF','F'] as WRound[])[currentRoundIndex - 1]]}`}
+          🔒 {currentRoundIndex === 0 ? 'Results hidden — no spoilers. Play a round to reveal it.' : `Revealed through ${ROUNDS[currentRoundIndex - 1]?.label ?? ''}`}
         </span>
       </div>
 
