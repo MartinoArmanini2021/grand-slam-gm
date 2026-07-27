@@ -131,8 +131,15 @@ the US Open is then execution, not discovery.
 - ✅ **W1/W2 foundation shipped** — `tournamentConfig.ts` drives the app's identity and
   a per-surface theme. Flipping the active tournament re-skins the branding and the
   signature court graphic (grass → hard = US-Open blue) with no component edits.
-  *Next in W1:* make draw size / round count configurable (so the engine runs the
-  Masters draws), then the full field (W4) and the automated results feed (W3).
+- ✅ **W1 core: round structure is config-driven** — a tournament declares only *which*
+  rounds it plays (`TOURNAMENT.rounds`); the engine derives `ROUNDS`, exit staging,
+  the transfer lock, and the bracket's labels/indices/draw-size from it. Points use
+  **one shared curve by round name** (a Masters final = a Slam final). Onboarding a
+  Masters draw (a different round count) now needs no engine edits. Kept the clean
+  binary bracket — the US Open's 128-draw uses it perfectly; non-128 Masters draws
+  get a simpler view later. 73/73 tests, incl. 4 config-derivation guards.
+  *Next in W1:* wire a real non-128 tournament's field + draw (W4) to exercise the
+  variable round count end-to-end, then the automated results feed (W3).
 
 ---
 
