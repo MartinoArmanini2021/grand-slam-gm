@@ -35,7 +35,7 @@ export default function PlayerAvatar({ playerId, name, size = 'md', className = 
   let ringColor = 'rgba(10,27,51,0.16)';
   try { ringColor = TIER_META[getTier(getPlayer(playerId).ranking)].color; } catch { /* unknown id */ }
   const ringStyle = ring
-    ? { boxShadow: `0 0 0 2px ${ringColor}, 0 0 0 3px rgba(255,255,255,0.6)` }
+    ? { boxShadow: `0 0 0 2px ${ringColor}, 0 0 0 4px rgba(255,255,255,0.7)` } // matches the ZIP spec
     : { boxShadow: 'inset 0 0 0 1px rgba(10,27,51,0.14)' };
   const clickable = onClick ? { cursor: 'pointer' } : {};
 
@@ -47,21 +47,27 @@ export default function PlayerAvatar({ playerId, name, size = 'md', className = 
   const src = sources[stage] ?? null; // exhausted → initials monogram
 
   if (src) {
+    // Match the ZIP's avatar treatment exactly: the image sits inside a clipped
+    // circle and is zoomed to a tight, uniform face crop (object-position 50% 22%,
+    // scale 1.08) — the same framing as the design deliverable, so the app and the
+    // spec are visually identical.
     return (
-      <img
-        key={src}
-        src={src}
-        alt={name}
-        width={px}
-        height={px}
+      <div
         className={className}
-        onError={() => setStage(s => s + 1)}
         onClick={onClick}
-        style={{
-          width: px, height: px, borderRadius: '50%', flexShrink: 0, display: 'block',
-          objectFit: 'cover', objectPosition: 'center 20%', ...ringStyle, ...clickable,
-        }}
-      />
+        style={{ width: px, height: px, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, position: 'relative', ...ringStyle, ...clickable }}
+      >
+        <img
+          key={src}
+          src={src}
+          alt={name}
+          onError={() => setStage(s => s + 1)}
+          style={{
+            position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block',
+            objectFit: 'cover', objectPosition: '50% 22%', transform: 'scale(1.08)', transformOrigin: '50% 22%',
+          }}
+        />
+      </div>
     );
   }
 
