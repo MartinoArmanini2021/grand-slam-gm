@@ -64,6 +64,8 @@ describe('FUZZ — many random full games never break an invariant', () => {
 
         // Invariants after every round:
         expect(store().budget, `iter ${i} round ${r}: negative budget`).toBeGreaterThanOrEqual(-1e-9);
+        // Budget never drifts past 1 decimal (every money mutation, incl. transfers, rounds via round1).
+        expect(Math.abs(store().budget * 10 - Math.round(store().budget * 10)), `iter ${i} round ${r}: budget float drift (${store().budget})`).toBeLessThan(1e-6);
         expect(store().myScore, `iter ${i} round ${r}: score regressed`).toBeGreaterThanOrEqual(prevScore);
         prevScore = store().myScore;
         // squad always exactly 8 and every member a real roster id

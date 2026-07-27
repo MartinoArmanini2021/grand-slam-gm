@@ -12,21 +12,21 @@ interface ProfileState {
   email: string; // used when playing as a guest; the signed-in email takes precedence in the UI
   teamName: string;
   teamEmblem: string;
-  set: (patch: Partial<Omit<ProfileState, 'set'>>) => void;
+  set: (patch: Partial<Omit<ProfileState, 'set' | 'reset'>>) => void;
+  reset: () => void;
 }
+
+const DEFAULTS = {
+  firstName: '', lastName: '', username: '', phone: '', country: '', email: '',
+  teamName: 'My Team', teamEmblem: '🎾',
+} as const;
 
 export const useProfile = create<ProfileState>()(
   persist(
     (set) => ({
-      firstName: '',
-      lastName: '',
-      username: '',
-      phone: '',
-      country: '',
-      email: '',
-      teamName: 'My Team',
-      teamEmblem: '🎾',
+      ...DEFAULTS,
       set: (patch) => set(patch),
+      reset: () => set({ ...DEFAULTS }),
     }),
     {
       name: 'gsgm-profile',

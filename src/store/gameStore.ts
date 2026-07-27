@@ -66,6 +66,7 @@ export const useGameStore = create<GameStore>()(
         if (myTeam.includes(id)) return;
         const player = findPlayer(id);
         if (!player || budget < player.price) return;
+        if (isPlayerOut(id, [])) return; // never draft an already-out (e.g. DNS) player — they'd never be refundable
         set({ myTeam: [...myTeam, id], budget: budget - player.price });
       },
 
@@ -82,7 +83,9 @@ export const useGameStore = create<GameStore>()(
       },
 
       setCaptain: (id) => {
-        const { myTeam, currentRoundIndex } = get();
+        const { myTeam, currentRoundIndex, phase } = get();
+        // Captaining only makes sense while choosing a squad or a round's captain.
+        if (phase !== 'draft' && phase !== 'pre_round') return;
         if (!myTeam.includes(id)) return;
         // An eliminated player can't captain (guards callers that don't pre-filter).
         const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
@@ -98,8 +101,11 @@ export const useGameStore = create<GameStore>()(
         // so unit tests can lock a small squad to isolate scoring; no production
         // caller ever passes an illegal squad.
         if (myTeam.length === 0) return;
+        // Default the captain to the first NON-eliminated member (never an already-out
+        // player), then fall back to myTeam[0] only if somehow all are out.
+        const defaultCaptain = captain ?? myTeam.find(id => !isPlayerOut(id, [])) ?? myTeam[0];
         // Snapshot the drafted squad so the transfer history can show who you signed.
-        set({ phase: 'pre_round', captain: captain ?? myTeam[0], initialSquad: [...myTeam] });
+        set({ phase: 'pre_round', captain: defaultCaptain, initialSquad: [...myTeam] });
       },
 
       // Mid-tournament substitution: swap an eliminated squad member for a
@@ -118,7 +124,7 @@ export const useGameStore = create<GameStore>()(
         const round = ROUNDS[currentRoundIndex - 1]?.id ?? ROUNDS[0].id;
         set({
           myTeam: myTeam.map(id => (id === oldId ? newId : id)),
-          budget: budget - player.price,
+          budget: round1(budget - player.price), // round like every other money mutation — budget can be fractional after refunds
           captain: captain === oldId ? null : captain,
           transfers: [...get().transfers, { out: oldId, in: newId, round }],
         });
@@ -257,6 +263,20 @@ export const useGameStore = create<GameStore>()(
           }
         }
         return s as GameStore;
+      },
+      // Runs on EVERY rehydrate (migrate only runs on a version bump): drop any
+      // persisted player id that no longer exists in the roster, so a stale squad can
+      // never dereference an undefined player and white-screen the app (the throwing
+      // getPlayer() is used across the pages). Belt-and-suspenders to migrate().
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        const ids = new Set(PLAYERS.map(p => p.id));
+        if (Array.isArray(state.myTeam)) state.myTeam = state.myTeam.filter(id => ids.has(id));
+        if (Array.isArray(state.initialSquad)) state.initialSquad = state.initialSquad.filter(id => ids.has(id));
+        if (Array.isArray(state.transfers)) state.transfers = state.transfers.filter(t => ids.has(t.in) && ids.has(t.out));
+        if (state.captain && !ids.has(state.captain)) state.captain = null;
+        if (Array.isArray(state.budgetReturns)) state.budgetReturns = state.budgetReturns.filter(r => ids.has(r.playerId));
+        if (Array.isArray(state.captainHistory)) state.captainHistory = state.captainHistory.filter(c => ids.has(c.playerId));
       },
     }
   )

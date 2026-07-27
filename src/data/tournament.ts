@@ -64,11 +64,13 @@ function rawExit(playerId: string): TournamentResult | 'W' | null | undefined {
 export const getMatchesForRound = (round: RoundId) =>
   activeMatches().filter(m => m.round === round);
 
-// Transfer window closes when the last round is up next: the final squad is locked,
-// but the penultimate-round elimination CAN still be replaced (so its refund is
-// spendable). Derived as the index of the last round — for a 7-round Slam that's 6
-// (R128=0 … F=6), so once currentRoundIndex reaches it (the Final is up next), the
-// squad is locked. A shorter Masters draw locks proportionally later in its own list.
+// Transfer window closes when the last round is up next. TRANSFER_LOCK_INDEX = the
+// last round's index — for a 7-round Slam that's 6 (R128=0 … F=6). transfersOpen is
+// true while currentRoundIndex < that. Concretely: after the QF is played,
+// currentRoundIndex is 5 (SF up next) → transfers open, so a QF loser (refunded 0.70)
+// CAN be swapped for the SF. After the SF, currentRoundIndex is 6 (Final up next) →
+// locked, so an SF loser (0 refund) cannot. So the QF is the last replaceable exit,
+// NOT the penultimate (SF). A shorter Masters draw locks proportionally in its list.
 export const TRANSFER_LOCK_INDEX = ROUNDS.length - 1;
 export const transfersOpen = (currentRoundIndex: number) => currentRoundIndex < TRANSFER_LOCK_INDEX;
 

@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { supabase, isAuthEnabled } from './supabaseClient';
+import { useGameStore } from '../store/gameStore';
+import { useProfile } from '../store/profileStore';
 
 interface AuthUser { id: string; email: string }
 
@@ -63,6 +65,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setGuest(false);
       try { localStorage.removeItem(GUEST_KEY); } catch { /* ignore */ }
+      // Wipe on-device game + profile so one account's squad/score/name can never
+      // bleed into the next person to sign in on this browser. The next identity
+      // rehydrates its own data from the cloud (or starts fresh).
+      try { useGameStore.getState().resetGame(); useProfile.getState().reset(); } catch { /* ignore */ }
     }
   };
 

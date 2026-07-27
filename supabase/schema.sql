@@ -41,7 +41,7 @@ create table if not exists public.leagues (
 create table if not exists public.entries (
   id                  uuid primary key default gen_random_uuid(),
   user_id             uuid not null references auth.users on delete cascade,
-  league_id           uuid references public.leagues on delete set null,
+  league_id           uuid not null references public.leagues on delete restrict,  -- NOT NULL: NULLs break the unique index → duplicate entries
   tournament_id       text not null,                          -- e.g. 'wimbledon_2026'
   squad               text[] not null default '{}',           -- player ids
   captain_history     jsonb  not null default '[]',           -- [{round, playerId}]
@@ -73,17 +73,24 @@ set search_path = public as $$
   where user_id = auth.uid() and league_id is not null
 $$;
 
--- Profiles: anyone signed in can READ (to show names/emblems on the board); a user
--- may only write their own row.
-drop policy if exists "profiles readable" on public.profiles;
-create policy "profiles readable" on public.profiles
-  for select to authenticated using (true);
+-- Profiles: a user reads only their OWN row (protects PII: first/last name, country).
+-- Other players' safe fields (username, team name/emblem) are exposed to the board
+-- via the public_profiles view below — never the base table.
+drop policy if exists "own profile readable" on public.profiles;
+create policy "own profile readable" on public.profiles
+  for select to authenticated using (auth.uid() = id);
 drop policy if exists "own profile upsert" on public.profiles;
 create policy "own profile upsert" on public.profiles
   for insert to authenticated with check (auth.uid() = id);
 drop policy if exists "own profile update" on public.profiles;
 create policy "own profile update" on public.profiles
   for update to authenticated using (auth.uid() = id);
+
+-- The leaderboard needs other players' names/emblems but must NOT see their PII.
+-- This view (SECURITY DEFINER by default) exposes only the safe columns to everyone.
+create or replace view public.public_profiles as
+  select id, username, team_name, team_emblem from public.profiles;
+grant select on public.public_profiles to authenticated;
 
 -- Entries: you can READ any entry that shares one of your leagues (so you see
 -- rivals' squads), and WRITE only your own row.

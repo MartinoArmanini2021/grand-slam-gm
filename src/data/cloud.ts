@@ -29,12 +29,27 @@ export async function fetchProfile(userId: string): Promise<CloudProfile | null>
 }
 
 // Upsert the signed-in user's profile row. RLS allows writing only your own id.
+// `username` is UNIQUE, so a collision would otherwise fail the WHOLE upsert and lose
+// the team name/emblem/etc too — on that error we retry without the username so
+// everything else still persists (the username just keeps its previous value).
 export async function saveProfile(userId: string, p: CloudProfile): Promise<void> {
   if (!supabase) return;
   const { error } = await supabase
     .from('profiles')
     .upsert({ id: userId, ...p }, { onConflict: 'id' });
-  if (error) console.warn('[cloud] saveProfile:', error.message);
+  if (!error) return;
+  const isDupUsername = error.code === '23505' || /username/i.test(error.message);
+  if (isDupUsername) {
+    const { username: _taken, ...rest } = p;
+    const { error: retryError } = await supabase
+      .from('profiles')
+      .upsert({ id: userId, ...rest }, { onConflict: 'id' });
+    console.warn(retryError
+      ? `[cloud] saveProfile retry: ${retryError.message}`
+      : '[cloud] saveProfile: username already taken — kept previous username, saved the rest');
+    return;
+  }
+  console.warn('[cloud] saveProfile:', error.message);
 }
 
 // ── Entries (a user's squad + progress for one tournament) ────────────────────
@@ -102,8 +117,10 @@ export async function fetchLeaderboard(leagueId: string, tournamentId: string): 
   if (!entries?.length) return [];
 
   const ids = entries.map(e => e.user_id as string);
+  // Read names from the public_profiles view (safe columns only) — the base profiles
+  // table is locked to own-row reads so PII (first/last name, country) isn't exposed.
   const { data: profs } = await supabase
-    .from('profiles').select('id, team_name, team_emblem, username').in('id', ids);
+    .from('public_profiles').select('id, team_name, team_emblem, username').in('id', ids);
   const byId = new Map((profs ?? []).map(p => [p.id, p]));
 
   return entries.map(e => {
