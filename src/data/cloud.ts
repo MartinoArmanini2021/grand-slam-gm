@@ -76,6 +76,52 @@ export async function fetchEntry(
   return data ? { score: data.score as number, state: (data.state ?? {}) as Record<string, unknown> } : null;
 }
 
+// One row per real player in a league's tournament, for the shared leaderboard.
+export interface CloudBoardRow {
+  userId: string;
+  teamName: string;
+  teamEmblem: string;
+  username: string;
+  score: number;
+  budget: number;
+  squad: string[];
+}
+
+// All entries in a league+tournament, joined to their profiles. RLS lets you read
+// entries that share one of your leagues, so everyone in the public league sees the
+// full board. (Score is client-sourced from the snapshot until the server scorer is
+// live; the leaderboard swaps to the authoritative entries.score column then.)
+export async function fetchLeaderboard(leagueId: string, tournamentId: string): Promise<CloudBoardRow[]> {
+  if (!supabase) return [];
+  const { data: entries, error } = await supabase
+    .from('entries')
+    .select('user_id, score, budget, state')
+    .eq('league_id', leagueId)
+    .eq('tournament_id', tournamentId);
+  if (error) { console.warn('[cloud] fetchLeaderboard:', error.message); return []; }
+  if (!entries?.length) return [];
+
+  const ids = entries.map(e => e.user_id as string);
+  const { data: profs } = await supabase
+    .from('profiles').select('id, team_name, team_emblem, username').in('id', ids);
+  const byId = new Map((profs ?? []).map(p => [p.id, p]));
+
+  return entries.map(e => {
+    const st = (e.state ?? {}) as { myScore?: number; myTeam?: string[] };
+    const p = byId.get(e.user_id as string);
+    return {
+      userId: e.user_id as string,
+      teamName: p?.team_name || 'Team',
+      teamEmblem: p?.team_emblem || '🎾',
+      username: p?.username || '',
+      // Prefer the authoritative column once the server sets it; else the snapshot.
+      score: (e.score as number) || (typeof st.myScore === 'number' ? st.myScore : 0),
+      budget: (e.budget as number) ?? 0,
+      squad: Array.isArray(st.myTeam) ? st.myTeam : [],
+    };
+  });
+}
+
 export async function saveEntry(
   userId: string, leagueId: string, tournamentId: string, e: EntryWrite,
 ): Promise<void> {
