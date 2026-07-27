@@ -36,3 +36,61 @@ export async function saveProfile(userId: string, p: CloudProfile): Promise<void
     .upsert({ id: userId, ...p }, { onConflict: 'id' });
   if (error) console.warn('[cloud] saveProfile:', error.message);
 }
+
+// ── Entries (a user's squad + progress for one tournament) ────────────────────
+
+// The public global league id, cached (every entry lands here unless it's moved to
+// a private league later).
+let cachedPublicLeagueId: string | null = null;
+export async function publicLeagueId(): Promise<string | null> {
+  if (!supabase) return null;
+  if (cachedPublicLeagueId) return cachedPublicLeagueId;
+  const { data, error } = await supabase
+    .from('leagues').select('id').eq('is_public', true).limit(1).maybeSingle();
+  if (error) { console.warn('[cloud] publicLeagueId:', error.message); return null; }
+  cachedPublicLeagueId = data?.id ?? null;
+  return cachedPublicLeagueId;
+}
+
+// What the client writes for its entry: the scoring inputs (typed columns the
+// server scorer reads) + a full state snapshot for device restore. Never `score`.
+export interface EntryWrite {
+  squad: string[];
+  captainHistory: unknown;
+  phase: string;
+  currentRoundIndex: number;
+  budget: number;
+  state: unknown;       // the persisted gameStore snapshot
+}
+
+export async function fetchEntry(
+  userId: string, leagueId: string, tournamentId: string,
+): Promise<{ score: number; state: Record<string, unknown> } | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('entries')
+    .select('score, state')
+    .eq('user_id', userId).eq('league_id', leagueId).eq('tournament_id', tournamentId)
+    .maybeSingle();
+  if (error) { console.warn('[cloud] fetchEntry:', error.message); return null; }
+  return data ? { score: data.score as number, state: (data.state ?? {}) as Record<string, unknown> } : null;
+}
+
+export async function saveEntry(
+  userId: string, leagueId: string, tournamentId: string, e: EntryWrite,
+): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('entries').upsert({
+    user_id: userId,
+    league_id: leagueId,
+    tournament_id: tournamentId,
+    squad: e.squad,
+    captain_history: e.captainHistory,
+    phase: e.phase,
+    current_round_index: e.currentRoundIndex,
+    budget: e.budget,
+    state: e.state,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'user_id,league_id,tournament_id' });
+  if (error) console.warn('[cloud] saveEntry:', error.message);
+}

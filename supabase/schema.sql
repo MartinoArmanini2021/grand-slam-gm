@@ -49,6 +49,7 @@ create table if not exists public.entries (
   current_round_index int    not null default 0,
   score               int    not null default 0,              -- SERVER-written only
   budget              numeric not null default 100,           -- derived, for display
+  state               jsonb  not null default '{}',           -- full client snapshot, for device restore
   updated_at          timestamptz default now(),
   unique (user_id, league_id, tournament_id)
 );
@@ -99,9 +100,10 @@ drop policy if exists "own entry update" on public.entries;
 create policy "own entry update" on public.entries
   for update to authenticated using (auth.uid() = user_id);
 
--- Block client writes to score: revoke the column. The Edge Function uses the
--- service-role key, which bypasses RLS, so only the server can set it.
-revoke update (score) on public.entries from authenticated;
+-- Block client writes to score: revoke the column on BOTH insert and update. The
+-- Edge Function uses the service-role key, which bypasses RLS, so only the server
+-- can set it. (Insert too, else a client could seed a high score on the first write.)
+revoke insert (score), update (score) on public.entries from authenticated;
 
 -- Leagues: public leagues readable by all signed-in users; private leagues readable
 -- if you're a member; anyone signed in can create one (they must own it).
