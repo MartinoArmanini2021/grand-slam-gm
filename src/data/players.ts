@@ -1,5 +1,6 @@
 import type { Player, Surface, TournamentResult, YearResult } from '../types';
 import rawField from './wimbledon2026Field.json';
+import { poolPlayer } from './playerPool';
 
 // ── Real Wimbledon 2026 men's singles field ──────────────────────────────────
 // Every player, price, and result below is derived from the actual 2026 draw
@@ -46,8 +47,17 @@ function toYearResults(rows: RawPlayer['yearResults']): YearResult[] {
 }
 
 function toPlayer(r: RawPlayer): Player {
+  // Refresh COUNTRY + FLAG from the master pool (modernised labels, e.g. "Czechia"),
+  // and the photo comes from the pool by id (see PlayerAvatar). RANK stays the
+  // at-Wimbledon value: this is a historical replay, and its pricing/scoring is
+  // designed around those ranks (a #178 underdog's deep run is the whole hook). The
+  // pool carries CURRENT ranks for live/future tournaments, applied when their field
+  // is drawn from it. Name stays from the field so the bracket's name→id lookup holds.
+  const base = poolPlayer(r.id);
   return {
-    id: r.id, name: r.name, country: r.country, flag: r.flag,
+    id: r.id, name: r.name,
+    country: base?.country ?? r.country,
+    flag: base?.flag ?? r.flag,
     ranking: r.ranking, seed: r.seed, age: r.age, hand: r.hand,
     style: deriveStyle(r),
     price: priceFor(r.ranking),

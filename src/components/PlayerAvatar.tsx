@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAvatarUri } from '../data/playerAvatars';
+import { photoUrlFor } from '../data/playerPool';
 import { getPlayer } from '../data/players';
 import { getTier, TIER_META } from '../data/tiers';
 
@@ -17,11 +18,10 @@ interface Props {
 const SIZE = { sm: 32, md: 40, lg: 56, xl: 96 } as const;
 const FONT = { sm: 11, md: 13, lg: 16, xl: 28 } as const;
 
-// One uniform illustrated icon per player (customized to their real features) so
-// the whole roster reads as a single standardized set. Flip USE_PHOTOS on once a
-// COMPLETE set of real headshots exists at /public/avatars/{id}.png for all 52 —
-// a partial set would mix photos and illustrations, which is the look we avoid.
-const USE_PHOTOS = false;
+// Real ATP headshots (hotlinked from the master pool) are tried first, then the
+// illustrated icon, then an initials monogram — each falls back automatically on a
+// load error, so a blocked/missing photo never leaves a hole. A self-hosted
+// /public/avatars/{id}.png could be added ahead of the hotlink later if desired.
 
 export default function PlayerAvatar({ playerId, name, size = 'md', className = '', ring = true, onClick }: Props) {
   const px = SIZE[size];
@@ -39,7 +39,7 @@ export default function PlayerAvatar({ playerId, name, size = 'md', className = 
   const clickable = onClick ? { cursor: 'pointer' } : {};
 
   const sources = [
-    ...(USE_PHOTOS ? [`/avatars/${playerId}.png`] : []),
+    photoUrlFor(playerId),  // real ATP headshot (hotlinked); null if not in the pool
     getAvatarUri(playerId), // illustrated icon (data URI); may be null for unknown ids
   ].filter(Boolean) as string[];
   const src = sources[stage] ?? null; // exhausted → initials monogram
