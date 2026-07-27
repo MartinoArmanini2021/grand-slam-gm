@@ -18,11 +18,12 @@ interface Props {
 const SIZE = { sm: 32, md: 40, lg: 56, xl: 96 } as const;
 const FONT = { sm: 11, md: 13, lg: 16, xl: 28 } as const;
 
-// Avatar source order, each falling back automatically on a load error so a
-// missing/blocked image never leaves a hole:
-//   1. self-hosted /avatars/{id}.png (downloaded from ATP — see scripts/fetch-avatars.mjs)
-//   2. the ATP hotlink (covers any id we haven't downloaded yet)
-//   3. the illustrated icon, then an initials monogram.
+// Avatars hotlink the official ATP headshot exactly as the design deliverable does
+// (Player Avatars.dc.html: src = p.headshot). Loaded in the browser, that URL
+// resolves to ATP's CONSISTENT studio headshot per player — a self-hosted curl copy
+// gets a different (inconsistent) image from the same URL, so we must hotlink. On a
+// load error it falls back to the initials monogram (as the HTML does); off-roster
+// ids with no pool photo fall back to the illustrated icon.
 
 export default function PlayerAvatar({ playerId, name, size = 'md', className = '', ring = true, onClick }: Props) {
   const px = SIZE[size];
@@ -39,11 +40,11 @@ export default function PlayerAvatar({ playerId, name, size = 'md', className = 
     : { boxShadow: 'inset 0 0 0 1px rgba(10,27,51,0.14)' };
   const clickable = onClick ? { cursor: 'pointer' } : {};
 
-  const photo = photoUrlFor(playerId); // ATP hotlink; null if the id isn't in the pool
-  const sources = [
-    ...(photo ? [`/avatars/${playerId}.png`, photo] : []), // self-hosted first, hotlink fallback
-    getAvatarUri(playerId),                                 // illustrated icon (data URI)
-  ].filter(Boolean) as string[];
+  const photo = photoUrlFor(playerId); // ATP headshot URL; null if the id isn't in the pool
+  // Pooled players: hotlink the ATP headshot, then fall straight to the initials
+  // monogram (matching the HTML) — never mix in the illustrated cartoon, which would
+  // itself read as inconsistent next to real photos. Off-roster ids: illustrated icon.
+  const sources = (photo ? [photo] : [getAvatarUri(playerId)]).filter(Boolean) as string[];
   const src = sources[stage] ?? null; // exhausted → initials monogram
 
   if (src) {
