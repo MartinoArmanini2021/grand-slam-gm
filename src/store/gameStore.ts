@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { GamePhase, RoundId, RoundScore, BudgetReturn, Transfer } from '../types';
 import {
-  ROUNDS, getMatchesForRound, isPlayerOut, BUDGET_RETURN_RATES, winPoints, transfersOpen,
+  ROUNDS, getMatchesForRound, isPlayerOut, BUDGET_RETURN_RATES, winPoints, transfersOpen, roundPlayable,
 } from '../data/tournament';
 import { findPlayer, PLAYERS } from '../data/players';
 import { SQUAD_SIZE, STARTING_BUDGET } from '../data/squadRules';
@@ -130,6 +130,9 @@ export const useGameStore = create<GameStore>()(
         // Only playable from pre_round. Guards a double-tap that would otherwise
         // burn the next round with no captain and skip its transfer window.
         if (phase !== 'pre_round') return;
+        // Live mode: refuse to score a round the real tournament hasn't finished.
+        // (Always true in replay mode — the baked draw is complete.)
+        if (!roundPlayable(currentRoundIndex)) return;
 
         const round = ROUNDS[currentRoundIndex];
         const roundMatches = getMatchesForRound(round.id);

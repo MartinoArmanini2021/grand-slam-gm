@@ -2,6 +2,8 @@ import type { Match, RoundId, TournamentResult } from '../types';
 import { findPlayer, PLAYERS } from './players';
 import { WIMBLEDON_2026, WIMBLEDON_2026_EARLY } from './wimbledon2026';
 import { TOURNAMENT, ROUND_META, ROUND_ORDER } from './tournamentConfig';
+import { useLiveStore } from '../store/liveStore';
+import { liveMatches, liveExit, roundComplete } from './liveResults';
 
 // Tournament identity + per-surface theming now live in ./tournamentConfig.
 
@@ -35,8 +37,32 @@ export const MATCHES: Match[] = [...WIMBLEDON_2026_EARLY, ...WIMBLEDON_2026].map
   score: m.score,
 }));
 
+// The matches the app scores right now. In replay mode that's the baked draw; in
+// live mode it's the completed matches projected from the live store (unplayed
+// matches are simply absent until their result is recorded). Every scoring/display
+// helper below reads through this, so the engine is identical in both modes — only
+// the source of results differs.
+function activeMatches(): Match[] {
+  if (TOURNAMENT.mode === 'live') {
+    const { draw, results } = useLiveStore.getState();
+    return liveMatches(draw, results);
+  }
+  return MATCHES;
+}
+
+// A player's exit for the ACTIVE tournament: the baked Wimbledon field in replay
+// mode ('W' = champion, undefined = unknown id), or derived from recorded live
+// results in live mode (null = still alive / champion).
+function rawExit(playerId: string): TournamentResult | 'W' | null | undefined {
+  if (TOURNAMENT.mode === 'live') {
+    const { draw, results } = useLiveStore.getState();
+    return liveExit(draw, results, playerId);
+  }
+  return findPlayer(playerId)?.exit;
+}
+
 export const getMatchesForRound = (round: RoundId) =>
-  MATCHES.filter(m => m.round === round);
+  activeMatches().filter(m => m.round === round);
 
 // Transfer window closes when the last round is up next: the final squad is locked,
 // but the penultimate-round elimination CAN still be replaced (so its refund is
@@ -46,9 +72,20 @@ export const getMatchesForRound = (round: RoundId) =>
 export const TRANSFER_LOCK_INDEX = ROUNDS.length - 1;
 export const transfersOpen = (currentRoundIndex: number) => currentRoundIndex < TRANSFER_LOCK_INDEX;
 
+// Can the round at this index be played (scored) yet? In live mode a round is only
+// playable once the real world has finished it — every pairing has a recorded
+// result. In replay mode the baked draw is always complete, so this is always true.
+export function roundPlayable(roundIndex: number): boolean {
+  if (TOURNAMENT.mode !== 'live') return true;
+  const round = ROUNDS[roundIndex];
+  if (!round) return false;
+  const { draw, results } = useLiveStore.getState();
+  return roundComplete(draw, results, round.id);
+}
+
 // A player's opponent in a given round (null if they weren't in it).
 export function getOpponentId(playerId: string, round: RoundId): string | null {
-  const m = MATCHES.find(x => x.round === round && (x.p1Id === playerId || x.p2Id === playerId));
+  const m = activeMatches().find(x => x.round === round && (x.p1Id === playerId || x.p2Id === playerId));
   if (!m) return null;
   return m.p1Id === playerId ? m.p2Id : m.p1Id;
 }
@@ -96,18 +133,18 @@ const EXIT_STAGE: Record<string, number> = {
   W: 99,
 };
 
-// The round a player was knocked out in (their real Wimbledon 2026 exit), or
-// null for the champion. Pre-R32 exits (R128/R64) are returned as-is for display.
+// The round a player was knocked out in (their exit), or null for the champion /
+// a still-alive player. Pre-R32 exits (R128/R64) are returned as-is for display.
 export function getPlayerExit(playerId: string): TournamentResult | null {
-  const e = findPlayer(playerId)?.exit;
+  const e = rawExit(playerId);
   return !e || e === 'W' ? null : e;
 }
 
-// Is this player eliminated, given which scored rounds (R32→F) have been revealed?
-// Their exit stage ≤ the deepest revealed stage → out. Because pre-R32 stages are
-// below R32, anyone who fell before the last 32 is out the moment R32 is revealed.
+// Is this player eliminated, given which scored rounds have been revealed? Their
+// exit stage ≤ the deepest revealed stage → out. Because earlier stages sort below
+// later ones, anyone who fell before a revealed round is already out.
 export function isPlayerOut(playerId: string, revealed: RoundId[]): boolean {
-  const e = findPlayer(playerId)?.exit;
+  const e = rawExit(playerId);
   if (!e || e === 'W') return false;
   const stage = EXIT_STAGE[e];
   if (stage === undefined) return false;
