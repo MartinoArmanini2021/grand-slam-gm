@@ -22,7 +22,7 @@ interface GameStore {
   currentRoundIndex: number;
   myScore: number;
   roundScores: RoundScore[];
-  activeTab: 'home' | 'draft' | 'tournament' | 'team' | 'league' | 'player';
+  activeTab: 'home' | 'draft' | 'tournament' | 'team' | 'league' | 'player' | 'admin';
   viewTeam: string; // which team the detail view shows: 'you' or a rival id
   viewPlayer: string; // which player the profile page shows
   playerReturnTab: GameStore['activeTab']; // where the profile's back button returns to

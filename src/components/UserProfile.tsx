@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { useGameStore } from '../store/gameStore';
 import { toast } from '../store/toastStore';
 import { useEscapeToClose } from '../hooks';
+import { isAdmin, setAdmin } from '../data/admin';
 
 export default function UserProfile({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { firstName, lastName, username, phone, country, email, teamName, teamEmblem, set } = useProfile();
@@ -125,6 +126,24 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
                 {enabled ? 'Log in to change your password.' : 'Password change is available once accounts are enabled.'}
               </div>
             )}
+          </div>
+
+          {/* Operator / admin mode — reveals the Match Admin tab for running a live
+              tournament. Reloads so the nav picks up the change. */}
+          <div className="pt-2" style={{ borderTop: '1px solid rgba(10,27,51,0.07)' }}>
+            <label className="flex items-center justify-between gap-3 cursor-pointer">
+              <span>
+                <span className="text-sm font-bold" style={{ color: 'var(--ink)' }}>Admin mode</span>
+                <span className="block text-[11px]" style={{ color: 'var(--ink-3)' }}>Show the Match Admin console (for running a live event)</span>
+              </span>
+              <input
+                type="checkbox"
+                defaultChecked={isAdmin()}
+                onChange={e => { setAdmin(e.target.checked); window.location.reload(); }}
+                className="w-5 h-5 shrink-0"
+                aria-label="Admin mode"
+              />
+            </label>
           </div>
 
           <p className="text-[11px] pt-1" style={{ color: 'var(--ink-3)' }}>Saved on this device. It'll sync to your account once accounts go live.</p>

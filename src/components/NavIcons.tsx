@@ -55,9 +55,25 @@ const BracketIcon: FC<IconProps> = ({ size, style }) => (
   </svg>
 );
 
+// Admin → sliders / control panel
+const AdminIcon: FC<IconProps> = ({ size, style }) => (
+  <svg {...svg(size)} style={style}>
+    <path d="M4 6h10" />
+    <path d="M18 6h2" />
+    <circle cx="16" cy="6" r="2" />
+    <path d="M4 12h2" />
+    <path d="M10 12h10" />
+    <circle cx="8" cy="12" r="2" />
+    <path d="M4 18h10" />
+    <path d="M18 18h2" />
+    <circle cx="16" cy="18" r="2" />
+  </svg>
+);
+
 export const NAV_ICONS: Record<string, FC<IconProps>> = {
   home: HomeIcon,
   league: LeagueIcon,
   draft: MarketIcon,
   tournament: BracketIcon,
+  admin: AdminIcon,
 };

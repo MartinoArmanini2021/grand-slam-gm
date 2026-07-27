@@ -7,6 +7,8 @@ import TournamentPage from './pages/TournamentPage';
 import TeamPage from './pages/TeamPage';
 import LeaguePage from './pages/LeaguePage';
 import PlayerPage from './pages/PlayerPage';
+import AdminPage from './pages/AdminPage';
+import { isAdmin } from './data/admin';
 import Toaster from './components/Toaster';
 import HowToPlay from './components/HowToPlay';
 import Logo from './components/Logo';
@@ -29,12 +31,17 @@ const TABS = [
   { id: 'tournament', label: 'Bracket', accent: 'var(--ember)' },
 ] as const;
 
+// The operator's match-admin tab is appended only for admins (a local flag toggled
+// from the profile menu). Regular players never see it.
+const ADMIN_TAB = { id: 'admin', label: 'Admin', accent: 'var(--blue-light)' } as const;
+
 export default function App() {
   const { activeTab, setActiveTab, phase, myScore, currentRoundIndex, myTeam } = useGameStore();
   const currentRound = currentRoundIndex < ROUNDS.length ? ROUNDS[currentRoundIndex] : null;
   const [showRules, setShowRules] = useState(() => !seenRules());
   const [showProfile, setShowProfile] = useState(false);
   const { ready, user, guest } = useAuth();
+  const tabs = isAdmin() ? [...TABS, ADMIN_TAB] : TABS;
 
   const closeRules = () => { setShowRules(false); markSeen(); };
 
@@ -66,7 +73,7 @@ export default function App() {
             {/* Nav — icon + label per tab, distinct accent underline when active;
                 scrolls horizontally on very narrow screens so it never overflows */}
             <nav className="flex items-center gap-1 flex-1 min-w-0 overflow-x-auto no-scrollbar">
-              {TABS.map(tab => {
+              {tabs.map(tab => {
                 const active = activeTab === tab.id;
                 const Icon = NAV_ICONS[tab.id];
                 return (
@@ -158,6 +165,7 @@ export default function App() {
           {activeTab === 'league'     && <LeaguePage />}
           {activeTab === 'team'       && <TeamPage />}
           {activeTab === 'player'     && <PlayerPage />}
+          {activeTab === 'admin'      && <AdminPage />}
         </ErrorBoundary>
       </main>
 
