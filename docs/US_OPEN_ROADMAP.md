@@ -138,8 +138,27 @@ the US Open is then execution, not discovery.
   Masters draw (a different round count) now needs no engine edits. Kept the clean
   binary bracket — the US Open's 128-draw uses it perfectly; non-128 Masters draws
   get a simpler view later. 73/73 tests, incl. 4 config-derivation guards.
-  *Next in W1:* wire a real non-128 tournament's field + draw (W4) to exercise the
-  variable round count end-to-end, then the automated results feed (W3).
+- ✅ **Live mode built (W3 core) — the engine can now run a live tournament.** Four
+  reviewable increments, all tested (91/91):
+  1. **Registry + `replay`/`live` flag** — Wimbledon (replay) and the National Bank
+     Open 2026 (Montréal, hard, 96-draw → 6-round R64→F, live) coexist.
+  2. **Live results store + mode-aware engine** — the scoring engine reads a mode
+     branch: baked draw in replay, a store of results-as-they-arrive in live (same
+     tested code path). Elimination is derived from recorded losses; a round refuses
+     to score until the real world finishes it; **admin overrides beat the feed**.
+  3. **Admin match console** — an operator screen (admin-gated) to enter/correct each
+     winner; overrides badged. Verified live in the browser.
+  4. **Wikipedia auto-feed** — poll → parse → merge, overrides preserved. Validated
+     against the **real 2025 draw page**, which caught three issues before the event:
+     CORS (must use `api.php?…&origin=*`, not `index.php?action=raw`), the winner is
+     marked by `'''bold'''`, and identity must use the wikilink target (later-round
+     labels get abbreviated). All handled.
+- **Remaining before a live Montréal run (~Aug 1):**
+  - **W4 field** — the Montréal entry list as draftable players (deferred: the field
+    is volatile — Sinner/Djokovic/Alcaraz already out; the draw isn't out till ~Aug 1).
+  - **Feed assembly** — a 96-draw is 8×`{{16TeamBracket-…-Byes}}` sections + one
+    `{{8TeamBracket}}` finals; stitch those into R64→F and confirm the 2026 page title.
+  - Draft against the real field and run a round through the live pipeline.
 
 ---
 
