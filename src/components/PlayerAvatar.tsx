@@ -18,10 +18,11 @@ interface Props {
 const SIZE = { sm: 32, md: 40, lg: 56, xl: 96 } as const;
 const FONT = { sm: 11, md: 13, lg: 16, xl: 28 } as const;
 
-// Real ATP headshots (hotlinked from the master pool) are tried first, then the
-// illustrated icon, then an initials monogram — each falls back automatically on a
-// load error, so a blocked/missing photo never leaves a hole. A self-hosted
-// /public/avatars/{id}.png could be added ahead of the hotlink later if desired.
+// Avatar source order, each falling back automatically on a load error so a
+// missing/blocked image never leaves a hole:
+//   1. self-hosted /avatars/{id}.png (downloaded from ATP — see scripts/fetch-avatars.mjs)
+//   2. the ATP hotlink (covers any id we haven't downloaded yet)
+//   3. the illustrated icon, then an initials monogram.
 
 export default function PlayerAvatar({ playerId, name, size = 'md', className = '', ring = true, onClick }: Props) {
   const px = SIZE[size];
@@ -38,9 +39,10 @@ export default function PlayerAvatar({ playerId, name, size = 'md', className = 
     : { boxShadow: 'inset 0 0 0 1px rgba(10,27,51,0.14)' };
   const clickable = onClick ? { cursor: 'pointer' } : {};
 
+  const photo = photoUrlFor(playerId); // ATP hotlink; null if the id isn't in the pool
   const sources = [
-    photoUrlFor(playerId),  // real ATP headshot (hotlinked); null if not in the pool
-    getAvatarUri(playerId), // illustrated icon (data URI); may be null for unknown ids
+    ...(photo ? [`/avatars/${playerId}.png`, photo] : []), // self-hosted first, hotlink fallback
+    getAvatarUri(playerId),                                 // illustrated icon (data URI)
   ].filter(Boolean) as string[];
   const src = sources[stage] ?? null; // exhausted → initials monogram
 
