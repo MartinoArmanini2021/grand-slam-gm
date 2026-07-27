@@ -38,8 +38,8 @@ completed bracket; these are the gaps between that and a live US Open.
 |---|---|---|---|
 | **W1** | **Tournament-agnostic engine** — parameterize everything now hard-coded to "Wimbledon"/grass/128-draw; handle variable draw sizes & round counts (Masters ≠ Slam) | The lead-up events aren't 128-draws; the engine must run any of them | 2–3 days |
 | **W2** | **Surface-aware branding & court** — hard = US-Open blue, clay = orange, grass = green; drive the court SVG, accent, subtitle, and surface emphasis from the tournament config | The court is a green grass court today; US Open must *look* like the US Open | 1 day |
-| **W3** | **Live results pipeline** — advance rounds from *real* results as matches finish. MVP = an admin marks winners; stretch = automated feed (the `liveData.ts` TODO) | Results no longer come from a baked file — they happen live | 1–2 days (MVP) |
-| **W4** | **Per-tournament data** — field (players, ATP rank → price, surface %, seeds) + draw structure, for each event we run | Every tournament needs its own field & bracket shell | ~½ day per event |
+| **W3** | **Live results pipeline** — **automated** feed (API/scraping via the `liveData.ts` seam) that advances rounds as matches finish, **plus an admin edit/override** to correct any bad scrape | Results no longer come from a baked file — they happen live, and a wrong result must be fixable | 2–3 days |
+| **W4** | **Per-tournament data** — the **full participant list** for each event (every player, ATP rank → price, surface %, seeds) + the draw structure | Every tournament needs its complete field & bracket | ~1 day per event |
 | **W5** | **Backend + multiplayer** (Supabase) — real accounts, cloud-stored squads, a shared league. Full plan already in [`GO_LIVE.md`](GO_LIVE.md) | Friends must see each other's squads & scores | 3–4 days |
 | **W6** | **Deploy** — Cloudflare Pages + custom domain + env/redirect config | A shareable link; needed even to hand the trial to a remote friend | ½ day |
 | **W7** | **Prod-readiness** — Resend SMTP for emails, forgot-password, privacy/terms, account deletion (GDPR, you're in the EU) | Required before real people sign up | 1 day |
@@ -111,22 +111,28 @@ the US Open is then execution, not discovery.
 
 ---
 
-## Decisions to make now (they shape Phase 0)
+## Decisions (locked)
 
-1. **Live results source.** Manual admin entry (reliable, a few minutes/round of work)
-   vs an automated feed (the `liveData.ts` Wikipedia parser, or a paid API).
-   **Recommendation:** manual entry for the MVP — it's robust and removes a scraping
-   dependency during your highest-stakes weeks. Automate *after* the US Open.
-2. **Draft field size.** Full 128-draw vs a curated top-N (as today, ~52).
-   **Recommendation:** curated for the lead-ups (fast to prepare, easy to reason about);
-   decide on 128 for the US Open once the pipeline is proven.
+1. **Live results → AUTOMATED (API/scraping), with an admin edit/override.** The feed
+   pulls results via the `liveData.ts` seam; an override lets us correct a bad scrape.
+   No manual entry as the primary path. Raises W3 to 2–3 days and adds a data-source
+   dependency to de-risk hard during Phase 1.
+2. **Field size → the FULL participant list per tournament** (128 for a Slam; the
+   Masters draws for the lead-ups). Every player's rank/price/surface stats, not a
+   curated subset — a bigger data task per event (W4 ≈ 1 day each).
 3. **Draw-size variation.** Masters events (Canada/Cincinnati) aren't 128-draws with
-   7 rounds. **W1 must make round count / draw size configurable** — this is the single
-   most important abstraction, and testing on the Masters events forces us to get it
-   right before the Slam.
-4. **Scoring integrity for the public board.** With real users competing, scores must
-   be server-authoritative (client can't self-report). Build this into **W5** — see
-   `GO_LIVE.md` §3.3.
+   7 rounds. **W1 must make round count / draw size configurable** — the single most
+   important abstraction; testing on the Masters events forces us to get it right
+   before the Slam.
+4. **Scoring integrity → SERVER-AUTHORITATIVE.** Scores are computed/stored on the
+   server; the client can't self-report. Built into **W5** — see `GO_LIVE.md` §3.3.
+
+## Progress
+- ✅ **W1/W2 foundation shipped** — `tournamentConfig.ts` drives the app's identity and
+  a per-surface theme. Flipping the active tournament re-skins the branding and the
+  signature court graphic (grass → hard = US-Open blue) with no component edits.
+  *Next in W1:* make draw size / round count configurable (so the engine runs the
+  Masters draws), then the full field (W4) and the automated results feed (W3).
 
 ---
 

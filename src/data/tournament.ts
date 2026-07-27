@@ -2,15 +2,7 @@ import type { Match, RoundId, TournamentResult } from '../types';
 import { findPlayer, PLAYERS } from './players';
 import { WIMBLEDON_2026, WIMBLEDON_2026_EARLY } from './wimbledon2026';
 
-export const TOURNAMENT = {
-  id: 'wimbledon_2026',
-  name: 'Wimbledon',
-  location: 'London, UK',
-  surface: 'grass' as const,
-  year: 2026,
-  startDate: 'Jun 29',
-  endDate: 'Jul 13',
-};
+// Tournament identity + per-surface theming now live in ./tournamentConfig.
 
 export const ROUNDS: { id: RoundId; label: string; short: string; points: number }[] = [
   { id: 'R128', label: 'Round of 128', short: 'R128', points: 1 },

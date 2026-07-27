@@ -3,6 +3,7 @@ import { useGameStore, substitutionCandidates } from '../store/gameStore';
 import { findPlayer } from '../data/players';
 import { getPlayerExit, isPlayerOut, ROUNDS, transfersOpen } from '../data/tournament';
 import { lastName } from '../data/format';
+import { SURFACE } from '../data/tournamentConfig';
 import { useEscapeToClose } from '../hooks';
 import PlayerAvatar from './PlayerAvatar';
 import PlayerPickerModal from './PlayerPickerModal';
@@ -37,19 +38,20 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
   return (
     <>
       <div className="relative w-full mx-auto rounded-2xl overflow-hidden select-none" style={{ aspectRatio: '16 / 9', maxWidth: fluid ? undefined : 860, boxShadow: '0 10px 34px rgba(10,27,51,0.22)' }}>
-        {/* Stadium + grass court (horizontal) */}
+        {/* Stadium + court (horizontal). Colours come from the active tournament's
+            surface theme, so the court re-skins per tournament (grass/hard/clay). */}
         <svg viewBox="0 0 640 360" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
           <defs>
             <linearGradient id="stand" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#123420" />
-              <stop offset="1" stopColor="#0c2417" />
+              <stop offset="0" stopColor={SURFACE.court.standTop} />
+              <stop offset="1" stopColor={SURFACE.court.standBottom} />
             </linearGradient>
           </defs>
 
           {/* Stands (stadium bowl) — concentric bands, lighter toward the court */}
           <rect x="0" y="0" width="640" height="360" fill="url(#stand)" />
-          <rect x="22" y="22" width="596" height="316" rx="14" fill="#163d25" />
-          <rect x="40" y="40" width="560" height="280" rx="10" fill="#1b4a2d" />
+          <rect x="22" y="22" width="596" height="316" rx="14" fill={SURFACE.court.band1} />
+          <rect x="40" y="40" width="560" height="280" rx="10" fill={SURFACE.court.band2} />
           {/* crowd speckle in the four stand bands */}
           {Array.from({ length: 160 }).map((_, i) => {
             const edge = i % 4;
@@ -60,17 +62,17 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
             else if (edge === 1) { cx = 30 + t * 580; cy = 326 + row * 9; }    // bottom
             else if (edge === 2) { cx = 6 + row * 11; cy = 30 + t * 300; }     // left
             else { cx = 606 + row * 11; cy = 30 + t * 300; }                   // right
-            return <circle key={i} cx={cx} cy={cy} r="1.6" fill={i % 2 ? '#dfe6d8' : '#9fb6a0'} opacity="0.5" />;
+            return <circle key={i} cx={cx} cy={cy} r="1.6" fill={i % 2 ? SURFACE.court.crowdLight : SURFACE.court.crowdDark} opacity="0.5" />;
           })}
 
-          {/* Grass court, inset (leaves the stand margin visible) */}
+          {/* Playing surface, inset (leaves the stand margin visible) */}
           <g>
-            {/* mow stripes (vertical bands) */}
+            {/* surface stripes (vertical bands) */}
             {Array.from({ length: 13 }).map((_, i) => (
-              <rect key={i} x={60 + i * 40} y="60" width="40" height="240" fill={i % 2 ? '#3f8347' : '#367038'} />
+              <rect key={i} x={60 + i * 40} y="60" width="40" height="240" fill={i % 2 ? SURFACE.court.stripeA : SURFACE.court.stripeB} />
             ))}
             {/* court lines */}
-            <g stroke="#ffffff" strokeOpacity="0.94" strokeWidth="2" fill="none">
+            <g stroke={SURFACE.court.line} strokeOpacity="0.94" strokeWidth="2" fill="none">
               <rect x="60" y="60" width="520" height="240" />       {/* doubles */}
               <line x1="60" y1="90" x2="580" y2="90" />              {/* top singles sideline */}
               <line x1="60" y1="270" x2="580" y2="270" />           {/* bottom singles sideline */}
@@ -79,8 +81,8 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
               <line x1="180" y1="180" x2="460" y2="180" />          {/* centre service line */}
             </g>
             {/* net (vertical, centre) */}
-            <line x1="320" y1="52" x2="320" y2="308" stroke="#eef4f0" strokeWidth="4" strokeOpacity="0.96" />
-            <line x1="320" y1="52" x2="320" y2="308" stroke="#0a1f44" strokeWidth="1" strokeOpacity="0.22" strokeDasharray="3 3" />
+            <line x1="320" y1="52" x2="320" y2="308" stroke={SURFACE.court.net} strokeWidth="4" strokeOpacity="0.96" />
+            <line x1="320" y1="52" x2="320" y2="308" stroke={SURFACE.court.netShadow} strokeWidth="1" strokeOpacity="0.22" strokeDasharray="3 3" />
           </g>
         </svg>
 

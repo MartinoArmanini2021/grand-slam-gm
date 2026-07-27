@@ -2,6 +2,7 @@ import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { ROUNDS, isPlayerOut } from '../data/tournament';
 import { isSquadValid, SQUAD_SIZE } from '../data/squadRules';
+import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
 import { onActivate } from '../hooks';
 import { useLeagueBoard } from '../data/leagueBoard';
 import SquadCourt from '../components/SquadCourt';
@@ -34,8 +35,8 @@ export default function HomePage() {
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
         <div className="min-w-0">
           <div className="flex items-baseline gap-x-3 gap-y-1 flex-wrap">
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-none" style={{ color: 'var(--ink)' }}>Wimbledon 2026</h1>
-            <span className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: 'var(--green)' }}>Grand Slam · Grass</span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-none" style={{ color: 'var(--ink)' }}>{TOURNAMENT.edition}</h1>
+            <span className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: SURFACE.accent }}>Grand Slam · {SURFACE.label}</span>
           </div>
           <div className="text-xs font-bold uppercase tracking-[0.2em] mt-1.5" style={{ color: 'var(--ember)' }}>
             {courtStatus(phase, currentRound, ROUNDS[currentRoundIndex - 1]?.short)}
