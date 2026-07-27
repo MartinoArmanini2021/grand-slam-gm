@@ -72,6 +72,14 @@ export const SURFACE_THEME: Record<Surface, SurfaceTheme> = {
   },
 };
 
+// How the app runs a tournament:
+//  • 'replay' — the whole draw is known and baked in; the app plays back completed
+//    results with no spoilers (Wimbledon 2026 — a finished event).
+//  • 'live'   — results don't exist yet; they arrive round by round from a feed
+//    (Wikipedia poll) with an admin override. The engine is the same; only the
+//    source of results and the gating on "can this round be played" differ.
+export type TournamentMode = 'replay' | 'live';
+
 export interface Tournament {
   id: string;
   name: string;      // "Wimbledon"
@@ -81,20 +89,45 @@ export interface Tournament {
   location: string;
   drawSize: number;  // 128 for a Slam; Masters draws differ
   rounds: RoundId[]; // the ordered rounds this tournament plays & scores
+  mode: TournamentMode;
 }
 
-// The tournament the app is currently running. Change this object (and add the
-// field + bracket data for it) to point the whole app at a new tournament.
-export const TOURNAMENT: Tournament = {
-  id: 'wimbledon_2026',
-  name: 'Wimbledon',
-  edition: 'Wimbledon 2026',
-  year: 2026,
-  surface: 'grass',
-  location: 'London, UK',
-  drawSize: 128,
-  rounds: ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'],
+// Every tournament the app knows about. One is active at a time (ACTIVE_TOURNAMENT_ID);
+// the rest are staged, ready to switch to once their field + data are wired.
+export const TOURNAMENTS: Record<string, Tournament> = {
+  wimbledon_2026: {
+    id: 'wimbledon_2026',
+    name: 'Wimbledon',
+    edition: 'Wimbledon 2026',
+    year: 2026,
+    surface: 'grass',
+    location: 'London, UK',
+    drawSize: 128,
+    rounds: ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'],
+    mode: 'replay',
+  },
+  // National Bank Open 2026 (men's) — Montréal, IGA Stadium, Aug 1–13. The new
+  // 12-day, 96-player Masters format: the top 32 seeds get first-round byes, so for
+  // our roster of top players the scored draw is a clean 6-round R64 → Final (the 32
+  // opening qualifier matches sit below where any drafted player enters). This is a
+  // LIVE event — results arrive as it's played (see the live-results feed).
+  canada_2026: {
+    id: 'canada_2026',
+    name: 'National Bank Open',
+    edition: 'National Bank Open 2026',
+    year: 2026,
+    surface: 'hard',
+    location: 'Montréal, Canada',
+    drawSize: 96,
+    rounds: ['R64', 'R32', 'R16', 'QF', 'SF', 'F'],
+    mode: 'live',
+  },
 };
+
+// The tournament the app is currently running. Switch this id (once the target's
+// field + data are wired) to point the whole app at a different tournament.
+export const ACTIVE_TOURNAMENT_ID = 'wimbledon_2026';
+export const TOURNAMENT: Tournament = TOURNAMENTS[ACTIVE_TOURNAMENT_ID];
 
 // Convenience: the active surface's theme.
 export const SURFACE: SurfaceTheme = SURFACE_THEME[TOURNAMENT.surface];
