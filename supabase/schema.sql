@@ -61,6 +61,17 @@ alter table public.profiles enable row level security;
 alter table public.leagues  enable row level security;
 alter table public.entries  enable row level security;
 
+-- The leagues you belong to. SECURITY DEFINER so it reads entries WITHOUT invoking
+-- RLS again — the entries/leagues read policies below use it, and referencing
+-- entries directly inside their own policy would recurse infinitely (Postgres 42P17).
+create or replace function public.my_league_ids()
+returns setof uuid
+language sql security definer stable
+set search_path = public as $$
+  select league_id from public.entries
+  where user_id = auth.uid() and league_id is not null
+$$;
+
 -- Profiles: anyone signed in can READ (to show names/emblems on the board); a user
 -- may only write their own row.
 drop policy if exists "profiles readable" on public.profiles;
@@ -78,8 +89,8 @@ create policy "own profile update" on public.profiles
 drop policy if exists "league entries readable" on public.entries;
 create policy "league entries readable" on public.entries
   for select to authenticated using (
-    league_id is null
-    or league_id in (select league_id from public.entries where user_id = auth.uid())
+    user_id = auth.uid()                          -- always your own entries
+    or league_id in (select public.my_league_ids())
   );
 drop policy if exists "own entry insert" on public.entries;
 create policy "own entry insert" on public.entries
@@ -98,7 +109,7 @@ drop policy if exists "leagues readable" on public.leagues;
 create policy "leagues readable" on public.leagues
   for select to authenticated using (
     is_public
-    or id in (select league_id from public.entries where user_id = auth.uid())
+    or id in (select public.my_league_ids())
   );
 drop policy if exists "create league" on public.leagues;
 create policy "create league" on public.leagues
