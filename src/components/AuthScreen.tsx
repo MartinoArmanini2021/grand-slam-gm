@@ -39,8 +39,8 @@ export default function AuthScreen() {
   } as const;
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'linear-gradient(150deg,var(--ink) 0%,var(--navy-2) 55%,#0e2a52 100%)' }}>
-      <div className="w-full" style={{ maxWidth: 400 }}>
+    <div className="min-h-[100dvh] flex items-center justify-center px-4 py-6 overflow-y-auto" style={{ background: 'linear-gradient(150deg,var(--ink) 0%,var(--navy-2) 55%,#0e2a52 100%)' }}>
+      <div className="w-full my-auto" style={{ maxWidth: 400 }}>
         <div className="flex justify-center mb-6"><Logo height={40} reversed /></div>
 
         <div className="rounded-2xl p-6 fade-in" style={{ background: '#FFFFFF', boxShadow: '0 20px 60px rgba(0,0,0,0.35)' }}>

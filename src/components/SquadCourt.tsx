@@ -37,11 +37,14 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
   useEscapeToClose(() => { setManageId(null); setSubFor(null); }, !!(manageId || subFor));
   const C = SURFACE.court; // stands / apron (outside court) / surface (inside court)
 
-  // Two leaders stand ON the court; everyone else fills the bench below it.
-  const bench = team.filter(id => id !== cap && id !== vice);
+  // Everything is ordered by tier: Platinum → Gold → Silver (i.e. best rank first).
+  const byRank = (ids: string[]) => [...ids].sort((a, b) => (findPlayer(a)?.ranking ?? 9999) - (findPlayer(b)?.ranking ?? 9999));
+  // Two leaders stand ON the court (at the baselines); everyone else fills the bench.
+  const bench = byRank(team.filter(id => id !== cap && id !== vice));
+  const benchTop = bench[0]; // best-ranked bench player — promoted when a leader steps down
   const LEADERS: { id: string | undefined; role: 'C' | 'V'; x: number }[] = [
-    { id: cap, role: 'C', x: 31 },
-    { id: vice, role: 'V', x: 69 },
+    { id: cap, role: 'C', x: 20 },  // captain — left baseline
+    { id: vice, role: 'V', x: 80 }, // vice — right baseline
   ];
   const emptyBench = Math.max(0, SQUAD_SIZE - team.length); // add-slots shown during the draft
 
@@ -112,14 +115,16 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
             <circle cx="320" cy="286" r="3.2" fill={C.net} />
           </g>
 
-          {/* Umpire's chair — beside the net, up in the apron (outside court) */}
-          <g stroke={C.line} strokeOpacity="0.9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none">
-            <path d="M312 72 L318 50 M328 72 L322 50" />                    {/* splayed legs */}
-            <line x1="314" y1="63" x2="326" y2="63" />                      {/* footrest */}
-            <rect x="309" y="44" width="22" height="6" rx="1.5" fill={C.apron} />  {/* seat */}
-            <line x1="311" y1="44" x2="311" y2="35" />                      {/* backrest */}
-            <line x1="331" y1="47" x2="335" y2="47" />                      {/* umpire's desk */}
+          {/* Umpire's chair — clean filled silhouette in the apron above the net */}
+          <g fill="#0b2036" fillOpacity="0.92">
+            <rect x="305" y="30" width="30" height="3.6" rx="1.8" />        {/* sun canopy */}
+            <rect x="318.4" y="33" width="3.2" height="8" />                {/* mast */}
+            <rect x="311" y="40" width="4" height="13" rx="1" />           {/* backrest */}
+            <rect x="311" y="49" width="18" height="3.6" rx="1" />         {/* seat */}
+            <rect x="313" y="62.5" width="14" height="2.6" rx="1.2" />     {/* footrest */}
           </g>
+          <path d="M313 53 L316 73 M327 53 L323 73" stroke="#0b2036" strokeOpacity="0.92" strokeWidth="2.6" strokeLinecap="round" /> {/* A-frame legs */}
+          <path d="M311 40 h4 M311 49 h18" stroke="#eef4f0" strokeOpacity="0.22" strokeWidth="0.9" /> {/* crisp edge highlight */}
         </svg>
 
         {/* Team identity — logo + name, top-left (links to your team page) */}
@@ -144,12 +149,18 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
           const label = isC ? 'Captain' : 'Vice';
           if (!id) {
             return (
-              <div key={role} className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-none" style={{ left: `${x}%`, top: '50%' }}>
+              <button
+                key={role}
+                onClick={() => canEdit && setPickerOpen(true)}
+                disabled={!canEdit}
+                className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center"
+                style={{ left: `${x}%`, top: '50%', cursor: canEdit ? 'pointer' : 'default' }}
+              >
                 <div className="rounded-full flex items-center justify-center" style={{ width: LEADER_SIZE, height: LEADER_SIZE, background: 'rgba(12,26,46,0.38)', border: `2px dashed ${badgeColor}` }}>
                   <span style={{ color: badgeColor, fontWeight: 800, fontSize: 'clamp(11px,4cqh,15px)' }}>{role}</span>
                 </div>
                 <span className="mt-1 text-[9px] font-bold uppercase tracking-wide" style={{ color: '#fff', opacity: 0.85 }}>{label}</span>
-              </div>
+              </button>
             );
           }
           const p = findPlayer(id);
@@ -264,6 +275,13 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
                         className="w-full text-left px-3 py-3 rounded-xl text-sm font-bold flex items-center gap-2.5 transition-colors hover:bg-black/5"
                         style={{ color: 'var(--ink)' }}
                       >🥈 Make Vice-Captain <span className="font-num text-xs" style={{ color: '#5a7ba5' }}>×1.5</span></button>
+                    )}
+                    {(captain === id || viceCaptain === id) && benchTop && (
+                      <button
+                        onClick={() => { if (captain === id) setCaptain(benchTop); else setViceCaptain(benchTop); setManageId(null); }}
+                        className="w-full text-left px-3 py-3 rounded-xl text-sm font-bold flex items-center gap-2.5 transition-colors hover:bg-black/5"
+                        style={{ color: 'var(--ink-2)' }}
+                      >⬇️ Move to bench</button>
                     )}
                     <div className="my-1 h-px" style={{ background: 'rgba(10,27,51,0.08)' }} />
                   </>

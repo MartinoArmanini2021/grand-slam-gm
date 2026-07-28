@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { getPlayer } from '../data/players';
+import { getTier, TIER_META, TIER_ORDER, type Tier } from '../data/tiers';
+import { nickOf } from '../data/nicknames';
 import { useLeagueBoard, useMyLeagues, type BoardEntry } from '../data/leagueBoard';
 import { lastName } from '../data/format';
 import { ROUNDS, isPlayerOut, getPlayerExit } from '../data/tournament';
@@ -33,7 +35,73 @@ function Standings({ rows, revealed }: { rows: BoardEntry[]; revealed: RoundId[]
     return <div className="rounded-2xl px-5 py-8 text-center text-sm" style={{ background: '#fff', border: '1px solid rgba(10,27,51,0.08)', color: 'var(--ink-3)' }}>No squads here yet — draft yours, and invite friends with the code above.</div>;
   }
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.08)' }}>
+    <>
+    {/* Mobile: a card per manager, squad grouped by tier (Platinum → Gold → Silver) */}
+    <div className="lg:hidden space-y-3">
+      {rows.map((row, i) => (
+        <div
+          key={row.id}
+          onClick={() => openTeam(row.id)}
+          role="button" tabIndex={0} onKeyDown={onActivate(() => openTeam(row.id))}
+          className="rounded-2xl p-3 cursor-pointer"
+          style={{ background: '#fff', border: `1px solid ${row.you ? 'rgba(14,111,196,0.35)' : 'rgba(10,27,51,0.08)'}` }}
+        >
+          <div className="flex items-center gap-2.5">
+            <RankBadge i={i} />
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0" style={{ background: `${row.color}1a`, border: `1px solid ${row.color}55` }}>{row.emblem}</div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-sm truncate" style={{ color: 'var(--ink)' }}>{row.name}</span>
+                {row.you && <span className="text-[9px] font-bold px-1 py-0.5 rounded shrink-0" style={{ background: 'var(--blue)', color: '#fff' }}>YOU</span>}
+              </div>
+              <div className="text-[11px] truncate" style={{ color: 'var(--ink-3)' }}>{row.motto || row.manager}</div>
+            </div>
+            <div className="text-right shrink-0">
+              <div className="font-num text-xl font-extrabold leading-none" style={{ color: 'var(--blue)' }}>{row.score}</div>
+              <div className="font-num text-[10px]" style={{ color: 'var(--green)' }}>${row.budget.toFixed(1)}M</div>
+            </div>
+          </div>
+          {row.squad.length === 0 ? (
+            <div className="text-[11px] italic mt-2" style={{ color: 'var(--ink-3)' }}>No squad yet</div>
+          ) : (
+            <div className="mt-2.5 space-y-1.5">
+              {TIER_ORDER.map(tier => {
+                const players = row.squad
+                  .filter(id => getTier(getPlayer(id).ranking) === tier)
+                  .sort((a, b) => getPlayer(a).ranking - getPlayer(b).ranking);
+                if (players.length === 0) return null;
+                return (
+                  <div key={tier} className="flex items-start gap-1.5">
+                    <span className="text-[9px] font-bold uppercase tracking-wide shrink-0 w-14 pt-1.5" style={{ color: TIER_META[tier as Tier].color }}>{tier}</span>
+                    <div className="flex flex-wrap gap-1">
+                      {players.map(id => {
+                        const p = getPlayer(id);
+                        const out = isPlayerOut(id, revealed);
+                        const nick = nickOf(id);
+                        return (
+                          <span key={id} role="button" tabIndex={0}
+                            onClick={e => { e.stopPropagation(); openPlayer(id); }} onKeyDown={onActivate(() => openPlayer(id))}
+                            className="inline-flex items-center gap-1 pl-0.5 pr-1.5 py-0.5 rounded-full cursor-pointer"
+                            style={{ background: out ? 'rgba(229,71,43,0.08)' : 'rgba(18,161,80,0.08)', border: `1px solid ${out ? 'rgba(229,71,43,0.22)' : 'rgba(18,161,80,0.22)'}`, opacity: out ? 0.7 : 1 }}
+                            title={out ? `Out — ${getPlayerExit(id)}` : 'Still in'}>
+                            <PlayerAvatar playerId={id} name={p.name} size="sm" />
+                            <span className="text-[11px] leading-none" style={{ marginRight: 1 }}>{p.flag}</span>
+                            <span className="text-[11px] font-semibold leading-none" style={{ color: out ? 'var(--ink-3)' : 'var(--ink)', textDecoration: out ? 'line-through' : 'none' }}>{nick ?? lastName(p.name)}</span>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+
+    {/* Desktop: the full standings table */}
+    <div className="rounded-2xl overflow-hidden hidden lg:block" style={{ border: '1px solid rgba(10,27,51,0.08)' }}>
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse bg-white">
           <thead>
@@ -71,7 +139,7 @@ function Standings({ rows, revealed }: { rows: BoardEntry[]; revealed: RoundId[]
                 </td>
                 <td className="px-2 py-2.5">
                   <div className="flex flex-wrap gap-1.5" style={{ minWidth: 200 }}>
-                    {row.squad.map(id => {
+                    {[...row.squad].sort((a, b) => getPlayer(a).ranking - getPlayer(b).ranking).map(id => {
                       const out = isPlayerOut(id, revealed);
                       return (
                         <span key={id} role="button" tabIndex={0}
@@ -96,6 +164,7 @@ function Standings({ rows, revealed }: { rows: BoardEntry[]; revealed: RoundId[]
         </table>
       </div>
     </div>
+    </>
   );
 }
 

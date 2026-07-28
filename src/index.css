@@ -31,7 +31,7 @@
 
 * { box-sizing: border-box; }
 
-body {
+html, body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
@@ -39,9 +39,12 @@ body {
   font-feature-settings: 'cv11', 'ss01';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Mobile precision: never allow horizontal overflow / sideways scroll. */
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
-#root { min-height: 100svh; }
+#root { min-height: 100svh; overflow-x: hidden; }
 
 /* Brand display type for headings */
 h1, h2 {

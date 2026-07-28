@@ -241,7 +241,7 @@ export default function DraftPage() {
               {myTeam.length === 0 && (
                 <div className="text-center py-6 text-sm" style={{ color: 'var(--ink-3)' }}>Pick {TEAM_SIZE} players</div>
               )}
-              {myTeam.map(id => {
+              {[...myTeam].sort((a, b) => getPlayer(a).ranking - getPlayer(b).ranking).map(id => {
                 const p = getPlayer(id);
                 const isCap = captain === id;
                 const isVice = viceCaptain === id;

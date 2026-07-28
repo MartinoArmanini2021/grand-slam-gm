@@ -11,6 +11,22 @@ import { round1 } from '../data/format';
 const CAPTAIN_MULTIPLIER = 2;   // captain doubles their round points
 const VICE_MULTIPLIER = 1.5;    // vice-captain earns 1.5× their round points
 
+// Ensure two distinct on-court leaders: keep any valid current pick, then fill an
+// empty slot with the best-ranked still-alive squad member (Platinum first). This
+// guarantees the court always fields a captain + vice when the squad has ≥2 players,
+// so it's always 2 on court + the rest on the bench.
+function pickLeaders(team: string[], captain: string | null, vice: string | null, revealed: RoundId[]) {
+  const valid = (id: string | null): id is string => !!id && team.includes(id);
+  let cap = valid(captain) ? captain : null;
+  let vc = valid(vice) && vice !== cap ? vice : null;
+  const byRank = team
+    .filter(id => !isPlayerOut(id, revealed))
+    .sort((a, b) => (findPlayer(a)?.ranking ?? 9999) - (findPlayer(b)?.ranking ?? 9999));
+  if (!cap) cap = byRank.find(id => id !== vc) ?? null;
+  if (!vc) vc = byRank.find(id => id !== cap) ?? null;
+  return { captain: cap, viceCaptain: vc };
+}
+
 interface GameStore {
   phase: GamePhase;
   myTeam: string[];
@@ -34,6 +50,7 @@ interface GameStore {
   removePlayer: (id: string) => void;
   setCaptain: (id: string) => void;
   setViceCaptain: (id: string) => void;
+  ensureLeaders: () => void;
   finalizeDraft: () => void;
   replacePlayer: (oldId: string, newId: string) => void;
   playNextRound: () => void;
@@ -66,14 +83,15 @@ export const useGameStore = create<GameStore>()(
       playerReturnTab: 'home',
 
       addPlayer: (id) => {
-        const { myTeam, budget, phase } = get();
+        const { myTeam, budget, phase, captain, viceCaptain } = get();
         if (phase !== 'draft') return; // squad is locked after the draft — use transfers
         if (myTeam.length >= SQUAD_SIZE) return;
         if (myTeam.includes(id)) return;
         const player = findPlayer(id);
         if (!player || budget < player.price) return;
         if (isPlayerOut(id, [])) return; // never draft an already-out (e.g. DNS) player — they'd never be refundable
-        set({ myTeam: [...myTeam, id], budget: budget - player.price });
+        const newTeam = [...myTeam, id];
+        set({ myTeam: newTeam, budget: budget - player.price, ...pickLeaders(newTeam, captain, viceCaptain, []) });
       },
 
       removePlayer: (id) => {
@@ -81,34 +99,46 @@ export const useGameStore = create<GameStore>()(
         if (phase !== 'draft') return; // squad is locked after the draft
         const player = findPlayer(id);
         if (!player) return;
+        const newTeam = myTeam.filter(pid => pid !== id);
         set({
-          myTeam: myTeam.filter(pid => pid !== id),
+          myTeam: newTeam,
           budget: budget + player.price,
-          captain: captain === id ? null : captain,
-          viceCaptain: viceCaptain === id ? null : viceCaptain,
+          // clear the removed player from a leader slot, then re-field two leaders
+          ...pickLeaders(newTeam, captain === id ? null : captain, viceCaptain === id ? null : viceCaptain, []),
         });
       },
 
       setCaptain: (id) => {
-        const { myTeam, viceCaptain, currentRoundIndex, phase } = get();
+        const { myTeam, captain, viceCaptain, currentRoundIndex, phase } = get();
         // Captaining only makes sense while choosing a squad or a round's captain.
         if (phase !== 'draft' && phase !== 'pre_round') return;
         if (!myTeam.includes(id)) return;
         // An eliminated player can't captain (guards callers that don't pre-filter).
         const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
         if (isPlayerOut(id, revealed)) return;
-        // Captain and vice must be distinct — promoting your vice frees the vice slot.
-        set({ captain: id, viceCaptain: viceCaptain === id ? null : viceCaptain });
+        if (id === captain) return;
+        // Promoting your vice swaps the two roles; a bench player drops the old captain
+        // to the bench. Either way there are still exactly two on-court leaders.
+        set({ captain: id, viceCaptain: id === viceCaptain ? captain : viceCaptain });
       },
 
       setViceCaptain: (id) => {
-        const { myTeam, captain, currentRoundIndex, phase } = get();
+        const { myTeam, captain, viceCaptain, currentRoundIndex, phase } = get();
         if (phase !== 'draft' && phase !== 'pre_round') return;
         if (!myTeam.includes(id)) return;
-        if (id === captain) return; // can't be both captain and vice
         const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
         if (isPlayerOut(id, revealed)) return;
-        set({ viceCaptain: id });
+        if (id === viceCaptain) return;
+        set({ viceCaptain: id, captain: id === captain ? viceCaptain : captain });
+      },
+
+      // Re-field two on-court leaders after a state restore (cloud / localStorage),
+      // so a squad hydrated from an older save always shows a captain + vice.
+      ensureLeaders: () => {
+        const { myTeam, captain, viceCaptain, currentRoundIndex, phase } = get();
+        if (phase !== 'draft' && phase !== 'pre_round') return;
+        const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
+        set(pickLeaders(myTeam, captain, viceCaptain, revealed));
       },
 
       finalizeDraft: () => {
@@ -119,13 +149,8 @@ export const useGameStore = create<GameStore>()(
         // permissive so unit tests can lock a small squad to isolate scoring; no
         // production caller ever passes an illegal squad.
         if (myTeam.length === 0) return;
-        // Default captain + vice to the first two NON-eliminated members (distinct),
-        // so a freshly-locked squad already fields two on-court leaders.
-        const alive = myTeam.filter(id => !isPlayerOut(id, []));
-        const defaultCaptain = captain ?? alive[0] ?? myTeam[0];
-        const defaultVice = viceCaptain ?? alive.find(id => id !== defaultCaptain) ?? null;
-        // Snapshot the drafted squad so the transfer history can show who you signed.
-        set({ phase: 'pre_round', captain: defaultCaptain, viceCaptain: defaultVice, initialSquad: [...myTeam] });
+        // Snapshot the drafted squad; keep the two leaders (they're kept defaulted).
+        set({ phase: 'pre_round', ...pickLeaders(myTeam, captain, viceCaptain, []), initialSquad: [...myTeam] });
       },
 
       // Mid-tournament substitution: swap an eliminated squad member for a
@@ -230,11 +255,10 @@ export const useGameStore = create<GameStore>()(
       continueToNextRound: () => {
         const { phase, myTeam, currentRoundIndex } = get();
         if (phase !== 'round_complete') return;
-        // Re-field two captains by default (first two still-alive members) so a
+        // Re-field two leaders by default (best-ranked still-alive members) so a
         // manager who doesn't touch the captaincy still gets ×2 / ×1.5 each round.
         const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
-        const alive = myTeam.filter(id => !isPlayerOut(id, revealed));
-        set({ phase: 'pre_round', captain: alive[0] ?? null, viceCaptain: alive[1] ?? null });
+        set({ phase: 'pre_round', ...pickLeaders(myTeam, null, null, revealed) });
       },
 
       setActiveTab: (tab) => set({ activeTab: tab }),
@@ -321,6 +345,12 @@ export const useGameStore = create<GameStore>()(
         if (Array.isArray(state.budgetReturns)) state.budgetReturns = state.budgetReturns.filter(r => ids.has(r.playerId));
         if (Array.isArray(state.captainHistory)) state.captainHistory = state.captainHistory.filter(c => ids.has(c.playerId));
         if (Array.isArray(state.viceCaptainHistory)) state.viceCaptainHistory = state.viceCaptainHistory.filter(c => ids.has(c.playerId));
+        // Re-field two on-court leaders (older saves may have one or none).
+        if ((state.phase === 'draft' || state.phase === 'pre_round') && Array.isArray(state.myTeam)) {
+          const revealed = ROUNDS.slice(0, state.currentRoundIndex ?? 0).map(r => r.id);
+          const led = pickLeaders(state.myTeam, state.captain ?? null, state.viceCaptain ?? null, revealed);
+          state.captain = led.captain; state.viceCaptain = led.viceCaptain;
+        }
       },
     }
   )

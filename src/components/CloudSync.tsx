@@ -118,6 +118,7 @@ export default function CloudSync() {
           const spent = st.myTeam.reduce((sum, id) => sum + (findPlayer(id)?.price ?? 0), 0);
           useGameStore.setState({ budget: round1(STARTING_BUDGET - spent) });
         }
+        useGameStore.getState().ensureLeaders(); // always field two on-court leaders
       } else if (useGameStore.getState().myTeam.length > 0) {
         await saveEntry(user.id, lid, TOURNAMENT.id, gameSnapshot()); // first push-up
       }
