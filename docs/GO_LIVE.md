@@ -435,8 +435,9 @@ layer. Auth, hosting, and email are hours, not days.
 Scores are computed on the server so the leaderboard number can't be self-reported.
 
 **Pieces**
-- `supabase/server_scoring.sql` — `matches` + `player_stats` tables and a trigger that
-  locks `entries.score` to the service role.
+- `supabase/server_scoring.sql` — `matches` + `player_stats` tables. (`entries.score` is
+  already locked to the server by `add_entry_state.sql`'s `revoke (score) from
+  authenticated`, and the client's `saveEntry` never writes score — so no trigger needed.)
 - `supabase/functions/recompute-score/index.ts` — the Edge Function (service role) that
   recomputes every entry from `public.matches`; the *only* writer of `entries.score`.
 - `src/scoring/serverEngine.ts` — the pure scoring math the function mirrors. A parity
@@ -457,10 +458,29 @@ Scores are computed on the server so the leaderboard number can't be self-report
    a webhook) to run after each results update.
 
 **Why it's cheat-proof**
-- The trigger blocks client writes to `entries.score` (clients can still PATCH their squad `state`).
+- `revoke (score) from authenticated` blocks client writes to `entries.score` (clients can
+  still save their squad `state`).
 - The function credits a win **only if the result exists in `public.matches`**, so nobody
   can score a round the tournament hasn't played; `playedRounds` is derived from the DB and
   applied to everyone equally (the live shared-round model).
+
+**Auto-run on live day (least-error option = `pg_cron`).** A time-based scheduler is more
+robust than a DB trigger doing HTTP on every write: it's decoupled, fires on a fixed
+cadence, and self-heals (a failed run just retries next tick). Paste this once when live
+(replace `<SERVICE_ROLE_KEY>`):
+```sql
+create extension if not exists pg_cron;
+create extension if not exists pg_net;
+select cron.schedule('recompute-scores', '*/3 * * * *', $$
+  select net.http_post(
+    url := 'https://mrdmlfumdsxufifjulbt.supabase.co/functions/v1/recompute-score',
+    headers := jsonb_build_object('Content-Type','application/json','Authorization','Bearer <SERVICE_ROLE_KEY>'),
+    body := '{}'::jsonb
+  );
+$$);
+```
+Every 3 minutes it recomputes all scores from the latest results. (Simpler still, if you'd
+rather stay manual: skip cron and just hit "Invoke" on the function after each round.)
 
 **Final flip:** the leaderboard currently reads `entries.score || client-snapshot` (graceful
 during the alpha). Once the function runs on a live event, switch `fetchLeaderboard` to use
