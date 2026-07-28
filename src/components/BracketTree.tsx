@@ -47,12 +47,19 @@ export default function BracketTree() {
   const cols = depth === 'full' ? ALL_COLS : SCORED_COLS;
   const { teamName, username } = useProfile();
   const treeRef = useRef<HTMLDivElement>(null);
-  // Bring a round column into view within the scrollable tree.
-  const scrollToRound = (round: string) =>
-    treeRef.current?.querySelector(`[data-round="${round}"]`)?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  // Bring a round column into view — scrolls the tree HORIZONTALLY only (never the
+  // page), so a jump never yanks you up or down.
+  const scrollToRound = (round: string) => {
+    const c = treeRef.current;
+    const el = c?.querySelector(`[data-round="${round}"]`) as HTMLElement | null;
+    if (!c || !el) return;
+    const er = el.getBoundingClientRect(), cr = c.getBoundingClientRect();
+    c.scrollBy({ left: (er.left - cr.left) - (cr.width - er.width) / 2, behavior: 'smooth' });
+  };
   // Follow the action: when the played round advances, centre on the next round
   // (or the Final once it's done). Re-runs on depth change so the target exists.
   useEffect(() => {
+    if (currentRoundIndex === 0) return; // draft: show the draw from the start, don't auto-centre
     const target = currentRoundIndex >= ROUND_ORDER.length ? 'F' : ROUND_ORDER[currentRoundIndex];
     const t = setTimeout(() => scrollToRound(target), 60);
     return () => clearTimeout(t);
@@ -254,7 +261,9 @@ export default function BracketTree() {
       </div>
 
       {/* Tree */}
-      <div ref={treeRef} className="overflow-auto rounded-2xl p-3" style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.07)', maxHeight: depth === 'full' ? '78vh' : undefined }}>
+      {/* Only the HORIZONTAL axis scrolls inside the tree; vertical scroll bubbles to
+          the page, so dragging up/down never gets stuck inside the bracket. */}
+      <div ref={treeRef} className="overflow-x-auto rounded-2xl p-3" style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.07)', overscrollBehaviorX: 'contain' }}>
         <div className="flex items-stretch w-full" style={{ minWidth: 'min-content' }}>
           {cols.map((round, ci) => {
             const matches = FULL_DRAW.filter(m => m.round === round && m.half === half);

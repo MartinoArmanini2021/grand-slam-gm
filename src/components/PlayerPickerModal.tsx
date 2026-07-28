@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { PLAYERS } from '../data/players';
 import { getTier, TIER_META } from '../data/tiers';
-import { SQUAD_SIZE } from '../data/squadRules';
+import { SQUAD_SIZE, isTierFull } from '../data/squadRules';
 import { useEscapeToClose } from '../hooks';
 import PlayerAvatar from './PlayerAvatar';
 import PlayerTag from './PlayerTag';
@@ -56,8 +56,10 @@ export default function PlayerPickerModal({ open, onClose }: { open: boolean; on
               const owned = myTeam.includes(p.id);
               const full = myTeam.length >= TEAM_SIZE;
               const canAfford = budget >= p.price;
-              const disabled = !owned && (full || !canAfford);
-              const tm = TIER_META[getTier(p.ranking)];
+              const tier = getTier(p.ranking);
+              const tierFull = !owned && isTierFull(tier, myTeam);
+              const disabled = !owned && (full || !canAfford || tierFull);
+              const tm = TIER_META[tier];
               return (
                 <div key={p.id} className="flex items-center gap-3 px-2 py-2 rounded-xl" style={{ opacity: disabled ? 0.5 : 1 }}>
                   <PlayerAvatar playerId={p.id} name={p.name} size="sm" />
@@ -81,7 +83,7 @@ export default function PlayerPickerModal({ open, onClose }: { open: boolean; on
                       cursor: disabled ? 'not-allowed' : 'pointer',
                     }}
                   >
-                    {owned ? 'Remove' : full ? 'Full' : !canAfford ? 'Too $' : '+ Add'}
+                    {owned ? 'Remove' : full ? 'Full' : tierFull ? 'Limit' : !canAfford ? 'Too $' : '+ Add'}
                   </button>
                 </div>
               );
@@ -90,8 +92,9 @@ export default function PlayerPickerModal({ open, onClose }: { open: boolean; on
         </div>
       </div>
 
-      {/* Purchase confirmation — shared with the Market */}
-      <PurchaseConfirmModal player={confirm} onClose={() => setConfirm(null)} />
+      {/* Purchase confirmation — shared with the Market. On a successful buy it
+          closes the picker too, so the selection window shuts after each pick. */}
+      <PurchaseConfirmModal player={confirm} onClose={() => setConfirm(null)} onPurchased={onClose} />
     </>
   );
 }

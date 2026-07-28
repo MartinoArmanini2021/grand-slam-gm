@@ -281,24 +281,17 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
                         onClick={() => { if (captain === id) setCaptain(benchTop); else setViceCaptain(benchTop); setManageId(null); }}
                         className="w-full text-left px-3 py-3 rounded-xl text-sm font-bold flex items-center gap-2.5 transition-colors hover:bg-black/5"
                         style={{ color: 'var(--ink-2)' }}
-                      >⬇️ Move to bench</button>
+                      >⬇️ Send {lastName(mp.name)} to the bench</button>
                     )}
                     <div className="my-1 h-px" style={{ background: 'rgba(10,27,51,0.08)' }} />
                   </>
                 )}
                 {phase === 'draft' ? (
-                  <>
-                    <button
-                      onClick={() => { removePlayer(id); setManageId(null); setPickerOpen(true); }}
-                      className="w-full text-left px-3 py-3 rounded-xl text-sm font-bold flex items-center gap-2.5 transition-colors hover:bg-black/5"
-                      style={{ color: 'var(--ink)' }}
-                    >🔁 Replace player</button>
-                    <button
-                      onClick={() => { removePlayer(id); setManageId(null); }}
-                      className="w-full text-left px-3 py-3 rounded-xl text-sm font-bold flex items-center gap-2.5 transition-colors hover:bg-black/5"
-                      style={{ color: 'var(--ember)' }}
-                    >✕ Remove from squad</button>
-                  </>
+                  <button
+                    onClick={() => { removePlayer(id); setManageId(null); }}
+                    className="w-full text-left px-3 py-3 rounded-xl text-sm font-bold flex items-center gap-2.5 transition-colors hover:bg-black/5"
+                    style={{ color: 'var(--ember)' }}
+                  >✕ Remove from squad</button>
                 ) : (() => {
                   const out = isPlayerOut(id, revealed);
                   const windowOpen = transfersOpen(currentRoundIndex);

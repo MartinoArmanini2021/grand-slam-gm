@@ -10,7 +10,7 @@ import type { Player } from '../types';
 const TEAM_SIZE = SQUAD_SIZE;
 
 // Shared purchase confirmation — used by the Market table and the on-court picker.
-export default function PurchaseConfirmModal({ player, onClose }: { player: Player | null; onClose: () => void }) {
+export default function PurchaseConfirmModal({ player, onClose, onPurchased }: { player: Player | null; onClose: () => void; onPurchased?: () => void }) {
   const { budget, addPlayer } = useGameStore();
   useEscapeToClose(onClose, !!player);
   if (!player) return null;
@@ -19,14 +19,16 @@ export default function PurchaseConfirmModal({ player, onClose }: { player: Play
     const before = useGameStore.getState().myTeam.length;
     addPlayer(player.id);
     const team = useGameStore.getState().myTeam;
-    // addPlayer guards on phase/full/duplicate/budget — only confirm if it took.
+    // addPlayer guards on phase/full/duplicate/budget/tier — only confirm if it took.
     if (team.includes(player.id) && team.length > before) {
       toast(`${lastName(player.name)} added to your squad`, 'good');
       if (team.length >= TEAM_SIZE) toast(`Squad full — ${TEAM_SIZE} players picked`, 'good');
+      onClose();
+      onPurchased?.(); // close the surrounding picker window too
     } else {
-      toast(`Couldn't add ${lastName(player.name)} — over budget or squad full`, 'warn');
+      toast(`Couldn't add ${lastName(player.name)} — over budget, squad full, or tier limit reached`, 'warn');
+      onClose();
     }
-    onClose();
   };
 
   return (

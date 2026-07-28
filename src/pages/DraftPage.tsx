@@ -7,6 +7,7 @@ import { tierCounts, squadShortfall, isSquadValid, isTierFull, TIER_MINIMUMS, SQ
 import PlayerAvatar from '../components/PlayerAvatar';
 import PlayerTag from '../components/PlayerTag';
 import PurchaseConfirmModal from '../components/PurchaseConfirmModal';
+import PlayerPickerModal from '../components/PlayerPickerModal';
 import { toast } from '../store/toastStore';
 import { onActivate } from '../hooks';
 import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
@@ -27,6 +28,7 @@ export default function DraftPage() {
   const [sort, setSort] = useState<SortKey>('ranking');
   const [search, setSearch] = useState('');
   const [confirm, setConfirm] = useState<Player | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const locked = phase !== 'draft'; // squad is locked after the draft — transfers happen on the Bracket page
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
@@ -103,7 +105,7 @@ export default function DraftPage() {
             <table className="w-full text-sm border-collapse bg-white">
               <thead>
                 <tr style={{ background: 'var(--raised)' }}>
-                  <th className={th} rowSpan={2} style={{ color: 'var(--ink-3)', textAlign: 'center', width: 54 }}><div style={{ lineHeight: 1.05 }}>ATP<br />Ranking</div></th>
+                  <th className="text-center px-1 py-2 text-[11px] font-bold uppercase tracking-wide" rowSpan={2} style={{ color: 'var(--ink-3)', width: 34 }}>ATP</th>
                   <th className={th} rowSpan={2} style={{ color: 'var(--ink-2)' }}>Player</th>
                   <th className={`${th} hidden sm:table-cell`} rowSpan={2} style={{ color: 'var(--ink-2)', textAlign: 'center' }}>Age</th>
                   <th className={`${th} hidden md:table-cell`} colSpan={3} style={{ color: 'var(--ink-2)', textAlign: 'center', borderBottom: '1px solid rgba(10,27,51,0.08)' }}>Win&nbsp;%&nbsp;(YTD)</th>
@@ -145,7 +147,7 @@ export default function DraftPage() {
                       onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'rgba(10,27,51,0.02)'; }}
                       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = isSelected ? 'rgba(18,161,80,0.05)' : 'transparent'; }}
                     >
-                      <td className="px-2 py-1.5 font-num text-xs text-center" style={{ color: tierColor, fontWeight: 700 }}>{player.ranking}</td>
+                      <td className="px-1 py-1.5 font-num text-xs text-center" style={{ color: tierColor, fontWeight: 700 }}>{player.ranking}</td>
                       <td className="px-2 py-1.5 w-full" style={{ maxWidth: 0 }}>
                         <div className="flex items-center gap-2 min-w-0">
                           <PlayerAvatar playerId={player.id} name={player.name} size="sm" onClick={e => { e.stopPropagation(); openPlayer(player.id); }} />
@@ -275,7 +277,7 @@ export default function DraftPage() {
                 );
               })}
               {!locked && Array.from({ length: TEAM_SIZE - myTeam.length }).map((_, i) => (
-                <div key={`e${i}`} className="px-3 py-2 rounded-xl text-xs text-center" style={{ border: '1px dashed rgba(10,27,51,0.06)', color: 'var(--ink-3)' }}>Empty slot</div>
+                <button key={`e${i}`} onClick={() => setPickerOpen(true)} className="w-full px-3 py-2 rounded-xl text-xs text-center transition-colors hover:bg-black/[0.03] cursor-pointer" style={{ border: '1px dashed rgba(10,27,51,0.14)', color: 'var(--ink-3)' }}>+ Add a player</button>
               ))}
             </div>
 
@@ -310,6 +312,7 @@ export default function DraftPage() {
 
       {/* Purchase confirmation */}
       <PurchaseConfirmModal player={confirm} onClose={() => setConfirm(null)} />
+      <PlayerPickerModal open={pickerOpen} onClose={() => setPickerOpen(false)} />
     </div>
   );
 }
