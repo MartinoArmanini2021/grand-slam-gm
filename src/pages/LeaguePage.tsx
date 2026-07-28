@@ -101,8 +101,43 @@ function Standings({ rows, revealed }: { rows: BoardEntry[]; revealed: RoundId[]
 
 export default function LeaguePage() {
   const { currentRoundIndex } = useGameStore();
-  const { user, enabled } = useAuth();
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
+  const [view, setView] = useState<'public' | 'private'>('public');
+  const publicBoard = useLeagueBoard(null);
+
+  return (
+    <div className="max-w-7xl mx-auto px-2 sm:px-3 py-6 fade-in">
+      {/* Public / Private selector */}
+      <div className="grid grid-cols-2 mb-5 rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.1)' }}>
+        {([['public', '🌍', 'Public Leagues', 'Play against everyone'], ['private', '🔒', 'Private Leagues', 'Invite-only friends']] as const).map(([v, icon, label, sub], i) => {
+          const active = view === v;
+          return (
+            <button key={v} onClick={() => setView(v)} className="px-4 py-3 text-left transition-all"
+              style={{ background: active ? 'linear-gradient(120deg,var(--ink),var(--navy-2))' : '#FFFFFF', borderLeft: i === 1 ? '1px solid rgba(10,27,51,0.1)' : 'none' }}>
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{icon}</span>
+                <span className="font-extrabold text-sm" style={{ color: active ? '#fff' : 'var(--ink)' }}>{label}</span>
+              </div>
+              <div className="text-[11px] mt-0.5" style={{ color: active ? 'var(--on-navy)' : 'var(--ink-3)' }}>{sub}</div>
+            </button>
+          );
+        })}
+      </div>
+
+      {view === 'public' ? (
+        <>
+          <h2 className="text-sm font-bold mb-2.5 px-1" style={{ color: 'var(--ink-2)' }}>🌍 Grand Slam Open League · {publicBoard.length} manager{publicBoard.length === 1 ? '' : 's'}</h2>
+          <Standings rows={publicBoard} revealed={revealed} />
+        </>
+      ) : (
+        <PrivateLeagues revealed={revealed} />
+      )}
+    </div>
+  );
+}
+
+function PrivateLeagues({ revealed }: { revealed: RoundId[] }) {
+  const { user, enabled } = useAuth();
 
   const [nonce, setNonce] = useState(0);
   const leagues = useMyLeagues(nonce);
@@ -133,15 +168,12 @@ export default function LeaguePage() {
   const isOwner = !!current && current.ownerId === user?.id;
 
   const header = (
-    <div className="mb-5">
-      <h1 className="text-xl font-extrabold flex items-center gap-2" style={{ color: 'var(--ink)' }}><span>🔒</span> Private Leagues</h1>
-      <p className="text-sm mt-0.5" style={{ color: 'var(--ink-2)' }}>Play only against friends you invite. Everyone sees just the leagues they've joined.</p>
-    </div>
+    <p className="text-xs mb-4 px-1" style={{ color: 'var(--ink-3)' }}>Invite-only — each private league is seen only by its members.</p>
   );
 
   if (!user) {
     return (
-      <div className="max-w-7xl mx-auto px-2 sm:px-3 py-6 fade-in">
+      <>
         {header}
         <div className="rounded-2xl p-8 text-center" style={{ background: '#fff', border: '1px solid rgba(10,27,51,0.09)' }}>
           <div className="text-4xl mb-3">🔒</div>
@@ -149,7 +181,7 @@ export default function LeaguePage() {
             {enabled ? 'Sign in to create a private league and invite friends by code.' : 'Private leagues need an account.'}
           </p>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -188,7 +220,7 @@ export default function LeaguePage() {
   const copy = (text: string) => { navigator.clipboard?.writeText(text).then(() => toast('Copied', 'good')); };
 
   return (
-    <div className="max-w-7xl mx-auto px-2 sm:px-3 py-6 fade-in">
+    <>
       {header}
 
       {/* Create + Join */}
@@ -274,6 +306,6 @@ export default function LeaguePage() {
           )}
         </>
       )}
-    </div>
+    </>
   );
 }

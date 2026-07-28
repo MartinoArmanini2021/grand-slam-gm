@@ -144,13 +144,18 @@ drop policy if exists "create league" on public.leagues;
 create policy "create league" on public.leagues
   for insert to authenticated with check (auth.uid() = owner_id);
 
--- ── 5. Auto-create a profile row on signup ────────────────────────────────────
--- New users are NOT auto-joined to any league — they see only private leagues they
--- explicitly join. The public league is just the placeholder every entry references.
+-- ── 5. Auto-create a profile row + public-league membership on signup ─────────
+-- Everyone joins the public global league (the "play against everyone" board);
+-- private leagues are joined explicitly by code and seen only by their members.
 create or replace function public.handle_new_user() returns trigger
 language plpgsql security definer set search_path = public as $$
+declare pub_id uuid;
 begin
   insert into public.profiles (id) values (new.id) on conflict do nothing;
+  select id into pub_id from public.leagues where is_public limit 1;
+  if pub_id is not null then
+    insert into public.league_members (league_id, user_id) values (pub_id, new.id) on conflict do nothing;
+  end if;
   return new;
 end $$;
 

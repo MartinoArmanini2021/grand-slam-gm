@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { ROUNDS, isPlayerOut } from '../data/tournament';
@@ -26,8 +27,15 @@ export default function HomePage() {
     : null;
 
   const myLeagues = useMyLeagues();
-  const primaryLeague = myLeagues[0] ?? null;
-  const board = useLeagueBoard(primaryLeague?.id ?? null);
+  // Which board to show on Home: null = the Public League; else a private league id.
+  // Default to your first private league once they load, then remember your choice.
+  const [boardLeague, setBoardLeague] = useState<string | null>(null);
+  const defaultedLeague = useRef(false);
+  useEffect(() => {
+    if (!defaultedLeague.current && myLeagues.length > 0) { setBoardLeague(myLeagues[0].id); defaultedLeague.current = true; }
+  }, [myLeagues]);
+  const board = useLeagueBoard(boardLeague);
+  const boardName = boardLeague ? (myLeagues.find(l => l.id === boardLeague)?.name ?? 'League') : 'Public League';
   const medal = (i: number) => (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`);
 
   return (
@@ -85,20 +93,29 @@ export default function HomePage() {
 
         {/* ── League leaderboard (below the court) ── */}
         <div className="mt-6">
-        <div className="flex items-center justify-between mb-2.5 px-1">
-          <h2 className="text-sm font-bold" style={{ color: 'var(--ink)' }}>{primaryLeague ? primaryLeague.name : 'Private leagues'}</h2>
-          <button onClick={() => setActiveTab('league')} className="text-xs font-semibold" style={{ color: 'var(--blue)' }}>
-            {primaryLeague ? 'Full standings →' : 'Create or join →'}
+        <div className="flex items-center justify-between mb-2.5 px-1 gap-2">
+          {myLeagues.length > 0 ? (
+            <select
+              value={boardLeague ?? ''}
+              onChange={e => setBoardLeague(e.target.value || null)}
+              aria-label="Choose which league to show"
+              className="text-sm font-bold rounded-lg px-2 py-1 outline-none max-w-[60%]"
+              style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.12)', color: 'var(--ink)' }}
+            >
+              <option value="">🌍 Public League</option>
+              {myLeagues.map(l => <option key={l.id} value={l.id}>🔒 {l.name}</option>)}
+            </select>
+          ) : (
+            <h2 className="text-sm font-bold" style={{ color: 'var(--ink)' }}>🌍 Public League</h2>
+          )}
+          <button onClick={() => setActiveTab('league')} className="text-xs font-semibold shrink-0" style={{ color: 'var(--blue)' }}>
+            Full standings →
           </button>
         </div>
 
-        {!primaryLeague ? (
+        {board.length === 0 ? (
           <div className="text-center py-8 text-sm rounded-2xl" style={{ color: 'var(--ink-3)', background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.07)' }}>
-            Create or join a private league to compete with friends.
-          </div>
-        ) : board.length === 0 ? (
-          <div className="text-center py-8 text-sm rounded-2xl" style={{ color: 'var(--ink-3)', background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.07)' }}>
-            Draft your squad to join {primaryLeague.name}.
+            {boardLeague ? `Draft your squad to join ${boardName}.` : 'Draft your squad to join the Public League.'}
           </div>
         ) : (
           <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.08)' }}>

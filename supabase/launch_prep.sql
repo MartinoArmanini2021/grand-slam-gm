@@ -1,19 +1,7 @@
--- === Launch prep: clean slate + private-leagues-only + league management ===
--- Run once before handing the app to friends. Idempotent except the final wipe (§C),
--- which deletes all test squads + leagues on purpose.
+-- === Launch prep: league management + clean slate (public league KEPT) ===
+-- Run once before handing the app to friends. §A/§B are idempotent; §C wipes test data.
 
--- A. New users no longer auto-join a global "everyone" league — players see only the
---    private leagues they explicitly join. The public league remains ONLY as the
---    placeholder every entry references (entries.league_id is NOT NULL); it has no
---    members and is never shown as a board.
-create or replace function public.handle_new_user() returns trigger
-language plpgsql security definer set search_path = public as $$
-begin
-  insert into public.profiles (id) values (new.id) on conflict do nothing;
-  return new;
-end $$;
-
--- B. League management functions (owner-gated where noted).
+-- A. League management functions (owner-gated where noted).
 -- Delete a private league you own (cascades its memberships).
 create or replace function public.delete_league(p_league uuid)
 returns void language plpgsql security definer set search_path = public as $$
@@ -43,8 +31,14 @@ grant execute on function public.delete_league(uuid) to authenticated;
 grant execute on function public.leave_league(uuid) to authenticated;
 grant execute on function public.remove_member(uuid, uuid) to authenticated;
 
--- C. Clean slate for the launch — wipe every squad, league, and membership (accounts
---    are kept). The public placeholder league is preserved. ⚠️ DELETES TEST DATA.
+-- B. Make sure every existing user is in the public league (in case any were created
+--    before it was seeded) — so the public board shows everyone.
+insert into public.league_members (league_id, user_id)
+  select l.id, u.id from public.leagues l cross join auth.users u
+  where l.is_public on conflict do nothing;
+
+-- C. Clean slate for the launch — wipe every squad and every PRIVATE league (the
+--    public league + its memberships stay, so the global board still works). Accounts
+--    are kept. ⚠️ DELETES TEST DATA.
 delete from public.entries;
-delete from public.league_members;
-delete from public.leagues where is_public = false;
+delete from public.leagues where is_public = false;  -- cascades private memberships
