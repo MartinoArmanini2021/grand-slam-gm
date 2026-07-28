@@ -12,13 +12,15 @@ import { onActivate } from '../hooks';
 import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
 import type { RoundId, Player } from '../types';
 
-type SortKey = 'ranking' | 'price' | 'surface';
+type SortKey = 'ranking' | 'surface';
 
 const TEAM_SIZE = SQUAD_SIZE;
 // The tournament's own surface (e.g. hard for Montréal) — drives which win% the
 // market emphasises (sort option, bold column, squad-row stat).
 const SURF = TOURNAMENT.surface;
-const SORT_LABEL: Record<SortKey, string> = { ranking: '# Rank', price: '$ Price', surface: `${SURFACE.label} %` };
+// Price is a strict function of ranking (priceFor), so a "$ Price" sort would be
+// identical to "# Rank" — we offer Rank + the surface win% instead.
+const SORT_LABEL: Record<SortKey, string> = { ranking: '# Rank', surface: `${SURFACE.label} %` };
 
 export default function DraftPage() {
   const { myTeam, captain, budget, phase, currentRoundIndex, removePlayer, setCaptain, finalizeDraft, openPlayer } = useGameStore();
@@ -36,7 +38,6 @@ export default function DraftPage() {
     .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
       if (sort === 'ranking') return a.ranking - b.ranking;
-      if (sort === 'price') return b.price - a.price;
       if (sort === 'surface') return b.surface[SURF] - a.surface[SURF];
       return 0;
     }), [sort, search]);
@@ -84,7 +85,7 @@ export default function DraftPage() {
               style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.09)', color: 'var(--ink)' }}
             />
             <div className="flex rounded-xl overflow-hidden ml-auto" style={{ border: '1px solid rgba(10,27,51,0.07)' }}>
-              {(['ranking', 'price', 'surface'] as SortKey[]).map(s => (
+              {(['ranking', 'surface'] as SortKey[]).map(s => (
                 <button
                   key={s}
                   onClick={() => setSort(s)}
@@ -153,6 +154,14 @@ export default function DraftPage() {
                               {out && <span className="text-[9px] font-bold px-1 py-0.5 rounded" style={{ background: 'rgba(229,71,43,0.12)', color: 'var(--ember)' }}>OUT {getPlayerExit(player.id)}</span>}
                             </div>
                             <div className="text-[10px] leading-tight truncate" style={{ color: 'var(--ink-3)' }}>{player.style}</div>
+                            {/* Compact surface win% for small screens (the dedicated columns show from md up) */}
+                            <div className="md:hidden mt-0.5 flex items-center gap-1.5 font-num text-[10px] leading-none">
+                              <span style={{ color: 'var(--green)', fontWeight: SURF === 'grass' ? 700 : 500 }}>G {player.surface.grass}</span>
+                              <span style={{ color: 'var(--ink-3)' }}>·</span>
+                              <span style={{ color: 'var(--blue)', fontWeight: SURF === 'hard' ? 700 : 500 }}>H {player.surface.hard}</span>
+                              <span style={{ color: 'var(--ink-3)' }}>·</span>
+                              <span style={{ color: 'var(--ember)', fontWeight: SURF === 'clay' ? 700 : 500 }}>C {player.surface.clay}</span>
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -196,8 +205,8 @@ export default function DraftPage() {
           </div>
         </div>
 
-        {/* ── My Squad — right sidebar on desktop, stacked below the table on mobile ── */}
-        <div className="w-full lg:w-72 shrink-0">
+        {/* ── My Squad — comes FIRST: left sidebar on desktop, above the table on mobile ── */}
+        <div className="w-full lg:w-72 shrink-0 order-first">
           <div className="lg:sticky lg:top-20 rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.09)' }}>
             <div className="flex items-center justify-between mb-1">
               <h2 className="font-bold text-sm" style={{ color: 'var(--ink)' }}>My Squad</h2>

@@ -39,6 +39,7 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
   const isOwnTeam = !readOnly && !squad; // your own court (home / your team page)
   const canEdit = isOwnTeam && phase === 'draft';
   useEscapeToClose(() => { setManageId(null); setSubFor(null); }, !!(manageId || subFor));
+  const C = SURFACE.court; // stands / apron (outside court) / surface (inside court)
 
   return (
     <>
@@ -48,46 +49,62 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
         <svg viewBox="0 0 640 360" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
           <defs>
             <linearGradient id="stand" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor={SURFACE.court.standTop} />
-              <stop offset="1" stopColor={SURFACE.court.standBottom} />
+              <stop offset="0" stopColor={C.standTop} />
+              <stop offset="1" stopColor={C.standBottom} />
             </linearGradient>
+            {/* soft vignette so the inside court reads as recessed / lit */}
+            <radialGradient id="court-lite" cx="0.5" cy="0.5" r="0.75">
+              <stop offset="0" stopColor="#ffffff" stopOpacity="0.10" />
+              <stop offset="1" stopColor="#000000" stopOpacity="0.16" />
+            </radialGradient>
           </defs>
 
-          {/* Stands (stadium bowl) — concentric bands, lighter toward the court */}
+          {/* ── ZONE 1 · STANDS (stadium seating) ── */}
           <rect x="0" y="0" width="640" height="360" fill="url(#stand)" />
-          <rect x="22" y="22" width="596" height="316" rx="14" fill={SURFACE.court.band1} />
-          <rect x="40" y="40" width="560" height="280" rx="10" fill={SURFACE.court.band2} />
-          {/* crowd speckle in the four stand bands */}
-          {Array.from({ length: 160 }).map((_, i) => {
+          {/* concentric seating tiers — subtle steps down toward the court */}
+          <rect x="10" y="9" width="620" height="342" rx="18" fill="none" stroke="#ffffff" strokeOpacity="0.06" strokeWidth="10" />
+          <rect x="24" y="21" width="592" height="318" rx="15" fill="none" stroke="#ffffff" strokeOpacity="0.05" strokeWidth="8" />
+          {/* crowd speckle across the whole seating ring (outside the apron) */}
+          {Array.from({ length: 220 }).map((_, i) => {
             const edge = i % 4;
             const t = ((i * 12.7) % 100) / 100;
-            const row = i % 3;
+            const row = i % 4;
             let cx = 0, cy = 0;
-            if (edge === 0) { cx = 30 + t * 580; cy = 8 + row * 10; }          // top
-            else if (edge === 1) { cx = 30 + t * 580; cy = 326 + row * 9; }    // bottom
-            else if (edge === 2) { cx = 6 + row * 11; cy = 30 + t * 300; }     // left
-            else { cx = 606 + row * 11; cy = 30 + t * 300; }                   // right
-            return <circle key={i} cx={cx} cy={cy} r="1.6" fill={i % 2 ? SURFACE.court.crowdLight : SURFACE.court.crowdDark} opacity="0.5" />;
+            if (edge === 0) { cx = 18 + t * 604; cy = 6 + row * 7.5; }         // top
+            else if (edge === 1) { cx = 18 + t * 604; cy = 328 + row * 7; }    // bottom
+            else if (edge === 2) { cx = 5 + row * 8; cy = 20 + t * 320; }      // left
+            else { cx = 603 + row * 8; cy = 20 + t * 320; }                    // right
+            return <circle key={i} cx={cx} cy={cy} r="1.7" fill={i % 2 ? C.crowdLight : C.crowdDark} opacity="0.55" />;
           })}
 
-          {/* Playing surface, inset (leaves the stand margin visible) */}
+          {/* ── ZONE 2 · OUTSIDE COURT (painted run-off apron) ── */}
+          <rect x="34" y="30" width="572" height="300" rx="12" fill={C.apron} />
+          <rect x="34" y="30" width="572" height="300" rx="12" fill="none" stroke="#000000" strokeOpacity="0.22" strokeWidth="2.5" />
+
+          {/* ── ZONE 3 · INSIDE COURT (playing surface + lines) ── */}
           <g>
-            {/* surface stripes (vertical bands) */}
-            {Array.from({ length: 13 }).map((_, i) => (
-              <rect key={i} x={60 + i * 40} y="60" width="40" height="240" fill={i % 2 ? SURFACE.court.stripeA : SURFACE.court.stripeB} />
+            <rect x="96" y="78" width="448" height="204" fill={C.surface} />
+            {/* grass mowing stripes — grass only */}
+            {C.stripe && Array.from({ length: 8 }).map((_, i) => (
+              i % 2 === 0 ? <rect key={i} x={96 + i * 56} y="78" width="56" height="204" fill={C.stripe} /> : null
             ))}
-            {/* court lines */}
-            <g stroke={SURFACE.court.line} strokeOpacity="0.94" strokeWidth="2" fill="none">
-              <rect x="60" y="60" width="520" height="240" />       {/* doubles */}
-              <line x1="60" y1="90" x2="580" y2="90" />              {/* top singles sideline */}
-              <line x1="60" y1="270" x2="580" y2="270" />           {/* bottom singles sideline */}
-              <line x1="180" y1="90" x2="180" y2="270" />           {/* left service line */}
-              <line x1="460" y1="90" x2="460" y2="270" />           {/* right service line */}
-              <line x1="180" y1="180" x2="460" y2="180" />          {/* centre service line */}
+            <rect x="96" y="78" width="448" height="204" fill="url(#court-lite)" />
+            {/* painted court lines */}
+            <g stroke={C.line} strokeOpacity="0.96" strokeWidth="2.4" fill="none">
+              <rect x="96" y="78" width="448" height="204" />       {/* doubles box */}
+              <line x1="96" y1="104" x2="544" y2="104" />           {/* top singles sideline */}
+              <line x1="96" y1="256" x2="544" y2="256" />           {/* bottom singles sideline */}
+              <line x1="200" y1="104" x2="200" y2="256" />          {/* left service line */}
+              <line x1="440" y1="104" x2="440" y2="256" />          {/* right service line */}
+              <line x1="200" y1="180" x2="440" y2="180" />          {/* centre service line */}
+              <line x1="96" y1="180" x2="104" y2="180" />           {/* baseline centre mark */}
+              <line x1="536" y1="180" x2="544" y2="180" />
             </g>
-            {/* net (vertical, centre) */}
-            <line x1="320" y1="52" x2="320" y2="308" stroke={SURFACE.court.net} strokeWidth="4" strokeOpacity="0.96" />
-            <line x1="320" y1="52" x2="320" y2="308" stroke={SURFACE.court.netShadow} strokeWidth="1" strokeOpacity="0.22" strokeDasharray="3 3" />
+            {/* net (vertical, centre) + posts */}
+            <line x1="320" y1="70" x2="320" y2="290" stroke={C.net} strokeWidth="4.5" strokeOpacity="0.97" />
+            <line x1="320" y1="70" x2="320" y2="290" stroke={C.netShadow} strokeWidth="1.5" strokeOpacity="0.25" strokeDasharray="3 3" />
+            <circle cx="320" cy="70" r="3.2" fill={C.net} />
+            <circle cx="320" cy="290" r="3.2" fill={C.net} />
           </g>
         </svg>
 

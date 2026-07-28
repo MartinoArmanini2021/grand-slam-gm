@@ -33,13 +33,19 @@ export const ROUND_ORDER: RoundId[] = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 
 export interface SurfaceTheme {
   label: string;   // "Grass" / "Hard" / "Clay" — shown in the header
   accent: string;  // the surface's brand accent (matches the app's surface palette)
+  // The court graphic reads as three clearly separated zones, outer→inner:
+  //   stands  → the stadium seating bowl (darkest)
+  //   apron   → the OUTSIDE court: the painted run-off surround
+  //   surface → the INSIDE court: the playing surface, carrying the white lines
+  // Only grass gets mowing `stripe`s; hard & clay are a solid inside surface.
   court: {
-    standTop: string; standBottom: string; // stadium bowl gradient
-    band1: string; band2: string;           // concentric stand bands
-    stripeA: string; stripeB: string;       // playing-surface stripes
+    standTop: string; standBottom: string; // seating bowl gradient
+    apron: string;                          // outside court (run-off surround)
+    surface: string;                        // inside court (playing surface)
+    stripe?: string;                        // grass mowing stripe (omit for hard/clay)
     line: string;                           // painted court lines
     net: string; netShadow: string;         // net + its dashed shadow
-    crowdLight: string; crowdDark: string;  // crowd speckle
+    crowdLight: string; crowdDark: string;  // crowd speckle in the stands
   };
 }
 
@@ -49,24 +55,30 @@ export const SURFACE_THEME: Record<Surface, SurfaceTheme> = {
   grass: {
     label: 'Grass', accent: '#12A150',
     court: {
-      standTop: '#123420', standBottom: '#0c2417', band1: '#163d25', band2: '#1b4a2d',
-      stripeA: '#3f8347', stripeB: '#367038', line: '#ffffff',
+      standTop: '#0f2e1c', standBottom: '#0a2013',
+      apron: '#15562e',                       // dark green surround
+      surface: '#3c9147', stripe: '#347f3c',  // green with mowing stripes
+      line: '#ffffff',
       net: '#eef4f0', netShadow: '#0a1f44', crowdLight: '#dfe6d8', crowdDark: '#9fb6a0',
     },
   },
   hard: {
     label: 'Hard', accent: '#0e6fc4',
     court: {
-      standTop: '#0c2036', standBottom: '#07162a', band1: '#123049', band2: '#17395a',
-      stripeA: '#2f6aa8', stripeB: '#285d95', line: '#ffffff',
+      standTop: '#0c2036', standBottom: '#07162a',
+      apron: '#1f7a44',                       // green surround (US-Open style)
+      surface: '#2f6aa8',                     // solid blue playing surface (no stripes)
+      line: '#ffffff',
       net: '#eef4f0', netShadow: '#0a1f44', crowdLight: '#ccd8e6', crowdDark: '#93a4bc',
     },
   },
   clay: {
     label: 'Clay', accent: '#E5472B',
     court: {
-      standTop: '#3a1f14', standBottom: '#2a160e', band1: '#5a2e1c', band2: '#6b3822',
-      stripeA: '#c96f42', stripeB: '#b45f36', line: '#f2ead9',
+      standTop: '#341a10', standBottom: '#241009',
+      apron: '#8a4a2c',                       // darker clay surround
+      surface: '#c96f42',                     // terracotta playing surface
+      line: '#f2ead9',
       net: '#eef4f0', netShadow: '#3a1f14', crowdLight: '#e6d8cd', crowdDark: '#bca697',
     },
   },
@@ -111,8 +123,10 @@ export const TOURNAMENTS: Record<string, Tournament> = {
     rounds: ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'],
     mode: 'replay',
     court: {
-      standTop: '#123420', standBottom: '#0c2417', band1: '#163d25', band2: '#1b4a2d', // green surround
-      stripeA: '#2f6aa8', stripeB: '#285d95', line: '#ffffff',                          // blue playing surface
+      standTop: '#0c2433', standBottom: '#071726',  // dark stadium seating
+      apron: '#1f7a44',                              // GREEN outside court
+      surface: '#2f6aa8',                            // BLUE inside court (no stripes — hard)
+      line: '#ffffff',
       net: '#eef4f0', netShadow: '#0a1f44', crowdLight: '#dfe6d8', crowdDark: '#9fb6a0',
     },
   },
