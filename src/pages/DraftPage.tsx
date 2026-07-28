@@ -23,7 +23,7 @@ const SURF = TOURNAMENT.surface;
 const SORT_LABEL: Record<SortKey, string> = { ranking: '# Rank', surface: `${SURFACE.label} %` };
 
 export default function DraftPage() {
-  const { myTeam, captain, budget, phase, currentRoundIndex, removePlayer, setCaptain, finalizeDraft, openPlayer } = useGameStore();
+  const { myTeam, captain, viceCaptain, budget, phase, currentRoundIndex, removePlayer, setCaptain, setViceCaptain, finalizeDraft, openPlayer } = useGameStore();
   const [sort, setSort] = useState<SortKey>('ranking');
   const [search, setSearch] = useState('');
   const [confirm, setConfirm] = useState<Player | null>(null);
@@ -223,7 +223,7 @@ export default function DraftPage() {
               </div>
             </div>
 
-            {/* Tier requirement: ≥4 Silver, ≥2 Gold of your 8. */}
+            {/* Tier requirement: exactly 2 Platinum, 3 Gold, 5 Silver of your 10. */}
             <div className="flex gap-2 mb-4">
               {TIER_MINIMUMS.map(({ tier, min }) => {
                 const have = counts[tier];
@@ -244,17 +244,27 @@ export default function DraftPage() {
               {myTeam.map(id => {
                 const p = getPlayer(id);
                 const isCap = captain === id;
+                const isVice = viceCaptain === id;
+                const rowBg = isCap ? 'rgba(217,154,0,0.07)' : isVice ? 'rgba(14,111,196,0.06)' : 'rgba(10,27,51,0.03)';
+                const rowBorder = isCap ? 'rgba(217,154,0,0.2)' : isVice ? 'rgba(14,111,196,0.2)' : 'rgba(10,27,51,0.06)';
                 return (
-                  <div key={id} className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: isCap ? 'rgba(217,154,0,0.07)' : 'rgba(10,27,51,0.03)', border: `1px solid ${isCap ? 'rgba(217,154,0,0.2)' : 'rgba(10,27,51,0.06)'}` }}>
+                  <div key={id} className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: rowBg, border: `1px solid ${rowBorder}` }}>
                     <PlayerAvatar playerId={id} name={p.name} size="sm" />
                     <div className="flex-1 min-w-0">
                       <PlayerTag playerId={id} flag={p.flag} className="text-[8px] font-bold uppercase tracking-wide leading-tight truncate" style={{ color: 'var(--blue)' }} />
                       <div className="text-xs font-medium truncate" style={{ color: 'var(--ink)' }}>{p.name}</div>
                       <div className="font-num text-[10px]" style={{ color: 'var(--ink-2)' }}>${p.price}M · 🎾{p.surface[SURF]}% {SURFACE.label}</div>
                     </div>
-                    {isCap && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0" style={{ background: 'rgba(217,154,0,0.15)', color: 'var(--gold)', border: '1px solid rgba(217,154,0,0.25)' }}>C</span>}
-                    {!locked && <button onClick={() => setCaptain(id)} className="text-xs px-1.5 py-1 rounded-lg transition-all shrink-0" title="Set as captain" style={{ background: isCap ? 'rgba(217,154,0,0.15)' : 'rgba(10,27,51,0.05)', border: `1px solid ${isCap ? 'rgba(217,154,0,0.25)' : 'rgba(10,27,51,0.07)'}`, color: isCap ? 'var(--gold)' : 'var(--ink-2)' }}>⭐</button>}
-                    {!locked && <button onClick={() => removePlayer(id)} className="text-xs px-1.5 py-1 rounded-lg transition-all shrink-0" style={{ background: 'rgba(10,27,51,0.04)', border: '1px solid rgba(10,27,51,0.06)', color: 'var(--ink-2)' }}>✕</button>}
+                    {/* Captain / Vice-captain toggles */}
+                    {!locked && (
+                      <>
+                        <button onClick={() => setCaptain(id)} title="Captain (×2)" className="text-[11px] font-extrabold w-6 h-6 rounded-lg shrink-0 flex items-center justify-center transition-all" style={{ background: isCap ? 'var(--gold)' : 'rgba(10,27,51,0.05)', color: isCap ? '#fff' : 'var(--ink-3)', border: `1px solid ${isCap ? 'var(--gold)' : 'rgba(10,27,51,0.08)'}` }}>C</button>
+                        <button onClick={() => setViceCaptain(id)} title="Vice-captain (×1.5)" className="text-[11px] font-extrabold w-6 h-6 rounded-lg shrink-0 flex items-center justify-center transition-all" style={{ background: isVice ? 'var(--blue)' : 'rgba(10,27,51,0.05)', color: isVice ? '#fff' : 'var(--ink-3)', border: `1px solid ${isVice ? 'var(--blue)' : 'rgba(10,27,51,0.08)'}` }}>V</button>
+                        <button onClick={() => removePlayer(id)} title="Remove" className="text-xs w-6 h-6 rounded-lg shrink-0 flex items-center justify-center" style={{ background: 'rgba(10,27,51,0.04)', border: '1px solid rgba(10,27,51,0.06)', color: 'var(--ink-2)' }}>✕</button>
+                      </>
+                    )}
+                    {locked && isCap && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0" style={{ background: 'var(--gold)', color: '#fff' }}>C</span>}
+                    {locked && isVice && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0" style={{ background: 'var(--blue)', color: '#fff' }}>V</span>}
                   </div>
                 );
               })}
@@ -263,8 +273,10 @@ export default function DraftPage() {
               ))}
             </div>
 
-            {!locked && myTeam.length > 0 && !captain && (
-              <p className="text-xs mb-3" style={{ color: 'var(--gold)' }}>⭐ Tap ⭐ to pick a captain</p>
+            {!locked && myTeam.length > 0 && (!captain || !viceCaptain) && (
+              <p className="text-[11px] mb-3" style={{ color: 'var(--ink-2)' }}>
+                Tap <b style={{ color: 'var(--gold)' }}>C</b> to set your captain (×2) and <b style={{ color: 'var(--blue)' }}>V</b> your vice (×1.5).
+              </p>
             )}
 
             {locked ? (

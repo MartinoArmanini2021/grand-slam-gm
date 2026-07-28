@@ -4,46 +4,51 @@ import { findPlayer } from '../data/players';
 import { getPlayerExit, isPlayerOut, ROUNDS, transfersOpen } from '../data/tournament';
 import { lastName } from '../data/format';
 import { SURFACE, TOURNAMENT } from '../data/tournamentConfig';
+import { SQUAD_SIZE } from '../data/squadRules';
 import { useEscapeToClose } from '../hooks';
 import PlayerAvatar from './PlayerAvatar';
 import PlayerPickerModal from './PlayerPickerModal';
 
-// Eight on-court positions (as % of the whole box). 4 per half in an arc, net down
-// the middle — outer players top/bottom, inner pair pushed toward the net.
-const SPOTS = [
-  { x: 18, y: 24 }, { x: 30, y: 42 }, { x: 30, y: 60 }, { x: 18, y: 78 }, // left half
-  { x: 82, y: 24 }, { x: 70, y: 42 }, { x: 70, y: 60 }, { x: 82, y: 78 }, // right half
-];
+// The two captains stand ON the court (mid-height, one each side of the net);
+// their avatars scale with the court height (the court is a size container).
+const LEADER_SIZE = 'clamp(50px, 20cqh, 78px)';
 
-// On-court avatar size scales with the court's height (the court is a size
-// container). Capped at 56px on wide screens; floored at 36px so four rows of
-// players never overlap on a phone (where the court is shorter).
-const AV_SIZE = 'clamp(36px, 13cqh, 56px)';
-
-export default function SquadCourt({ squad, captainId, readOnly, teamName, emblem, onTeamClick, fluid }: {
+export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, teamName, emblem, onTeamClick, fluid }: {
   squad?: string[];        // when given, renders this squad instead of your own (read-only)
   captainId?: string;
+  viceCaptainId?: string;
   readOnly?: boolean;
   teamName?: string;       // team identity shown inside the court (top-left)
   emblem?: string;
   onTeamClick?: () => void; // makes the team label a link (e.g. to your team page)
   fluid?: boolean;         // fill the container width instead of the 860px cap
 } = {}) {
-  const { myTeam, captain, currentRoundIndex, phase, budget, openPlayer, removePlayer, replacePlayer } = useGameStore();
+  const { myTeam, captain, viceCaptain, currentRoundIndex, phase, budget, openPlayer, removePlayer, replacePlayer, setCaptain, setViceCaptain } = useGameStore();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [manageId, setManageId] = useState<string | null>(null);
   const [subFor, setSubFor] = useState<string | null>(null); // eliminated player being transferred out
   const team = squad ?? myTeam;
-  const cap = captainId ?? (squad ? undefined : captain);
+  const cap = captainId ?? (squad ? undefined : captain ?? undefined);
+  const vice = viceCaptainId ?? (squad ? undefined : viceCaptain ?? undefined);
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
   const isOwnTeam = !readOnly && !squad; // your own court (home / your team page)
   const canEdit = isOwnTeam && phase === 'draft';
+  const canCaptain = isOwnTeam && (phase === 'draft' || phase === 'pre_round'); // captaincy is editable
   useEscapeToClose(() => { setManageId(null); setSubFor(null); }, !!(manageId || subFor));
   const C = SURFACE.court; // stands / apron (outside court) / surface (inside court)
 
+  // Two leaders stand ON the court; everyone else fills the bench below it.
+  const bench = team.filter(id => id !== cap && id !== vice);
+  const LEADERS: { id: string | undefined; role: 'C' | 'V'; x: number }[] = [
+    { id: cap, role: 'C', x: 31 },
+    { id: vice, role: 'V', x: 69 },
+  ];
+  const emptyBench = Math.max(0, SQUAD_SIZE - team.length); // add-slots shown during the draft
+
   return (
     <>
-      <div className="relative w-full mx-auto rounded-2xl overflow-hidden select-none aspect-[4/3] sm:aspect-[16/9]" style={{ containerType: 'size', maxWidth: fluid ? undefined : 860, boxShadow: '0 10px 34px rgba(10,27,51,0.22)' }}>
+      <div className="w-full mx-auto" style={{ maxWidth: fluid ? undefined : 860 }}>
+      <div className="relative w-full rounded-2xl overflow-hidden select-none aspect-[4/3] sm:aspect-[16/9]" style={{ containerType: 'size', boxShadow: '0 10px 34px rgba(10,27,51,0.22)' }}>
         {/* Stadium + court (horizontal). Colours come from the active tournament's
             surface theme, so the court re-skins per tournament (grass/hard/clay). */}
         <svg viewBox="0 0 640 360" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
@@ -132,51 +137,41 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
           </button>
         )}
 
-        {/* Players / empty slots */}
-        {SPOTS.map((spot, i) => {
-          const id = team[i];
+        {/* The two captains — on the court, one each side of the net */}
+        {LEADERS.map(({ id, role, x }) => {
+          const isC = role === 'C';
+          const badgeColor = isC ? 'var(--gold)' : '#7DA9D8';
+          const label = isC ? 'Captain' : 'Vice';
           if (!id) {
             return (
-              <button
-                key={i}
-                onClick={() => canEdit && setPickerOpen(true)}
-                disabled={!canEdit}
-                className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center"
-                style={{ left: `${spot.x}%`, top: `${spot.y}%`, cursor: canEdit ? 'pointer' : 'default' }}
-              >
-                <div className="rounded-full flex items-center justify-center transition-transform" style={{
-                  width: AV_SIZE, height: AV_SIZE,
-                  background: 'rgba(12,26,46,0.42)',
-                  border: canEdit ? '2px dashed rgba(255,255,255,0.5)' : '2px solid rgba(255,255,255,0.18)',
-                }}>
-                  {canEdit && <span className="text-white/80 text-2xl leading-none font-light">+</span>}
+              <div key={role} className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-none" style={{ left: `${x}%`, top: '50%' }}>
+                <div className="rounded-full flex items-center justify-center" style={{ width: LEADER_SIZE, height: LEADER_SIZE, background: 'rgba(12,26,46,0.38)', border: `2px dashed ${badgeColor}` }}>
+                  <span style={{ color: badgeColor, fontWeight: 800, fontSize: 'clamp(11px,4cqh,15px)' }}>{role}</span>
                 </div>
-                {canEdit && <span className="mt-1 text-[9px] font-semibold text-white/70">Add</span>}
-              </button>
+                <span className="mt-1 text-[9px] font-bold uppercase tracking-wide" style={{ color: '#fff', opacity: 0.85 }}>{label}</span>
+              </div>
             );
           }
           const p = findPlayer(id);
-          if (!p) return null; // stale id (e.g. roster change) → skip rather than crash
+          if (!p) return null;
           const out = isPlayerOut(id, revealed);
           const exit = getPlayerExit(id);
-          const isCap = cap === id;
           return (
             <button
-              key={i}
+              key={role}
               onClick={() => (isOwnTeam ? setManageId(id) : openPlayer(id))}
               className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center"
-              style={{ left: `${spot.x}%`, top: `${spot.y}%`, opacity: out ? 0.5 : 1 }}
+              style={{ left: `${x}%`, top: '50%', opacity: out ? 0.5 : 1 }}
             >
-              <div className="relative" style={isCap ? { filter: 'drop-shadow(0 0 6px rgba(217,154,0,0.7))' } : undefined}>
-                <PlayerAvatar playerId={id} name={p.name} size="lg" dimension={AV_SIZE} />
-                {isCap && (
-                  <span className="absolute -top-1 -right-1 rounded-full flex items-center justify-center text-[10px] font-extrabold" style={{ width: 20, height: 20, background: 'var(--gold)', color: '#fff', border: '2px solid #fff' }}>C</span>
-                )}
+              <div className="relative" style={{ filter: `drop-shadow(0 0 7px ${isC ? 'rgba(217,154,0,0.75)' : 'rgba(125,169,216,0.75)'})` }}>
+                <PlayerAvatar playerId={id} name={p.name} size="lg" dimension={LEADER_SIZE} />
+                <span className="absolute -top-1 -right-1 rounded-full flex items-center justify-center text-[10px] font-extrabold" style={{ width: 20, height: 20, background: badgeColor, color: '#fff', border: '2px solid #fff' }}>{role}</span>
               </div>
               <div className="mt-1 px-1.5 py-0.5 rounded-md flex items-center gap-1 whitespace-nowrap" style={{ background: 'rgba(10,31,68,0.82)' }}>
-                <span className="text-[10px] font-bold text-white leading-none">{lastName(p.name)}</span>
+                <span className="text-[11px] font-bold text-white leading-none">{lastName(p.name)}</span>
                 <span className="font-num text-[9px] leading-none" style={{ color: '#7DE2FC' }}>${p.price}M</span>
               </div>
+              <span className="text-[8px] font-bold uppercase tracking-wide mt-0.5" style={{ color: badgeColor }}>{isC ? 'Captain ×2' : 'Vice ×1.5'}</span>
               {out && <div className="text-[8px] font-bold mt-0.5" style={{ color: '#ffd0c6' }}>OUT {exit}</div>}
             </button>
           );
@@ -186,11 +181,54 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
         {team.length === 0 && (
           <div className="absolute inset-x-0 bottom-3 flex items-center justify-center pointer-events-none">
             <div className="px-4 py-1.5 rounded-full text-xs font-semibold" style={{ background: 'rgba(10,31,68,0.78)', color: '#fff' }}>
-              {canEdit ? 'Tap a + to pick your squad' : 'No squad selected'}
+              {canEdit ? 'Draft your squad in the Market' : 'No squad selected'}
             </div>
           </div>
         )}
       </div>
+
+      {/* ── Bench: the eight supporting players below the court ── */}
+      {(bench.length > 0 || emptyBench > 0) && (
+        <div className="mt-2.5">
+          <div className="flex items-center gap-2 mb-1.5 px-1">
+            <span className="text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: 'var(--ink-3)' }}>Bench</span>
+            <div className="flex-1 h-px" style={{ background: 'rgba(10,27,51,0.08)' }} />
+          </div>
+          <div className="flex flex-wrap justify-center gap-x-2 gap-y-2.5">
+            {bench.map(id => {
+              const p = findPlayer(id);
+              if (!p) return null;
+              const out = isPlayerOut(id, revealed);
+              const exit = getPlayerExit(id);
+              return (
+                <button
+                  key={id}
+                  onClick={() => (isOwnTeam ? setManageId(id) : openPlayer(id))}
+                  className="flex flex-col items-center gap-0.5 w-[15%] min-w-[52px] max-w-[72px]"
+                  style={{ opacity: out ? 0.5 : 1 }}
+                >
+                  <PlayerAvatar playerId={id} name={p.name} size="md" />
+                  <span className="text-[10px] font-bold leading-none truncate w-full text-center" style={{ color: 'var(--ink)' }}>{lastName(p.name)}</span>
+                  <span className="font-num text-[9px] leading-none" style={{ color: out ? 'var(--ember)' : 'var(--blue)' }}>{out ? `OUT ${exit}` : `$${p.price}M`}</span>
+                </button>
+              );
+            })}
+            {canEdit && Array.from({ length: emptyBench }).map((_, i) => (
+              <button
+                key={`e${i}`}
+                onClick={() => setPickerOpen(true)}
+                className="flex flex-col items-center gap-0.5 w-[15%] min-w-[52px] max-w-[72px]"
+              >
+                <span className="rounded-full flex items-center justify-center" style={{ width: 40, height: 40, border: '2px dashed rgba(10,27,51,0.22)' }}>
+                  <span className="text-xl leading-none font-light" style={{ color: 'var(--ink-3)' }}>+</span>
+                </span>
+                <span className="text-[10px] font-semibold" style={{ color: 'var(--ink-3)' }}>Add</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      </div>{/* /wrapper */}
 
       {/* Manage a drafted player — tapping your court player opens this, not the profile */}
       {manageId && (() => {
@@ -211,6 +249,25 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
                 </div>
               </div>
               <div className="p-2">
+                {canCaptain && !isPlayerOut(id, revealed) && (
+                  <>
+                    {captain !== id && (
+                      <button
+                        onClick={() => { setCaptain(id); setManageId(null); }}
+                        className="w-full text-left px-3 py-3 rounded-xl text-sm font-bold flex items-center gap-2.5 transition-colors hover:bg-black/5"
+                        style={{ color: 'var(--ink)' }}
+                      >👑 Make Captain <span className="font-num text-xs" style={{ color: 'var(--gold)' }}>×2</span></button>
+                    )}
+                    {viceCaptain !== id && (
+                      <button
+                        onClick={() => { setViceCaptain(id); setManageId(null); }}
+                        className="w-full text-left px-3 py-3 rounded-xl text-sm font-bold flex items-center gap-2.5 transition-colors hover:bg-black/5"
+                        style={{ color: 'var(--ink)' }}
+                      >🥈 Make Vice-Captain <span className="font-num text-xs" style={{ color: '#5a7ba5' }}>×1.5</span></button>
+                    )}
+                    <div className="my-1 h-px" style={{ background: 'rgba(10,27,51,0.08)' }} />
+                  </>
+                )}
                 {phase === 'draft' ? (
                   <>
                     <button

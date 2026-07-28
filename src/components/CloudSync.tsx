@@ -3,6 +3,9 @@ import { useAuth } from '../auth/AuthProvider';
 import { useProfile } from '../store/profileStore';
 import { useGameStore } from '../store/gameStore';
 import { TOURNAMENT } from '../data/tournamentConfig';
+import { findPlayer } from '../data/players';
+import { STARTING_BUDGET } from '../data/squadRules';
+import { round1 } from '../data/format';
 import {
   fetchProfile, saveProfile, type CloudProfile,
   publicLeagueId, fetchEntry, saveEntry, type EntryWrite,
@@ -32,7 +35,8 @@ function gameSnapshot(): EntryWrite {
   const s = useGameStore.getState();
   const state = {
     phase: s.phase, myTeam: s.myTeam, initialSquad: s.initialSquad, transfers: s.transfers,
-    captain: s.captain, captainHistory: s.captainHistory, budget: s.budget,
+    captain: s.captain, viceCaptain: s.viceCaptain,
+    captainHistory: s.captainHistory, viceCaptainHistory: s.viceCaptainHistory, budget: s.budget,
     budgetReturns: s.budgetReturns, currentRoundIndex: s.currentRoundIndex,
     myScore: s.myScore, roundScores: s.roundScores,
   };
@@ -107,6 +111,13 @@ export default function CloudSync() {
       const hasCloud = entry && entry.state && Object.keys(entry.state).length > 0;
       if (hasCloud) {
         useGameStore.setState(entry!.state);            // restore this device from cloud
+        // Existing accounts may carry a budget from the old $100 / 8-player era; for
+        // an in-progress draft, re-derive it from the squad + current price curve.
+        const st = useGameStore.getState();
+        if (st.phase === 'draft') {
+          const spent = st.myTeam.reduce((sum, id) => sum + (findPlayer(id)?.price ?? 0), 0);
+          useGameStore.setState({ budget: round1(STARTING_BUDGET - spent) });
+        }
       } else if (useGameStore.getState().myTeam.length > 0) {
         await saveEntry(user.id, lid, TOURNAMENT.id, gameSnapshot()); // first push-up
       }

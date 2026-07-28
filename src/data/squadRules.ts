@@ -1,15 +1,18 @@
 import { findPlayer } from './players';
 import { getTier, type Tier } from './tiers';
 
-// Squad composition rule. An 8-player squad must include at least 4 Silver and at
-// least 2 Gold — the remaining 2 slots are free (any tier, e.g. a Platinum star).
-// This forces a balanced build: you can't stack the draw with cheap wildcards, nor
-// blow the budget on marquee names only.
-export const SQUAD_SIZE = 8;
-export const STARTING_BUDGET = 100; // $M each manager gets to draft their squad
+// Squad composition rule. A 10-player squad is exactly 2 Platinum, 3 Gold and
+// 5 Silver. Because the minimums (2+3+5) add up to the squad size, they are in
+// effect an EXACT quota — you can't stack marquee names, nor fill the draw with
+// cheap wildcards. Budget is roomy ($200M) so most builds are affordable; the
+// squeeze is choosing WHICH two Platinum / three Gold you can pair with strong
+// Silver value.
+export const SQUAD_SIZE = 10;
+export const STARTING_BUDGET = 200; // $M each manager gets to draft their squad
 export const TIER_MINIMUMS: { tier: Tier; min: number }[] = [
-  { tier: 'Silver', min: 4 },
-  { tier: 'Gold', min: 2 },
+  { tier: 'Platinum', min: 2 },
+  { tier: 'Gold', min: 3 },
+  { tier: 'Silver', min: 5 },
 ];
 
 export function tierCounts(ids: string[]): Record<Tier, number> {

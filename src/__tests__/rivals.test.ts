@@ -5,18 +5,19 @@ import { ROUNDS, isPlayerOut } from '../data/tournament';
 import { isSquadValid, tierCounts } from '../data/squadRules';
 
 describe('rivals squad building', () => {
-  it('every rival strategy yields a legal 8-player squad within $100M meeting the tier rule', () => {
+  it('every rival strategy yields a legal 10-player squad within $200M meeting the tier rule', () => {
     for (const r of RIVALS) {
       const squad = buildSquad(r.rank);
-      expect(squad).toHaveLength(8);
-      expect(new Set(squad).size).toBe(8);
+      expect(squad).toHaveLength(10);
+      expect(new Set(squad).size).toBe(10);
       const spent = squad.reduce((s, id) => s + getPlayer(id).price, 0);
-      expect(spent).toBeLessThanOrEqual(100);
-      // ≥4 Silver, ≥2 Gold
+      expect(spent).toBeLessThanOrEqual(200);
+      // 2 Platinum, 3 Gold, 5 Silver
       expect(isSquadValid(squad)).toBe(true);
       const c = tierCounts(squad);
-      expect(c.Silver).toBeGreaterThanOrEqual(4);
-      expect(c.Gold).toBeGreaterThanOrEqual(2);
+      expect(c.Platinum).toBe(2);
+      expect(c.Gold).toBe(3);
+      expect(c.Silver).toBe(5);
     }
   });
 
@@ -58,12 +59,12 @@ describe('static scoreSquad (reference)', () => {
 });
 
 describe('transfer-aware simulation', () => {
-  it('always keeps a legal 8-player squad and non-negative budget at every round', () => {
+  it('always keeps a legal 10-player squad and non-negative budget at every round', () => {
     for (const r of RIVALS) {
       for (let upto = 0; upto <= ROUNDS.length; upto++) {
         const t = simulateRival(r, upto);
-        expect(t.squad).toHaveLength(8);
-        expect(new Set(t.squad).size).toBe(8);
+        expect(t.squad).toHaveLength(10);
+        expect(new Set(t.squad).size).toBe(10);
         expect(t.budget).toBeGreaterThanOrEqual(0);
       }
     }

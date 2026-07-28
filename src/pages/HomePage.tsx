@@ -69,18 +69,18 @@ export default function HomePage() {
       <SquadCourt fluid teamName={teamName} emblem={teamEmblem} onTeamClick={() => openTeam('you')} />
       <div className="text-[11px] mt-1.5 mb-3 text-center" style={{ color: 'var(--ink-3)' }}>
         {phase === 'draft'
-          ? 'Tap a + to add players · tap a player to manage your squad'
-          : <>Tap a player to manage or view their profile · <span style={{ color: 'var(--gold)' }}>⭐ = captain (2× points)</span></>}
+          ? 'Your two captains lead on court · the other 8 sit on the bench · draft in the Market'
+          : <>Tap a player to manage · <span style={{ color: 'var(--gold)' }}>C = captain ×2</span> · <span style={{ color: 'var(--blue)' }}>V = vice ×1.5</span></>}
       </div>
 
       {/* ── Action callout ── */}
       {phase === 'draft' && (
         <ActionBanner color="var(--blue)" title={squadReady ? 'Squad ready — lock it in' : 'Build your squad'}
-          body={`$${budget.toFixed(1)}M budget · ${myTeam.length}/${TEAM_TARGET} picked · ≥4 Silver, ≥2 Gold`} cta="Go to Market" onClick={() => setActiveTab('draft')} />
+          body={`$${budget.toFixed(1)}M budget · ${myTeam.length}/${TEAM_TARGET} picked · 2 Platinum · 3 Gold · 5 Silver`} cta="Go to Market" onClick={() => setActiveTab('draft')} />
       )}
       {phase === 'pre_round' && currentRound && (
-        <ActionBanner color="var(--gold)" title={`Set captain for ${currentRound.label}`}
-          body={`double points if your captain wins · ${activePlayers.length} still in`} cta="Pick Captain" onClick={() => setActiveTab('tournament')} />
+        <ActionBanner color="var(--gold)" title={`Set your captains for ${currentRound.label}`}
+          body={`captain ×2 · vice ×1.5 · ${activePlayers.length} still in`} cta="Pick Captains" onClick={() => setActiveTab('tournament')} />
       )}
       {phase === 'round_complete' && currentRound && (
         <ActionBanner color="var(--green)" title={`${ROUNDS[currentRoundIndex - 1]?.label} results are in`}

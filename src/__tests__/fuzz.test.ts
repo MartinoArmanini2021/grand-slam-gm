@@ -12,13 +12,14 @@ function rng(seed: number) {
 }
 const store = () => useGameStore.getState();
 
-// Build a random VALID squad (8, ≥4 Silver, ≥2 Gold) within $100M by adding through
-// the real store guards until valid.
+// Build a random VALID squad (10 · 2 Platinum · 3 Gold · 5 Silver) within $200M by
+// adding through the real store guards until valid.
 function draftValidSquad(rand: () => number) {
   store().resetGame();
   const byPrice = (arr: typeof PLAYERS) => [...arr].sort((a, b) => a.price - b.price);
-  const silver = byPrice(PLAYERS.filter(p => getTier(p.ranking) === 'Silver'));
+  const platinum = byPrice(PLAYERS.filter(p => getTier(p.ranking) === 'Platinum'));
   const gold = byPrice(PLAYERS.filter(p => getTier(p.ranking) === 'Gold'));
+  const silver = byPrice(PLAYERS.filter(p => getTier(p.ranking) === 'Silver'));
   // Seeded pick of n distinct players from a pool — varies the squad per seed while
   // staying within guaranteed-affordable cheap tiers (so the draft never fails; the
   // fuzzed surface is the PLAY loop below, not squad assembly).
@@ -27,10 +28,10 @@ function draftValidSquad(rand: () => number) {
     for (let k = 0; k < n && a.length; k++) out.push(a.splice(Math.floor(rand() * a.length), 1)[0]!);
     return out;
   };
-  const picks = [...takeN(silver.slice(0, 16), 4), ...takeN(gold, 2)]; // 4 Silver + 2 Gold
-  for (const p of silver) { if (picks.length >= 8) break; if (!picks.includes(p)) picks.push(p); } // 2 cheapest Silver
+  const picks = [...takeN(platinum, 2), ...takeN(gold, 3)]; // 2 Platinum + 3 Gold
+  for (const p of silver) { if (picks.length >= 10) break; if (!picks.includes(p)) picks.push(p); } // 5 cheapest Silver
   for (const p of picks) store().addPlayer(p.id);
-  return store().myTeam.length === 8 && isSquadValid(store().myTeam);
+  return store().myTeam.length === 10 && isSquadValid(store().myTeam);
 }
 
 describe('FUZZ — many random full games never break an invariant', () => {
@@ -68,8 +69,8 @@ describe('FUZZ — many random full games never break an invariant', () => {
         expect(Math.abs(store().budget * 10 - Math.round(store().budget * 10)), `iter ${i} round ${r}: budget float drift (${store().budget})`).toBeLessThan(1e-6);
         expect(store().myScore, `iter ${i} round ${r}: score regressed`).toBeGreaterThanOrEqual(prevScore);
         prevScore = store().myScore;
-        // squad always exactly 8 and every member a real roster id
-        expect(store().myTeam).toHaveLength(8);
+        // squad always exactly 10 and every member a real roster id
+        expect(store().myTeam).toHaveLength(10);
         for (const id of store().myTeam) expect(PLAYERS.some(p => p.id === id)).toBe(true);
         // every recorded transfer references real players
         for (const t of store().transfers) { expect(PLAYERS.some(p => p.id === t.in)).toBe(true); expect(PLAYERS.some(p => p.id === t.out)).toBe(true); }

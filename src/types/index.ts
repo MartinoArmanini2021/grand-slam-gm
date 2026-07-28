@@ -42,7 +42,8 @@ export type GamePhase = 'draft' | 'pre_round' | 'round_complete' | 'finished';
 export interface RoundScore {
   round: RoundId;
   points: number;
-  captainBonus: number;
+  captainBonus: number; // extra points from the captain (×2) this round
+  viceBonus: number;    // extra points from the vice-captain (×1.5) this round
 }
 
 export interface BudgetReturn {

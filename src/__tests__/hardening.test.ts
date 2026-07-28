@@ -3,6 +3,7 @@ import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { PLAYERS } from '../data/players';
 import { getTier } from '../data/tiers';
+import { isSquadValid } from '../data/squadRules';
 
 // Regression guards for the end-of-day review fixes.
 const g = () => useGameStore.getState();
@@ -19,7 +20,7 @@ describe('store hardening', () => {
     expect(g().myScore).toBe(0);
     expect(g().currentRoundIndex).toBe(0);
     expect(g().phase).toBe('draft');
-    expect(g().budget).toBe(100);
+    expect(g().budget).toBe(200);
   });
 
   it('profile reset() clears identity + team back to defaults (no cross-account bleed)', () => {
@@ -42,14 +43,17 @@ describe('store hardening', () => {
     expect(g().captain).toBeNull();
   });
 
-  it('a 4-Silver + 2-Gold + 2-Silver squad builds and locks (tier rule holds)', () => {
+  it('a valid 2-Platinum + 3-Gold + 5-Silver squad builds and locks (tier rule holds)', () => {
     const byPrice = (t: string) => PLAYERS.filter(p => getTier(p.ranking) === t).sort((a, b) => a.price - b.price);
-    const picks = [...byPrice('Silver').slice(0, 6), ...byPrice('Gold').slice(0, 2)];
+    const picks = [...byPrice('Platinum').slice(0, 2), ...byPrice('Gold').slice(0, 3), ...byPrice('Silver').slice(0, 5)];
     for (const p of picks) g().addPlayer(p.id);
-    expect(g().myTeam).toHaveLength(8);
+    expect(g().myTeam).toHaveLength(10);
+    expect(isSquadValid(g().myTeam)).toBe(true);
     g().finalizeDraft();
     expect(g().phase).toBe('pre_round');
-    // default captain is a real, non-null squad member
+    // defaults: two distinct on-court leaders (captain + vice), both real members
     expect(g().myTeam).toContain(g().captain);
+    expect(g().myTeam).toContain(g().viceCaptain);
+    expect(g().captain).not.toBe(g().viceCaptain);
   });
 });

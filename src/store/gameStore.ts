@@ -8,7 +8,8 @@ import { findPlayer, PLAYERS } from '../data/players';
 import { SQUAD_SIZE, STARTING_BUDGET } from '../data/squadRules';
 import { round1 } from '../data/format';
 
-const CAPTAIN_MULTIPLIER = 2;
+const CAPTAIN_MULTIPLIER = 2;   // captain doubles their round points
+const VICE_MULTIPLIER = 1.5;    // vice-captain earns 1.5× their round points
 
 interface GameStore {
   phase: GamePhase;
@@ -16,7 +17,9 @@ interface GameStore {
   initialSquad: string[]; // the squad as drafted (before any transfers) — for history
   transfers: Transfer[];  // mid-tournament replacements you've made, in order
   captain: string | null;
+  viceCaptain: string | null;
   captainHistory: { round: RoundId; playerId: string }[];
+  viceCaptainHistory: { round: RoundId; playerId: string }[];
   budget: number;
   budgetReturns: BudgetReturn[];
   currentRoundIndex: number;
@@ -30,6 +33,7 @@ interface GameStore {
   addPlayer: (id: string) => void;
   removePlayer: (id: string) => void;
   setCaptain: (id: string) => void;
+  setViceCaptain: (id: string) => void;
   finalizeDraft: () => void;
   replacePlayer: (oldId: string, newId: string) => void;
   playNextRound: () => void;
@@ -48,7 +52,9 @@ export const useGameStore = create<GameStore>()(
       initialSquad: [],
       transfers: [],
       captain: null,
+      viceCaptain: null,
       captainHistory: [],
+      viceCaptainHistory: [],
       budget: STARTING_BUDGET,
       budgetReturns: [],
       currentRoundIndex: 0,
@@ -71,7 +77,7 @@ export const useGameStore = create<GameStore>()(
       },
 
       removePlayer: (id) => {
-        const { myTeam, budget, captain, phase } = get();
+        const { myTeam, budget, captain, viceCaptain, phase } = get();
         if (phase !== 'draft') return; // squad is locked after the draft
         const player = findPlayer(id);
         if (!player) return;
@@ -79,39 +85,53 @@ export const useGameStore = create<GameStore>()(
           myTeam: myTeam.filter(pid => pid !== id),
           budget: budget + player.price,
           captain: captain === id ? null : captain,
+          viceCaptain: viceCaptain === id ? null : viceCaptain,
         });
       },
 
       setCaptain: (id) => {
-        const { myTeam, currentRoundIndex, phase } = get();
+        const { myTeam, viceCaptain, currentRoundIndex, phase } = get();
         // Captaining only makes sense while choosing a squad or a round's captain.
         if (phase !== 'draft' && phase !== 'pre_round') return;
         if (!myTeam.includes(id)) return;
         // An eliminated player can't captain (guards callers that don't pre-filter).
         const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
         if (isPlayerOut(id, revealed)) return;
-        set({ captain: id });
+        // Captain and vice must be distinct — promoting your vice frees the vice slot.
+        set({ captain: id, viceCaptain: viceCaptain === id ? null : viceCaptain });
+      },
+
+      setViceCaptain: (id) => {
+        const { myTeam, captain, currentRoundIndex, phase } = get();
+        if (phase !== 'draft' && phase !== 'pre_round') return;
+        if (!myTeam.includes(id)) return;
+        if (id === captain) return; // can't be both captain and vice
+        const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
+        if (isPlayerOut(id, revealed)) return;
+        set({ viceCaptain: id });
       },
 
       finalizeDraft: () => {
-        const { myTeam, captain, phase } = get();
+        const { myTeam, captain, viceCaptain, phase } = get();
         if (phase !== 'draft') return; // already locked in
-        // The full composition rule (8 · ≥4 Silver · ≥2 Gold) is enforced at the
-        // UI (the Lock button is gated on isSquadValid). The store stays permissive
-        // so unit tests can lock a small squad to isolate scoring; no production
-        // caller ever passes an illegal squad.
+        // The full composition rule (10 · 2 Platinum · 3 Gold · 5 Silver) is enforced
+        // at the UI (the Lock button is gated on isSquadValid). The store stays
+        // permissive so unit tests can lock a small squad to isolate scoring; no
+        // production caller ever passes an illegal squad.
         if (myTeam.length === 0) return;
-        // Default the captain to the first NON-eliminated member (never an already-out
-        // player), then fall back to myTeam[0] only if somehow all are out.
-        const defaultCaptain = captain ?? myTeam.find(id => !isPlayerOut(id, [])) ?? myTeam[0];
+        // Default captain + vice to the first two NON-eliminated members (distinct),
+        // so a freshly-locked squad already fields two on-court leaders.
+        const alive = myTeam.filter(id => !isPlayerOut(id, []));
+        const defaultCaptain = captain ?? alive[0] ?? myTeam[0];
+        const defaultVice = viceCaptain ?? alive.find(id => id !== defaultCaptain) ?? null;
         // Snapshot the drafted squad so the transfer history can show who you signed.
-        set({ phase: 'pre_round', captain: defaultCaptain, initialSquad: [...myTeam] });
+        set({ phase: 'pre_round', captain: defaultCaptain, viceCaptain: defaultVice, initialSquad: [...myTeam] });
       },
 
       // Mid-tournament substitution: swap an eliminated squad member for a
       // still-alive player you can now afford (with the returned budget).
       replacePlayer: (oldId, newId) => {
-        const { myTeam, budget, captain, currentRoundIndex, phase } = get();
+        const { myTeam, budget, captain, viceCaptain, currentRoundIndex, phase } = get();
         if (phase === 'finished' || phase === 'draft') return;
         if (!transfersOpen(currentRoundIndex)) return; // window shut after the QF
         if (!myTeam.includes(oldId) || myTeam.includes(newId)) return;
@@ -126,12 +146,13 @@ export const useGameStore = create<GameStore>()(
           myTeam: myTeam.map(id => (id === oldId ? newId : id)),
           budget: round1(budget - player.price), // round like every other money mutation — budget can be fractional after refunds
           captain: captain === oldId ? null : captain,
+          viceCaptain: viceCaptain === oldId ? null : viceCaptain,
           transfers: [...get().transfers, { out: oldId, in: newId, round }],
         });
       },
 
       playNextRound: () => {
-        const { currentRoundIndex, myTeam, captain, captainHistory, budgetReturns, myScore, roundScores, phase } = get();
+        const { currentRoundIndex, myTeam, captain, viceCaptain, captainHistory, viceCaptainHistory, budgetReturns, myScore, roundScores, phase } = get();
         if (currentRoundIndex >= ROUNDS.length) return;
         // Only playable from pre_round. Guards a double-tap that would otherwise
         // burn the next round with no captain and skip its transfer window.
@@ -146,6 +167,7 @@ export const useGameStore = create<GameStore>()(
         // Calculate points
         let roundPoints = 0;
         let captainBonus = 0;
+        let viceBonus = 0;
         const newReturns: BudgetReturn[] = [];
 
         myTeam.forEach(playerId => {
@@ -159,8 +181,13 @@ export const useGameStore = create<GameStore>()(
             const oppId = match.p1Id === playerId ? match.p2Id : match.p1Id;
             const pts = winPoints(round.id, playerId, oppId); // ranking-weighted + upset bonus
             if (playerId === captain) {
-              captainBonus += pts; // +pts extra (total 2x)
-              roundPoints += pts * CAPTAIN_MULTIPLIER;
+              const total = pts * CAPTAIN_MULTIPLIER;
+              captainBonus += total - pts; // +pts extra (total 2×)
+              roundPoints += total;
+            } else if (playerId === viceCaptain) {
+              const total = Math.round(pts * VICE_MULTIPLIER);
+              viceBonus += total - pts; // +half extra (total 1.5×, rounded)
+              roundPoints += total;
             } else {
               roundPoints += pts;
             }
@@ -176,19 +203,24 @@ export const useGameStore = create<GameStore>()(
         const totalReturn = newReturns.reduce((sum, r) => sum + r.amount, 0);
         const isLastRound = currentRoundIndex === ROUNDS.length - 1;
 
-        // Store captain for this round
+        // Record who captained / vice-captained this round for the history.
         const newCaptainHistory = captain
           ? [...captainHistory, { round: round.id, playerId: captain }]
           : captainHistory;
+        const newViceCaptainHistory = viceCaptain
+          ? [...viceCaptainHistory, { round: round.id, playerId: viceCaptain }]
+          : viceCaptainHistory;
 
         set({
           myScore: myScore + roundPoints,
-          roundScores: [...roundScores, { round: round.id, points: roundPoints, captainBonus }],
+          roundScores: [...roundScores, { round: round.id, points: roundPoints, captainBonus, viceBonus }],
           budgetReturns: [...budgetReturns, ...newReturns],
           budget: round1(get().budget + totalReturn),
           currentRoundIndex: currentRoundIndex + 1,
           captainHistory: newCaptainHistory,
+          viceCaptainHistory: newViceCaptainHistory,
           captain: null,
+          viceCaptain: null,
           phase: isLastRound ? 'finished' : 'round_complete',
         });
       },
@@ -196,8 +228,13 @@ export const useGameStore = create<GameStore>()(
       // Move from the results screen to captain-picking for the next round. Guarded
       // so it can only advance from round_complete (never re-open a finished game).
       continueToNextRound: () => {
-        if (get().phase !== 'round_complete') return;
-        set({ phase: 'pre_round' });
+        const { phase, myTeam, currentRoundIndex } = get();
+        if (phase !== 'round_complete') return;
+        // Re-field two captains by default (first two still-alive members) so a
+        // manager who doesn't touch the captaincy still gets ×2 / ×1.5 each round.
+        const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
+        const alive = myTeam.filter(id => !isPlayerOut(id, revealed));
+        set({ phase: 'pre_round', captain: alive[0] ?? null, viceCaptain: alive[1] ?? null });
       },
 
       setActiveTab: (tab) => set({ activeTab: tab }),
@@ -216,7 +253,9 @@ export const useGameStore = create<GameStore>()(
         initialSquad: [],
         transfers: [],
         captain: null,
+        viceCaptain: null,
         captainHistory: [],
+        viceCaptainHistory: [],
         budget: STARTING_BUDGET,
         budgetReturns: [],
         currentRoundIndex: 0,
@@ -230,13 +269,14 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'grand-slam-gm-v1',
-      version: 2,
+      version: 3,
       // Persist only game data — never the transient navigation state (activeTab /
       // viewTeam / viewPlayer / playerReturnTab), so a reload always lands on Home
       // rather than restoring a deep player/team detail view.
       partialize: (s) => ({
         phase: s.phase, myTeam: s.myTeam, initialSquad: s.initialSquad, transfers: s.transfers,
-        captain: s.captain, captainHistory: s.captainHistory, budget: s.budget,
+        captain: s.captain, viceCaptain: s.viceCaptain,
+        captainHistory: s.captainHistory, viceCaptainHistory: s.viceCaptainHistory, budget: s.budget,
         budgetReturns: s.budgetReturns, currentRoundIndex: s.currentRoundIndex,
         myScore: s.myScore, roundScores: s.roundScores,
       }),
@@ -252,9 +292,11 @@ export const useGameStore = create<GameStore>()(
           if (Array.isArray(s.initialSquad)) s.initialSquad = s.initialSquad.filter(id => ids.has(id));
           if (Array.isArray(s.transfers)) s.transfers = s.transfers.filter(t => ids.has(t.in) && ids.has(t.out));
           if (s.captain && !ids.has(s.captain)) s.captain = null;
+          if (s.viceCaptain && !ids.has(s.viceCaptain)) s.viceCaptain = null;
           if (s.viewPlayer && !ids.has(s.viewPlayer)) s.viewPlayer = '';
           if (Array.isArray(s.budgetReturns)) s.budgetReturns = s.budgetReturns.filter(r => ids.has(r.playerId));
           if (Array.isArray(s.captainHistory)) s.captainHistory = s.captainHistory.filter(c => ids.has(c.playerId));
+          if (Array.isArray(s.viceCaptainHistory)) s.viceCaptainHistory = s.viceCaptainHistory.filter(c => ids.has(c.playerId));
           // During the draft, budget is exactly 100 − squad cost; recompute it so a
           // squad carried over from an older price curve can't show the wrong budget.
           if (s.phase === 'draft' && Array.isArray(s.myTeam)) {
@@ -275,8 +317,10 @@ export const useGameStore = create<GameStore>()(
         if (Array.isArray(state.initialSquad)) state.initialSquad = state.initialSquad.filter(id => ids.has(id));
         if (Array.isArray(state.transfers)) state.transfers = state.transfers.filter(t => ids.has(t.in) && ids.has(t.out));
         if (state.captain && !ids.has(state.captain)) state.captain = null;
+        if (state.viceCaptain && !ids.has(state.viceCaptain)) state.viceCaptain = null;
         if (Array.isArray(state.budgetReturns)) state.budgetReturns = state.budgetReturns.filter(r => ids.has(r.playerId));
         if (Array.isArray(state.captainHistory)) state.captainHistory = state.captainHistory.filter(c => ids.has(c.playerId));
+        if (Array.isArray(state.viceCaptainHistory)) state.viceCaptainHistory = state.viceCaptainHistory.filter(c => ids.has(c.playerId));
       },
     }
   )

@@ -1,26 +1,27 @@
 import { describe, it, expect } from 'vitest';
 import { PLAYERS, getPlayer } from '../data/players';
-import { getTier, TIER_ORDER } from '../data/tiers';
-import { isSquadValid, tierCounts, SQUAD_SIZE } from '../data/squadRules';
+import { getTier, TIER_ORDER, type Tier } from '../data/tiers';
+import { isSquadValid, tierCounts, SQUAD_SIZE, STARTING_BUDGET } from '../data/squadRules';
 
-describe('squad composition rule (≥4 Silver, ≥2 Gold of 8)', () => {
-  // 4 Silver (rank ≥17), 2 Gold (7–16), 2 Platinum (≤6)
-  const valid = ['munar', 'giron', 'safiullin', 'mochizuki', 'cobolli', 'lehecka', 'sinner', 'zverev'];
+describe('squad composition rule (2 Platinum, 3 Gold, 5 Silver of 10)', () => {
+  // 5 Silver (rank ≥17), 3 Gold (7–16), 2 Platinum (≤6)
+  const valid = ['munar', 'giron', 'safiullin', 'mochizuki', 'bergs', 'cobolli', 'lehecka', 'fritz', 'sinner', 'zverev'];
   it('accepts a squad meeting every minimum', () => {
     expect(valid).toHaveLength(SQUAD_SIZE);
     const c = tierCounts(valid);
-    expect(c.Silver).toBeGreaterThanOrEqual(4);
-    expect(c.Gold).toBeGreaterThanOrEqual(2);
+    expect(c.Platinum).toBe(2);
+    expect(c.Gold).toBe(3);
+    expect(c.Silver).toBe(5);
     expect(isSquadValid(valid)).toBe(true);
   });
   it('rejects too few Gold', () => {
-    // swap a Gold (cobolli #10) for a Silver (brooksby #82) → only 1 Gold left
-    const oneGold = ['munar', 'giron', 'safiullin', 'mochizuki', 'brooksby', 'lehecka', 'sinner', 'zverev'];
-    expect(tierCounts(oneGold).Gold).toBe(1);
-    expect(isSquadValid(oneGold)).toBe(false);
+    // swap a Gold (fritz #8) for a Silver (brooksby #82) → only 2 Gold left (need 3)
+    const twoGold = ['munar', 'giron', 'safiullin', 'mochizuki', 'bergs', 'cobolli', 'lehecka', 'brooksby', 'sinner', 'zverev'];
+    expect(tierCounts(twoGold).Gold).toBe(2);
+    expect(isSquadValid(twoGold)).toBe(false);
   });
   it('rejects an under-size squad even if tiers are met', () => {
-    expect(isSquadValid(valid.slice(0, 7))).toBe(false);
+    expect(isSquadValid(valid.slice(0, 9))).toBe(false);
   });
 });
 
@@ -68,11 +69,11 @@ describe('pricing curve', () => {
     }
   });
 
-  it('you cannot field 8 with the two most expensive (budget tension)', () => {
-    const byPrice = [...PLAYERS].sort((a, b) => b.price - a.price);
-    const topTwo = byPrice[0].price + byPrice[1].price;
-    const cheapest6 = byPrice.slice(-6).reduce((s, p) => s + p.price, 0);
-    expect(topTwo + cheapest6).toBeGreaterThan(100); // infeasible → real trade-off
+  it('the most expensive legal 2/3/5 squad is unaffordable (budget tension)', () => {
+    const byTier = (t: Tier) => PLAYERS.filter(p => getTier(p.ranking) === t).sort((a, b) => b.price - a.price);
+    const priciest = [...byTier('Platinum').slice(0, 2), ...byTier('Gold').slice(0, 3), ...byTier('Silver').slice(0, 5)];
+    const cost = priciest.reduce((s, p) => s + p.price, 0);
+    expect(cost).toBeGreaterThan(STARTING_BUDGET); // all-elite build infeasible → real trade-off
   });
 });
 
