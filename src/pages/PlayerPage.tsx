@@ -3,7 +3,7 @@ import { useGameStore } from '../store/gameStore';
 import { findPlayer, PLAYERS } from '../data/players';
 import { getTier, TIER_META } from '../data/tiers';
 import { WIMBLEDON_2026 } from '../data/wimbledon2026';
-import { ROUNDS, isPlayerOut, getPlayerExit } from '../data/tournament';
+import { ROUNDS, isPlayerOut, getPlayerExit, getOpponentId } from '../data/tournament';
 import { lastName } from '../data/format';
 import { nickOf } from '../data/nicknames';
 import { TOURNAMENT } from '../data/tournamentConfig';
@@ -30,6 +30,15 @@ export default function PlayerPage() {
 
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
   const isOut = isPlayerOut(p.id, revealed);
+  // Who this player faces NEXT in the draw (from the current round onward) — the
+  // default opponent shown in the head-to-head.
+  const nextOppId = (() => {
+    for (let i = currentRoundIndex; i < ROUNDS.length; i++) {
+      const oid = getOpponentId(p.id, ROUNDS[i].id);
+      if (oid) return oid;
+    }
+    return undefined;
+  })();
 
   const tier = getTier(p.ranking);
   const tm = TIER_META[tier];
@@ -136,15 +145,17 @@ export default function PlayerPage() {
 
       {/* Head-to-head */}
       <div className="mt-4">
-        <H2HSection player={p} />
+        <H2HSection player={p} defaultOppId={nextOppId} />
       </div>
     </div>
   );
 }
 
-function H2HSection({ player }: { player: Player }) {
+function H2HSection({ player, defaultOppId }: { player: Player; defaultOppId?: string }) {
   const opponents = PLAYERS.filter(o => o.id !== player.id).sort((a, b) => a.ranking - b.ranking);
-  const [oppId, setOppId] = useState(opponents[0]?.id ?? '');
+  // Default to the opponent this player faces NEXT in the draw; the selector still
+  // lets you review any head-to-head.
+  const [oppId, setOppId] = useState(defaultOppId ?? opponents[0]?.id ?? '');
   const opp = opponents.find(o => o.id === oppId) ?? opponents[0];
   if (!opp) return null;
 

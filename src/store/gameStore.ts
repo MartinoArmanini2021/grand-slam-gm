@@ -51,6 +51,7 @@ interface GameStore {
   removePlayer: (id: string) => void;
   setCaptain: (id: string) => void;
   setViceCaptain: (id: string) => void;
+  benchLeader: (id: string) => void;
   ensureLeaders: () => void;
   finalizeDraft: () => void;
   replacePlayer: (oldId: string, newId: string) => void;
@@ -132,6 +133,15 @@ export const useGameStore = create<GameStore>()(
         if (isPlayerOut(id, revealed)) return;
         if (id === viceCaptain) return;
         set({ viceCaptain: id, captain: id === captain ? viceCaptain : captain });
+      },
+
+      // Send a captain/vice back to the bench, leaving the slot BLANK (no auto-fill)
+      // so the manager can deliberately choose who fills it.
+      benchLeader: (id) => {
+        const { captain, viceCaptain, phase } = get();
+        if (phase !== 'draft' && phase !== 'pre_round') return;
+        if (id === captain) set({ captain: null });
+        else if (id === viceCaptain) set({ viceCaptain: null });
       },
 
       // Re-field two on-court leaders after a state restore (cloud / localStorage),

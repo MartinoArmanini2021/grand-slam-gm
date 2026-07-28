@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
-import { getRivalTeams } from '../data/rivals';
+import { useLeagueBoard } from '../data/leagueBoard';
 import { getPlayer } from '../data/players';
 import { ROUNDS } from '../data/tournament';
 import { lastName } from '../data/format';
@@ -24,8 +24,10 @@ function BackToLeague() {
 }
 
 export default function TeamPage() {
-  const { myTeam, initialSquad, transfers, captain, budget, myScore, currentRoundIndex, viewTeam } = useGameStore();
+  const { myTeam, initialSquad, transfers, captain, budget, myScore, viewTeam, setActiveTab } = useGameStore();
   const { teamName, teamEmblem, username } = useProfile();
+  // Real league members come from the public board (everyone is a member of it).
+  const board = useLeagueBoard(null);
 
   if (viewTeam === 'you') {
     return (
@@ -38,21 +40,32 @@ export default function TeamPage() {
     );
   }
 
-  const team = getRivalTeams(currentRoundIndex).find(t => t.rival.id === viewTeam);
-  if (!team) return null;
+  // Another manager: resolve their squad from the league board (fixes the blank page).
+  const entry = board.find(e => e.id === viewTeam);
+  if (entry) {
+    return (
+      <TeamView
+        key={entry.id}
+        emblem={entry.emblem} name={entry.name} manager={entry.manager} color={entry.color}
+        score={entry.score} budget={entry.budget} squad={entry.squad}
+        captainId={entry.captain ?? ''} viceCaptainId={entry.viceCaptain ?? ''}
+      />
+    );
+  }
+
+  // Not in the board yet (still loading, or a stale link) — a friendly fallback.
   return (
-    <TeamView
-      key={team.rival.id}
-      emblem={team.rival.emblem} name={team.rival.name} manager={team.rival.manager} color={team.rival.color}
-      score={team.score} budget={team.budget} squad={team.squad} captainId={team.captainId}
-      initialSquad={team.initialSquad} transfers={team.transfers}
-    />
+    <div className="max-w-3xl mx-auto px-3 py-10 text-center fade-in">
+      <div className="text-4xl mb-3">🎾</div>
+      <p className="text-sm mb-4" style={{ color: 'var(--ink-2)' }}>This team isn't in your league yet, or is still loading.</p>
+      <button onClick={() => setActiveTab('league')} className="text-sm font-semibold" style={{ color: 'var(--blue)' }}>‹ Back to League</button>
+    </div>
   );
 }
 
-function TeamView({ emblem, name, manager, color, score, budget, squad, captainId, editable, initialSquad = [], transfers = [] }: {
+function TeamView({ emblem, name, manager, color, score, budget, squad, captainId, viceCaptainId, editable, initialSquad = [], transfers = [] }: {
   emblem: string; name: string; manager: string; color: string;
-  score: number; budget: number; squad: string[]; captainId: string; editable?: boolean;
+  score: number; budget: number; squad: string[]; captainId: string; viceCaptainId?: string; editable?: boolean;
   initialSquad?: string[]; transfers?: Transfer[];
 }) {
   const setProfile = useProfile(s => s.set);
@@ -142,7 +155,7 @@ function TeamView({ emblem, name, manager, color, score, budget, squad, captainI
 
       {/* The squad on court. Your own team is interactive (tap + to buy players
           during the draft); rival teams are read-only. */}
-      {editable ? <SquadCourt /> : <SquadCourt squad={squad} captainId={captainId} readOnly />}
+      {editable ? <SquadCourt /> : <SquadCourt squad={squad} captainId={captainId} viceCaptainId={viceCaptainId} readOnly />}
       <div className="text-[11px] mt-2 text-center" style={{ color: 'var(--ink-3)' }}>
         {editable
           ? <>Tap a <b>+</b> to buy players · tap a player for their profile · <span style={{ color: 'var(--gold)' }}>⭐ = captain</span></>

@@ -4,7 +4,7 @@ import type { WMatch, WRound } from '../data/wimbledon2026';
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { findPlayer } from '../data/players';
-import { getRivalTeams } from '../data/rivals';
+import { useLeagueBoard } from '../data/leagueBoard';
 import { ROUNDS } from '../data/tournament';
 import { ROUND_META, ROUND_ORDER, TOURNAMENT } from '../data/tournamentConfig';
 
@@ -65,11 +65,11 @@ export default function BracketTree() {
     return () => clearTimeout(t);
   }, [currentRoundIndex, depth]);
 
-  // Teams you can highlight in the draw: your squad + every league rival.
-  const teams = [
-    ...(myTeam.length > 0 ? [{ id: 'you', name: teamName, username: username ? `@${username}` : '@you', squad: myTeam }] : []),
-    ...getRivalTeams(currentRoundIndex).map(rt => ({ id: rt.rival.id, name: rt.rival.name, username: rt.rival.manager, squad: rt.squad })),
-  ];
+  // Teams you can highlight in the draw: the real managers in your league (no bots).
+  const board = useLeagueBoard(null);
+  const teams = board.length > 0
+    ? board.map(e => ({ id: e.id, name: e.name, username: e.manager, squad: e.squad }))
+    : (myTeam.length > 0 ? [{ id: 'you', name: teamName, username: username ? `@${username}` : '@you', squad: myTeam }] : []);
   const [teamId, setTeamId] = useState('you');
   const selected = teams.find(t => t.id === teamId) ?? teams[0];
   // Keep the dropdown's value in sync with what's actually highlighted (e.g. when
@@ -96,7 +96,6 @@ export default function BracketTree() {
         <span className="text-[11px] truncate flex-1" style={{ color: dim ? 'var(--ink-3)' : 'var(--ink)', fontWeight: isWinner || isMine ? 800 : 500 }}>
           {name}
         </span>
-        {isMine && <span className="text-[9px] shrink-0" style={{ color: 'var(--gold)' }}>★</span>}
         {isWinner && <span className="text-[10px] shrink-0" style={{ color: 'var(--green)' }}>✓</span>}
       </button>
     );
@@ -216,20 +215,13 @@ export default function BracketTree() {
               </button>
             ))}
           </div>
-          {/* Jump straight to a round in the draw (the tree scrolls to it) */}
-          <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.1)' }}>
-            {cols.filter(r => r === cols[0] || r === 'SF').concat('F' as WRound).map(r => (
-              <button
-                key={r}
-                onClick={() => scrollToRound(r)}
-                className="px-3 py-2 text-xs font-bold transition-colors"
-                style={{ background: r === 'F' ? 'rgba(217,154,0,0.1)' : '#FFFFFF', color: r === 'F' ? 'var(--gold)' : 'var(--ink-2)' }}
-                title={`Scroll to ${r === 'F' ? 'the Final' : ROUND_LABEL[r]}`}
-              >
-                {r === 'F' ? '🏆 Final' : ROUND_LABEL[r]}
-              </button>
-            ))}
-          </div>
+          {/* One clean nav aid: scroll the tree to the Final */}
+          <button
+            onClick={() => scrollToRound('F')}
+            className="px-3 py-2 text-xs font-bold rounded-xl transition-colors"
+            style={{ background: 'rgba(217,154,0,0.1)', color: 'var(--gold)', border: '1px solid rgba(217,154,0,0.25)' }}
+            title="Scroll to the Final"
+          >🏆 Final</button>
         </div>
         {teams.length > 0 && (
           <div className="flex items-center gap-1.5">
@@ -249,7 +241,7 @@ export default function BracketTree() {
       <div className="flex items-center gap-3 text-[11px] mb-3 flex-wrap" style={{ color: 'var(--ink-3)' }}>
         {highlight.size > 0 && selected && (
           <span className="flex items-center gap-1 font-semibold" style={{ color: 'var(--gold)' }}>
-            <span style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--gold)', display: 'inline-block' }} /> Highlighting {selected.name}'s players (★)
+            <span style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--gold)', display: 'inline-block' }} /> Highlighting {selected.name}'s players
           </span>
         )}
         <span>

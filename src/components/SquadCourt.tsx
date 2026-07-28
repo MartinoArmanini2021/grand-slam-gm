@@ -23,7 +23,7 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
   onTeamClick?: () => void; // makes the team label a link (e.g. to your team page)
   fluid?: boolean;         // fill the container width instead of the 860px cap
 } = {}) {
-  const { myTeam, captain, viceCaptain, currentRoundIndex, phase, budget, openPlayer, removePlayer, replacePlayer, setCaptain, setViceCaptain } = useGameStore();
+  const { myTeam, captain, viceCaptain, currentRoundIndex, phase, budget, openPlayer, removePlayer, replacePlayer, setCaptain, setViceCaptain, benchLeader } = useGameStore();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [manageId, setManageId] = useState<string | null>(null);
   const [subFor, setSubFor] = useState<string | null>(null); // eliminated player being transferred out
@@ -41,7 +41,6 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
   const byRank = (ids: string[]) => [...ids].sort((a, b) => (findPlayer(a)?.ranking ?? 9999) - (findPlayer(b)?.ranking ?? 9999));
   // Two leaders stand ON the court (at the baselines); everyone else fills the bench.
   const bench = byRank(team.filter(id => id !== cap && id !== vice));
-  const benchTop = bench[0]; // best-ranked bench player — promoted when a leader steps down
   const LEADERS: { id: string | undefined; role: 'C' | 'V'; x: number }[] = [
     { id: cap, role: 'C', x: 20 },  // captain — left baseline
     { id: vice, role: 'V', x: 80 }, // vice — right baseline
@@ -276,9 +275,9 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
                         style={{ color: 'var(--ink)' }}
                       >🥈 Make Vice-Captain <span className="font-num text-xs" style={{ color: '#5a7ba5' }}>×1.5</span></button>
                     )}
-                    {(captain === id || viceCaptain === id) && benchTop && (
+                    {(captain === id || viceCaptain === id) && (
                       <button
-                        onClick={() => { if (captain === id) setCaptain(benchTop); else setViceCaptain(benchTop); setManageId(null); }}
+                        onClick={() => { benchLeader(id); setManageId(null); }}
                         className="w-full text-left px-3 py-3 rounded-xl text-sm font-bold flex items-center gap-2.5 transition-colors hover:bg-black/5"
                         style={{ color: 'var(--ink-2)' }}
                       >⬇️ Send {lastName(mp.name)} to the bench</button>

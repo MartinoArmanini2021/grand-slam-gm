@@ -16,6 +16,8 @@ export interface BoardEntry {
   budget: number;
   score: number;
   you: boolean;
+  captain: string | null;
+  viceCaptain: string | null;
 }
 
 // Deterministic accent per real user, so a team keeps the same colour across renders.
@@ -60,6 +62,7 @@ export function useLeagueBoard(leagueId: string | null = null): BoardEntry[] {
       id: r.userId, name: r.teamName, emblem: r.teamEmblem,
       manager: r.username ? `@${r.username}` : '@player',
       motto: '', color: colorFor(r.userId), squad: r.squad, budget: r.budget, score: r.score, you: false,
+      captain: r.captain, viceCaptain: r.viceCaptain,
     }));
 
   const board: BoardEntry[] = [
@@ -67,6 +70,7 @@ export function useLeagueBoard(leagueId: string | null = null): BoardEntry[] {
     ...(myTeam.length > 0 ? [{
       id: 'you', name: teamName, emblem: teamEmblem, manager: username ? `@${username}` : '@you',
       motto: 'Your squad', color: '#0e6fc4', squad: myTeam, budget, score: myScore, you: true,
+      captain: useGameStore.getState().captain, viceCaptain: useGameStore.getState().viceCaptain,
     }] : []),
   ];
 

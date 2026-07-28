@@ -4,7 +4,6 @@ import { useAuth } from '../auth/AuthProvider';
 import { useGameStore } from '../store/gameStore';
 import { toast } from '../store/toastStore';
 import { useEscapeToClose } from '../hooks';
-import { isAdmin, setAdmin } from '../data/admin';
 
 export default function UserProfile({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { firstName, lastName, username, phone, country, email, teamName, teamEmblem, set } = useProfile();
@@ -31,6 +30,9 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
   const accountEmail = user?.email ?? '';
   const field = { background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.12)', color: 'var(--ink)' } as const;
   const initials = ((firstName[0] ?? '') + (lastName[0] ?? '')) || (username[0] ?? accountEmail[0] ?? 'U');
+  // Required for the live league: username, name, surname, email, phone.
+  const incomplete = [username, firstName, lastName, accountEmail || email, phone].some(v => !v.trim());
+  const reqStyle = (v: string) => (v.trim() ? field : { ...field, border: '1px solid rgba(229,71,43,0.55)' });
 
   const changePassword = async () => {
     setPwMsg(null);
@@ -50,7 +52,7 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(10,27,51,0.55)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div onClick={e => e.stopPropagation()} className="fade-in rounded-2xl w-full" style={{ maxWidth: 440, background: '#fff', maxHeight: '90vh', overflowY: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} className="fade-in rounded-2xl w-full" style={{ maxWidth: 420, background: '#fff', maxHeight: '88dvh', overflowY: 'auto' }}>
         {/* Header */}
         <div className="flex items-center gap-3 px-5 py-4 sticky top-0" style={{ background: 'linear-gradient(120deg,var(--ink),var(--navy-2))', borderRadius: '16px 16px 0 0', zIndex: 1 }}>
           <div className="flex items-center justify-center rounded-xl text-lg font-extrabold uppercase" style={{ width: 44, height: 44, background: 'rgba(255,255,255,0.16)', color: '#fff' }}>
@@ -65,31 +67,36 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
           <button onClick={onClose} className="text-white text-sm font-bold px-3 py-1.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.15)' }}>Done</button>
         </div>
 
-        <div className="p-5 space-y-3">
-          <Row label="Username">
-            <input value={username} onChange={e => set({ username: e.target.value })} placeholder="Pick a username" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={field} />
+        <div className="p-4 sm:p-5 space-y-2.5">
+          {incomplete && (
+            <div className="text-xs rounded-xl px-3 py-2" style={{ background: 'rgba(217,154,0,0.1)', border: '1px solid rgba(217,154,0,0.25)', color: '#8a6a00' }}>
+              Please complete the <b>required</b> fields (marked <span style={{ color: 'var(--ember)' }}>*</span>) — they'll be needed to join the live league.
+            </div>
+          )}
+          <Row label="Username" req>
+            <input value={username} onChange={e => set({ username: e.target.value })} placeholder="Pick a username" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={reqStyle(username)} />
           </Row>
           <div className="grid grid-cols-2 gap-3">
-            <Row label="First name">
-              <input value={firstName} onChange={e => set({ firstName: e.target.value })} placeholder="First name" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={field} />
+            <Row label="First name" req>
+              <input value={firstName} onChange={e => set({ firstName: e.target.value })} placeholder="First name" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={reqStyle(firstName)} />
             </Row>
-            <Row label="Surname">
-              <input value={lastName} onChange={e => set({ lastName: e.target.value })} placeholder="Surname" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={field} />
+            <Row label="Surname" req>
+              <input value={lastName} onChange={e => set({ lastName: e.target.value })} placeholder="Surname" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={reqStyle(lastName)} />
             </Row>
           </div>
-          <Row label="Email">
+          <Row label="Email" req>
             {accountEmail ? (
               <div className="w-full text-sm px-3 py-2.5 rounded-xl font-num flex items-center justify-between" style={{ ...field, color: 'var(--ink-2)' }}>
                 {accountEmail}
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(18,161,80,0.12)', color: 'var(--green)' }}>VERIFIED</span>
               </div>
             ) : (
-              <input value={email} onChange={e => set({ email: e.target.value })} placeholder="you@email.com" type="email" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={field} />
+              <input value={email} onChange={e => set({ email: e.target.value })} placeholder="you@email.com" type="email" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={reqStyle(email)} />
             )}
           </Row>
           <div className="grid grid-cols-2 gap-3">
-            <Row label="Phone">
-              <input value={phone} onChange={e => set({ phone: e.target.value })} placeholder="+00 000 000" type="tel" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={field} />
+            <Row label="Phone" req>
+              <input value={phone} onChange={e => set({ phone: e.target.value })} placeholder="+00 000 000" type="tel" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={reqStyle(phone)} />
             </Row>
             <Row label="Country">
               <input value={country} onChange={e => set({ country: e.target.value })} placeholder="Country" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={field} />
@@ -128,24 +135,6 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
             )}
           </div>
 
-          {/* Operator / admin mode — reveals the Match Admin tab for running a live
-              tournament. Reloads so the nav picks up the change. */}
-          <div className="pt-2" style={{ borderTop: '1px solid rgba(10,27,51,0.07)' }}>
-            <label className="flex items-center justify-between gap-3 cursor-pointer">
-              <span>
-                <span className="text-sm font-bold" style={{ color: 'var(--ink)' }}>Admin mode</span>
-                <span className="block text-[11px]" style={{ color: 'var(--ink-3)' }}>Show the Match Admin console (for running a live event)</span>
-              </span>
-              <input
-                type="checkbox"
-                defaultChecked={isAdmin()}
-                onChange={e => { setAdmin(e.target.checked); window.location.reload(); }}
-                className="w-5 h-5 shrink-0"
-                aria-label="Admin mode"
-              />
-            </label>
-          </div>
-
           <p className="text-[11px] pt-1" style={{ color: 'var(--ink-3)' }}>Saved on this device. It'll sync to your account once accounts go live.</p>
 
           {/* Start over — wipes the squad and score so you can draft again.
@@ -176,10 +165,12 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
   );
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Row({ label, req, children }: { label: string; req?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <div className="text-[11px] font-bold uppercase tracking-wide mb-1.5" style={{ color: 'var(--ink-2)' }}>{label}</div>
+      <div className="text-[11px] font-bold uppercase tracking-wide mb-1.5" style={{ color: 'var(--ink-2)' }}>
+        {label}{req && <span style={{ color: 'var(--ember)' }}> *</span>}
+      </div>
       {children}
     </div>
   );

@@ -47,7 +47,7 @@ describe('draft mechanics', () => {
 
   it('rejects an 11th player', () => {
     // a legal 2 Platinum · 3 Gold · 5 Silver squad, then one more
-    ['sinner', 'zverev', 'djokovic', 'fritz', 'medvedev', 'fery', 'giron', 'munar', 'bergs', 'zheng'].forEach(id => store().addPlayer(id));
+    ['sinner', 'zverev', 'bublik', 'ruud', 'rublev', 'fery', 'giron', 'munar', 'bergs', 'zheng'].forEach(id => store().addPlayer(id));
     expect(store().myTeam).toHaveLength(10);
     store().addPlayer('svajda'); // squad already full
     expect(store().myTeam).toHaveLength(10);
@@ -170,7 +170,7 @@ describe('budget returns', () => {
 
 describe('scoring invariants over a mixed squad', () => {
   it('score is monotonic and every refund is for an owned, eliminated player', () => {
-    ['sinner', 'zverev', 'fery', 'fritz', 'cobolli', 'lehecka'].forEach(id => store().addPlayer(id));
+    ['sinner', 'zverev', 'ruud', 'lehecka', 'fery', 'giron'].forEach(id => store().addPlayer(id));
     store().finalizeDraft();
     let prev = 0;
     const cap = store().captain!;

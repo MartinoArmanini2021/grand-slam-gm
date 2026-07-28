@@ -4,8 +4,8 @@ import { getTier, TIER_ORDER, type Tier } from '../data/tiers';
 import { isSquadValid, tierCounts, SQUAD_SIZE, STARTING_BUDGET } from '../data/squadRules';
 
 describe('squad composition rule (2 Platinum, 3 Gold, 5 Silver of 10)', () => {
-  // 5 Silver (rank ≥17), 3 Gold (7–16), 2 Platinum (≤6)
-  const valid = ['munar', 'giron', 'safiullin', 'mochizuki', 'bergs', 'cobolli', 'lehecka', 'fritz', 'sinner', 'zverev'];
+  // 5 Silver (rank ≥26), 3 Gold (11–25), 2 Platinum (≤10)
+  const valid = ['munar', 'giron', 'safiullin', 'mochizuki', 'bergs', 'bublik', 'ruud', 'rublev', 'sinner', 'zverev'];
   it('accepts a squad meeting every minimum', () => {
     expect(valid).toHaveLength(SQUAD_SIZE);
     const c = tierCounts(valid);
@@ -15,8 +15,8 @@ describe('squad composition rule (2 Platinum, 3 Gold, 5 Silver of 10)', () => {
     expect(isSquadValid(valid)).toBe(true);
   });
   it('rejects too few Gold', () => {
-    // swap a Gold (fritz #8) for a Silver (brooksby #82) → only 2 Gold left (need 3)
-    const twoGold = ['munar', 'giron', 'safiullin', 'mochizuki', 'bergs', 'cobolli', 'lehecka', 'brooksby', 'sinner', 'zverev'];
+    // swap a Gold (rublev #13) for a Silver (brooksby #82) → only 2 Gold left (need 3)
+    const twoGold = ['munar', 'giron', 'safiullin', 'mochizuki', 'bergs', 'bublik', 'ruud', 'brooksby', 'sinner', 'zverev'];
     expect(tierCounts(twoGold).Gold).toBe(2);
     expect(isSquadValid(twoGold)).toBe(false);
   });
@@ -80,10 +80,10 @@ describe('pricing curve', () => {
 describe('tiers by ranking', () => {
   it('boundaries are correct', () => {
     expect(getTier(1)).toBe('Platinum');
-    expect(getTier(6)).toBe('Platinum');
-    expect(getTier(7)).toBe('Gold');
-    expect(getTier(16)).toBe('Gold');
-    expect(getTier(17)).toBe('Silver');
+    expect(getTier(10)).toBe('Platinum');
+    expect(getTier(11)).toBe('Gold');
+    expect(getTier(25)).toBe('Gold');
+    expect(getTier(26)).toBe('Silver');
     expect(getTier(32)).toBe('Silver');
   });
 

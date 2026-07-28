@@ -8,7 +8,6 @@ import TeamPage from './pages/TeamPage';
 import LeaguePage from './pages/LeaguePage';
 import PlayerPage from './pages/PlayerPage';
 import AdminPage from './pages/AdminPage';
-import { isAdmin } from './data/admin';
 import Toaster from './components/Toaster';
 import HowToPlay from './components/HowToPlay';
 import Logo from './components/Logo';
@@ -31,17 +30,13 @@ const TABS = [
   { id: 'tournament', label: 'Bracket', accent: 'var(--ember)' },
 ] as const;
 
-// The operator's match-admin tab is appended only for admins (a local flag toggled
-// from the profile menu). Regular players never see it.
-const ADMIN_TAB = { id: 'admin', label: 'Admin', accent: 'var(--blue-light)' } as const;
-
 export default function App() {
   const { activeTab, setActiveTab, phase, myScore, currentRoundIndex } = useGameStore();
   const currentRound = currentRoundIndex < ROUNDS.length ? ROUNDS[currentRoundIndex] : null;
   const [showRules, setShowRules] = useState(() => !seenRules());
   const [showProfile, setShowProfile] = useState(false);
   const { ready, user, guest } = useAuth();
-  const tabs = isAdmin() ? [...TABS, ADMIN_TAB] : TABS;
+  const tabs = TABS; // Match Admin is disabled until player roles & permissions are defined
 
   const closeRules = () => { setShowRules(false); markSeen(); };
 

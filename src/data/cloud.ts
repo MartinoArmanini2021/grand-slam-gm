@@ -167,6 +167,8 @@ export interface CloudBoardRow {
   score: number;
   budget: number;
   squad: string[];
+  captain: string | null;
+  viceCaptain: string | null;
 }
 
 // The leaderboard for a league = its members' entries for the tournament, joined to
@@ -198,7 +200,7 @@ export async function fetchLeaderboard(leagueId: string, tournamentId: string): 
   const byId = new Map((profs ?? []).map(p => [p.id, p]));
 
   return entries.map(e => {
-    const st = (e.state ?? {}) as { myScore?: number; myTeam?: string[] };
+    const st = (e.state ?? {}) as { myScore?: number; myTeam?: string[]; captain?: string | null; viceCaptain?: string | null };
     const p = byId.get(e.user_id as string);
     return {
       userId: e.user_id as string,
@@ -209,6 +211,8 @@ export async function fetchLeaderboard(leagueId: string, tournamentId: string): 
       score: (e.score as number) || (typeof st.myScore === 'number' ? st.myScore : 0),
       budget: (e.budget as number) ?? 0,
       squad: Array.isArray(st.myTeam) ? st.myTeam : [],
+      captain: st.captain ?? null,
+      viceCaptain: st.viceCaptain ?? null,
     };
   });
 }

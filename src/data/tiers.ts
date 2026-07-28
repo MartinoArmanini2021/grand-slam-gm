@@ -1,10 +1,10 @@
 export type Tier = 'Platinum' | 'Gold' | 'Silver';
 
 // Tier by ATP ranking (stable, independent of the price curve):
-// top 6 are Platinum, next 10 Gold, the rest Silver.
+// top 10 are Platinum, the next 15 (11–25) Gold, the rest Silver.
 export function getTier(ranking: number): Tier {
-  if (ranking <= 6) return 'Platinum';
-  if (ranking <= 16) return 'Gold';
+  if (ranking <= 10) return 'Platinum';
+  if (ranking <= 25) return 'Gold';
   return 'Silver';
 }
 
