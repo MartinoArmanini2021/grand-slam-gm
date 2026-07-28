@@ -12,8 +12,8 @@ import { toast } from '../store/toastStore';
 
 export default function TournamentPage() {
   const {
-    phase, myTeam, captain, currentRoundIndex, roundScores, myScore,
-    setCaptain, playNextRound, continueToNextRound, budgetReturns,
+    phase, myTeam, captain, viceCaptain, currentRoundIndex, roundScores, myScore,
+    playNextRound, continueToNextRound, budgetReturns, setActiveTab,
   } = useGameStore();
 
   const currentRound = phase !== 'draft' && phase !== 'finished' ? ROUNDS[currentRoundIndex] : null;
@@ -75,33 +75,18 @@ export default function TournamentPage() {
           <div className="px-5 py-4">
             {phase === 'pre_round' && (
               <>
-                <p className="text-xs mb-3" style={{ color: 'var(--gold)' }}>
-                  {aliveSquad.length === 0
-                    ? 'All your players are out — play on to finish the tournament.'
-                    : 'Choose your captain — they score 2× points if they win (eliminated players can\'t be captain)'}
-                </p>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {aliveSquad.map(id => {
-                    const p = getPlayer(id);
-                    const isCap = captain === id;
-                    return (
-                      <button
-                        key={id}
-                        onClick={() => { setCaptain(id); toast(`${lastName(p.name)} is your captain ⭐`, 'info'); }}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all"
-                        style={{
-                          background: isCap ? 'rgba(217,154,0,0.1)' : 'rgba(10,27,51,0.04)',
-                          border: `1px solid ${isCap ? 'rgba(217,154,0,0.3)' : 'rgba(10,27,51,0.07)'}`,
-                          color: isCap ? 'var(--gold)' : 'var(--ink)',
-                          fontWeight: isCap ? 600 : 400,
-                        }}
-                      >
-                        {p.flag} {lastName(p.name)}
-                        {isCap && <span>⭐</span>}
-                      </button>
-                    );
-                  })}
-                </div>
+                {aliveSquad.length === 0 ? (
+                  <p className="text-xs mb-4" style={{ color: 'var(--ink-2)' }}>All your players are out — play on to finish the tournament.</p>
+                ) : (
+                  <div className="flex items-center gap-2 mb-4 flex-wrap">
+                    <span className="text-xs" style={{ color: 'var(--ink-2)' }}>Your leaders:</span>
+                    <LeaderChip role="C" id={captain} />
+                    <LeaderChip role="V" id={viceCaptain} />
+                    <button onClick={() => setActiveTab('home')} className="text-xs font-semibold" style={{ color: 'var(--blue)' }}>
+                      Change on the pitch →
+                    </button>
+                  </div>
+                )}
                 <button
                   onClick={() => {
                     const label = currentRound.label;
@@ -141,7 +126,7 @@ export default function TournamentPage() {
                     onClick={continueToNextRound}
                     style={{ background: 'rgba(14,111,196,0.12)', border: '1px solid rgba(14,111,196,0.25)', color: 'var(--blue)' }}
                   >
-                    Set Captain for {ROUNDS[currentRoundIndex]?.label} →
+                    Continue to {ROUNDS[currentRoundIndex]?.label} →
                   </button>
                 )}
               </div>
@@ -156,6 +141,21 @@ export default function TournamentPage() {
       {/* ── The real Wimbledon 2026 draw ── */}
       <BracketTree />
     </div>
+  );
+}
+
+// A read-only chip for the round's captain / vice — the picks are made on the pitch (Home).
+function LeaderChip({ role, id }: { role: 'C' | 'V'; id: string | null }) {
+  if (!id) return null;
+  const p = getPlayer(id);
+  const isC = role === 'C';
+  const color = isC ? 'var(--gold)' : '#3f6ea5';
+  return (
+    <span className="inline-flex items-center gap-1.5 pl-0.5 pr-1.5 py-0.5 rounded-full" style={{ background: isC ? 'rgba(217,154,0,0.1)' : 'rgba(14,111,196,0.08)', border: `1px solid ${isC ? 'rgba(217,154,0,0.3)' : 'rgba(14,111,196,0.25)'}` }}>
+      <PlayerAvatar playerId={id} name={p.name} size="sm" />
+      <span className="text-[12px] font-bold" style={{ color: 'var(--ink)' }}>{lastName(p.name)}</span>
+      <span className="text-[9px] font-extrabold px-1 py-0.5 rounded" style={{ background: color, color: '#fff' }}>{isC ? 'C ×2' : 'V ×1.5'}</span>
+    </span>
   );
 }
 

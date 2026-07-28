@@ -5,7 +5,8 @@ import {
   ROUNDS, getMatchesForRound, isPlayerOut, BUDGET_RETURN_RATES, winPoints, transfersOpen, roundPlayable,
 } from '../data/tournament';
 import { findPlayer, PLAYERS } from '../data/players';
-import { SQUAD_SIZE, STARTING_BUDGET } from '../data/squadRules';
+import { SQUAD_SIZE, STARTING_BUDGET, isTierFull } from '../data/squadRules';
+import { getTier } from '../data/tiers';
 import { round1 } from '../data/format';
 
 const CAPTAIN_MULTIPLIER = 2;   // captain doubles their round points
@@ -90,6 +91,7 @@ export const useGameStore = create<GameStore>()(
         const player = findPlayer(id);
         if (!player || budget < player.price) return;
         if (isPlayerOut(id, [])) return; // never draft an already-out (e.g. DNS) player — they'd never be refundable
+        if (isTierFull(getTier(player.ranking), myTeam)) return; // tier quota already met (e.g. no 3rd Platinum)
         const newTeam = [...myTeam, id];
         set({ myTeam: newTeam, budget: budget - player.price, ...pickLeaders(newTeam, captain, viceCaptain, []) });
       },

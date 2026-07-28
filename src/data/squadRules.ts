@@ -15,6 +15,14 @@ export const TIER_MINIMUMS: { tier: Tier; min: number }[] = [
   { tier: 'Silver', min: 5 },
 ];
 
+// Because the composition is an EXACT quota, each tier's maximum equals its minimum.
+// The Market uses this to lock a tier once it's full (e.g. no 3rd Platinum).
+export const TIER_LIMITS = Object.fromEntries(TIER_MINIMUMS.map(({ tier, min }) => [tier, min])) as Record<Tier, number>;
+
+export function isTierFull(tier: Tier, ids: string[]): boolean {
+  return tierCounts(ids)[tier] >= (TIER_LIMITS[tier] ?? Infinity);
+}
+
 export function tierCounts(ids: string[]): Record<Tier, number> {
   const c: Record<Tier, number> = { Platinum: 0, Gold: 0, Silver: 0 };
   for (const id of ids) {

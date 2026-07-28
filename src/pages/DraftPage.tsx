@@ -3,7 +3,7 @@ import { useGameStore } from '../store/gameStore';
 import { PLAYERS, getPlayer } from '../data/players';
 import { ROUNDS, isPlayerOut, getPlayerExit } from '../data/tournament';
 import { getTier, TIER_META } from '../data/tiers';
-import { tierCounts, squadShortfall, isSquadValid, TIER_MINIMUMS, SQUAD_SIZE, STARTING_BUDGET } from '../data/squadRules';
+import { tierCounts, squadShortfall, isSquadValid, isTierFull, TIER_MINIMUMS, SQUAD_SIZE, STARTING_BUDGET } from '../data/squadRules';
 import PlayerAvatar from '../components/PlayerAvatar';
 import PlayerTag from '../components/PlayerTag';
 import PurchaseConfirmModal from '../components/PurchaseConfirmModal';
@@ -63,7 +63,7 @@ export default function DraftPage() {
         </p>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 items-start">
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 lg:items-start">
 
         {/* ── Left: Player table ── */}
         <div className="flex-1 min-w-0">
@@ -124,8 +124,10 @@ export default function DraftPage() {
                   const out = isPlayerOut(player.id, revealed);
                   const full = myTeam.length >= TEAM_SIZE;
                   const canAfford = budget >= player.price;
-                  const addable = !locked && !isSelected && !out && !full && canAfford;
-                  const tierColor = TIER_META[getTier(player.ranking)].color;
+                  const tier = getTier(player.ranking);
+                  const tierFull = !isSelected && isTierFull(tier, myTeam); // quota met for this tier
+                  const addable = !locked && !isSelected && !out && !full && canAfford && !tierFull;
+                  const tierColor = TIER_META[tier].color;
 
                   return (
                     <tr
@@ -138,13 +140,13 @@ export default function DraftPage() {
                       style={{
                         borderBottom: '1px solid rgba(10,27,51,0.05)',
                         background: isSelected ? 'rgba(18,161,80,0.05)' : 'transparent',
-                        opacity: out ? 0.5 : 1,
+                        opacity: out || tierFull ? 0.45 : 1, // shade players whose tier quota is met
                       }}
                       onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'rgba(10,27,51,0.02)'; }}
                       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = isSelected ? 'rgba(18,161,80,0.05)' : 'transparent'; }}
                     >
                       <td className="px-2 py-1.5 font-num text-xs text-center" style={{ color: tierColor, fontWeight: 700 }}>{player.ranking}</td>
-                      <td className="px-2 py-1.5">
+                      <td className="px-2 py-1.5 w-full" style={{ maxWidth: 0 }}>
                         <div className="flex items-center gap-2 min-w-0">
                           <PlayerAvatar playerId={player.id} name={player.name} size="sm" onClick={e => { e.stopPropagation(); openPlayer(player.id); }} />
                           <div className="min-w-0">
@@ -155,7 +157,7 @@ export default function DraftPage() {
                             </div>
                             <div className="text-[10px] leading-tight truncate" style={{ color: 'var(--ink-3)' }}>{player.style}</div>
                             {/* Compact surface win% for small screens (the dedicated columns show from md up) */}
-                            <div className="md:hidden mt-0.5 flex items-center gap-1.5 font-num text-[10px] leading-none">
+                            <div className="md:hidden mt-0.5 flex items-center gap-1.5 font-num text-[10px] leading-none whitespace-nowrap">
                               <span style={{ color: 'var(--green)', fontWeight: SURF === 'grass' ? 700 : 500 }}>G {player.surface.grass}</span>
                               <span style={{ color: 'var(--ink-3)' }}>·</span>
                               <span style={{ color: 'var(--blue)', fontWeight: SURF === 'hard' ? 700 : 500 }}>H {player.surface.hard}</span>
@@ -193,7 +195,7 @@ export default function DraftPage() {
                               cursor: (!isSelected && !addable) ? 'not-allowed' : 'pointer',
                             }}
                           >
-                            {isSelected ? 'Remove' : out ? 'Out' : full ? 'Full' : !canAfford ? 'Too $' : '+ Add'}
+                            {isSelected ? 'Remove' : out ? 'Out' : full ? 'Full' : tierFull ? 'Limit' : !canAfford ? 'Too $' : '+ Add'}
                           </button>
                         )}
                       </td>
@@ -227,11 +229,15 @@ export default function DraftPage() {
             <div className="flex gap-2 mb-4">
               {TIER_MINIMUMS.map(({ tier, min }) => {
                 const have = counts[tier];
-                const ok = have >= min;
+                const ok = have === min;     // exact quota met
+                const over = have > min;     // too many (legacy squads only — the Market now blocks this)
+                const bg = ok ? 'rgba(18,161,80,0.08)' : over ? 'rgba(229,71,43,0.08)' : 'var(--raised)';
+                const bd = ok ? 'rgba(18,161,80,0.28)' : over ? 'rgba(229,71,43,0.28)' : 'rgba(10,27,51,0.08)';
+                const fg = ok ? 'var(--green)' : over ? 'var(--ember)' : 'var(--ink)';
                 return (
-                  <div key={tier} className="flex-1 rounded-lg px-2 py-1.5 text-center" style={{ background: ok ? 'rgba(18,161,80,0.08)' : 'var(--raised)', border: `1px solid ${ok ? 'rgba(18,161,80,0.28)' : 'rgba(10,27,51,0.08)'}` }}>
+                  <div key={tier} className="flex-1 rounded-lg px-2 py-1.5 text-center" style={{ background: bg, border: `1px solid ${bd}` }}>
                     <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: TIER_META[tier].color }}>{tier}</div>
-                    <div className="font-num text-sm font-bold" style={{ color: ok ? 'var(--green)' : 'var(--ink)' }}>{have}/{min}{ok ? ' ✓' : ''}</div>
+                    <div className="font-num text-sm font-bold" style={{ color: fg }}>{have}/{min}{ok ? ' ✓' : over ? ' !' : ''}</div>
                   </div>
                 );
               })}

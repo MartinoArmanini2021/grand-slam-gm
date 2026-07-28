@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { getPlayer } from '../data/players';
 import { getTier, TIER_META, TIER_ORDER, type Tier } from '../data/tiers';
-import { nickOf } from '../data/nicknames';
 import { useLeagueBoard, useMyLeagues, type BoardEntry } from '../data/leagueBoard';
 import { lastName } from '../data/format';
 import { ROUNDS, isPlayerOut, getPlayerExit } from '../data/tournament';
@@ -64,6 +63,7 @@ function Standings({ rows, revealed }: { rows: BoardEntry[]; revealed: RoundId[]
           {row.squad.length === 0 ? (
             <div className="text-[11px] italic mt-2" style={{ color: 'var(--ink-3)' }}>No squad yet</div>
           ) : (
+            /* One tidy row per tier — faces only */
             <div className="mt-2.5 space-y-1.5">
               {TIER_ORDER.map(tier => {
                 const players = row.squad
@@ -71,22 +71,18 @@ function Standings({ rows, revealed }: { rows: BoardEntry[]; revealed: RoundId[]
                   .sort((a, b) => getPlayer(a).ranking - getPlayer(b).ranking);
                 if (players.length === 0) return null;
                 return (
-                  <div key={tier} className="flex items-start gap-1.5">
-                    <span className="text-[9px] font-bold uppercase tracking-wide shrink-0 w-14 pt-1.5" style={{ color: TIER_META[tier as Tier].color }}>{tier}</span>
-                    <div className="flex flex-wrap gap-1">
+                  <div key={tier} className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: TIER_META[tier as Tier].color }} title={tier} />
+                    <div className="flex flex-wrap gap-1.5">
                       {players.map(id => {
                         const p = getPlayer(id);
                         const out = isPlayerOut(id, revealed);
-                        const nick = nickOf(id);
                         return (
                           <span key={id} role="button" tabIndex={0}
                             onClick={e => { e.stopPropagation(); openPlayer(id); }} onKeyDown={onActivate(() => openPlayer(id))}
-                            className="inline-flex items-center gap-1 pl-0.5 pr-1.5 py-0.5 rounded-full cursor-pointer"
-                            style={{ background: out ? 'rgba(229,71,43,0.08)' : 'rgba(18,161,80,0.08)', border: `1px solid ${out ? 'rgba(229,71,43,0.22)' : 'rgba(18,161,80,0.22)'}`, opacity: out ? 0.7 : 1 }}
-                            title={out ? `Out — ${getPlayerExit(id)}` : 'Still in'}>
+                            className="cursor-pointer" style={{ opacity: out ? 0.45 : 1, filter: out ? 'grayscale(1)' : 'none' }}
+                            title={out ? `${p.name} — out ${getPlayerExit(id)}` : p.name}>
                             <PlayerAvatar playerId={id} name={p.name} size="sm" />
-                            <span className="text-[11px] leading-none" style={{ marginRight: 1 }}>{p.flag}</span>
-                            <span className="text-[11px] font-semibold leading-none" style={{ color: out ? 'var(--ink-3)' : 'var(--ink)', textDecoration: out ? 'line-through' : 'none' }}>{nick ?? lastName(p.name)}</span>
                           </span>
                         );
                       })}

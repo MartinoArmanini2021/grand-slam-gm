@@ -1,4 +1,4 @@
-import { useState, Fragment } from 'react';
+import { useState, useRef, useEffect, Fragment } from 'react';
 import { WIMBLEDON_2026, WIMBLEDON_2026_EARLY, WIMBLEDON_2026_CHAMPION } from '../data/wimbledon2026';
 import type { WMatch, WRound } from '../data/wimbledon2026';
 import { useGameStore } from '../store/gameStore';
@@ -40,10 +40,23 @@ export default function BracketTree() {
   // Default to the full draw: the Round of 128 is known from the start, whereas the
   // Last-32 participants stay hidden (no spoilers) until R64 is played — so Last-32
   // would look empty on a first visit.
-  const [depth, setDepth] = useState<'full' | 'last32'>('full');
-  const cols = depth === 'full' ? ALL_COLS : SCORED_COLS;
   const { myTeam, currentRoundIndex } = useGameStore();
+  // Auto-adapt: once the draw has narrowed (R32 reached), default to the compact
+  // Last-32 view so the business end — and the Final — is front and centre.
+  const [depth, setDepth] = useState<'full' | 'last32'>(currentRoundIndex >= 2 ? 'last32' : 'full');
+  const cols = depth === 'full' ? ALL_COLS : SCORED_COLS;
   const { teamName, username } = useProfile();
+  const treeRef = useRef<HTMLDivElement>(null);
+  // Bring a round column into view within the scrollable tree.
+  const scrollToRound = (round: string) =>
+    treeRef.current?.querySelector(`[data-round="${round}"]`)?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  // Follow the action: when the played round advances, centre on the next round
+  // (or the Final once it's done). Re-runs on depth change so the target exists.
+  useEffect(() => {
+    const target = currentRoundIndex >= ROUND_ORDER.length ? 'F' : ROUND_ORDER[currentRoundIndex];
+    const t = setTimeout(() => scrollToRound(target), 60);
+    return () => clearTimeout(t);
+  }, [currentRoundIndex, depth]);
 
   // Teams you can highlight in the draw: your squad + every league rival.
   const teams = [
@@ -128,7 +141,7 @@ export default function BracketTree() {
   // One round of matches — each match sits in an equal flex slot so later rounds
   // line up on the midpoint of their two feeders (a true, proportional bracket).
   const Column = ({ round, matches }: { round: WRound; matches: WMatch[] }) => (
-    <div className="flex flex-col" style={{ width: CARD_W }}>
+    <div className="flex flex-col" style={{ width: CARD_W }} data-round={round}>
       <ColHeader label={ROUND_LABEL[round]} />
       <div className="flex-1 flex flex-col">
         {matches.map(m => (
@@ -196,6 +209,20 @@ export default function BracketTree() {
               </button>
             ))}
           </div>
+          {/* Jump straight to a round in the draw (the tree scrolls to it) */}
+          <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.1)' }}>
+            {cols.filter(r => r === cols[0] || r === 'SF').concat('F' as WRound).map(r => (
+              <button
+                key={r}
+                onClick={() => scrollToRound(r)}
+                className="px-3 py-2 text-xs font-bold transition-colors"
+                style={{ background: r === 'F' ? 'rgba(217,154,0,0.1)' : '#FFFFFF', color: r === 'F' ? 'var(--gold)' : 'var(--ink-2)' }}
+                title={`Scroll to ${r === 'F' ? 'the Final' : ROUND_LABEL[r]}`}
+              >
+                {r === 'F' ? '🏆 Final' : ROUND_LABEL[r]}
+              </button>
+            ))}
+          </div>
         </div>
         {teams.length > 0 && (
           <div className="flex items-center gap-1.5">
@@ -227,7 +254,7 @@ export default function BracketTree() {
       </div>
 
       {/* Tree */}
-      <div className="overflow-auto rounded-2xl p-3" style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.07)', maxHeight: depth === 'full' ? '78vh' : undefined }}>
+      <div ref={treeRef} className="overflow-auto rounded-2xl p-3" style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.07)', maxHeight: depth === 'full' ? '78vh' : undefined }}>
         <div className="flex items-stretch w-full" style={{ minWidth: 'min-content' }}>
           {cols.map((round, ci) => {
             const matches = FULL_DRAW.filter(m => m.round === round && m.half === half);
@@ -243,7 +270,7 @@ export default function BracketTree() {
           {/* SF → Final: a single straight join (the other finalist comes from the other half) */}
           <Connector count={1} single />
           {/* Final */}
-          <div className="flex flex-col" style={{ width: CARD_W }}>
+          <div className="flex flex-col" style={{ width: CARD_W }} data-round="F">
             <ColHeader label="Final 🏆" gold />
             <div className="flex-1 flex flex-col justify-center">
               <MatchCard m={final} />

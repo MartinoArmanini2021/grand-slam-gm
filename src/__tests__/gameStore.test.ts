@@ -46,10 +46,18 @@ describe('draft mechanics', () => {
   });
 
   it('rejects an 11th player', () => {
-    ['fery', 'giron', 'munar', 'bergs', 'zheng', 'svajda', 'mochizuki', 'safiullin', 'cilic', 'struff'].forEach(id => store().addPlayer(id));
+    // a legal 2 Platinum · 3 Gold · 5 Silver squad, then one more
+    ['sinner', 'zverev', 'djokovic', 'fritz', 'medvedev', 'fery', 'giron', 'munar', 'bergs', 'zheng'].forEach(id => store().addPlayer(id));
     expect(store().myTeam).toHaveLength(10);
-    store().addPlayer('virtanen');
+    store().addPlayer('svajda'); // squad already full
     expect(store().myTeam).toHaveLength(10);
+  });
+
+  it('blocks a third player of a full tier (e.g. no 3rd Platinum)', () => {
+    store().addPlayer('sinner');          // Platinum 1/2
+    store().addPlayer('zverev');          // Platinum 2/2 → full
+    store().addPlayer('augeraliassime');  // Platinum (rank 4) → blocked
+    expect(store().myTeam).toEqual(['sinner', 'zverev']);
   });
 
   it('rejects duplicate players', () => {
