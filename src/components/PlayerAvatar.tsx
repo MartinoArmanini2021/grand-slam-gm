@@ -10,6 +10,7 @@ interface Props {
   playerId: string;
   name: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  dimension?: string; // explicit CSS size (e.g. a clamp()/cqh value) — overrides `size` px
   className?: string;
   ring?: boolean; // tier-coloured ring (default true)
   onClick?: (e: MouseEvent) => void; // e.g. open the player's profile
@@ -25,8 +26,8 @@ const FONT = { sm: 11, md: 13, lg: 16, xl: 28 } as const;
 // load error it falls back to the initials monogram (as the HTML does); off-roster
 // ids with no pool photo fall back to the illustrated icon.
 
-export default function PlayerAvatar({ playerId, name, size = 'md', className = '', ring = true, onClick }: Props) {
-  const px = SIZE[size];
+export default function PlayerAvatar({ playerId, name, size = 'md', dimension, className = '', ring = true, onClick }: Props) {
+  const px: string | number = dimension ?? SIZE[size];
   const [stage, setStage] = useState(0);
   // Reset the image-source fallback when the player changes on a reused instance
   // (e.g. a court slot keyed by index after a transfer), so a new player isn't

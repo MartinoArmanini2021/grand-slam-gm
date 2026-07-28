@@ -15,6 +15,11 @@ const SPOTS = [
   { x: 82, y: 24 }, { x: 70, y: 42 }, { x: 70, y: 60 }, { x: 82, y: 78 }, // right half
 ];
 
+// On-court avatar size scales with the court's height (the court is a size
+// container). Capped at 56px on wide screens; floored at 36px so four rows of
+// players never overlap on a phone (where the court is shorter).
+const AV_SIZE = 'clamp(36px, 13cqh, 56px)';
+
 export default function SquadCourt({ squad, captainId, readOnly, teamName, emblem, onTeamClick, fluid }: {
   squad?: string[];        // when given, renders this squad instead of your own (read-only)
   captainId?: string;
@@ -37,7 +42,7 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
 
   return (
     <>
-      <div className="relative w-full mx-auto rounded-2xl overflow-hidden select-none" style={{ aspectRatio: '16 / 9', maxWidth: fluid ? undefined : 860, boxShadow: '0 10px 34px rgba(10,27,51,0.22)' }}>
+      <div className="relative w-full mx-auto rounded-2xl overflow-hidden select-none aspect-[4/3] sm:aspect-[16/9]" style={{ containerType: 'size', maxWidth: fluid ? undefined : 860, boxShadow: '0 10px 34px rgba(10,27,51,0.22)' }}>
         {/* Stadium + court (horizontal). Colours come from the active tournament's
             surface theme, so the court re-skins per tournament (grass/hard/clay). */}
         <svg viewBox="0 0 640 360" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
@@ -91,13 +96,13 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
           <button
             onClick={onTeamClick}
             disabled={!onTeamClick}
-            className="absolute top-3 left-3 flex items-center gap-2.5 transition-opacity hover:opacity-90"
+            className="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 flex items-center gap-2 sm:gap-2.5 transition-opacity hover:opacity-90"
             style={{ cursor: onTeamClick ? 'pointer' : 'default' }}
             title={onTeamClick ? 'Open your team' : undefined}
           >
-            <span className="flex items-center justify-center rounded-xl text-xl shrink-0" style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.28)' }}>{emblem}</span>
-            <span className="text-lg font-extrabold text-white" style={{ textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}>{teamName}</span>
-            {onTeamClick && <span className="text-white text-lg leading-none" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>›</span>}
+            <span className="flex items-center justify-center rounded-lg sm:rounded-xl text-base sm:text-xl shrink-0 w-8 h-8 sm:w-10 sm:h-10" style={{ background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.28)' }}>{emblem}</span>
+            <span className="text-sm sm:text-lg font-extrabold text-white" style={{ textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}>{teamName}</span>
+            {onTeamClick && <span className="text-white text-base sm:text-lg leading-none" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>›</span>}
           </button>
         )}
 
@@ -114,7 +119,7 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
                 style={{ left: `${spot.x}%`, top: `${spot.y}%`, cursor: canEdit ? 'pointer' : 'default' }}
               >
                 <div className="rounded-full flex items-center justify-center transition-transform" style={{
-                  width: 60, height: 60,
+                  width: AV_SIZE, height: AV_SIZE,
                   background: 'rgba(12,26,46,0.42)',
                   border: canEdit ? '2px dashed rgba(255,255,255,0.5)' : '2px solid rgba(255,255,255,0.18)',
                 }}>
@@ -137,7 +142,7 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
               style={{ left: `${spot.x}%`, top: `${spot.y}%`, opacity: out ? 0.5 : 1 }}
             >
               <div className="relative" style={isCap ? { filter: 'drop-shadow(0 0 6px rgba(217,154,0,0.7))' } : undefined}>
-                <PlayerAvatar playerId={id} name={p.name} size="lg" />
+                <PlayerAvatar playerId={id} name={p.name} size="lg" dimension={AV_SIZE} />
                 {isCap && (
                   <span className="absolute -top-1 -right-1 rounded-full flex items-center justify-center text-[10px] font-extrabold" style={{ width: 20, height: 20, background: 'var(--gold)', color: '#fff', border: '2px solid #fff' }}>C</span>
                 )}
