@@ -9,12 +9,16 @@ import PlayerTag from '../components/PlayerTag';
 import PurchaseConfirmModal from '../components/PurchaseConfirmModal';
 import { toast } from '../store/toastStore';
 import { onActivate } from '../hooks';
+import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
 import type { RoundId, Player } from '../types';
 
-type SortKey = 'ranking' | 'price' | 'grass';
+type SortKey = 'ranking' | 'price' | 'surface';
 
 const TEAM_SIZE = SQUAD_SIZE;
-const SORT_LABEL: Record<SortKey, string> = { ranking: '# Rank', price: '$ Price', grass: 'Grass %' };
+// The tournament's own surface (e.g. hard for Montréal) — drives which win% the
+// market emphasises (sort option, bold column, squad-row stat).
+const SURF = TOURNAMENT.surface;
+const SORT_LABEL: Record<SortKey, string> = { ranking: '# Rank', price: '$ Price', surface: `${SURFACE.label} %` };
 
 export default function DraftPage() {
   const { myTeam, captain, budget, phase, currentRoundIndex, removePlayer, setCaptain, finalizeDraft, openPlayer } = useGameStore();
@@ -33,7 +37,7 @@ export default function DraftPage() {
     .sort((a, b) => {
       if (sort === 'ranking') return a.ranking - b.ranking;
       if (sort === 'price') return b.price - a.price;
-      if (sort === 'grass') return b.surface.grass - a.surface.grass;
+      if (sort === 'surface') return b.surface[SURF] - a.surface[SURF];
       return 0;
     }), [sort, search]);
 
@@ -42,7 +46,7 @@ export default function DraftPage() {
   const roundLabel = currentRoundIndex < ROUNDS.length ? ROUNDS[currentRoundIndex].label : 'Tournament complete';
 
   return (
-    <div className="max-w-7xl mx-auto px-2 sm:px-3 pt-6 pb-24 lg:pb-6">
+    <div className="max-w-7xl mx-auto px-2 sm:px-3 pt-6 pb-6">
       {/* Status header */}
       <div className="mb-4">
         <div className="flex items-baseline gap-x-3 gap-y-1 flex-wrap">
@@ -58,7 +62,7 @@ export default function DraftPage() {
         </p>
       </div>
 
-      <div className="flex gap-4 lg:gap-6 items-start">
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 items-start">
 
         {/* ── Left: Player table ── */}
         <div className="flex-1 min-w-0">
@@ -80,7 +84,7 @@ export default function DraftPage() {
               style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.09)', color: 'var(--ink)' }}
             />
             <div className="flex rounded-xl overflow-hidden ml-auto" style={{ border: '1px solid rgba(10,27,51,0.07)' }}>
-              {(['ranking', 'price', 'grass'] as SortKey[]).map(s => (
+              {(['ranking', 'price', 'surface'] as SortKey[]).map(s => (
                 <button
                   key={s}
                   onClick={() => setSort(s)}
@@ -153,9 +157,9 @@ export default function DraftPage() {
                         </div>
                       </td>
                       <td className="px-2 py-1.5 text-center font-num text-xs hidden sm:table-cell" style={{ color: 'var(--ink-2)' }}>{player.age}</td>
-                      <td className="px-2 py-1.5 text-center font-num text-xs font-bold hidden md:table-cell" style={{ color: 'var(--green)' }}>{player.surface.grass}%</td>
-                      <td className="px-2 py-1.5 text-center font-num text-xs hidden md:table-cell" style={{ color: 'var(--ink-2)' }}>{player.surface.hard}%</td>
-                      <td className="px-2 py-1.5 text-center font-num text-xs hidden md:table-cell" style={{ color: 'var(--ink-2)' }}>{player.surface.clay}%</td>
+                      <td className="px-2 py-1.5 text-center font-num text-xs hidden md:table-cell" style={{ color: SURF === 'grass' ? 'var(--green)' : 'var(--ink-3)', fontWeight: SURF === 'grass' ? 700 : 400 }}>{player.surface.grass}%</td>
+                      <td className="px-2 py-1.5 text-center font-num text-xs hidden md:table-cell" style={{ color: SURF === 'hard' ? 'var(--blue)' : 'var(--ink-3)', fontWeight: SURF === 'hard' ? 700 : 400 }}>{player.surface.hard}%</td>
+                      <td className="px-2 py-1.5 text-center font-num text-xs hidden md:table-cell" style={{ color: SURF === 'clay' ? 'var(--ember)' : 'var(--ink-3)', fontWeight: SURF === 'clay' ? 700 : 400 }}>{player.surface.clay}%</td>
                       <td className="px-2 py-1.5 text-center font-num text-xs hidden md:table-cell" style={{ color: 'var(--ink-2)' }}>{player.ytd.wins}–{player.ytd.losses}</td>
                       <td className="px-2 py-1.5 text-center font-num text-xs hidden lg:table-cell" style={{ color: player.ytd.titles > 0 ? 'var(--gold)' : 'var(--ink-3)' }}>{player.ytd.titles}</td>
                       <td className="px-2 py-1.5 text-right font-num text-sm font-bold" style={{ color: 'var(--blue)' }}>${player.price}M</td>
@@ -192,9 +196,9 @@ export default function DraftPage() {
           </div>
         </div>
 
-        {/* ── Right: My Squad ── */}
-        <div className="w-72 shrink-0 hidden lg:block">
-          <div className="sticky top-20 rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.09)' }}>
+        {/* ── My Squad — right sidebar on desktop, stacked below the table on mobile ── */}
+        <div className="w-full lg:w-72 shrink-0">
+          <div className="lg:sticky lg:top-20 rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.09)' }}>
             <div className="flex items-center justify-between mb-1">
               <h2 className="font-bold text-sm" style={{ color: 'var(--ink)' }}>My Squad</h2>
               <span className="font-num text-xs" style={{ color: 'var(--ink-2)' }}>{myTeam.length} / {TEAM_SIZE}</span>
@@ -237,7 +241,7 @@ export default function DraftPage() {
                     <div className="flex-1 min-w-0">
                       <PlayerTag playerId={id} flag={p.flag} className="text-[8px] font-bold uppercase tracking-wide leading-tight truncate" style={{ color: 'var(--blue)' }} />
                       <div className="text-xs font-medium truncate" style={{ color: 'var(--ink)' }}>{p.name}</div>
-                      <div className="font-num text-[10px]" style={{ color: 'var(--ink-2)' }}>${p.price}M · 🌱{p.surface.grass}%</div>
+                      <div className="font-num text-[10px]" style={{ color: 'var(--ink-2)' }}>${p.price}M · 🎾{p.surface[SURF]}% {SURFACE.label}</div>
                     </div>
                     {isCap && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0" style={{ background: 'rgba(217,154,0,0.15)', color: 'var(--gold)', border: '1px solid rgba(217,154,0,0.25)' }}>C</span>}
                     {!locked && <button onClick={() => setCaptain(id)} className="text-xs px-1.5 py-1 rounded-lg transition-all shrink-0" title="Set as captain" style={{ background: isCap ? 'rgba(217,154,0,0.15)' : 'rgba(10,27,51,0.05)', border: `1px solid ${isCap ? 'rgba(217,154,0,0.25)' : 'rgba(10,27,51,0.07)'}`, color: isCap ? 'var(--gold)' : 'var(--ink-2)' }}>⭐</button>}
@@ -276,24 +280,6 @@ export default function DraftPage() {
           </div>
         </div>
       </div>
-
-      {/* Mobile squad + lock bar (the sidebar is desktop-only) */}
-      {phase === 'draft' && (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 px-3 py-2.5 flex items-center gap-3" style={{ background: 'var(--ink)', boxShadow: '0 -4px 20px rgba(0,0,0,0.25)' }}>
-          <div className="flex-1 min-w-0">
-            <div className="text-white font-bold text-sm">{myTeam.length}/{TEAM_SIZE} picked</div>
-            <div className="text-[11px] font-num" style={{ color: 'var(--on-navy-2)' }}>${budget.toFixed(1)}M left</div>
-          </div>
-          <button
-            onClick={() => { finalizeDraft(); toast('Squad locked in — good luck! 🎾', 'good'); }}
-            disabled={!valid}
-            className="px-5 py-2.5 rounded-xl font-bold text-sm shrink-0"
-            style={{ background: valid ? 'var(--blue)' : 'rgba(255,255,255,0.14)', color: valid ? '#fff' : 'var(--on-navy-2)' }}
-          >
-            {valid ? 'Lock Squad →' : myTeam.length < TEAM_SIZE ? `${TEAM_SIZE - myTeam.length} to pick` : `Need ${shortfall.map(s => `${s.missing} ${s.tier[0]}`).join(', ')}`}
-          </button>
-        </div>
-      )}
 
       {/* Purchase confirmation */}
       <PurchaseConfirmModal player={confirm} onClose={() => setConfirm(null)} />

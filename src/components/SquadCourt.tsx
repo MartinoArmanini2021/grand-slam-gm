@@ -3,7 +3,7 @@ import { useGameStore, substitutionCandidates } from '../store/gameStore';
 import { findPlayer } from '../data/players';
 import { getPlayerExit, isPlayerOut, ROUNDS, transfersOpen } from '../data/tournament';
 import { lastName } from '../data/format';
-import { SURFACE } from '../data/tournamentConfig';
+import { SURFACE, TOURNAMENT } from '../data/tournamentConfig';
 import { useEscapeToClose } from '../hooks';
 import PlayerAvatar from './PlayerAvatar';
 import PlayerPickerModal from './PlayerPickerModal';
@@ -258,7 +258,7 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
                     <PlayerAvatar playerId={p.id} name={p.name} size="sm" />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold truncate" style={{ color: 'var(--ink)' }}>{p.name}</div>
-                      <div className="text-[11px]" style={{ color: 'var(--ink-3)' }}>#{p.ranking} · 🌱{p.surface.grass}%</div>
+                      <div className="text-[11px]" style={{ color: 'var(--ink-3)' }}>#{p.ranking} · 🎾{p.surface[TOURNAMENT.surface]}% {SURFACE.label}</div>
                     </div>
                     <div className="font-num text-sm font-bold shrink-0 w-12 text-right" style={{ color: 'var(--blue)' }}>${p.price}M</div>
                     <button

@@ -103,7 +103,7 @@ export default function PlayerPage() {
 
       <div className="mb-4">
         <Panel title="Surface win rate">
-          <SurfaceBar hard={p.surface.hard} clay={p.surface.clay} grass={p.surface.grass} highlight="grass" />
+          <SurfaceBar hard={p.surface.hard} clay={p.surface.clay} grass={p.surface.grass} highlight={TOURNAMENT.surface} />
         </Panel>
       </div>
 
