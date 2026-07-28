@@ -27,6 +27,7 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [manageId, setManageId] = useState<string | null>(null);
   const [subFor, setSubFor] = useState<string | null>(null); // eliminated player being transferred out
+  const [assignRole, setAssignRole] = useState<'C' | 'V' | null>(null); // picking a player for an empty leader slot
   const team = squad ?? myTeam;
   const cap = captainId ?? (squad ? undefined : captain ?? undefined);
   const vice = viceCaptainId ?? (squad ? undefined : viceCaptain ?? undefined);
@@ -34,7 +35,7 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
   const isOwnTeam = !readOnly && !squad; // your own court (home / your team page)
   const canEdit = isOwnTeam && phase === 'draft';
   const canCaptain = isOwnTeam && (phase === 'draft' || phase === 'pre_round'); // captaincy is editable
-  useEscapeToClose(() => { setManageId(null); setSubFor(null); }, !!(manageId || subFor));
+  useEscapeToClose(() => { setManageId(null); setSubFor(null); setAssignRole(null); }, !!(manageId || subFor || assignRole));
   const C = SURFACE.court; // stands / apron (outside court) / surface (inside court)
 
   // Everything is ordered by tier: Platinum → Gold → Silver (i.e. best rank first).
@@ -147,18 +148,21 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
           const badgeColor = isC ? 'var(--gold)' : '#7DA9D8';
           const label = isC ? 'Captain' : 'Vice';
           if (!id) {
+            // Empty leader slot: tap to CHOOSE a player for this role (captaincy is
+            // editable), or to add players during the draft if the squad isn't full.
+            const onEmpty = canCaptain ? () => setAssignRole(role) : canEdit ? () => setPickerOpen(true) : undefined;
             return (
               <button
                 key={role}
-                onClick={() => canEdit && setPickerOpen(true)}
-                disabled={!canEdit}
+                onClick={onEmpty}
+                disabled={!onEmpty}
                 className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center"
-                style={{ left: `${x}%`, top: '50%', cursor: canEdit ? 'pointer' : 'default' }}
+                style={{ left: `${x}%`, top: '50%', cursor: onEmpty ? 'pointer' : 'default' }}
               >
                 <div className="rounded-full flex items-center justify-center" style={{ width: LEADER_SIZE, height: LEADER_SIZE, background: 'rgba(12,26,46,0.38)', border: `2px dashed ${badgeColor}` }}>
-                  <span style={{ color: badgeColor, fontWeight: 800, fontSize: 'clamp(11px,4cqh,15px)' }}>{role}</span>
+                  <span style={{ color: badgeColor, fontWeight: 800, fontSize: 'clamp(11px,4cqh,15px)' }}>{onEmpty ? '+' : role}</span>
                 </div>
-                <span className="mt-1 text-[9px] font-bold uppercase tracking-wide" style={{ color: '#fff', opacity: 0.85 }}>{label}</span>
+                <span className="mt-1 text-[9px] font-bold uppercase tracking-wide" style={{ color: '#fff', opacity: 0.85 }}>{canCaptain ? `Pick ${label}` : label}</span>
               </button>
             );
           }
@@ -366,6 +370,43 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
                     >Sign</button>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Choose a player for an empty Captain / Vice slot */}
+      {assignRole && (() => {
+        const isC = assignRole === 'C';
+        const other = isC ? viceCaptain : captain;
+        const options = byRank(team.filter(id => id !== other && !isPlayerOut(id, revealed)));
+        return (
+          <div onClick={() => setAssignRole(null)} style={{ position: 'fixed', inset: 0, zIndex: 220, background: 'rgba(10,27,51,0.55)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+            <div onClick={e => e.stopPropagation()} className="fade-in w-full" style={{ maxWidth: 520, background: '#FFFFFF', borderRadius: '18px 18px 0 0', maxHeight: '82vh', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ background: 'linear-gradient(120deg,var(--ink),var(--navy-2))', padding: '16px 18px', borderRadius: '18px 18px 0 0' }}>
+                <div className="flex items-center justify-between">
+                  <div className="text-white font-extrabold text-base">Pick your {isC ? 'Captain (×2)' : 'Vice-Captain (×1.5)'}</div>
+                  <button onClick={() => setAssignRole(null)} className="text-white text-sm font-bold px-3 py-1.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.15)' }}>Cancel</button>
+                </div>
+              </div>
+              <div className="overflow-y-auto p-2" style={{ flex: 1 }}>
+                {options.map(id => {
+                  const op = findPlayer(id);
+                  if (!op) return null;
+                  return (
+                    <button key={id} onClick={() => { (isC ? setCaptain : setViceCaptain)(id); setAssignRole(null); }}
+                      className="flex items-center gap-3 w-full text-left px-2 py-2 rounded-xl transition-colors hover:bg-black/5">
+                      <PlayerAvatar playerId={id} name={op.name} size="sm" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold truncate" style={{ color: 'var(--ink)' }}>{op.flag} {op.name}</div>
+                        <div className="text-[11px]" style={{ color: 'var(--ink-3)' }}>#{op.ranking} · ${op.price}M</div>
+                      </div>
+                      <span className="text-xs font-bold px-3 py-1.5 rounded-lg" style={{ background: isC ? 'rgba(217,154,0,0.12)' : 'rgba(14,111,196,0.12)', color: isC ? 'var(--gold)' : 'var(--blue)' }}>{isC ? 'Captain' : 'Vice'}</span>
+                    </button>
+                  );
+                })}
+                {options.length === 0 && <div className="text-center py-8 text-sm" style={{ color: 'var(--ink-3)' }}>No eligible players.</div>}
               </div>
             </div>
           </div>

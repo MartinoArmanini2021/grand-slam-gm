@@ -3,12 +3,11 @@ import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { useLeagueBoard } from '../data/leagueBoard';
 import { getPlayer } from '../data/players';
-import { tierCounts } from '../data/squadRules';
-import { TIER_META, TIER_ORDER, type Tier } from '../data/tiers';
 import { ROUNDS } from '../data/tournament';
 import { lastName } from '../data/format';
 import SquadCourt from '../components/SquadCourt';
 import PlayerAvatar from '../components/PlayerAvatar';
+import PlayerTag from '../components/PlayerTag';
 import { toast } from '../store/toastStore';
 import type { Transfer } from '../types';
 
@@ -87,23 +86,21 @@ function TeamView({ emblem, name, manager, color, score, budget, squad, captainI
       <BackToLeague />
 
       {/* Club header: emblem + name + username, total score at the same level */}
-      <div className="rounded-2xl p-5 mb-3" style={{ background: 'linear-gradient(120deg,var(--ink),var(--navy-2))' }}>
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shrink-0" style={{ background: color, boxShadow: '0 4px 14px rgba(0,0,0,0.25)' }}>
+      <div className="rounded-2xl px-4 py-3 mb-3" style={{ background: 'linear-gradient(120deg,var(--ink),var(--navy-2))' }}>
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl shrink-0" style={{ background: color, boxShadow: '0 4px 14px rgba(0,0,0,0.25)' }}>
             {emblem}
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-extrabold tracking-tight text-white leading-tight truncate">{name}</h1>
-            <div className="text-sm font-num" style={{ color: 'var(--on-navy)' }}>{manager}</div>
+            <h1 className="text-xl font-extrabold tracking-tight text-white leading-tight truncate">{name}</h1>
+            <div className="text-xs font-num" style={{ color: 'var(--on-navy)' }}>{manager}</div>
           </div>
+          {editable && (
+            <button onClick={openEditor} className="text-[11px] font-bold px-2.5 py-1 rounded-lg shrink-0" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}>✎ Edit</button>
+          )}
           <div className="text-right shrink-0">
-            {editable && (
-              <button onClick={openEditor} className="text-[11px] font-bold px-2.5 py-1 rounded-lg mb-1.5" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}>
-                ✎ Edit team
-              </button>
-            )}
-            <div className="font-num text-4xl font-extrabold leading-none" style={{ color: 'var(--gold-bright)' }}>{score}</div>
-            <div className="text-[10px] uppercase tracking-widest mt-1" style={{ color: 'var(--on-navy-2)' }}>Total score</div>
+            <div className="font-num text-3xl font-extrabold leading-none" style={{ color: 'var(--gold-bright)' }}>{score}</div>
+            <div className="text-[9px] uppercase tracking-widest mt-0.5" style={{ color: 'var(--on-navy-2)' }}>Points</div>
           </div>
         </div>
       </div>
@@ -143,18 +140,6 @@ function TeamView({ emblem, name, manager, color, score, budget, squad, captainI
         </div>
       )}
 
-      {/* Only Total Score (above) + Available Budget */}
-      <div className="grid grid-cols-2 gap-3 mb-5">
-        <div className="rounded-2xl p-4 text-center" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.07)' }}>
-          <div className="font-num text-2xl font-bold" style={{ color: 'var(--blue)' }}>{score}</div>
-          <div className="text-[11px] mt-0.5" style={{ color: 'var(--ink-2)' }}>Total score</div>
-        </div>
-        <div className="rounded-2xl p-4 text-center" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.07)' }}>
-          <div className="font-num text-2xl font-bold" style={{ color: 'var(--green)' }}>${budget.toFixed(1)}M</div>
-          <div className="text-[11px] mt-0.5" style={{ color: 'var(--ink-2)' }}>Available budget</div>
-        </div>
-      </div>
-
       {/* The squad on court. Your own team is interactive (tap + to buy players
           during the draft); rival teams are read-only. */}
       {editable ? <SquadCourt /> : <SquadCourt squad={squad} captainId={captainId} viceCaptainId={viceCaptainId} readOnly />}
@@ -173,41 +158,42 @@ function TeamView({ emblem, name, manager, color, score, budget, squad, captainI
   );
 }
 
-// Compact squad snapshot shown below the court on any team view: tier make-up, the
-// two on-court leaders, and budget left.
+// The squad below the court: a Market-style row per player (nickname · flag · surface
+// win% · price), tier-ordered, with the captain/vice marked.
 function SquadStats({ squad, captainId, viceCaptainId, budget }: { squad: string[]; captainId: string; viceCaptainId?: string; budget: number }) {
   const openPlayer = useGameStore(s => s.openPlayer);
-  const counts = tierCounts(squad);
-  const leader = (id: string | undefined, role: 'C' | 'V') => {
-    if (!id || !squad.includes(id)) return null;
-    const p = getPlayer(id);
-    const gold = role === 'C';
-    return (
-      <button onClick={() => openPlayer(id)} className="flex items-center gap-2 w-full text-left rounded-xl px-2 py-1.5" style={{ background: gold ? 'rgba(217,154,0,0.06)' : 'rgba(14,111,196,0.06)' }}>
-        <PlayerAvatar playerId={id} name={p.name} size="sm" />
-        <span className="flex-1 text-sm font-semibold truncate" style={{ color: 'var(--ink)' }}>{lastName(p.name)}</span>
-        <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: gold ? 'var(--gold)' : 'var(--blue)', color: '#fff' }}>{role === 'C' ? 'C ×2' : 'V ×1.5'}</span>
-      </button>
-    );
-  };
+  const ordered = [...squad].sort((a, b) => getPlayer(a).ranking - getPlayer(b).ranking);
   return (
-    <div className="rounded-2xl p-4" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.08)' }}>
-      <div className="text-[11px] font-bold uppercase tracking-wide mb-3" style={{ color: 'var(--ink-2)' }}>Squad</div>
-      <div className="grid grid-cols-3 gap-2 mb-3">
-        {TIER_ORDER.map(t => (
-          <div key={t} className="rounded-lg px-2 py-1.5 text-center" style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.06)' }}>
-            <div className="text-[9px] font-bold uppercase tracking-wide" style={{ color: TIER_META[t as Tier].color }}>{t}</div>
-            <div className="font-num text-sm font-bold" style={{ color: 'var(--ink)' }}>{counts[t as Tier]}</div>
-          </div>
-        ))}
+    <div className="rounded-2xl p-3" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.08)' }}>
+      <div className="flex items-center justify-between mb-2 px-1">
+        <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-2)' }}>Squad</span>
+        <span className="text-[11px]" style={{ color: 'var(--ink-3)' }}>Budget <b className="font-num" style={{ color: 'var(--green)' }}>${budget.toFixed(1)}M</b></span>
       </div>
-      <div className="space-y-1.5 mb-3">
-        {leader(captainId, 'C')}
-        {leader(viceCaptainId, 'V')}
-      </div>
-      <div className="flex items-center justify-between text-xs pt-2" style={{ borderTop: '1px solid rgba(10,27,51,0.06)' }}>
-        <span style={{ color: 'var(--ink-2)' }}>Budget left</span>
-        <span className="font-num font-bold" style={{ color: 'var(--green)' }}>${budget.toFixed(1)}M</span>
+      <div className="space-y-1">
+        {ordered.map(id => {
+          const p = getPlayer(id);
+          const isC = id === captainId, isV = id === viceCaptainId;
+          return (
+            <button key={id} onClick={() => openPlayer(id)} className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-xl transition-colors hover:bg-black/[0.03]"
+              style={{ background: isC ? 'rgba(217,154,0,0.06)' : isV ? 'rgba(14,111,196,0.06)' : 'transparent' }}>
+              <PlayerAvatar playerId={id} name={p.name} size="sm" />
+              <div className="flex-1 min-w-0">
+                <PlayerTag playerId={id} flag={p.flag} className="text-[8px] font-bold uppercase tracking-wide leading-tight truncate" style={{ color: 'var(--blue)' }} />
+                <div className="text-xs font-semibold leading-tight truncate" style={{ color: 'var(--ink)' }}>{p.name}</div>
+                <div className="font-num text-[10px] leading-none flex items-center gap-1.5 mt-0.5 whitespace-nowrap">
+                  <span style={{ color: 'var(--green)' }}>G {p.surface.grass}</span>
+                  <span style={{ color: 'var(--blue)' }}>H {p.surface.hard}</span>
+                  <span style={{ color: 'var(--ember)' }}>C {p.surface.clay}</span>
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-1 shrink-0">
+                <span className="font-num text-xs font-bold" style={{ color: 'var(--blue)' }}>${p.price}M</span>
+                {isC && <span className="text-[8px] font-extrabold px-1 py-0.5 rounded" style={{ background: 'var(--gold)', color: '#fff' }}>C ×2</span>}
+                {isV && <span className="text-[8px] font-extrabold px-1 py-0.5 rounded" style={{ background: 'var(--blue)', color: '#fff' }}>V ×1.5</span>}
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

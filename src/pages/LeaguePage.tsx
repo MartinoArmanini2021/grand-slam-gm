@@ -172,18 +172,18 @@ function Standings({ rows, revealed, compact }: { rows: BoardEntry[]; revealed: 
                   </div>
                 </td>
                 <td className="px-2 py-2.5">
-                  <div className="flex flex-wrap gap-1.5" style={{ minWidth: 200 }}>
+                  {/* Uniform grid so the 10 players line up evenly (5 × 2), tier-ordered */}
+                  <div className="grid grid-cols-5 gap-1.5" style={{ minWidth: 380 }}>
                     {[...row.squad].sort((a, b) => getPlayer(a).ranking - getPlayer(b).ranking).map(id => {
                       const out = isPlayerOut(id, revealed);
                       return (
                         <span key={id} role="button" tabIndex={0}
                           onClick={e => { e.stopPropagation(); openPlayer(id); }} onKeyDown={onActivate(() => openPlayer(id))}
-                          className="inline-flex items-center gap-1.5 pl-0.5 pr-2 py-0.5 rounded-full cursor-pointer transition-transform hover:-translate-y-px"
+                          className="flex items-center gap-1.5 w-full min-w-0 pl-0.5 pr-2 py-0.5 rounded-full cursor-pointer transition-transform hover:-translate-y-px"
                           style={{ background: out ? 'rgba(229,71,43,0.08)' : 'rgba(18,161,80,0.08)', border: `1px solid ${out ? 'rgba(229,71,43,0.22)' : 'rgba(18,161,80,0.22)'}`, opacity: out ? 0.7 : 1 }}
-                          title={out ? `Out — ${getPlayerExit(id)}` : 'Still in'}>
+                          title={out ? `${getPlayer(id).name} — out ${getPlayerExit(id)}` : getPlayer(id).name}>
                           <PlayerAvatar playerId={id} name={getPlayer(id).name} size="sm" />
-                          <span className="text-[11px] font-semibold" style={{ color: out ? 'var(--ink-3)' : 'var(--ink)', textDecoration: out ? 'line-through' : 'none' }}>{lastName(getPlayer(id).name)}</span>
-                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: out ? 'var(--ember)' : 'var(--green)', display: 'inline-block' }} />
+                          <span className="text-[11px] font-semibold truncate" style={{ color: out ? 'var(--ink-3)' : 'var(--ink)', textDecoration: out ? 'line-through' : 'none' }}>{lastName(getPlayer(id).name)}</span>
                         </span>
                       );
                     })}
