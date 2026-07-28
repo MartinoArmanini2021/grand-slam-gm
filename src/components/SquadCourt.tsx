@@ -101,10 +101,19 @@ export default function SquadCourt({ squad, captainId, readOnly, teamName, emble
               <line x1="536" y1="180" x2="544" y2="180" />
             </g>
             {/* net (vertical, centre) + posts */}
-            <line x1="320" y1="70" x2="320" y2="290" stroke={C.net} strokeWidth="4.5" strokeOpacity="0.97" />
-            <line x1="320" y1="70" x2="320" y2="290" stroke={C.netShadow} strokeWidth="1.5" strokeOpacity="0.25" strokeDasharray="3 3" />
-            <circle cx="320" cy="70" r="3.2" fill={C.net} />
-            <circle cx="320" cy="290" r="3.2" fill={C.net} />
+            <line x1="320" y1="74" x2="320" y2="286" stroke={C.net} strokeWidth="4.5" strokeOpacity="0.97" />
+            <line x1="320" y1="74" x2="320" y2="286" stroke={C.netShadow} strokeWidth="1.5" strokeOpacity="0.25" strokeDasharray="3 3" />
+            <circle cx="320" cy="74" r="3.2" fill={C.net} />
+            <circle cx="320" cy="286" r="3.2" fill={C.net} />
+          </g>
+
+          {/* Umpire's chair — beside the net, up in the apron (outside court) */}
+          <g stroke={C.line} strokeOpacity="0.9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none">
+            <path d="M312 72 L318 50 M328 72 L322 50" />                    {/* splayed legs */}
+            <line x1="314" y1="63" x2="326" y2="63" />                      {/* footrest */}
+            <rect x="309" y="44" width="22" height="6" rx="1.5" fill={C.apron} />  {/* seat */}
+            <line x1="311" y1="44" x2="311" y2="35" />                      {/* backrest */}
+            <line x1="331" y1="47" x2="335" y2="47" />                      {/* umpire's desk */}
           </g>
         </svg>
 
