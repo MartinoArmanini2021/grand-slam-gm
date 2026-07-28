@@ -8,7 +8,7 @@ import { getTier, type Tier } from './tiers';
 // squeeze is choosing WHICH two Platinum / three Gold you can pair with strong
 // Silver value.
 export const SQUAD_SIZE = 10;
-export const STARTING_BUDGET = 200; // $M each manager gets to draft their squad
+export const STARTING_BUDGET = 150; // $M each manager gets to draft their squad
 export const TIER_MINIMUMS: { tier: Tier; min: number }[] = [
   { tier: 'Platinum', min: 2 },
   { tier: 'Gold', min: 3 },

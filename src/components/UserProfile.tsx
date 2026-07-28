@@ -12,6 +12,7 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
   const resetGame = useGameStore(s => s.resetGame);
 
   const [confirmReset, setConfirmReset] = useState(false);
+  const [showPw, setShowPw] = useState(false);
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
   const [pwBusy, setPwBusy] = useState(false);
@@ -21,7 +22,7 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
   // confirm can't be left armed (a data-loss trap) and stale password text/messages
   // don't linger into the next open.
   useEffect(() => {
-    if (!open) { setConfirmReset(false); setPwMsg(null); setNewPw(''); setConfirmPw(''); }
+    if (!open) { setConfirmReset(false); setShowPw(false); setPwMsg(null); setNewPw(''); setConfirmPw(''); }
   }, [open]);
   useEscapeToClose(onClose, open);
 
@@ -30,27 +31,30 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
   const accountEmail = user?.email ?? '';
   const field = { background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.12)', color: 'var(--ink)' } as const;
   const initials = ((firstName[0] ?? '') + (lastName[0] ?? '')) || (username[0] ?? accountEmail[0] ?? 'U');
-  // Required for the live league: username, name, surname, email, phone.
-  const incomplete = [username, firstName, lastName, accountEmail || email, phone].some(v => !v.trim());
+  // Required for the live league: username, name, surname, email, phone, country.
+  const incomplete = [username, firstName, lastName, accountEmail || email, phone, country].some(v => !v.trim());
   const reqStyle = (v: string) => (v.trim() ? field : { ...field, border: '1px solid rgba(229,71,43,0.55)' });
 
-  const changePassword = async () => {
+  const changePassword = async (): Promise<boolean> => {
     setPwMsg(null);
-    if (newPw.length < 6) { setPwMsg({ ok: false, text: 'Password must be at least 6 characters.' }); return; }
-    if (newPw !== confirmPw) { setPwMsg({ ok: false, text: 'Passwords do not match.' }); return; }
+    if (newPw.length < 6) { setPwMsg({ ok: false, text: 'Password must be at least 6 characters.' }); return false; }
+    if (newPw !== confirmPw) { setPwMsg({ ok: false, text: 'Passwords do not match.' }); return false; }
     setPwBusy(true);
     try {
       await updatePassword(newPw);
-      setPwMsg({ ok: true, text: 'Password updated.' });
       setNewPw(''); setConfirmPw('');
+      toast('Password updated', 'good');
+      return true;
     } catch (e) {
       setPwMsg({ ok: false, text: e instanceof Error ? e.message : 'Failed to update.' });
+      return false;
     } finally {
       setPwBusy(false);
     }
   };
 
   return (
+    <>
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(10,27,51,0.55)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div onClick={e => e.stopPropagation()} className="fade-in rounded-2xl w-full" style={{ maxWidth: 420, background: '#fff', maxHeight: '88dvh', overflowY: 'auto' }}>
         {/* Header */}
@@ -98,8 +102,8 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
             <Row label="Phone" req>
               <input value={phone} onChange={e => set({ phone: e.target.value })} placeholder="+00 000 000" type="tel" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={reqStyle(phone)} />
             </Row>
-            <Row label="Country">
-              <input value={country} onChange={e => set({ country: e.target.value })} placeholder="Country" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={field} />
+            <Row label="Country" req>
+              <input value={country} onChange={e => set({ country: e.target.value })} placeholder="Country" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={reqStyle(country)} />
             </Row>
           </div>
 
@@ -116,20 +120,14 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
             </button>
           </Row>
 
-          {/* Password */}
+          {/* Password — a single button opens a separate popup */}
           <div className="pt-2" style={{ borderTop: '1px solid rgba(10,27,51,0.07)' }}>
-            <div className="text-[11px] font-bold uppercase tracking-wide mb-2 mt-1" style={{ color: 'var(--ink-2)' }}>Change password</div>
             {user ? (
-              <div className="space-y-2">
-                <input value={newPw} onChange={e => setNewPw(e.target.value)} type="password" placeholder="New password" autoComplete="new-password" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={field} />
-                <input value={confirmPw} onChange={e => setConfirmPw(e.target.value)} type="password" placeholder="Confirm new password" autoComplete="new-password" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={field} />
-                {pwMsg && (
-                  <div className="text-xs rounded-xl px-3 py-2" style={{ background: pwMsg.ok ? 'rgba(18,161,80,0.08)' : 'rgba(229,71,43,0.08)', color: pwMsg.ok ? 'var(--green)' : '#c0341c', border: `1px solid ${pwMsg.ok ? 'rgba(18,161,80,0.25)' : 'rgba(229,71,43,0.25)'}` }}>{pwMsg.text}</div>
-                )}
-                <button onClick={changePassword} disabled={pwBusy} className="w-full py-2.5 rounded-xl text-sm font-bold" style={{ background: 'rgba(14,111,196,0.1)', color: 'var(--blue)' }}>{pwBusy ? 'Updating…' : 'Update password'}</button>
-              </div>
+              <button onClick={() => { setNewPw(''); setConfirmPw(''); setPwMsg(null); setShowPw(true); }} className="w-full py-2.5 rounded-xl text-sm font-bold mt-1" style={{ background: 'rgba(14,111,196,0.1)', color: 'var(--blue)' }}>
+                Change password →
+              </button>
             ) : (
-              <div className="text-xs rounded-xl px-3 py-2.5" style={{ background: 'rgba(217,154,0,0.1)', border: '1px solid rgba(217,154,0,0.25)', color: '#8a6a00' }}>
+              <div className="text-xs rounded-xl px-3 py-2.5 mt-1" style={{ background: 'rgba(217,154,0,0.1)', border: '1px solid rgba(217,154,0,0.25)', color: '#8a6a00' }}>
                 {enabled ? 'Log in to change your password.' : 'Password change is available once accounts are enabled.'}
               </div>
             )}
@@ -162,6 +160,30 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
         </div>
       </div>
     </div>
+
+    {/* Change-password — a separate popup on top of the profile */}
+    {showPw && (
+      <div onClick={() => setShowPw(false)} style={{ position: 'fixed', inset: 0, zIndex: 210, background: 'rgba(10,27,51,0.6)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+        <div onClick={e => e.stopPropagation()} className="fade-in rounded-2xl w-full" style={{ maxWidth: 380, background: '#fff', padding: 20 }}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="font-extrabold text-base" style={{ color: 'var(--ink)' }}>Change password</div>
+            <button onClick={() => setShowPw(false)} className="text-sm font-bold px-2.5 py-1 rounded-lg" style={{ background: 'var(--raised)', color: 'var(--ink-2)' }}>✕</button>
+          </div>
+          <div className="space-y-2">
+            <input value={newPw} onChange={e => setNewPw(e.target.value)} type="password" placeholder="New password" autoComplete="new-password" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={field} />
+            <input value={confirmPw} onChange={e => setConfirmPw(e.target.value)} type="password" placeholder="Confirm new password" autoComplete="new-password" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={field} />
+            {pwMsg && (
+              <div className="text-xs rounded-xl px-3 py-2" style={{ background: pwMsg.ok ? 'rgba(18,161,80,0.08)' : 'rgba(229,71,43,0.08)', color: pwMsg.ok ? 'var(--green)' : '#c0341c', border: `1px solid ${pwMsg.ok ? 'rgba(18,161,80,0.25)' : 'rgba(229,71,43,0.25)'}` }}>{pwMsg.text}</div>
+            )}
+            <div className="flex gap-2 pt-1">
+              <button onClick={() => setShowPw(false)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold" style={{ background: '#F0F3F7', color: 'var(--ink)', border: '1px solid rgba(10,27,51,0.1)' }}>Cancel</button>
+              <button onClick={async () => { if (await changePassword()) setShowPw(false); }} disabled={pwBusy} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: 'var(--blue)' }}>{pwBusy ? 'Updating…' : 'Update'}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 

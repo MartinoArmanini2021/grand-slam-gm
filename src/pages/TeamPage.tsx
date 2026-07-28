@@ -3,6 +3,8 @@ import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { useLeagueBoard } from '../data/leagueBoard';
 import { getPlayer } from '../data/players';
+import { tierCounts } from '../data/squadRules';
+import { TIER_META, TIER_ORDER, type Tier } from '../data/tiers';
 import { ROUNDS } from '../data/tournament';
 import { lastName } from '../data/format';
 import SquadCourt from '../components/SquadCourt';
@@ -24,7 +26,7 @@ function BackToLeague() {
 }
 
 export default function TeamPage() {
-  const { myTeam, initialSquad, transfers, captain, budget, myScore, viewTeam, setActiveTab } = useGameStore();
+  const { myTeam, initialSquad, transfers, captain, viceCaptain, budget, myScore, viewTeam, setActiveTab } = useGameStore();
   const { teamName, teamEmblem, username } = useProfile();
   // Real league members come from the public board (everyone is a member of it).
   const board = useLeagueBoard(null);
@@ -34,7 +36,7 @@ export default function TeamPage() {
       <TeamView
         key="you"
         emblem={teamEmblem} name={teamName} manager={username ? `@${username}` : '@you'} color="var(--blue)"
-        score={myScore} budget={budget} squad={myTeam} captainId={captain ?? myTeam[0] ?? ''} editable
+        score={myScore} budget={budget} squad={myTeam} captainId={captain ?? myTeam[0] ?? ''} viceCaptainId={viceCaptain ?? ''} editable
         initialSquad={initialSquad} transfers={transfers}
       />
     );
@@ -156,13 +158,57 @@ function TeamView({ emblem, name, manager, color, score, budget, squad, captainI
       {/* The squad on court. Your own team is interactive (tap + to buy players
           during the draft); rival teams are read-only. */}
       {editable ? <SquadCourt /> : <SquadCourt squad={squad} captainId={captainId} viceCaptainId={viceCaptainId} readOnly />}
-      <div className="text-[11px] mt-2 text-center" style={{ color: 'var(--ink-3)' }}>
+      <div className="text-[11px] mt-2 mb-4 text-center" style={{ color: 'var(--ink-3)' }}>
         {editable
-          ? <>Tap a <b>+</b> to buy players · tap a player for their profile · <span style={{ color: 'var(--gold)' }}>⭐ = captain</span></>
-          : <>Tap a player to see their profile · <span style={{ color: 'var(--gold)' }}>⭐ = captain</span></>}
+          ? <>Tap a <b>+</b> to buy players · tap a player for their profile</>
+          : <>Tap a player to see their profile</>}
       </div>
 
-      <TransferHistory initialSquad={initialSquad.length ? initialSquad : squad} transfers={transfers} />
+      {/* Squad stats + transfer history — side by side on desktop, stacked on mobile */}
+      <div className="grid md:grid-cols-2 gap-3 items-start">
+        <SquadStats squad={squad} captainId={captainId} viceCaptainId={viceCaptainId} budget={budget} />
+        <TransferHistory initialSquad={initialSquad.length ? initialSquad : squad} transfers={transfers} />
+      </div>
+    </div>
+  );
+}
+
+// Compact squad snapshot shown below the court on any team view: tier make-up, the
+// two on-court leaders, and budget left.
+function SquadStats({ squad, captainId, viceCaptainId, budget }: { squad: string[]; captainId: string; viceCaptainId?: string; budget: number }) {
+  const openPlayer = useGameStore(s => s.openPlayer);
+  const counts = tierCounts(squad);
+  const leader = (id: string | undefined, role: 'C' | 'V') => {
+    if (!id || !squad.includes(id)) return null;
+    const p = getPlayer(id);
+    const gold = role === 'C';
+    return (
+      <button onClick={() => openPlayer(id)} className="flex items-center gap-2 w-full text-left rounded-xl px-2 py-1.5" style={{ background: gold ? 'rgba(217,154,0,0.06)' : 'rgba(14,111,196,0.06)' }}>
+        <PlayerAvatar playerId={id} name={p.name} size="sm" />
+        <span className="flex-1 text-sm font-semibold truncate" style={{ color: 'var(--ink)' }}>{lastName(p.name)}</span>
+        <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: gold ? 'var(--gold)' : 'var(--blue)', color: '#fff' }}>{role === 'C' ? 'C ×2' : 'V ×1.5'}</span>
+      </button>
+    );
+  };
+  return (
+    <div className="rounded-2xl p-4" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.08)' }}>
+      <div className="text-[11px] font-bold uppercase tracking-wide mb-3" style={{ color: 'var(--ink-2)' }}>Squad</div>
+      <div className="grid grid-cols-3 gap-2 mb-3">
+        {TIER_ORDER.map(t => (
+          <div key={t} className="rounded-lg px-2 py-1.5 text-center" style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.06)' }}>
+            <div className="text-[9px] font-bold uppercase tracking-wide" style={{ color: TIER_META[t as Tier].color }}>{t}</div>
+            <div className="font-num text-sm font-bold" style={{ color: 'var(--ink)' }}>{counts[t as Tier]}</div>
+          </div>
+        ))}
+      </div>
+      <div className="space-y-1.5 mb-3">
+        {leader(captainId, 'C')}
+        {leader(viceCaptainId, 'V')}
+      </div>
+      <div className="flex items-center justify-between text-xs pt-2" style={{ borderTop: '1px solid rgba(10,27,51,0.06)' }}>
+        <span style={{ color: 'var(--ink-2)' }}>Budget left</span>
+        <span className="font-num font-bold" style={{ color: 'var(--green)' }}>${budget.toFixed(1)}M</span>
+      </div>
     </div>
   );
 }

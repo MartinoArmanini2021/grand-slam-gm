@@ -20,7 +20,7 @@ describe('store hardening', () => {
     expect(g().myScore).toBe(0);
     expect(g().currentRoundIndex).toBe(0);
     expect(g().phase).toBe('draft');
-    expect(g().budget).toBe(200);
+    expect(g().budget).toBe(150);
   });
 
   it('profile reset() clears identity + team back to defaults (no cross-account bleed)', () => {

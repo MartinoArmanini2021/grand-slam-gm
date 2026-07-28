@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Fragment } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { ROUNDS, isPlayerOut } from '../data/tournament';
@@ -37,6 +37,14 @@ export default function HomePage() {
   const board = useLeagueBoard(boardLeague);
   const boardName = boardLeague ? (myLeagues.find(l => l.id === boardLeague)?.name ?? 'League') : 'Public League';
   const medal = (i: number) => (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`);
+  // Show only the top slice on Home (scales to 200+ managers); if you're below it,
+  // pin your own row underneath so you always see your standing.
+  const LEADERBOARD_TOP = 12;
+  const youIdx = board.findIndex(r => r.you);
+  const topRows = board.slice(0, LEADERBOARD_TOP).map((row, i) => ({ row, rank: i, gap: false }));
+  const rows = youIdx >= LEADERBOARD_TOP
+    ? [...topRows, { row: board[youIdx], rank: youIdx, gap: true }]
+    : topRows;
 
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-3 pt-3 pb-6 fade-in">
@@ -128,31 +136,40 @@ export default function HomePage() {
                 </tr>
               </thead>
               <tbody>
-                {board.map((row, i) => (
-                  <tr
-                    key={row.id}
-                    onClick={() => openTeam(row.id)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={onActivate(() => openTeam(row.id))}
-                    className="cursor-pointer transition-colors"
-                    style={{ borderBottom: '1px solid rgba(10,27,51,0.05)', background: row.you ? 'rgba(14,111,196,0.05)' : 'transparent' }}
-                    onMouseEnter={e => { if (!row.you) (e.currentTarget as HTMLElement).style.background = 'rgba(10,27,51,0.02)'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = row.you ? 'rgba(14,111,196,0.05)' : 'transparent'; }}
-                  >
-                    <td className="px-2 py-2 text-center font-num font-bold" style={{ color: i < 3 ? 'var(--ink)' : 'var(--ink-3)' }}>{medal(i)}</td>
-                    <td className="px-2 py-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="w-7 h-7 rounded-lg flex items-center justify-center text-base shrink-0" style={{ background: `${row.color}1a`, border: `1px solid ${row.color}44` }}>{row.emblem}</span>
-                        <span className="font-bold truncate" style={{ color: 'var(--ink)' }}>{row.name}</span>
-                        {row.you && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0" style={{ background: 'var(--blue)', color: '#fff' }}>YOU</span>}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2 text-right font-num text-base font-extrabold" style={{ color: 'var(--blue)' }}>{row.score}</td>
-                  </tr>
+                {rows.map(({ row, rank, gap }) => (
+                  <Fragment key={row.id}>
+                    {gap && (
+                      <tr><td colSpan={3} className="text-center py-1 text-xs font-bold" style={{ color: 'var(--ink-3)' }}>⋯</td></tr>
+                    )}
+                    <tr
+                      onClick={() => openTeam(row.id)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={onActivate(() => openTeam(row.id))}
+                      className="cursor-pointer transition-colors"
+                      style={{ borderBottom: '1px solid rgba(10,27,51,0.05)', background: row.you ? 'rgba(14,111,196,0.05)' : 'transparent' }}
+                      onMouseEnter={e => { if (!row.you) (e.currentTarget as HTMLElement).style.background = 'rgba(10,27,51,0.02)'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = row.you ? 'rgba(14,111,196,0.05)' : 'transparent'; }}
+                    >
+                      <td className="px-2 py-2 text-center font-num font-bold" style={{ color: rank < 3 ? 'var(--ink)' : 'var(--ink-3)' }}>{medal(rank)}</td>
+                      <td className="px-2 py-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-7 h-7 rounded-lg flex items-center justify-center text-base shrink-0" style={{ background: `${row.color}1a`, border: `1px solid ${row.color}44` }}>{row.emblem}</span>
+                          <span className="font-bold truncate" style={{ color: 'var(--ink)' }}>{row.name}</span>
+                          {row.you && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0" style={{ background: 'var(--blue)', color: '#fff' }}>YOU</span>}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-right font-num text-base font-extrabold" style={{ color: 'var(--blue)' }}>{row.score}</td>
+                    </tr>
+                  </Fragment>
                 ))}
               </tbody>
             </table>
+            {board.length > LEADERBOARD_TOP && (
+              <button onClick={() => setActiveTab('league')} className="w-full py-2 text-xs font-semibold" style={{ background: 'var(--raised)', color: 'var(--blue)', borderTop: '1px solid rgba(10,27,51,0.06)' }}>
+                Top {LEADERBOARD_TOP} of {board.length} · Full standings →
+              </button>
+            )}
           </div>
         )}
         </div>{/* /leaderboard */}

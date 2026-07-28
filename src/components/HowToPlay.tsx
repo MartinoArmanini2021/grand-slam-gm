@@ -1,13 +1,13 @@
 import { useEscapeToClose } from '../hooks';
 
 const RULES: { icon: string; title: string; body: string }[] = [
-  { icon: '🎾', title: 'Draft 10 players', body: 'You get $200M to sign a 10-player squad — exactly 2 Platinum, 3 Gold and 5 Silver. Stars cost more, so choose: two galácticos and bargain support, or a deeper balanced squad.' },
+  { icon: '🎾', title: 'Draft 10 players', body: 'You get $150M to sign a 10-player squad — exactly 2 Platinum, 3 Gold and 5 Silver. Stars cost more, so choose: two galácticos and bargain support, or a deeper balanced squad.' },
   { icon: '📈', title: 'Win rounds, score points', body: 'Every round your player wins scores — from the Round of 128 (+1) up through R64 +1, R32 +2, R16 +5, QF +10, SF +20, Final +40. Lower-ranked winners score more per win.' },
   { icon: '👑', title: 'Captain & Vice-Captain', body: 'Two of your squad lead on court: your Captain scores ×2 and your Vice-Captain ×1.5. The other 8 sit on the bench (they still score ×1). Re-pick your two leaders each round.' },
   { icon: '🔥', title: 'Upset bonus', body: 'When a lower-ranked player beats a higher seed, you earn bonus points (bigger in the later rounds). Backing the right underdog pays off.' },
   { icon: '💸', title: 'Elimination = money back', body: 'When your player is knocked out you get part of their price back — more the further they reached — and can spend it to transfer in someone still alive.' },
   { icon: '🔒', title: 'Transfers close before the final', body: 'Reinforce your squad through the semi-finals — a quarter-final casualty can still be replaced for the semis. Only the final squad is locked, so plan ahead.' },
-  { icon: '🏆', title: 'Beat your league', body: 'Everyone gets the same $200M. Climb the League standings and be crowned Grand Slam GM.' },
+  { icon: '🏆', title: 'Beat your league', body: 'Everyone gets the same $150M. Climb the League standings and be crowned Grand Slam GM.' },
 ];
 
 export default function HowToPlay({ open, onClose }: { open: boolean; onClose: () => void }) {

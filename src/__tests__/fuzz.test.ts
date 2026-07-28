@@ -28,7 +28,9 @@ function draftValidSquad(rand: () => number) {
     for (let k = 0; k < n && a.length; k++) out.push(a.splice(Math.floor(rand() * a.length), 1)[0]!);
     return out;
   };
-  const picks = [...takeN(platinum, 2), ...takeN(gold, 3)]; // 2 Platinum + 3 Gold
+  // Pick from the cheaper end of each tier so the whole squad always fits the $150
+  // budget (the fuzzed surface is the PLAY loop below, not squad assembly).
+  const picks = [...takeN(platinum.slice(0, 4), 2), ...takeN(gold.slice(0, 6), 3)]; // 2 Platinum + 3 Gold
   for (const p of silver) { if (picks.length >= 10) break; if (!picks.includes(p)) picks.push(p); } // 5 cheapest Silver
   for (const p of picks) store().addPlayer(p.id);
   return store().myTeam.length === 10 && isSquadValid(store().myTeam);

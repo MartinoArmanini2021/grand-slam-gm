@@ -27,8 +27,8 @@ beforeEach(() => { store().resetGame(); });
 // augeraliassime 29, djokovic 23, fritz 22, cobolli 20, lehecka 17, fery 6.
 
 describe('draft mechanics', () => {
-  it('starts with $200M, empty team, draft phase', () => {
-    expect(store().budget).toBe(200);
+  it('starts with $150M, empty team, draft phase', () => {
+    expect(store().budget).toBe(150);
     expect(store().myTeam).toHaveLength(0);
     expect(store().phase).toBe('draft');
   });
@@ -36,20 +36,20 @@ describe('draft mechanics', () => {
   it('adding Sinner (#1) costs $50M', () => {
     store().addPlayer('sinner');
     expect(store().myTeam).toEqual(['sinner']);
-    expect(store().budget).toBe(150);
+    expect(store().budget).toBe(100);
   });
 
-  it('budget always equals 200 minus squad cost during draft', () => {
+  it('budget always equals 150 minus squad cost during draft', () => {
     ['sinner', 'fery', 'cobolli'].forEach(id => store().addPlayer(id));
     const cost = store().myTeam.reduce((s, id) => s + getPlayer(id).price, 0);
-    expect(store().budget).toBe(200 - cost);
+    expect(store().budget).toBe(150 - cost);
   });
 
   it('rejects an 11th player', () => {
-    // a legal 2 Platinum · 3 Gold · 5 Silver squad, then one more
-    ['sinner', 'zverev', 'bublik', 'ruud', 'rublev', 'fery', 'giron', 'munar', 'bergs', 'zheng'].forEach(id => store().addPlayer(id));
+    // a legal, budget-affordable 2 Platinum · 3 Gold · 5 Silver squad, then one more
+    ['cobolli', 'medvedev', 'lehecka', 'rublev', 'ruud', 'fery', 'zheng', 'svajda', 'virtanen', 'mochizuki'].forEach(id => store().addPlayer(id));
     expect(store().myTeam).toHaveLength(10);
-    store().addPlayer('svajda'); // squad already full
+    store().addPlayer('giron'); // squad already full
     expect(store().myTeam).toHaveLength(10);
   });
 
@@ -79,7 +79,7 @@ describe('draft mechanics', () => {
     store().setCaptain('sinner');
     store().removePlayer('sinner');
     expect(store().myTeam).toHaveLength(0);
-    expect(store().budget).toBe(200);
+    expect(store().budget).toBe(150);
     expect(store().captain).toBeNull();
   });
 
@@ -154,7 +154,7 @@ describe('budget returns', () => {
     expect(store().myScore).toBe(captainScore('fritz'));
     const ret = store().budgetReturns.find(r => r.playerId === 'fritz');
     expect(ret).toMatchObject({ playerId: 'fritz', round: 'QF', amount: 15.4 }); // 22 · 0.70
-    expect(store().budget).toBeCloseTo(200 - 22 + 15.4, 5);
+    expect(store().budget).toBeCloseTo(150 - 22 + 15.4, 5);
   });
 
   it('a player who lost in the first round is refunded when R128 is played', () => {
@@ -164,7 +164,7 @@ describe('budget returns', () => {
     play('sinner'); // R128 → ruud loses, refunded at the R128 rate 18·0.40 = 7.2
     const ret = store().budgetReturns.find(r => r.playerId === 'ruud');
     expect(ret).toMatchObject({ round: 'R128', amount: 7.2 });
-    expect(store().budget).toBeCloseTo(200 - 50 - 18 + 7.2, 5);
+    expect(store().budget).toBeCloseTo(150 - 50 - 18 + 7.2, 5);
   });
 });
 
@@ -202,14 +202,14 @@ describe('mid-tournament substitutions', () => {
   it('an eliminated player can be replaced by an affordable, still-alive player', () => {
     draftAndReachR16();
     expect(eliminatedSquad(store().myTeam, store().currentRoundIndex)).toEqual(['lehecka']);
-    // draft leftover 200-50-17=133, + Lehecka R16 refund 17·0.60 = 10.2 → 143.2
+    // draft leftover 150-50-17=83, + Lehecka R16 refund 17·0.60 = 10.2 → 93.2
     const budgetBefore = store().budget;
-    expect(budgetBefore).toBeCloseTo(143.2, 5);
+    expect(budgetBefore).toBeCloseTo(93.2, 5);
 
     store().replacePlayer('lehecka', 'zverev'); // $33, reaches the final
     expect(store().myTeam).toContain('zverev');
     expect(store().myTeam).not.toContain('lehecka');
-    expect(store().budget).toBeCloseTo(143.2 - 33, 5);
+    expect(store().budget).toBeCloseTo(93.2 - 33, 5);
   });
 
   it('the replacement scores from the next round on', () => {
@@ -296,7 +296,7 @@ describe('guards', () => {
     store().finalizeDraft();
     play('sinner');
     store().resetGame();
-    expect(store().budget).toBe(200);
+    expect(store().budget).toBe(150);
     expect(store().myTeam).toHaveLength(0);
     expect(store().myScore).toBe(0);
     expect(store().phase).toBe('draft');
