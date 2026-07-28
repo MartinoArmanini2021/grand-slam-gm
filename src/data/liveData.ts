@@ -77,6 +77,17 @@ function teamTarget(raw: string): string {
   return m ? m[1].trim() : cleanTeam(raw);
 }
 
+// A real Masters draw (e.g. the 96-player National Bank Open) is published as SEVERAL
+// bracket templates — 8 section brackets + one "Finals" bracket — not a single one.
+// Split them so each is parsed on its own (otherwise their RD-team keys collide).
+// Aug-1 TODO: map each section's rounds onto the tournament's R64→F and number slots
+// globally, once the real 2026 draw page is live (per the roadmap).
+export function splitBrackets(wikitext: string): { type: string; text: string }[] {
+  const starts = [...wikitext.matchAll(/\{\{(\d+TeamBracket[^\s|}]*)/g)];
+  const idxs = starts.map(m => m.index ?? 0).concat([wikitext.length]);
+  return starts.map((m, i) => ({ type: m[1].trim(), text: wikitext.slice(idxs[i], idxs[i + 1]) }));
+}
+
 // Parse a single {{NTeamBracket-Compact-Tennis*}} template into a live draw + the
 // results implied by advancement. `roundIds` maps template rounds RD1..RDn onto this
 // tournament's round ids (e.g. ['R64','R32','R16','QF','SF','F']).
