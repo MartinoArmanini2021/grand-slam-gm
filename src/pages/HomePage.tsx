@@ -46,7 +46,7 @@ export default function HomePage() {
         <div className="min-w-0">
           <div className="flex items-baseline gap-x-3 gap-y-1 flex-wrap">
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-none" style={{ color: 'var(--ink)' }}>{TOURNAMENT.edition}</h1>
-            <span className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: SURFACE.accent }}>Grand Slam · {SURFACE.label}</span>
+            <span className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: SURFACE.accent }}>{TOURNAMENT.location.split(',')[0]} · {SURFACE.label}</span>
           </div>
           <div className="text-xs font-bold uppercase tracking-[0.2em] mt-1.5" style={{ color: 'var(--ember)' }}>
             {courtStatus(phase, currentRound, ROUNDS[currentRoundIndex - 1]?.short)}

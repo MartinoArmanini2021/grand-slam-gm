@@ -7,6 +7,7 @@ import type { RoundId } from '../types';
 import PlayerAvatar from '../components/PlayerAvatar';
 import BracketTree from '../components/BracketTree';
 import { getTier, TIER_META } from '../data/tiers';
+import { TOURNAMENT } from '../data/tournamentConfig';
 import { toast } from '../store/toastStore';
 
 export default function TournamentPage() {
@@ -28,7 +29,7 @@ export default function TournamentPage() {
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-3 py-6 fade-in">
       <div className="mb-4">
-        <h1 className="text-lg font-extrabold" style={{ color: 'var(--ink)' }}>Wimbledon 2026 — the draw</h1>
+        <h1 className="text-lg font-extrabold" style={{ color: 'var(--ink)' }}>{TOURNAMENT.edition} — the draw</h1>
         <p className="text-xs mt-0.5" style={{ color: 'var(--ink-2)' }}>
           The real men's singles bracket. Highlight any team's players and tap anyone to trace their route to the final.
         </p>

@@ -90,21 +90,31 @@ export interface Tournament {
   drawSize: number;  // 128 for a Slam; Masters draws differ
   rounds: RoundId[]; // the ordered rounds this tournament plays & scores
   mode: TournamentMode;
+  court?: SurfaceTheme['court']; // optional court palette override (else the surface default)
 }
 
 // Every tournament the app knows about. One is active at a time (ACTIVE_TOURNAMENT_ID);
 // the rest are staged, ready to switch to once their field + data are wired.
 export const TOURNAMENTS: Record<string, Tournament> = {
+  // Active tournament for the friends demo: branded as the National Bank Open
+  // (Montréal). It still plays the baked 128-draw bracket as STAND-IN data until the
+  // real Montréal field/draw is wired (W4); only the branding + court are Montréal.
+  // Montréal hard court: green surround (stands), blue playing surface.
   wimbledon_2026: {
     id: 'wimbledon_2026',
-    name: 'Wimbledon',
-    edition: 'Wimbledon 2026',
+    name: 'National Bank Open',
+    edition: 'National Bank Open 2026',
     year: 2026,
-    surface: 'grass',
-    location: 'London, UK',
+    surface: 'hard',
+    location: 'Montréal, Canada',
     drawSize: 128,
     rounds: ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'],
     mode: 'replay',
+    court: {
+      standTop: '#123420', standBottom: '#0c2417', band1: '#163d25', band2: '#1b4a2d', // green surround
+      stripeA: '#2f6aa8', stripeB: '#285d95', line: '#ffffff',                          // blue playing surface
+      net: '#eef4f0', netShadow: '#0a1f44', crowdLight: '#dfe6d8', crowdDark: '#9fb6a0',
+    },
   },
   // National Bank Open 2026 (men's) — Montréal, IGA Stadium, Aug 1–13. The new
   // 12-day, 96-player Masters format: the top 32 seeds get first-round byes, so for
@@ -129,5 +139,9 @@ export const TOURNAMENTS: Record<string, Tournament> = {
 export const ACTIVE_TOURNAMENT_ID = 'wimbledon_2026';
 export const TOURNAMENT: Tournament = TOURNAMENTS[ACTIVE_TOURNAMENT_ID];
 
-// Convenience: the active surface's theme.
-export const SURFACE: SurfaceTheme = SURFACE_THEME[TOURNAMENT.surface];
+// Convenience: the active surface's theme, with any per-tournament court override
+// applied (e.g. Montréal's green-surround / blue-surface hard court).
+const BASE_SURFACE = SURFACE_THEME[TOURNAMENT.surface];
+export const SURFACE: SurfaceTheme = TOURNAMENT.court
+  ? { ...BASE_SURFACE, court: TOURNAMENT.court }
+  : BASE_SURFACE;

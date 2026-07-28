@@ -6,6 +6,7 @@ import { WIMBLEDON_2026 } from '../data/wimbledon2026';
 import { ROUNDS, isPlayerOut, getPlayerExit } from '../data/tournament';
 import { lastName } from '../data/format';
 import { nickOf } from '../data/nicknames';
+import { TOURNAMENT } from '../data/tournamentConfig';
 import type { Player, RoundId, TournamentResult } from '../types';
 import PlayerAvatar from '../components/PlayerAvatar';
 import SurfaceBar from '../components/SurfaceBar';
@@ -192,10 +193,10 @@ function H2HSection({ player }: { player: Player }) {
       <div className="rounded-xl px-3 py-2.5 mb-3 text-xs" style={{ background: meeting ? 'rgba(18,161,80,0.06)' : 'rgba(10,27,51,0.03)', border: `1px solid ${meeting ? 'rgba(18,161,80,0.18)' : 'rgba(10,27,51,0.06)'}` }}>
         {meeting ? (
           <span style={{ color: 'var(--ink)' }}>
-            🎾 Met at Wimbledon 2026 · <b>{ROUND_FULL[meeting.round]}</b> — <b style={{ color: 'var(--green)' }}>{lastName(meeting.winner)}</b> won <span className="font-num" style={{ color: 'var(--ink-2)' }}>{meeting.score}</span>
+            🎾 Met at {TOURNAMENT.edition} · <b>{ROUND_FULL[meeting.round]}</b> — <b style={{ color: 'var(--green)' }}>{lastName(meeting.winner)}</b> won <span className="font-num" style={{ color: 'var(--ink-2)' }}>{meeting.score}</span>
           </span>
         ) : (
-          <span style={{ color: 'var(--ink-3)' }}>They didn't meet in the Wimbledon 2026 draw. Full career H2H arrives with the live-data feed.</span>
+          <span style={{ color: 'var(--ink-3)' }}>They didn't meet in the {TOURNAMENT.edition} draw. Full career H2H arrives with the live-data feed.</span>
         )}
       </div>
 

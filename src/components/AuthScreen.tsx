@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../auth/AuthProvider';
+import { TOURNAMENT } from '../data/tournamentConfig';
 import Logo from './Logo';
 
 type Mode = 'login' | 'register' | 'verify';
@@ -117,7 +118,7 @@ export default function AuthScreen() {
           </div>
         </div>
 
-        <p className="text-center text-xs mt-4" style={{ color: 'var(--on-navy-2)' }}>Grand Slam GM · Wimbledon 2026 fantasy</p>
+        <p className="text-center text-xs mt-4" style={{ color: 'var(--on-navy-2)' }}>Grand Slam GM · {TOURNAMENT.edition} fantasy</p>
       </div>
     </div>
   );
