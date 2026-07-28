@@ -429,3 +429,39 @@ layer. Auth, hosting, and email are hours, not days.
 - Supabase pricing — https://supabase.com/pricing
 - Cloudflare Pages vs Vercel — https://www.devpick.io/compare/cloudflare-pages-vs-vercel
 - Resend pricing — https://resend.com/pricing
+
+## Server-authoritative scoring (W5) — build & deploy
+
+Scores are computed on the server so the leaderboard number can't be self-reported.
+
+**Pieces**
+- `supabase/server_scoring.sql` — `matches` + `player_stats` tables and a trigger that
+  locks `entries.score` to the service role.
+- `supabase/functions/recompute-score/index.ts` — the Edge Function (service role) that
+  recomputes every entry from `public.matches`; the *only* writer of `entries.score`.
+- `src/scoring/serverEngine.ts` — the pure scoring math the function mirrors. A parity
+  test (`vitest serverScoring`) replays a full game in the client and asserts the engine
+  returns the identical score, so client and server can never drift.
+
+**Deploy (one-time)**
+1. Apply the migration: paste `supabase/server_scoring.sql` into the Supabase SQL editor.
+2. Deploy the function (Supabase CLI, logged into the project):
+   ```bash
+   supabase functions deploy recompute-score --project-ref mrdmlfumdsxufifjulbt
+   ```
+   `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically.
+3. Fill `public.matches`:
+   - **Live:** the results feed / admin console writes rows as rounds finish.
+   - **Replay/testing:** seed from the baked draw.
+4. Recompute: `supabase functions invoke recompute-score` — or schedule it (pg_cron /
+   a webhook) to run after each results update.
+
+**Why it's cheat-proof**
+- The trigger blocks client writes to `entries.score` (clients can still PATCH their squad `state`).
+- The function credits a win **only if the result exists in `public.matches`**, so nobody
+  can score a round the tournament hasn't played; `playedRounds` is derived from the DB and
+  applied to everyone equally (the live shared-round model).
+
+**Final flip:** the leaderboard currently reads `entries.score || client-snapshot` (graceful
+during the alpha). Once the function runs on a live event, switch `fetchLeaderboard` to use
+`entries.score` exclusively — a one-line change.
