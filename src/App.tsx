@@ -20,7 +20,6 @@ import CloudSync from './components/CloudSync';
 import { useAuth } from './auth/AuthProvider';
 
 const NAVY = 'var(--ink)';
-const BLUE = 'var(--blue)';
 
 const seenRules = () => { try { return !!localStorage.getItem('gsgm-seen-rules'); } catch { return true; } };
 const markSeen = () => { try { localStorage.setItem('gsgm-seen-rules', '1'); } catch { /* ignore */ } };
@@ -37,7 +36,7 @@ const TABS = [
 const ADMIN_TAB = { id: 'admin', label: 'Admin', accent: 'var(--blue-light)' } as const;
 
 export default function App() {
-  const { activeTab, setActiveTab, phase, myScore, currentRoundIndex, myTeam } = useGameStore();
+  const { activeTab, setActiveTab, phase, myScore, currentRoundIndex } = useGameStore();
   const currentRound = currentRoundIndex < ROUNDS.length ? ROUNDS[currentRoundIndex] : null;
   const [showRules, setShowRules] = useState(() => !seenRules());
   const [showProfile, setShowProfile] = useState(false);
@@ -95,11 +94,6 @@ export default function App() {
                   >
                     <Icon size={17} style={{ color: active ? tab.accent : 'currentColor' }} />
                     <span className="hidden sm:inline">{tab.label}</span>
-                    {tab.id === 'league' && myTeam.length > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center" style={{ background: BLUE, color: '#fff' }}>
-                        {myTeam.length}
-                      </span>
-                    )}
                     {tab.id === 'tournament' && phase === 'pre_round' && (
                       <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full pulse-dot" style={{ background: 'var(--green-bright)' }} />
                     )}

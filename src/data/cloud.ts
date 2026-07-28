@@ -93,17 +93,51 @@ export async function fetchEntry(
 
 // ── Leagues (public + private, join-by-code) ─────────────────────────────────
 
-export interface MyLeague { id: string; name: string; code: string | null; isPublic: boolean }
+export interface MyLeague { id: string; name: string; code: string | null; isPublic: boolean; ownerId: string | null }
+export interface LeagueMember { userId: string; username: string; teamName: string; teamEmblem: string }
 
-// Every league you can see: the public global league + any private league you're a
+// Every league you can see: the public placeholder + any private league you're a
 // member of (RLS on `leagues` returns exactly these). Public first.
 export async function fetchMyLeagues(): Promise<MyLeague[]> {
   if (!supabase) return [];
   const { data, error } = await supabase
-    .from('leagues').select('id, name, code, is_public')
+    .from('leagues').select('id, name, code, is_public, owner_id')
     .order('is_public', { ascending: false });
   if (error) { console.warn('[cloud] fetchMyLeagues:', error.message); return []; }
-  return (data ?? []).map(l => ({ id: l.id as string, name: l.name as string, code: l.code as string | null, isPublic: l.is_public as boolean }));
+  return (data ?? []).map(l => ({
+    id: l.id as string, name: l.name as string, code: l.code as string | null,
+    isPublic: l.is_public as boolean, ownerId: l.owner_id as string | null,
+  }));
+}
+
+// The members of a league (with their safe profile fields) — for the manage roster.
+export async function fetchLeagueMembers(leagueId: string): Promise<LeagueMember[]> {
+  if (!supabase) return [];
+  const { data: members } = await supabase.from('league_members').select('user_id').eq('league_id', leagueId);
+  const ids = (members ?? []).map(m => m.user_id as string);
+  if (!ids.length) return [];
+  const { data: profs } = await supabase.from('public_profiles').select('id, username, team_name, team_emblem').in('id', ids);
+  const byId = new Map((profs ?? []).map(p => [p.id, p]));
+  return ids.map(id => {
+    const p = byId.get(id);
+    return { userId: id, username: (p?.username as string) || '', teamName: (p?.team_name as string) || 'Team', teamEmblem: (p?.team_emblem as string) || '🎾' };
+  });
+}
+
+export async function deleteLeague(leagueId: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.rpc('delete_league', { p_league: leagueId });
+  if (error) throw error;
+}
+export async function leaveLeague(leagueId: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.rpc('leave_league', { p_league: leagueId });
+  if (error) throw error;
+}
+export async function removeMember(leagueId: string, userId: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.rpc('remove_member', { p_league: leagueId, p_user: userId });
+  if (error) throw error;
 }
 
 // Create a private league (server picks the invite code, auto-joins you). Throws on error.

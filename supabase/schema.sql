@@ -144,16 +144,13 @@ drop policy if exists "create league" on public.leagues;
 create policy "create league" on public.leagues
   for insert to authenticated with check (auth.uid() = owner_id);
 
--- ── 5. Auto-create a profile row + public-league membership on signup ─────────
+-- ── 5. Auto-create a profile row on signup ────────────────────────────────────
+-- New users are NOT auto-joined to any league — they see only private leagues they
+-- explicitly join. The public league is just the placeholder every entry references.
 create or replace function public.handle_new_user() returns trigger
 language plpgsql security definer set search_path = public as $$
-declare pub_id uuid;
 begin
   insert into public.profiles (id) values (new.id) on conflict do nothing;
-  select id into pub_id from public.leagues where is_public limit 1;
-  if pub_id is not null then
-    insert into public.league_members (league_id, user_id) values (pub_id, new.id) on conflict do nothing;
-  end if;
   return new;
 end $$;
 
@@ -197,3 +194,31 @@ end $$;
 
 grant execute on function public.create_league(text) to authenticated;
 grant execute on function public.join_league(text) to authenticated;
+
+-- Delete a private league you own (cascades memberships); leave a league; owner
+-- removes a member.
+create or replace function public.delete_league(p_league uuid)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  delete from public.leagues where id = p_league and owner_id = auth.uid() and is_public = false;
+  if not found then raise exception 'Only the league owner can delete it'; end if;
+end $$;
+
+create or replace function public.leave_league(p_league uuid)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  delete from public.league_members where league_id = p_league and user_id = auth.uid();
+end $$;
+
+create or replace function public.remove_member(p_league uuid, p_user uuid)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not exists (select 1 from public.leagues where id = p_league and owner_id = auth.uid()) then
+    raise exception 'Only the league owner can remove members';
+  end if;
+  delete from public.league_members where league_id = p_league and user_id = p_user and user_id <> auth.uid();
+end $$;
+
+grant execute on function public.delete_league(uuid) to authenticated;
+grant execute on function public.leave_league(uuid) to authenticated;
+grant execute on function public.remove_member(uuid, uuid) to authenticated;

@@ -4,7 +4,7 @@ import { ROUNDS, isPlayerOut } from '../data/tournament';
 import { isSquadValid, SQUAD_SIZE } from '../data/squadRules';
 import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
 import { onActivate } from '../hooks';
-import { useLeagueBoard } from '../data/leagueBoard';
+import { useLeagueBoard, useMyLeagues } from '../data/leagueBoard';
 import SquadCourt from '../components/SquadCourt';
 import type { GamePhase, RoundId } from '../types';
 
@@ -25,7 +25,9 @@ export default function HomePage() {
     ? Math.round(roundScores.reduce((a, b) => a + (b.points > 0 ? 1 : 0), 0) / roundScores.length * 100)
     : null;
 
-  const board = useLeagueBoard();
+  const myLeagues = useMyLeagues();
+  const primaryLeague = myLeagues[0] ?? null;
+  const board = useLeagueBoard(primaryLeague?.id ?? null);
   const medal = (i: number) => (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`);
 
   return (
@@ -84,15 +86,19 @@ export default function HomePage() {
         {/* ── League leaderboard (below the court) ── */}
         <div className="mt-6">
         <div className="flex items-center justify-between mb-2.5 px-1">
-          <h2 className="text-sm font-bold" style={{ color: 'var(--ink)' }}>League leaderboard</h2>
+          <h2 className="text-sm font-bold" style={{ color: 'var(--ink)' }}>{primaryLeague ? primaryLeague.name : 'Private leagues'}</h2>
           <button onClick={() => setActiveTab('league')} className="text-xs font-semibold" style={{ color: 'var(--blue)' }}>
-            Full standings →
+            {primaryLeague ? 'Full standings →' : 'Create or join →'}
           </button>
         </div>
 
-        {board.length === 0 ? (
+        {!primaryLeague ? (
           <div className="text-center py-8 text-sm rounded-2xl" style={{ color: 'var(--ink-3)', background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.07)' }}>
-            Draft your squad to join the league.
+            Create or join a private league to compete with friends.
+          </div>
+        ) : board.length === 0 ? (
+          <div className="text-center py-8 text-sm rounded-2xl" style={{ color: 'var(--ink-3)', background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.07)' }}>
+            Draft your squad to join {primaryLeague.name}.
           </div>
         ) : (
           <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.08)' }}>

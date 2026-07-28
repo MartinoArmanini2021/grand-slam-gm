@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { useAuth } from '../auth/AuthProvider';
-import { getRivalTeams } from './rivals';
 import { TOURNAMENT } from './tournamentConfig';
-import { publicLeagueId, fetchLeaderboard, type CloudBoardRow } from './cloud';
+import { publicLeagueId, fetchLeaderboard, fetchMyLeagues, type CloudBoardRow, type MyLeague } from './cloud';
 
 export interface BoardEntry {
   id: string;
@@ -46,14 +45,13 @@ function useCloudBoard(leagueId: string | null): CloudBoardRow[] {
 }
 
 // The single source of truth for a league's standings, sorted by score (then name).
-// Real signed-in players (from the cloud) join your team; AI bots pad ONLY the public
-// global board (leagueId null). Shared by the Home leaderboard and the League page.
+// Only REAL players: the league's signed-in members from the cloud, plus your own
+// team. No AI bots. Shared by the Home leaderboard and the League page.
 export function useLeagueBoard(leagueId: string | null = null): BoardEntry[] {
-  const { myTeam, myScore, budget, currentRoundIndex } = useGameStore();
+  const { myTeam, myScore, budget } = useGameStore();
   const { teamName, teamEmblem, username } = useProfile();
   const { user } = useAuth();
   const cloud = useCloudBoard(leagueId);
-  const rivals = leagueId === null ? getRivalTeams(currentRoundIndex) : [];
 
   // Real other players (exclude yourself — your live local row represents you).
   const cloudRows: BoardEntry[] = cloud
@@ -65,10 +63,6 @@ export function useLeagueBoard(leagueId: string | null = null): BoardEntry[] {
     }));
 
   const board: BoardEntry[] = [
-    ...rivals.map(rt => ({
-      id: rt.rival.id, name: rt.rival.name, emblem: rt.rival.emblem, manager: rt.rival.manager,
-      motto: rt.rival.tag, color: rt.rival.color, squad: rt.squad, budget: rt.budget, score: rt.score, you: false,
-    })),
     ...cloudRows,
     ...(myTeam.length > 0 ? [{
       id: 'you', name: teamName, emblem: teamEmblem, manager: username ? `@${username}` : '@you',
@@ -77,4 +71,18 @@ export function useLeagueBoard(leagueId: string | null = null): BoardEntry[] {
   ];
 
   return board.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+}
+
+// The private leagues you belong to (public placeholder excluded). `nonce` forces a
+// refresh (bump it after create/join/leave/delete). Empty when signed out.
+export function useMyLeagues(nonce = 0): MyLeague[] {
+  const { user } = useAuth();
+  const [leagues, setLeagues] = useState<MyLeague[]>([]);
+  useEffect(() => {
+    if (!user) { setLeagues([]); return; }
+    let cancelled = false;
+    void fetchMyLeagues().then(all => { if (!cancelled) setLeagues(all.filter(l => !l.isPublic)); });
+    return () => { cancelled = true; };
+  }, [user, nonce]);
+  return leagues;
 }
