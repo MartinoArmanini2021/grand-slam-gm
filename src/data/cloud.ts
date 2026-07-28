@@ -91,6 +91,39 @@ export async function fetchEntry(
   return data ? { score: data.score as number, state: (data.state ?? {}) as Record<string, unknown> } : null;
 }
 
+// ── Leagues (public + private, join-by-code) ─────────────────────────────────
+
+export interface MyLeague { id: string; name: string; code: string | null; isPublic: boolean }
+
+// Every league you can see: the public global league + any private league you're a
+// member of (RLS on `leagues` returns exactly these). Public first.
+export async function fetchMyLeagues(): Promise<MyLeague[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('leagues').select('id, name, code, is_public')
+    .order('is_public', { ascending: false });
+  if (error) { console.warn('[cloud] fetchMyLeagues:', error.message); return []; }
+  return (data ?? []).map(l => ({ id: l.id as string, name: l.name as string, code: l.code as string | null, isPublic: l.is_public as boolean }));
+}
+
+// Create a private league (server picks the invite code, auto-joins you). Throws on error.
+export async function createLeague(name: string): Promise<{ id: string; code: string }> {
+  if (!supabase) throw new Error('Accounts are not configured.');
+  const { data, error } = await supabase.rpc('create_league', { p_name: name });
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  return { id: row.id as string, code: row.code as string };
+}
+
+// Join a private league by its code. Throws (with a friendly message) on a bad code.
+export async function joinLeague(code: string): Promise<{ id: string; name: string }> {
+  if (!supabase) throw new Error('Accounts are not configured.');
+  const { data, error } = await supabase.rpc('join_league', { p_code: code });
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  return { id: row.id as string, name: row.name as string };
+}
+
 // One row per real player in a league's tournament, for the shared leaderboard.
 export interface CloudBoardRow {
   userId: string;
@@ -102,16 +135,23 @@ export interface CloudBoardRow {
   squad: string[];
 }
 
-// All entries in a league+tournament, joined to their profiles. RLS lets you read
-// entries that share one of your leagues, so everyone in the public league sees the
-// full board. (Score is client-sourced from the snapshot until the server scorer is
-// live; the leaderboard swaps to the authoritative entries.score column then.)
+// The leaderboard for a league = its members' entries for the tournament, joined to
+// their (safe) profiles. Membership-based: read the league's members, then their
+// entries. Works for the public global league (everyone is a member) and any private
+// league you belong to. (Score is client-sourced from the snapshot until the server
+// scorer is live; the board swaps to the authoritative entries.score column then.)
 export async function fetchLeaderboard(leagueId: string, tournamentId: string): Promise<CloudBoardRow[]> {
   if (!supabase) return [];
+  const { data: members, error: memberError } = await supabase
+    .from('league_members').select('user_id').eq('league_id', leagueId);
+  if (memberError) { console.warn('[cloud] fetchLeaderboard members:', memberError.message); return []; }
+  const memberIds = (members ?? []).map(m => m.user_id as string);
+  if (!memberIds.length) return [];
+
   const { data: entries, error } = await supabase
     .from('entries')
     .select('user_id, score, budget, state')
-    .eq('league_id', leagueId)
+    .in('user_id', memberIds)
     .eq('tournament_id', tournamentId);
   if (error) { console.warn('[cloud] fetchLeaderboard:', error.message); return []; }
   if (!entries?.length) return [];

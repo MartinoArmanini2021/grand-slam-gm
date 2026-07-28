@@ -24,16 +24,16 @@ const BOARD_COLORS = ['#0e6fc4', '#12A150', '#E5472B', '#8b5cf6', '#d99a00', '#0
 const colorFor = (id: string) =>
   BOARD_COLORS[[...id].reduce((a, c) => a + c.charCodeAt(0), 0) % BOARD_COLORS.length];
 
-// Real players in the shared league, polled so friends' moves show up. Empty when
-// signed out / guest (the board falls back to you + AI bots).
-function useCloudBoard(): CloudBoardRow[] {
+// Real players in a league, polled so friends' moves show up. `leagueId` null → the
+// public global league. Empty when signed out / guest.
+function useCloudBoard(leagueId: string | null): CloudBoardRow[] {
   const { user } = useAuth();
   const [rows, setRows] = useState<CloudBoardRow[]>([]);
   useEffect(() => {
     if (!user) { setRows([]); return; }
     let cancelled = false;
     const load = async () => {
-      const lid = await publicLeagueId();
+      const lid = leagueId ?? await publicLeagueId();
       if (!lid || cancelled) return;
       const r = await fetchLeaderboard(lid, TOURNAMENT.id);
       if (!cancelled) setRows(r);
@@ -41,19 +41,19 @@ function useCloudBoard(): CloudBoardRow[] {
     void load();
     const timer = window.setInterval(() => void load(), 20_000);
     return () => { cancelled = true; clearInterval(timer); };
-  }, [user]);
+  }, [user, leagueId]);
   return rows;
 }
 
-// The single source of truth for the league standings, sorted by score (then name).
-// Real signed-in players (from the cloud) join your team and the AI bots that pad a
-// small league. Shared by the Home leaderboard and the League page.
-export function useLeagueBoard(): BoardEntry[] {
+// The single source of truth for a league's standings, sorted by score (then name).
+// Real signed-in players (from the cloud) join your team; AI bots pad ONLY the public
+// global board (leagueId null). Shared by the Home leaderboard and the League page.
+export function useLeagueBoard(leagueId: string | null = null): BoardEntry[] {
   const { myTeam, myScore, budget, currentRoundIndex } = useGameStore();
   const { teamName, teamEmblem, username } = useProfile();
   const { user } = useAuth();
-  const cloud = useCloudBoard();
-  const rivals = getRivalTeams(currentRoundIndex);
+  const cloud = useCloudBoard(leagueId);
+  const rivals = leagueId === null ? getRivalTeams(currentRoundIndex) : [];
 
   // Real other players (exclude yourself — your live local row represents you).
   const cloudRows: BoardEntry[] = cloud

@@ -57,21 +57,37 @@ create table if not exists public.entries (
 create index if not exists entries_league_tournament_idx
   on public.entries (league_id, tournament_id);
 
--- ── 4. Row-Level Security ─────────────────────────────────────────────────────
-alter table public.profiles enable row level security;
-alter table public.leagues  enable row level security;
-alter table public.entries  enable row level security;
+-- ── 3b. League membership ─────────────────────────────────────────────────────
+-- The source of truth for who belongs to which league. Written ONLY by the
+-- create_league / join_league functions (§7), never directly by clients — so a
+-- client can't self-join a private league by writing a league_id.
+create table if not exists public.league_members (
+  league_id uuid not null references public.leagues on delete cascade,
+  user_id   uuid not null references auth.users on delete cascade,
+  joined_at timestamptz default now(),
+  primary key (league_id, user_id)
+);
 
--- The leagues you belong to. SECURITY DEFINER so it reads entries WITHOUT invoking
--- RLS again — the entries/leagues read policies below use it, and referencing
--- entries directly inside their own policy would recurse infinitely (Postgres 42P17).
+-- ── 4. Row-Level Security ─────────────────────────────────────────────────────
+alter table public.profiles       enable row level security;
+alter table public.leagues        enable row level security;
+alter table public.entries        enable row level security;
+alter table public.league_members enable row level security;
+
+-- The leagues you belong to (verified membership). SECURITY DEFINER so it reads
+-- league_members WITHOUT re-invoking RLS — the entries/leagues read policies use it,
+-- and referencing a table inside its own policy would recurse (Postgres 42P17).
 create or replace function public.my_league_ids()
 returns setof uuid
 language sql security definer stable
 set search_path = public as $$
-  select league_id from public.entries
-  where user_id = auth.uid() and league_id is not null
+  select league_id from public.league_members where user_id = auth.uid()
 $$;
+
+-- You can read the membership of any league you belong to (for board rosters).
+drop policy if exists "co-members readable" on public.league_members;
+create policy "co-members readable" on public.league_members
+  for select to authenticated using (league_id in (select public.my_league_ids()));
 
 -- Profiles: a user reads only their OWN row (protects PII: first/last name, country).
 -- Other players' safe fields (username, team name/emblem) are exposed to the board
@@ -92,13 +108,17 @@ create or replace view public.public_profiles as
   select id, username, team_name, team_emblem from public.profiles;
 grant select on public.public_profiles to authenticated;
 
--- Entries: you can READ any entry that shares one of your leagues (so you see
--- rivals' squads), and WRITE only your own row.
+-- Entries: readable if the owner shares one of your leagues (membership decides —
+-- entries.league_id is irrelevant for reads). Everyone shares the public league, so
+-- the public board sees all entries. Write only your own row.
 drop policy if exists "league entries readable" on public.entries;
 create policy "league entries readable" on public.entries
   for select to authenticated using (
-    user_id = auth.uid()                          -- always your own entries
-    or league_id in (select public.my_league_ids())
+    user_id = auth.uid()
+    or entries.user_id in (
+      select lm.user_id from public.league_members lm
+      where lm.league_id in (select public.my_league_ids())
+    )
   );
 drop policy if exists "own entry insert" on public.entries;
 create policy "own entry insert" on public.entries
@@ -124,11 +144,16 @@ drop policy if exists "create league" on public.leagues;
 create policy "create league" on public.leagues
   for insert to authenticated with check (auth.uid() = owner_id);
 
--- ── 5. Auto-create a profile row on signup ────────────────────────────────────
+-- ── 5. Auto-create a profile row + public-league membership on signup ─────────
 create or replace function public.handle_new_user() returns trigger
 language plpgsql security definer set search_path = public as $$
+declare pub_id uuid;
 begin
   insert into public.profiles (id) values (new.id) on conflict do nothing;
+  select id into pub_id from public.leagues where is_public limit 1;
+  if pub_id is not null then
+    insert into public.league_members (league_id, user_id) values (pub_id, new.id) on conflict do nothing;
+  end if;
   return new;
 end $$;
 
@@ -141,3 +166,34 @@ create trigger on_auth_user_created
 insert into public.leagues (name, is_public)
 select 'Grand Slam Open League', true
 where not exists (select 1 from public.leagues where is_public = true);
+
+-- ── 7. Private-league functions (join-by-code) ────────────────────────────────
+-- Create a private league — random 6-char code, owner = caller, creator auto-joined.
+create or replace function public.create_league(p_name text)
+returns table (id uuid, code text)
+language plpgsql security definer set search_path = public as $$
+declare new_id uuid; new_code text;
+begin
+  new_code := upper(substr(md5(gen_random_uuid()::text), 1, 6));
+  insert into public.leagues (name, code, is_public, owner_id)
+    values (coalesce(nullif(btrim(p_name), ''), 'My League'), new_code, false, auth.uid())
+    returning leagues.id into new_id;
+  insert into public.league_members (league_id, user_id) values (new_id, auth.uid()) on conflict do nothing;
+  return query select new_id, new_code;
+end $$;
+
+-- Join a private league by its code.
+create or replace function public.join_league(p_code text)
+returns table (id uuid, name text)
+language plpgsql security definer set search_path = public as $$
+declare lg record;
+begin
+  select l.id, l.name into lg from public.leagues l
+    where l.code = upper(btrim(p_code)) and l.is_public = false limit 1;
+  if lg.id is null then raise exception 'No league found with that code'; end if;
+  insert into public.league_members (league_id, user_id) values (lg.id, auth.uid()) on conflict do nothing;
+  return query select lg.id, lg.name;
+end $$;
+
+grant execute on function public.create_league(text) to authenticated;
+grant execute on function public.join_league(text) to authenticated;
