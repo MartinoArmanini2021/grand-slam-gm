@@ -64,6 +64,16 @@ describe('server-authoritative scoring == client engine (parity)', () => {
     expect(scoreEntry(stateFromStore(), buildCtx())).toBe(store().myScore);
   });
 
+  it('falls back to the current squad when a squad is not yet locked (initialSquad empty)', () => {
+    store().addPlayer('sinner');
+    store().addPlayer('zverev');
+    const locked: EntryState = { initialSquad: ['sinner', 'zverev'], playedRounds: ROUNDS.map(r => r.id) };
+    const notLocked: EntryState = { initialSquad: [], myTeam: ['sinner', 'zverev'], playedRounds: ROUNDS.map(r => r.id) };
+    const ctx = buildCtx();
+    expect(scoreEntry(notLocked, ctx)).toBe(scoreEntry(locked, ctx));
+    expect(scoreEntry(notLocked, ctx)).toBeGreaterThan(0);
+  });
+
   it('a manipulated client score would NOT match the authoritative recompute', () => {
     store().addPlayer('sinner');
     store().finalizeDraft();

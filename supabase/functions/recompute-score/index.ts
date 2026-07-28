@@ -34,6 +34,7 @@ const winPoints = (base: number, w: number, l: number) =>
 interface MatchRow { round: string; p1: string; p2: string; winner: string | null }
 interface EntryState {
   initialSquad?: string[];
+  myTeam?: string[]; // current squad — fallback if a squad isn't locked yet
   transfers?: { out: string; in: string; round: string }[];
   captainHistory?: { round: string; playerId: string }[];
   viceCaptainHistory?: { round: string; playerId: string }[];
@@ -42,7 +43,7 @@ interface EntryState {
 function scoreEntry(state: EntryState, matches: MatchRow[], rankById: Record<string, number>, playedRounds: string[]): number {
   const idx = (r: string) => ROUND_ORDER.indexOf(r);
   const rank = (id: string) => rankById[id] ?? 40;
-  const initial = state.initialSquad ?? [];
+  const initial = (state.initialSquad?.length ? state.initialSquad : state.myTeam) ?? [];
   let total = 0;
   for (const round of playedRounds) {
     const ri = idx(round);

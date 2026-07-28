@@ -12,6 +12,7 @@ export interface MatchRow { round: string; p1: string; p2: string; winner: strin
 
 export interface EntryState {
   initialSquad: string[];
+  myTeam?: string[]; // current squad — fallback if a squad isn't locked yet (initialSquad empty)
   transfers?: { out: string; in: string; round: string }[];
   captainHistory?: { round: string; playerId: string }[];
   viceCaptainHistory?: { round: string; playerId: string }[];
@@ -50,13 +51,14 @@ export function winPoints(base: number, winnerRank: number, loserRank: number): 
 export function scoreEntry(state: EntryState, ctx: ScoreCtx): number {
   const idx = (r: string) => ctx.roundsInOrder.indexOf(r);
   const rank = (id: string) => ctx.rankById[id] ?? 40; // off-roster opponents → neutral
+  const base0 = state.initialSquad?.length ? state.initialSquad : (state.myTeam ?? []);
   let total = 0;
 
   for (const round of state.playedRounds) {
     const ri = idx(round);
     // The squad AS IT STOOD that round: apply only transfers made in EARLIER rounds
     // (a transfer is logged against the round just played, so the buy scores from next).
-    let squad = [...state.initialSquad];
+    let squad = [...base0];
     for (const t of state.transfers ?? []) {
       if (idx(t.round) < ri) squad = squad.map(id => (id === t.out ? t.in : id));
     }
