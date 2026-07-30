@@ -1,24 +1,35 @@
 // Authorization guard for privileged Edge Functions (recompute-score, ingest-draw).
 //
-// WHY THIS IS NEEDED: Supabase's `verify_jwt` only checks that the caller presents a VALID
-// JWT — and the PUBLIC anon key is a valid JWT that ships in the browser bundle. So gateway
-// JWT verification is NOT authorization: any visitor can invoke these functions with the
-// anon key. (Confirmed: an anon-key call to recompute-score returned 200 and rescored live.)
-// For ingest-draw that would be catastrophic — its `overrides` param writes match winners.
+// Only the SERVICE ROLE may invoke these. We check the ROLE CLAIM of the caller's JWT
+// (role === 'service_role') rather than string-equality with SUPABASE_SERVICE_ROLE_KEY —
+// that env value can differ from the exact key pasted into the cron (new vs legacy key
+// formats, rotation, how the platform injects it), which produced false 401s and stopped
+// the scoring cron even with a correct key.
 //
-// The guard: require the SERVICE-ROLE key in the Authorization header. The cron already
-// sends exactly that (`Authorization: Bearer <SERVICE_ROLE_KEY>`), so it keeps working;
-// anon and end-user JWTs are rejected with 401. Returns a Response to short-circuit, or null.
-export function assertServiceRole(req: Request): Response | null {
-  const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-  const expected = `Bearer ${key}`;
-  const got = req.headers.get('Authorization') ?? '';
-  // key must exist AND the header must match it exactly (a user/anon JWT never will).
-  if (!key || got !== expected) {
-    return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
+// SAFE because Supabase's gateway (verify_jwt, ON by default) VERIFIES the JWT SIGNATURE
+// before this function runs: a client cannot forge a `service_role` token (the JWT secret is
+// server-only), and the public anon key (role 'anon') / end-user tokens (role 'authenticated')
+// fail the role check. The cron sends the service_role key, so it passes.
+// ⚠️ Do NOT disable `verify_jwt` on these functions — without gateway signature verification a
+// forged unsigned token could pass this role check.
+function decodeJwtRole(token: string): string | null {
+  const part = token.split('.')[1];
+  if (!part) return null;
+  try {
+    const b64 = part.replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4)));
+    return typeof payload?.role === 'string' ? payload.role : null;
+  } catch {
+    return null;
   }
-  return null;
+}
+
+export function assertServiceRole(req: Request): Response | null {
+  const auth = req.headers.get('Authorization') ?? '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+  if (decodeJwtRole(token) === 'service_role') return null;
+  return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), {
+    status: 401,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
