@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import fullDraw from './fixtures/nbo2025-fulldraw.txt?raw';
 import fieldJson from '../data/montreal2026Field.json';
-import { buildResolver, parseFullDraw } from '../data/drawParser';
+import { buildResolver, parseFullDraw, buildMatchRows } from '../data/drawParser';
+import type { LiveMatch, LiveResults } from '../data/liveResults';
 import { matchKey } from '../data/liveResults';
 import { TOURNAMENT, ACTIVE_TOURNAMENT_ID } from '../data/tournamentConfig';
 import { LIVE } from '../data/liveData';
@@ -40,5 +41,42 @@ describe('ingest-draw server path (field roster + shared parser)', () => {
   it('the field-JSON roster matches every drafted id used by the client', () => {
     const ids = new Set((fieldJson as { id: string }[]).map(p => p.id));
     expect(ids.size).toBe(74); // the whole field, unique
+  });
+});
+
+// The bulletproofing guarantee: the ingest function can NEVER regress a recorded result to
+// null because of a flaky fetch or a mid-edit (partial) Wikipedia page. buildMatchRows is
+// the pure core of that; these tests pin every priority case.
+describe('ingest never-regress (buildMatchRows)', () => {
+  const m = (round: string, slot: number, p1Id: string, p2Id: string): LiveMatch =>
+    ({ round: round as LiveMatch['round'], slot, half: 'top', p1Id, p2Id });
+  const draw: LiveMatch[] = [m('QF', 0, 'shelton', 'khachanov')];
+  const win = (k: string, v: string): LiveResults => ({ [k]: v });
+  const key = matchKey('QF', 0);
+
+  it('writes a freshly parsed winner', () => {
+    const [row] = buildMatchRows('t', draw, win(key, 'shelton'));
+    expect(row.winner_id).toBe('shelton');
+  });
+
+  it('KEEPS a stored winner when the new parse has none (partial/flaky page)', () => {
+    const [row] = buildMatchRows('t', draw, {}, { [key]: 'shelton' });
+    expect(row.winner_id).toBe('shelton'); // never regressed to null
+  });
+
+  it('applies a fresh correction over the stored winner', () => {
+    const [row] = buildMatchRows('t', draw, win(key, 'khachanov'), { [key]: 'shelton' });
+    expect(row.winner_id).toBe('khachanov');
+  });
+
+  it('lets a manual override beat both parsed and stored', () => {
+    const [row] = buildMatchRows('t', draw, win(key, 'shelton'), { [key]: 'shelton' }, { [key]: 'khachanov' });
+    expect(row.winner_id).toBe('khachanov');
+  });
+
+  it('is null only when no winner exists anywhere (undecided match)', () => {
+    const [row] = buildMatchRows('t', draw, {}, {}, {});
+    expect(row.winner_id).toBeNull();
+    expect(row).toMatchObject({ tournament_id: 't', round: 'QF', slot: 0, p1_id: 'shelton', p2_id: 'khachanov' });
   });
 });

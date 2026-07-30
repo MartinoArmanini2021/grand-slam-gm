@@ -107,6 +107,32 @@ export function parseBracket(
   return { draw, results };
 }
 
+// ── Upsert rows with NEVER-REGRESS semantics (used by the ingest Edge Function) ──
+// A DB-shaped match row. snake_case to match public.matches exactly.
+export interface MatchRow {
+  tournament_id: string; round: string; slot: number;
+  p1_id: string; p2_id: string; winner_id: string | null;
+}
+
+// Build the rows to upsert into public.matches. The critical guarantee: a winner that is
+// ALREADY recorded (from a prior run — `existingWinners`) is NEVER overwritten with null by
+// a later partial or transient parse (a mid-edit Wikipedia page, a flaky fetch). Priority
+// is: manual override  >  freshly parsed result  >  previously stored winner  >  null.
+// So the leaderboard can only ever move FORWARD, never lose a result it already had.
+export function buildMatchRows(
+  tournamentId: string,
+  draw: LiveMatch[],
+  results: LiveResults,
+  existingWinners: Record<string, string | null> = {},
+  overrides: Record<string, string> = {},
+): MatchRow[] {
+  return draw.map((m) => {
+    const key = matchKey(m.round, m.slot);
+    const winner = overrides[key] ?? results[key] ?? existingWinners[key] ?? null;
+    return { tournament_id: tournamentId, round: m.round, slot: m.slot, p1_id: m.p1Id, p2_id: m.p2Id, winner_id: winner };
+  });
+}
+
 // ── Full 96-draw stitching ───────────────────────────────────────────────────
 // A 96-player Masters draw is published as 8 SECTION brackets ({{16TeamBracket…}}, rounds
 // RD1..RD4 = R128→R64→R32→R16) that each feed one winner into a single FINALS bracket

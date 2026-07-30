@@ -17,7 +17,7 @@
 //   POST { "overrides": [ { "round": "QF", "slot": 0, "winnerId": "shelton" } ] }
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { parseFullDraw, buildResolver } from '../../../src/data/drawParser.ts';
+import { parseFullDraw, buildResolver, buildMatchRows } from '../../../src/data/drawParser.ts';
 import field from '../../../src/data/montreal2026Field.json' with { type: 'json' };
 
 // These MUST stay in sync with src/data/tournamentConfig.ts + src/data/liveData.ts. A unit
@@ -48,33 +48,43 @@ Deno.serve(async (req) => {
     const page = body.page ?? WIKI_PAGE;
     const tournamentId = body.tournamentId ?? TOURNAMENT_ID;
 
-    // 1) Fetch the draw wikitext (CORS-open MediaWiki API).
+    // 1) Fetch the draw wikitext (CORS-open MediaWiki API). Retry once on a transient
+    //    failure so a single flaky request never skips an ingest cycle.
     const wikiUrl = `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(page)}`
       + `&prop=wikitext&formatversion=2&format=json&origin=*`;
-    const res = await fetch(wikiUrl);
-    if (!res.ok) throw new Error(`Wikipedia fetch failed: ${res.status}`);
-    const wiki = await res.json();
-    const wikitext = wiki?.parse?.wikitext;
-    if (typeof wikitext !== 'string') throw new Error(wiki?.error?.info ?? 'Draw page not found');
+    const fetchWiki = async (): Promise<string> => {
+      const res = await fetch(wikiUrl);
+      if (!res.ok) throw new Error(`Wikipedia fetch failed: ${res.status}`);
+      const wiki = await res.json();
+      const wt = wiki?.parse?.wikitext;
+      if (typeof wt !== 'string') throw new Error(wiki?.error?.info ?? 'Draw page not found');
+      return wt;
+    };
+    let wikitext: string;
+    try { wikitext = await fetchWiki(); }
+    catch { await new Promise((r) => setTimeout(r, 1500)); wikitext = await fetchWiki(); }
 
     // 2) Parse into the tournament's scored rounds (shared, validated parser).
     const resolve = buildResolver(roster);
     const { draw, results } = parseFullDraw(wikitext, { scoredRounds: [...SCORED_ROUNDS], resolve });
 
-    // 3) Apply any manual overrides (a human always beats a stale/incorrect feed value).
-    const override = new Map<string, string>();
-    for (const o of body.overrides ?? []) override.set(`${o.round}_${o.slot}`, o.winnerId);
+    // 3) Load the winners we ALREADY hold, so a partial/transient parse can never regress a
+    //    recorded result to null (the leaderboard only ever moves forward — see buildMatchRows).
+    const existingWinners: Record<string, string | null> = {};
+    {
+      const { data: prior, error } = await db
+        .from('matches').select('round, slot, winner_id').eq('tournament_id', tournamentId);
+      if (error) throw error;
+      for (const r of prior ?? []) existingWinners[`${r.round}_${r.slot}`] = r.winner_id;
+    }
 
-    // 4) Upsert one row per known pairing; winner_id fills in as results land (null until then).
-    //    PK (tournament_id, round, slot) → idempotent, so re-running is safe and cheap.
-    const rows = draw.map((m) => {
-      const key = `${m.round}_${m.slot}`;
-      return {
-        tournament_id: tournamentId, round: m.round, slot: m.slot,
-        p1_id: m.p1Id, p2_id: m.p2Id,
-        winner_id: override.get(key) ?? results[key] ?? null,
-      };
-    });
+    // 4) Manual overrides beat everything (a human always wins over a stale/incorrect feed).
+    const overrides: Record<string, string> = {};
+    for (const o of body.overrides ?? []) overrides[`${o.round}_${o.slot}`] = o.winnerId;
+
+    // 5) Build rows (override > parsed > previously stored > null) and upsert. PK
+    //    (tournament_id, round, slot) → idempotent; re-running is safe and cheap.
+    const rows = buildMatchRows(tournamentId, draw, results, existingWinners, overrides);
     let written = 0;
     if (rows.length) {
       const { error } = await db.from('matches').upsert(rows, { onConflict: 'tournament_id,round,slot' });
