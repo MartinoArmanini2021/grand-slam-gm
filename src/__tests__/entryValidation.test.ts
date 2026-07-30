@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import saveEntrySql from '../../supabase/save_entry_rpc.sql?raw';
 import { validateSquadLegality, validateCaptainLock, type RosterPricing } from '../data/entryValidation';
+import { buildLegalityFixtures } from './fixtures/entryFixtures';
 import { PLAYERS } from '../data/players';
 import { getTier, type Tier } from '../data/tiers';
 
@@ -58,6 +59,17 @@ describe('validateSquadLegality — illegal squads rejected (F1 core)', () => {
   it('rejects a FAKE / unknown player id', () => {
     const s = legalSquad(); s[0] = 'totally_not_a_player';
     expect(validateSquadLegality(draft(s), ROSTER)).toMatch(/unknown player/i);
+  });
+});
+
+// The TS verdict for each SHARED fixture. rpcDrift.integration.test.ts runs the SAME
+// fixtures through the live save_entry RPC and asserts the RPC's verdict matches this one —
+// so if the SQL and the TS ever diverge, that test fails. This is the TS half.
+describe('shared legality fixtures — TS verdict (RPC drift mirror)', () => {
+  const tsVerdict = (f: ReturnType<typeof buildLegalityFixtures>[number]): 'accept' | 'reject' =>
+    validateSquadLegality({ squad: f.state.myTeam, phase: f.state.phase, hasTransfers: f.state.transfers.length > 0 }, ROSTER) === null ? 'accept' : 'reject';
+  it.each(buildLegalityFixtures().map(f => [f.name, f] as const))('%s → %o', (_name, f) => {
+    expect(tsVerdict(f)).toBe(f.expect);
   });
 });
 
