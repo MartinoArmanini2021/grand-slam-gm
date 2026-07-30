@@ -1,9 +1,12 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- F1 — Server-side entry validation + the SINGLE validated write path.
--- Apply in the Supabase SQL editor (idempotent). This is the real fix for the audit's
--- 🔴: the client can no longer write entries.state directly, so it can never field an
--- illegal squad or retroactively re-pick a captain after a round's results are in. Every
--- entry write now goes through save_entry(), which validates + version-guards atomically.
+-- F1 (+ Phase-2 B2/B3) — Server-side entry validation + the SINGLE validated write path.
+-- Apply in the Supabase SQL editor (idempotent). RE-RUN this if you applied an earlier
+-- version — it now also (B3) pins the entry to the canonical public league inside save_entry
+-- and rejects a crafted p_league, and (B2) revokes the direct write path to `leagues`.
+--
+-- F1: the client can no longer write entries.state directly, so it can never field an illegal
+-- squad or retroactively re-pick a captain after a round's results are in. Every entry write
+-- goes through save_entry(), which validates + version-guards atomically.
 --
 -- ⚠️ PREREQUISITE: run supabase/add_entry_rev.sql first (this RPC writes entries.rev).
 -- ⚠️ DEPLOY ORDER: deploy the client that calls save_entry FIRST (it falls back to the old
@@ -114,9 +117,19 @@ declare
   v_plat int; v_gold int; v_silv int;
   v_existing public.entries%rowtype;
   v_found boolean;
+  v_public uuid;
   r_round text; v_inc text; v_sto text;
 begin
   if v_uid is null then raise exception 'Not authenticated'; end if;
+
+  -- B3: pin the entry to the canonical PUBLIC league and reject any other p_league. Entries
+  -- only ever live in the public league (private-league boards join on user_id, not on the
+  -- entry's league_id), so accepting an arbitrary p_league would let a client create a SECOND
+  -- entry for the same tournament under a different league_id — a duplicate row on the board.
+  -- Deriving the league here (not trusting the client) makes one entry per user per tournament.
+  select id into v_public from public.leagues where is_public limit 1;
+  if v_public is null then raise exception 'No public league configured'; end if;
+  if p_league is distinct from v_public then raise exception 'Invalid league for this entry'; end if;
 
   v_squad := array(select jsonb_array_elements_text(coalesce(p_state->'myTeam', '[]'::jsonb)));
   v_size := coalesce(array_length(v_squad, 1), 0);
@@ -155,7 +168,7 @@ begin
 
   -- Lock + load the existing entry (atomic rev guard + captain lock in one txn).
   select * into v_existing from public.entries
-    where user_id = v_uid and league_id = p_league and tournament_id = p_tournament for update;
+    where user_id = v_uid and league_id = v_public and tournament_id = p_tournament for update;
   v_found := found;
 
   -- (e) F2 rev guard — the entry must be at the rev the client last read.
@@ -175,7 +188,7 @@ begin
 
   -- (g) write. rev advances; score is never set here.
   insert into public.entries (user_id, league_id, tournament_id, squad, captain_history, phase, current_round_index, budget, state, rev, updated_at)
-    values (v_uid, p_league, p_tournament, v_squad,
+    values (v_uid, v_public, p_tournament, v_squad,
             coalesce(p_state->'captainHistory','[]'::jsonb), v_phase,
             coalesce((p_state->>'currentRoundIndex')::int, 0),
             coalesce((p_state->>'budget')::numeric, 150),
@@ -200,3 +213,12 @@ grant execute on function public.save_entry(text, uuid, jsonb, bigint) to authen
 --    still can't reopen it.)
 revoke insert, update on public.entries from authenticated;
 revoke insert, update on public.entries from anon;
+
+-- 4) B2 — close the direct write path to LEAGUES. The RLS "create league" policy allowed any
+--    authenticated user to INSERT a league with no restriction on is_public — i.e. create a
+--    rogue PUBLIC league (publicLeagueId() picks is_public LIMIT 1, so a second one could route
+--    entries to the wrong board) or spam leagues. The app only ever creates leagues via the
+--    create_league RPC (SECURITY DEFINER, unaffected by these revokes), so close the raw path.
+drop policy if exists "create league" on public.leagues;
+revoke insert, update, delete on public.leagues from authenticated;
+revoke insert, update, delete on public.leagues from anon;

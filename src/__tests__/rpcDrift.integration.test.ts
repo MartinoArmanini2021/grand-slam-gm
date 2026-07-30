@@ -46,6 +46,17 @@ describe.skipIf(!RUN)('save_entry RPC ↔ entryValidation.ts drift (live DB)', (
     expect([401, 403]).toContain(r.status);
   });
 
+  it('B3: a crafted p_league is REJECTED (no multi-entry board pollution)', async () => {
+    // A legal (empty, draft) squad but a bogus league id — must be rejected on the league,
+    // not silently written under a different league_id (which would duplicate the board row).
+    const res = await fetch(`${URL}/rest/v1/rpc/save_entry`, {
+      method: 'POST', headers: H,
+      body: JSON.stringify({ p_tournament: 'montreal_2026', p_league: '00000000-0000-0000-0000-000000000001', p_base_rev: 0, p_state: { phase: 'draft', myTeam: [] } }),
+    });
+    expect(res.ok).toBe(false);
+    expect(JSON.stringify(await res.json().catch(() => ({})))).toMatch(/invalid league/i);
+  });
+
   it.each(buildLegalityFixtures().map(f => [f.name, f] as const))('RPC verdict == TS verdict == expected: %s', async (_name, f) => {
     const res = await fetch(`${URL}/rest/v1/rpc/save_entry`, {
       method: 'POST', headers: H,
