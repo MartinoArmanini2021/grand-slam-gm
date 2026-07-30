@@ -8,6 +8,7 @@ import { nickOf } from '../data/nicknames';
 import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
 import type { Player, RoundId, TournamentResult } from '../types';
 import PlayerAvatar from '../components/PlayerAvatar';
+import PlayerVideoButton from '../components/PlayerVideoButton';
 import SurfaceBar from '../components/SurfaceBar';
 
 const SURFACE_DOT: Record<string, string> = { grass: '#12A150', clay: '#E5472B', hard: '#0e6fc4' };
@@ -83,7 +84,10 @@ export default function PlayerPage() {
             {nickOf(p.id) && (
               <div className="text-sm font-bold tracking-wide leading-tight" style={{ color: 'var(--gold-bright)' }}>“{nickOf(p.id)}”</div>
             )}
-            <h1 className="text-2xl font-extrabold tracking-tight text-white leading-tight">{p.name}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-extrabold tracking-tight text-white leading-tight">{p.name}</h1>
+              <PlayerVideoButton name={p.name} size="md" />
+            </div>
             <div className="text-sm" style={{ color: 'var(--on-navy)' }}>
               #{p.ranking} ATP{p.seed ? ` · Seed ${p.seed}` : ''} · {p.style}
             </div>

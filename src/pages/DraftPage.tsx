@@ -5,6 +5,7 @@ import { ROUNDS, isPlayerOut, getPlayerExit } from '../data/tournament';
 import { getTier, TIER_META, type Tier } from '../data/tiers';
 import { tierCounts, squadShortfall, isSquadValid, isTierFull, TIER_MINIMUMS, SQUAD_SIZE, STARTING_BUDGET } from '../data/squadRules';
 import PlayerAvatar from '../components/PlayerAvatar';
+import PlayerVideoButton from '../components/PlayerVideoButton';
 import PlayerTag from '../components/PlayerTag';
 import PurchaseConfirmModal from '../components/PurchaseConfirmModal';
 import PlayerPickerModal from '../components/PlayerPickerModal';
@@ -32,6 +33,10 @@ export default function DraftPage() {
   const [confirm, setConfirm] = useState<Player | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [showLocked, setShowLocked] = useState(false);
+  // "Watch the players" hint — shown atop the list until the user dismisses it (persisted),
+  // so newcomers who don't know the field learn about the ▶ video links.
+  const [videoHint, setVideoHint] = useState(() => { try { return localStorage.getItem('gsgm-video-hint') !== 'off'; } catch { return true; } });
+  const dismissVideoHint = () => { setVideoHint(false); try { localStorage.setItem('gsgm-video-hint', 'off'); } catch { /* ignore */ } };
 
   const locked = phase !== 'draft'; // squad is locked after the draft — transfers happen on the Bracket page
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
@@ -149,6 +154,19 @@ export default function DraftPage() {
             </div>
           )}
 
+          {/* "Don't know the players?" — nudge new managers to the ▶ video links */}
+          {videoHint && (
+            <div className="rounded-2xl px-3 py-2.5 mb-3 flex items-center gap-3" style={{ background: 'rgba(255,0,0,0.05)', border: '1px solid rgba(255,0,0,0.18)' }}>
+              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full shrink-0" style={{ background: '#FF0000', color: '#fff' }} aria-hidden="true">
+                <svg width={13} height={13} viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+              </span>
+              <p className="flex-1 min-w-0 text-[13px] leading-snug" style={{ color: 'var(--ink)' }}>
+                <b>Don’t know the players?</b> Tap the red <span style={{ color: '#FF0000', fontWeight: 700 }}>▶</span> next to any name to watch them in action on YouTube.
+              </p>
+              <button onClick={dismissVideoHint} aria-label="Dismiss tip" className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-sm transition-colors hover:bg-black/[0.05]" style={{ color: 'var(--ink-3)' }}>✕</button>
+            </div>
+          )}
+
           {/* Table */}
           <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.08)' }}>
             <table className="w-full text-sm border-collapse bg-white">
@@ -200,6 +218,7 @@ export default function DraftPage() {
                       <td className="px-2 py-1.5 w-full" style={{ maxWidth: 0 }}>
                         <div className="flex items-center gap-2 min-w-0">
                           <PlayerAvatar playerId={player.id} name={player.name} size="sm" onClick={e => { e.stopPropagation(); openPlayer(player.id); }} />
+                          <PlayerVideoButton name={player.name} />
                           <div className="min-w-0">
                             <PlayerTag playerId={player.id} flag={player.flag} className="text-[9px] font-bold uppercase tracking-wide leading-tight truncate" style={{ color: 'var(--blue)' }} />
                             <div className="text-[13px] font-semibold leading-tight truncate flex items-center gap-1.5" style={{ color: 'var(--ink)' }}>
