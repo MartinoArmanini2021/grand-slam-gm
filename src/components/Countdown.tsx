@@ -24,10 +24,24 @@ function fmt(c: { d: number; h: number; m: number; s: number }): string {
   return `${c.m}m ${p2(c.s)}s`;
 }
 
+// The absolute deadline, shown in the VIEWER's own timezone (e.g. "Sat 1 Aug, 17:00")
+// so the countdown is verifiable at a glance — a bare "2d 6h" can't be checked, an
+// explicit local date can. Falls back to '' if the target can't be parsed.
+function absoluteDeadline(targetIso?: string): string {
+  const t = targetIso ? Date.parse(targetIso) : NaN;
+  if (!Number.isFinite(t)) return '';
+  try {
+    return new Date(t).toLocaleString(undefined, {
+      weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+    });
+  } catch { return ''; }
+}
+
 // A deadline banner with a ticking countdown. Renders nothing once the deadline passes
 // (so callers can fall through to their next state). Turns urgent (red) under an hour.
 export default function Countdown({ target, title, note }: { target?: string; title: string; note?: string }) {
   const c = useCountdown(target);
+  const deadline = absoluteDeadline(target);
   if (!c) return null;
   const urgent = c.total < 60 * 60 * 1000;
   const color = urgent ? 'var(--ember)' : 'var(--blue)';
@@ -38,7 +52,11 @@ export default function Countdown({ target, title, note }: { target?: string; ti
       <span className="text-lg shrink-0">⏳</span>
       <div className="flex-1 min-w-0">
         <div className="text-sm font-bold" style={{ color: 'var(--ink)' }}>{title}</div>
-        {note && <div className="text-[11px]" style={{ color: 'var(--ink-2)' }}>{note}</div>}
+        {/* Show the actual deadline (viewer's local time) so the countdown is checkable. */}
+        <div className="text-[11px]" style={{ color: 'var(--ink-2)' }}>
+          {deadline && <span className="font-semibold" style={{ color: 'var(--ink)' }}>{deadline}</span>}
+          {deadline && note ? ' · ' : ''}{note}
+        </div>
       </div>
       <div className="text-right shrink-0">
         <div className="font-num text-base font-extrabold tabular-nums" style={{ color }}>{fmt(c)}</div>
