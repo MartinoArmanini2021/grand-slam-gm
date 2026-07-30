@@ -30,12 +30,13 @@ run('npx wrangler pages deploy dist --project-name grand-slam-gm --branch main -
 // 5) Marker check — production must serve the exact bundle we built (propagation-aware).
 console.log('\n→ verifying production serves the new bundle…');
 let served = false;
-for (let i = 0; i < 20 && !served; i++) {
+const ATTEMPTS = 45; // ~135s — Cloudflare alias propagation can exceed a minute
+for (let i = 0; i < ATTEMPTS && !served; i++) {
   try {
     const html = await (await fetch(PROD, { cache: 'no-store', headers: { 'cache-control': 'no-cache' } })).text();
     served = html.includes(bundle);
   } catch { /* transient — retry */ }
-  if (!served) await new Promise((r) => setTimeout(r, 2000));
+  if (!served) await new Promise((r) => setTimeout(r, 3000));
 }
-if (!served) { console.error(`\n✗ production did NOT serve ${bundle} within ~40s — likely a stale/failed deploy. Investigate.`); process.exit(1); }
+if (!served) { console.error(`\n✗ production did NOT serve ${bundle} within ~${ATTEMPTS * 3}s — likely a stale/failed deploy. Investigate (or it's just slow propagation — re-check the live bundle).`); process.exit(1); }
 console.log(`\n✓ Deployed and verified: production is serving ${bundle}.`);
