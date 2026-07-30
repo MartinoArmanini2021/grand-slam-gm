@@ -89,14 +89,25 @@ Deno.serve(async (req) => {
     if (rErr) throw rErr;
     const rankById: Record<string, number> = Object.fromEntries((rankRows ?? []).map(r => [r.id, r.ranking]));
 
-    const { data: entries, error: eErr } = await db
-      .from('entries').select('user_id, state').eq('tournament_id', tournamentId);
-    if (eErr) throw eErr;
+    // Paginate the entries read. PostgREST caps a single response (db-max-rows, default
+    // ~1000), so a bare select would silently score only the FIRST page and freeze
+    // everyone else's leaderboard at scale. Loop with .range() until a short page ends it.
+    const PAGE = 1000;
+    const entries: { user_id: string; state: unknown }[] = [];
+    for (let from = 0; ; from += PAGE) {
+      const { data, error: eErr } = await db
+        .from('entries').select('user_id, state').eq('tournament_id', tournamentId)
+        .range(from, from + PAGE - 1);
+      if (eErr) throw eErr;
+      const rows = (data ?? []) as { user_id: string; state: unknown }[];
+      entries.push(...rows);
+      if (rows.length < PAGE) break;
+    }
 
     // Compute every score in memory, then apply them SET-BASED via one RPC per chunk
     // (a single `update … from jsonb_to_recordset`) instead of one round-trip per entry —
     // the serial loop would never finish inside the cron window at 100k+ entries.
-    const scores = (entries ?? []).map(e => ({
+    const scores = entries.map(e => ({
       user_id: e.user_id,
       score: scoreEntry((e.state ?? {}) as EntryState, matches, rankById, playedRounds),
     }));

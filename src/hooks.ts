@@ -1,6 +1,35 @@
 import { useEffect, useRef } from 'react';
 import type { KeyboardEvent } from 'react';
 
+// Poll `fn` roughly every `intervalMs`, but ONLY while the browser tab is visible. A
+// backgrounded tab stops hitting the network entirely — which saves the user's battery
+// and, at scale (thousands of open tabs), keeps idle clients from hammering the backend.
+// Refocusing the tab fires an immediate refresh so the data is never stale on return. A
+// ±15% random jitter desynchronises many clients so their polls don't arrive in one spike.
+// `active=false` disables polling (e.g. signed-out). `fn` is read through a ref, so passing
+// a fresh closure each render never re-subscribes the timer.
+export function useVisiblePoll(fn: () => void, intervalMs: number, active = true) {
+  const cb = useRef(fn);
+  cb.current = fn;
+  useEffect(() => {
+    if (!active) return;
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const nextDelay = () => intervalMs * (0.85 + Math.random() * 0.3);
+    const schedule = () => {
+      timer = setTimeout(() => {
+        if (stopped) return;
+        if (!document.hidden) cb.current(); // skip the tick entirely while hidden
+        schedule();
+      }, nextDelay());
+    };
+    schedule();
+    const onVisible = () => { if (!document.hidden && !stopped) cb.current(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { stopped = true; clearTimeout(timer); document.removeEventListener('visibilitychange', onVisible); };
+  }, [intervalMs, active]);
+}
+
 // Make a non-<button> interactive element (a clickable row or chip) keyboard-
 // operable: Enter or Space activates it, matching native button behaviour. Pair
 // with role="button" tabIndex={0}.

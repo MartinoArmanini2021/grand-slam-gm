@@ -8,7 +8,7 @@ import { lastName } from '../data/format';
 import { ROUNDS, isPlayerOut, getPlayerExit } from '../data/tournament';
 import PlayerAvatar from '../components/PlayerAvatar';
 import { toast } from '../store/toastStore';
-import { onActivate } from '../hooks';
+import { onActivate, useVisiblePoll } from '../hooks';
 import { useAuth } from '../auth/AuthProvider';
 import {
   createLeague, joinLeague, deleteLeague, leaveLeague, removeMember,
@@ -281,13 +281,12 @@ function PrivateLeagues({ revealed }: { revealed: RoundId[] }) {
     setConfirmDelete(false);
     if (!selected) { setMembers([]); return; }
     let cancelled = false;
-    const load = () => { void fetchLeagueMembers(selected).then(m => { if (!cancelled) setMembers(m); }); };
-    load();
-    // Poll so a friend who just joined shows up in the member list + count within ~20s,
-    // matching the leaderboard's own refresh cadence (no manual reload needed).
-    const t = setInterval(load, 20000);
-    return () => { cancelled = true; clearInterval(t); };
+    void fetchLeagueMembers(selected).then(m => { if (!cancelled) setMembers(m); });
+    return () => { cancelled = true; };
   }, [selected, nonce]);
+  // Poll so a friend who just joined shows up within ~20s — jittered + paused while the tab
+  // is hidden (see useVisiblePoll), matching the leaderboard's refresh cadence.
+  useVisiblePoll(() => { if (selected) void fetchLeagueMembers(selected).then(setMembers); }, 20000, !!selected);
 
   const refresh = () => setNonce(n => n + 1);
   const current = leagues.find(l => l.id === selected) ?? null;

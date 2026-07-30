@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { useAuth } from '../auth/AuthProvider';
+import { useVisiblePoll } from '../hooks';
 import { findPlayer } from './players';
 import { TOURNAMENT } from './tournamentConfig';
 import { publicLeagueId, fetchLeaderboard, fetchMyLeagues, type CloudBoardRow, type MyLeague } from './cloud';
@@ -31,21 +32,22 @@ const colorFor = (id: string) =>
 function useCloudBoard(leagueId: string | null): CloudBoardRow[] {
   const { user } = useAuth();
   const [rows, setRows] = useState<CloudBoardRow[]>([]);
-  useEffect(() => {
+  // Guard against a stale async response overwriting a newer one when leagueId/user changes.
+  const reqId = useRef(0);
+  const load = async () => {
     if (!user) { setRows([]); return; }
-    let cancelled = false;
-    const load = async () => {
-      const lid = leagueId ?? await publicLeagueId();
-      if (!lid || cancelled) return;
-      // A specific (private) league lists EVERY member — including friends who joined but
-      // haven't drafted. The public global board shows the ranked field.
-      const r = await fetchLeaderboard(lid, TOURNAMENT.id, { allMembers: leagueId !== null });
-      if (!cancelled) setRows(r);
-    };
-    void load();
-    const timer = window.setInterval(() => void load(), 20_000);
-    return () => { cancelled = true; clearInterval(timer); };
-  }, [user, leagueId]);
+    const my = ++reqId.current;
+    const lid = leagueId ?? await publicLeagueId();
+    if (!lid || my !== reqId.current) return;
+    // A specific (private) league lists EVERY member — including friends who joined but
+    // haven't drafted. The public global board shows the ranked field.
+    const r = await fetchLeaderboard(lid, TOURNAMENT.id, { allMembers: leagueId !== null });
+    if (my === reqId.current) setRows(r);
+  };
+  // Load immediately when the user/league changes…
+  useEffect(() => { void load(); if (!user) setRows([]); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [user, leagueId]);
+  // …then refresh on a jittered 20s poll that pauses while the tab is hidden (scale + battery).
+  useVisiblePoll(() => void load(), 20_000, !!user);
   return rows;
 }
 
