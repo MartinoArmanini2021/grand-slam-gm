@@ -237,7 +237,8 @@ export async function fetchLeaderboard(
     const ids = (members ?? []).map(m => m.user_id as string);
     if (!ids.length) return [];
     const [entriesRes, profsRes] = await Promise.all([
-      supabase.from('entries').select('user_id, score, budget, state').in('user_id', ids).eq('tournament_id', tournamentId),
+      // board_entries (B8): redacts squad/captain for others' draft-phase entries (see the view).
+      supabase.from('board_entries').select('user_id, score, budget, state').in('user_id', ids).eq('tournament_id', tournamentId),
       supabase.from('public_profiles').select('id, team_name, team_emblem, username').in('id', ids),
     ]);
     if (entriesRes.error) console.warn('[cloud] leaderboard entries:', entriesRes.error.message);
@@ -260,9 +261,9 @@ export async function fetchLeaderboard(
     }
   } catch { /* fall through to a direct query */ }
 
-  // Fallback: ranked entries, bounded, direct from Supabase.
+  // Fallback: ranked entries, bounded, direct from Supabase — via the redacting board view (B8).
   const { data: entries, error } = await supabase
-    .from('entries')
+    .from('board_entries')
     .select('user_id, score, budget, state')
     .eq('tournament_id', tournamentId)
     .order('score', { ascending: false })
