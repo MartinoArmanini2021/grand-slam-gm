@@ -18,9 +18,21 @@ import {
 // kept and pushed up (so anything entered while playing as a guest isn't lost).
 // After that: debounce-save profile edits back to the cloud.
 
-// Record when we last successfully pushed this tournament's entry to the cloud, so the
-// hydrate can tell whether the cloud copy is newer than local (freshest-wins).
-const markSaved = () => { try { localStorage.setItem(`gsgm-entry-ts-${TOURNAMENT.id}`, String(Date.now())); } catch { /* ignore */ } };
+// Cross-device sync uses a persisted "this device has edits it never saved" flag rather
+// than a timestamp comparison. Timestamps were unreliable ACROSS devices: each device
+// stamped `updated_at` with its OWN clock, so clock skew let a laptop wrongly decide its
+// stale copy was "newer" than the phone's real save — the reported bug where the captain
+// / vice reverted to a previous value on another device. The flag has no such ambiguity:
+//   • a real local edit sets it (unsaved changes live only on this device)
+//   • a successful cloud save clears it (this device is now in sync with the cloud)
+// On hydrate the cloud (the shared source of truth) wins UNLESS this flag is set.
+const DIRTY_KEY = `gsgm-dirty-${TOURNAMENT.id}`;
+const markSaved = () => {
+  try { localStorage.setItem(`gsgm-entry-ts-${TOURNAMENT.id}`, String(Date.now())); localStorage.removeItem(DIRTY_KEY); } catch { /* ignore */ }
+};
+const markLocalDirty = () => { try { localStorage.setItem(DIRTY_KEY, '1'); } catch { /* ignore */ } };
+const hasLocalUnsaved = () => { try { return localStorage.getItem(DIRTY_KEY) === '1'; } catch { return false; } };
+const clearLocalDirty = () => { try { localStorage.removeItem(DIRTY_KEY); } catch { /* ignore */ } };
 
 const toCloud = (s: ReturnType<typeof useProfile.getState>): CloudProfile => ({
   username: s.username || null,
@@ -120,14 +132,14 @@ export default function CloudSync() {
         const entry = await fetchEntry(user.id, lid, TOURNAMENT.id); // throws on load failure
         if (cancelled) return;
         const hasCloud = entry && entry.state && Object.keys(entry.state).length > 0;
-        // Freshest-wins: never let an OLDER cloud snapshot clobber newer local progress
-        // (e.g. edits made offline that reached localStorage but not the cloud). Apply the
-        // cloud only when it's strictly newer than our last successful push, OR when this
-        // device has no squad to lose (a fresh device restoring from cloud).
-        const localTs = Number(localStorage.getItem(`gsgm-entry-ts-${TOURNAMENT.id}`)) || 0;
-        const cloudTs = entry?.updatedAt ? Date.parse(entry.updatedAt) : 0;
+        // Cloud is the shared source of truth: apply it on every fresh load so a change
+        // made on one device (e.g. a new captain/vice on the phone) always shows up on the
+        // others. The ONLY reason to keep local instead is unsaved local edits this device
+        // never managed to push (the dirty flag) — those we keep and push up so nothing
+        // made offline is lost. `localEmpty` covers a brand-new device restoring from cloud.
         const localEmpty = useGameStore.getState().myTeam.length === 0;
-        if (hasCloud && (cloudTs > localTs || localEmpty)) {
+        const localHasUnsaved = hasLocalUnsaved();
+        if (hasCloud && (localEmpty || !localHasUnsaved)) {
           // Sanitize BEFORE applying: the cloud snapshot can hold ids removed from the
           // roster since it was saved, an out-of-range round index, or an eliminated
           // leader — sanitizeState drops/repairs all of that (same path as localStorage),
@@ -137,6 +149,7 @@ export default function CloudSync() {
           applyingCloud.current = true;
           useGameStore.setState(restored);              // restore this device from cloud
           applyingCloud.current = false;
+          clearLocalDirty();                            // local now equals the cloud
           useSync.getState().setStatus('saved');        // in sync with the cloud
           markTournamentJoined(TOURNAMENT.id);          // they already have an entry → already joined
         } else if (hasCloud) {
@@ -189,6 +202,7 @@ export default function CloudSync() {
       if (cur === prev) return;
       prev = cur;
       if (applyingCloud.current || !user || gameHydratedFor.current !== user.id) return;
+      markLocalDirty();               // persist "unsaved local edits" across reloads (see DIRTY_KEY)
       useSync.getState().markDirty();
       clearTimeout(timer);
       timer = setTimeout(() => { void doSave(); }, 1000);

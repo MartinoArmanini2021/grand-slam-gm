@@ -28,11 +28,38 @@ interface RawPlayer {
   //  now derived live from results, so it's ignored here.)
 }
 
-const SLAM_META: Record<string, { short: string; surface: Surface; tournament: string }> = {
-  W:  { short: 'WIM', surface: 'grass', tournament: 'Wimbledon' },
-  RG: { short: 'RG',  surface: 'clay',  tournament: 'Roland Garros' },
-  AO: { short: 'AO',  surface: 'hard',  tournament: 'Australian Open' },
+// The 2026 tour calendar for every event that shows up in a player's season results:
+// its canonical SURFACE, full NAME, and a chronological WEEK key (ascending = earlier
+// in the season). This drives BOTH the surface dot AND the left→right ordering on the
+// Player page, so the results strip reads as a true form timeline (January → now)
+// instead of a Slams-first jumble — and the dots finally match reality (hard vs clay
+// vs grass), which is the whole point of showing form heading into a hard-court event.
+const TOUR_CALENDAR: Record<string, { surface: Surface; tournament: string; week: number }> = {
+  BRI: { surface: 'hard',  tournament: 'Brisbane',         week: 1 },
+  ADL: { surface: 'hard',  tournament: 'Adelaide',         week: 2 },
+  AKL: { surface: 'hard',  tournament: 'Auckland',         week: 2 },
+  AO:  { surface: 'hard',  tournament: 'Australian Open',  week: 4 },
+  DUB: { surface: 'hard',  tournament: 'Dubai',            week: 9 },
+  IW:  { surface: 'hard',  tournament: 'Indian Wells',     week: 11 },
+  MIA: { surface: 'hard',  tournament: 'Miami',            week: 13 },
+  MAD: { surface: 'clay',  tournament: 'Madrid',           week: 18 },
+  ROM: { surface: 'clay',  tournament: 'Rome',             week: 20 },
+  RG:  { surface: 'clay',  tournament: 'Roland Garros',    week: 22 },
+  HER: { surface: 'grass', tournament: "'s-Hertogenbosch", week: 24 },
+  QUE: { surface: 'grass', tournament: "Queen's Club",     week: 25 },
+  EAS: { surface: 'grass', tournament: 'Eastbourne',       week: 26 },
+  WIM: { surface: 'grass', tournament: 'Wimbledon',        week: 28 },
+  HAM: { surface: 'clay',  tournament: 'Hamburg',          week: 30 },
+  BAS: { surface: 'hard',  tournament: 'Basel',            week: 43 },
+  DC:  { surface: 'hard',  tournament: 'Davis Cup',        week: 46 },
 };
+
+// The National Bank Open sits in early August (~week 31). Season results shown on the
+// Player page are the player's FORM HEADING IN, so anything later in the calendar than
+// the active event (Basel in October, the Davis Cup finals in November) is dropped —
+// it can't be "form" for a tournament that hasn't started. Summer events (Cincinnati)
+// fall a couple of weeks later, so the cutoff is generous.
+const SEASON_CUTOFF_WEEK = 34;
 
 // ── Detailed pricing ─────────────────────────────────────────────────────────
 // Price is built from three real, transparent inputs (see priceBreakdown):
@@ -99,11 +126,25 @@ function deriveStyle(p: RawPlayer): string {
   return (p.hand === 'L' ? 'Left-handed ' : '') + base;
 }
 
+// Chronological form timeline: keep only events up to the active tournament, then sort
+// earliest→latest by calendar week (unknown codes are kept and sorted last, never dropped).
+function orderSeason(results: YearResult[]): YearResult[] {
+  const weekOf = (short: string) => TOUR_CALENDAR[short]?.week ?? Number.POSITIVE_INFINITY;
+  return results
+    .filter(r => weekOf(r.short) <= SEASON_CUTOFF_WEEK || !TOUR_CALENDAR[r.short]) // drop known post-event results only
+    .sort((a, b) => weekOf(a.short) - weekOf(b.short));
+}
+
 function toYearResults(rows: RawPlayer['yearResults']): YearResult[] {
-  return rows.map(r => {
-    const meta = SLAM_META[r.short] ?? { short: r.short, surface: 'grass' as Surface, tournament: r.short };
-    return { short: meta.short, surface: meta.surface, tournament: meta.tournament, result: r.result as TournamentResult };
-  });
+  return orderSeason(rows.map(r => {
+    const meta = TOUR_CALENDAR[r.short];
+    return {
+      short: r.short,
+      surface: meta?.surface ?? 'hard',
+      tournament: meta?.tournament ?? r.short,
+      result: r.result as TournamentResult,
+    };
+  }));
 }
 
 function toPlayer(r: RawPlayer): Player {
@@ -134,7 +175,7 @@ function toPlayer(r: RawPlayer): Player {
     surface,
     ytd,
     form: [],
-    yearResults: base?.results2026?.length ? (base.results2026 as YearResult[]) : toYearResults(r.yearResults),
+    yearResults: base?.results2026?.length ? orderSeason(base.results2026 as YearResult[]) : toYearResults(r.yearResults),
     statsYear: base?.statsYear,
   };
 }

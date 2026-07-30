@@ -137,15 +137,17 @@ export const TOURNAMENTS: Record<string, Tournament> = {
     rounds: ['R64', 'R32', 'R16', 'QF', 'SF', 'F'],
     mode: 'live',
     live: true, // ← the live production tournament
-    // ESTIMATED order of play (UTC) — replace with the official schedule when it publishes.
-    // schedule.R64 doubles as the draft deadline (squad must be locked before play starts).
+    // Official window: draw ceremony Fri 31 Jul 2026; main draw runs Sat 1 Aug → the
+    // expanded-Masters final on Thu 13 Aug 2026 (UTC times below). R64 doubles as the
+    // draft deadline — the squad must be locked before the first ball is struck. The
+    // mid-round times are best estimates until the official order of play publishes.
     schedule: {
-      R64: '2026-08-02T15:00:00Z',
+      R64: '2026-08-01T15:00:00Z', // first day of main-draw play — DRAFT CLOSES
       R32: '2026-08-04T15:00:00Z',
       R16: '2026-08-06T15:00:00Z',
-      QF:  '2026-08-08T15:00:00Z',
-      SF:  '2026-08-10T17:00:00Z',
-      F:   '2026-08-12T18:00:00Z',
+      QF:  '2026-08-08T17:00:00Z',
+      SF:  '2026-08-11T17:00:00Z',
+      F:   '2026-08-13T18:00:00Z', // expanded-format final (midweek)
     },
     court: {
       standTop: '#0c2433', standBottom: '#071726',  // dark stadium seating

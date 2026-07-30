@@ -142,8 +142,11 @@ export default function PlayerPage() {
         </Panel>
       </div>
 
-      {/* 2026 tournament results */}
+      {/* 2026 tournament results — chronological (Jan → now) so the form reads left→right */}
       <Panel title={`${statsYr} tournament results`}>
+        {p.yearResults.length === 0 ? (
+          <div className="text-sm py-2" style={{ color: 'var(--ink-3)' }}>No {statsYr} tournament results recorded yet.</div>
+        ) : (<div>
         <div className="flex gap-3 flex-wrap">
           {p.yearResults.map((r, i) => {
             const [bg, color] = resultStyle(r.result);
@@ -167,6 +170,7 @@ export default function PlayerPage() {
           <span><span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: SURFACE_DOT.grass }} />Grass</span>
           <span className="ml-auto">W = Champion · F = Final · SF/QF/R16 = round reached</span>
         </div>
+        </div>)}
       </Panel>
 
       {/* Head-to-head */}
@@ -202,19 +206,19 @@ function H2HSection({ player, defaultOppId }: { player: Player; defaultOppId?: s
 
   return (
     <Panel title="Head-to-head">
-      <div className="flex items-center gap-3 mb-3">
+      <div className="flex items-center gap-2 sm:gap-3 mb-3">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <PlayerAvatar playerId={player.id} name={player.name} size="sm" />
+          <span className="shrink-0"><PlayerAvatar playerId={player.id} name={player.name} size="sm" /></span>
           <span className="text-sm font-bold truncate" style={{ color: 'var(--ink)' }}>{lastName(player.name)}</span>
         </div>
-        <span className="text-xs font-bold" style={{ color: 'var(--ink-3)' }}>vs</span>
+        <span className="text-xs font-bold shrink-0 px-0.5" style={{ color: 'var(--ink-3)' }}>vs</span>
         <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
-          <PlayerAvatar playerId={opp.id} name={opp.name} size="sm" />
+          <span className="shrink-0"><PlayerAvatar playerId={opp.id} name={opp.name} size="sm" /></span>
           <select
             value={oppId}
             onChange={e => setOppId(e.target.value)}
             aria-label="Compare with player"
-            className="text-sm font-semibold rounded-lg px-2 py-1.5 max-w-[150px]"
+            className="text-sm font-semibold rounded-lg px-2 py-1.5 flex-1 min-w-0 max-w-[150px]"
             style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.12)', color: 'var(--ink)' }}
           >
             {opponents.map(o => (
