@@ -4,6 +4,8 @@ import type { GamePhase, RoundId, RoundScore, BudgetReturn, Transfer } from '../
 import {
   ROUNDS, getMatchesForRound, isPlayerOut, BUDGET_RETURN_RATES, winPoints, transfersOpen, roundPlayable,
 } from '../data/tournament';
+import { ACTIVE_TOURNAMENT_ID } from '../data/tournamentConfig';
+import { track } from '../data/analytics';
 import { findPlayer, PLAYERS } from '../data/players';
 import { SQUAD_SIZE, STARTING_BUDGET, isTierFull } from '../data/squadRules';
 import { getTier } from '../data/tiers';
@@ -17,7 +19,9 @@ const VICE_MULTIPLIER = 1.5;    // vice-captain earns 1.5× their round points
 // guarantees the court always fields a captain + vice when the squad has ≥2 players,
 // so it's always 2 on court + the rest on the bench.
 function pickLeaders(team: string[], captain: string | null, vice: string | null, revealed: RoundId[]) {
-  const valid = (id: string | null): id is string => !!id && team.includes(id);
+  // A valid leader is on the team AND not eliminated — so a restored save never fields
+  // a captain/vice who is already out (the fill list below is alive-only too).
+  const valid = (id: string | null): id is string => !!id && team.includes(id) && !isPlayerOut(id, revealed);
   let cap = valid(captain) ? captain : null;
   let vc = valid(vice) && vice !== cap ? vice : null;
   const byRank = team
@@ -26,6 +30,46 @@ function pickLeaders(team: string[], captain: string | null, vice: string | null
   if (!cap) cap = byRank.find(id => id !== vc) ?? null;
   if (!vc) vc = byRank.find(id => id !== cap) ?? null;
   return { captain: cap, viceCaptain: vc };
+}
+
+// Make ANY restored state safe to run — used by every hydration path (localStorage
+// migrate + rehydrate AND the cloud restore in CloudSync, which formerly bypassed all
+// of this). Mutates in place: (1) drops player ids no longer in the roster so the
+// throwing getPlayer() can't white-screen a page; (2) clamps currentRoundIndex and
+// reconciles the phase so a save from a different round-count can't get stuck; (3)
+// re-derives a draft budget after a price-curve change; (4) re-fields two alive leaders.
+export function sanitizeState(s: Partial<GameStore>): void {
+  if (!s) return;
+  const ids = new Set(PLAYERS.map(p => p.id));
+  if (Array.isArray(s.myTeam)) s.myTeam = s.myTeam.filter(id => ids.has(id));
+  if (Array.isArray(s.initialSquad)) s.initialSquad = s.initialSquad.filter(id => ids.has(id));
+  if (Array.isArray(s.transfers)) s.transfers = s.transfers.filter(t => ids.has(t.in) && ids.has(t.out));
+  if (s.captain && !ids.has(s.captain)) s.captain = null;
+  if (s.viceCaptain && !ids.has(s.viceCaptain)) s.viceCaptain = null;
+  if (s.viewPlayer && !ids.has(s.viewPlayer)) s.viewPlayer = '';
+  if (Array.isArray(s.budgetReturns)) s.budgetReturns = s.budgetReturns.filter(r => ids.has(r.playerId));
+  if (Array.isArray(s.captainHistory)) s.captainHistory = s.captainHistory.filter(c => ids.has(c.playerId));
+  if (Array.isArray(s.viceCaptainHistory)) s.viceCaptainHistory = s.viceCaptainHistory.filter(c => ids.has(c.playerId));
+  // Round index in range, and phase consistent with it (a save from a longer draw, or
+  // a corrupt index, can't leave the app stuck in pre_round with no round to play).
+  if (typeof s.currentRoundIndex === 'number') {
+    s.currentRoundIndex = Math.max(0, Math.min(ROUNDS.length, Math.floor(s.currentRoundIndex)));
+    if (s.currentRoundIndex >= ROUNDS.length && (s.phase === 'pre_round' || s.phase === 'round_complete')) {
+      s.phase = 'finished';
+    }
+  }
+  // Draft budget is exactly STARTING_BUDGET − squad cost; recompute after price changes.
+  if (s.phase === 'draft' && Array.isArray(s.myTeam)) {
+    const priceById = new Map(PLAYERS.map(p => [p.id, p.price]));
+    s.budget = round1(STARTING_BUDGET - s.myTeam.reduce((sum, id) => sum + (priceById.get(id) ?? 0), 0));
+  }
+  // Always field two still-alive on-court leaders (older saves may have one, none, or
+  // an eliminated pick — pickLeaders now filters eliminated players out).
+  if ((s.phase === 'draft' || s.phase === 'pre_round') && Array.isArray(s.myTeam)) {
+    const revealed = ROUNDS.slice(0, s.currentRoundIndex ?? 0).map(r => r.id);
+    const led = pickLeaders(s.myTeam, s.captain ?? null, s.viceCaptain ?? null, revealed);
+    s.captain = led.captain; s.viceCaptain = led.viceCaptain;
+  }
 }
 
 interface GameStore {
@@ -100,6 +144,7 @@ export const useGameStore = create<GameStore>()(
       removePlayer: (id) => {
         const { myTeam, budget, captain, viceCaptain, phase } = get();
         if (phase !== 'draft') return; // squad is locked after the draft
+        if (!myTeam.includes(id)) return; // not owned → nothing to refund (guards a double-tap of ✕)
         const player = findPlayer(id);
         if (!player) return;
         const newTeam = myTeam.filter(pid => pid !== id);
@@ -163,6 +208,7 @@ export const useGameStore = create<GameStore>()(
         if (myTeam.length === 0) return;
         // Snapshot the drafted squad; keep the two leaders (they're kept defaulted).
         set({ phase: 'pre_round', ...pickLeaders(myTeam, captain, viceCaptain, []), initialSquad: [...myTeam] });
+        track('squad_locked', { size: myTeam.length, spend: STARTING_BUDGET - get().budget });
       },
 
       // Mid-tournament substitution: swap an eliminated squad member for a
@@ -177,6 +223,10 @@ export const useGameStore = create<GameStore>()(
         if (isPlayerOut(newId, revealed)) return;  // replacement already knocked out
         const player = findPlayer(newId);
         if (!player || budget < player.price) return;         // unknown id or can't afford
+        // Enforce the tier quota on the resulting squad — a swap must never create a
+        // 3rd Platinum (etc.). Same-tier swaps always pass; a cross-tier swap is
+        // rejected when the incoming tier is already full among the players you keep.
+        if (isTierFull(getTier(player.ranking), myTeam.filter(id => id !== oldId))) return;
         // Log the move against the round just played, for the transfer history.
         const round = ROUNDS[currentRoundIndex - 1]?.id ?? ROUNDS[0].id;
         set({
@@ -186,6 +236,7 @@ export const useGameStore = create<GameStore>()(
           viceCaptain: viceCaptain === oldId ? null : viceCaptain,
           transfers: [...get().transfers, { out: oldId, in: newId, round }],
         });
+        track('transfer_made', { out: oldId, in: newId, round });
       },
 
       playNextRound: () => {
@@ -260,6 +311,7 @@ export const useGameStore = create<GameStore>()(
           viceCaptain: null,
           phase: isLastRound ? 'finished' : 'round_complete',
         });
+        track('round_played', { round: round.id, points: roundPoints, finished: isLastRound });
       },
 
       // Move from the results screen to captain-picking for the next round. Guarded
@@ -277,11 +329,11 @@ export const useGameStore = create<GameStore>()(
 
       openTeam: (teamId) => set({ viewTeam: teamId, activeTab: 'team' }),
 
-      openPlayer: (playerId) => set(s => ({
+      openPlayer: (playerId) => { track('player_viewed', { playerId }); set(s => ({
         viewPlayer: playerId,
         playerReturnTab: s.activeTab === 'player' ? s.playerReturnTab : s.activeTab,
         activeTab: 'player',
-      })),
+      })); },
 
       resetGame: () => set({
         phase: 'draft',
@@ -304,7 +356,10 @@ export const useGameStore = create<GameStore>()(
       }),
     }),
     {
-      name: 'grand-slam-gm-v1',
+      // Scope the save PER TOURNAMENT (like the live store) so a squad/score from one
+      // event never bleeds into the next — switching the active tournament starts a
+      // clean slate rather than rehydrating the previous event's state.
+      name: `grand-slam-gm-${ACTIVE_TOURNAMENT_ID}`,
       version: 3,
       // Persist only game data — never the transient navigation state (activeTab /
       // viewTeam / viewPlayer / playerReturnTab), so a reload always lands on Home
@@ -321,48 +376,13 @@ export const useGameStore = create<GameStore>()(
       // re-derive a stale draft budget after roster/price changes.
       migrate: (persisted) => {
         const s = persisted as Partial<GameStore> | undefined;
-        if (s) {
-          const ids = new Set(PLAYERS.map(p => p.id));
-          const priceById = new Map(PLAYERS.map(p => [p.id, p.price]));
-          if (Array.isArray(s.myTeam)) s.myTeam = s.myTeam.filter(id => ids.has(id));
-          if (Array.isArray(s.initialSquad)) s.initialSquad = s.initialSquad.filter(id => ids.has(id));
-          if (Array.isArray(s.transfers)) s.transfers = s.transfers.filter(t => ids.has(t.in) && ids.has(t.out));
-          if (s.captain && !ids.has(s.captain)) s.captain = null;
-          if (s.viceCaptain && !ids.has(s.viceCaptain)) s.viceCaptain = null;
-          if (s.viewPlayer && !ids.has(s.viewPlayer)) s.viewPlayer = '';
-          if (Array.isArray(s.budgetReturns)) s.budgetReturns = s.budgetReturns.filter(r => ids.has(r.playerId));
-          if (Array.isArray(s.captainHistory)) s.captainHistory = s.captainHistory.filter(c => ids.has(c.playerId));
-          if (Array.isArray(s.viceCaptainHistory)) s.viceCaptainHistory = s.viceCaptainHistory.filter(c => ids.has(c.playerId));
-          // During the draft, budget is exactly 100 − squad cost; recompute it so a
-          // squad carried over from an older price curve can't show the wrong budget.
-          if (s.phase === 'draft' && Array.isArray(s.myTeam)) {
-            const spent = s.myTeam.reduce((sum, id) => sum + (priceById.get(id) ?? 0), 0);
-            s.budget = STARTING_BUDGET - spent;
-          }
-        }
+        if (s) sanitizeState(s);
         return s as GameStore;
       },
-      // Runs on EVERY rehydrate (migrate only runs on a version bump): drop any
-      // persisted player id that no longer exists in the roster, so a stale squad can
-      // never dereference an undefined player and white-screen the app (the throwing
-      // getPlayer() is used across the pages). Belt-and-suspenders to migrate().
+      // Runs on EVERY rehydrate (migrate only runs on a version bump). Belt-and-
+      // suspenders: the same sanitize the cloud restore uses (see sanitizeState).
       onRehydrateStorage: () => (state) => {
-        if (!state) return;
-        const ids = new Set(PLAYERS.map(p => p.id));
-        if (Array.isArray(state.myTeam)) state.myTeam = state.myTeam.filter(id => ids.has(id));
-        if (Array.isArray(state.initialSquad)) state.initialSquad = state.initialSquad.filter(id => ids.has(id));
-        if (Array.isArray(state.transfers)) state.transfers = state.transfers.filter(t => ids.has(t.in) && ids.has(t.out));
-        if (state.captain && !ids.has(state.captain)) state.captain = null;
-        if (state.viceCaptain && !ids.has(state.viceCaptain)) state.viceCaptain = null;
-        if (Array.isArray(state.budgetReturns)) state.budgetReturns = state.budgetReturns.filter(r => ids.has(r.playerId));
-        if (Array.isArray(state.captainHistory)) state.captainHistory = state.captainHistory.filter(c => ids.has(c.playerId));
-        if (Array.isArray(state.viceCaptainHistory)) state.viceCaptainHistory = state.viceCaptainHistory.filter(c => ids.has(c.playerId));
-        // Re-field two on-court leaders (older saves may have one or none).
-        if ((state.phase === 'draft' || state.phase === 'pre_round') && Array.isArray(state.myTeam)) {
-          const revealed = ROUNDS.slice(0, state.currentRoundIndex ?? 0).map(r => r.id);
-          const led = pickLeaders(state.myTeam, state.captain ?? null, state.viceCaptain ?? null, revealed);
-          state.captain = led.captain; state.viceCaptain = led.viceCaptain;
-        }
+        if (state) sanitizeState(state);
       },
     }
   )

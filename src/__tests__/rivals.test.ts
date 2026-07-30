@@ -1,8 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { RIVALS, buildSquad, scoreSquad, getRivalTeams, simulateRival } from '../data/rivals';
 import { getPlayer } from '../data/players';
-import { ROUNDS, isPlayerOut } from '../data/tournament';
+import { ROUNDS, isPlayerOut, winPoints } from '../data/tournament';
 import { isSquadValid, tierCounts } from '../data/squadRules';
+import { loadSampleTournament, roles, sampleMatches } from './fixtures/sampleDraw';
+
+// Rivals score against the live draw; load a resolved sample so results are deterministic.
+beforeEach(loadSampleTournament);
 
 describe('rivals squad building', () => {
   it('every rival strategy yields a legal 10-player squad within $200M meeting the tier rule', () => {
@@ -52,9 +56,16 @@ describe('static scoreSquad (reference)', () => {
     }
   });
 
-    it('a solo champion (Sinner, #1) scores 128 across all seven rounds, captained', () => {
-    // #1 → mult 0.8, no upsets; R128..F gross 1+1+2+4+8+16+32 = 64, doubled = 128
-    expect(scoreSquad(['sinner'], ROUNDS.length)).toBe(128);
+  it('a solo champion scores the full captained title run', () => {
+    // The static reference scorer captains the solo player, so a champion who wins every
+    // round banks each win doubled — derived from the fixture, not a hard-coded number.
+    const champScore = ROUNDS.reduce((s, r) => {
+      const m = sampleMatches.find(x => x.round === r.id && (x.p1Id === roles.champion || x.p2Id === roles.champion));
+      if (!m || m.winnerId !== roles.champion) return s;
+      const opp = m.p1Id === roles.champion ? m.p2Id : m.p1Id;
+      return s + winPoints(r.id, roles.champion, opp) * 2;
+    }, 0);
+    expect(scoreSquad([roles.champion], ROUNDS.length)).toBe(champScore);
   });
 });
 
@@ -111,8 +122,8 @@ describe('transfer-aware simulation', () => {
     for (const r of RIVALS) {
       const t = simulateRival(r, ROUNDS.length);
       for (const tr of t.transfers) {
-        // transfers react to R128..QF eliminations (prep for the next round); never SF/F
-        expect(['R128', 'R64', 'R32', 'R16', 'QF']).toContain(tr.round);
+        // transfers react to R64..QF eliminations (prep for the next round); never SF/F
+        expect(['R64', 'R32', 'R16', 'QF']).toContain(tr.round);
       }
     }
   });

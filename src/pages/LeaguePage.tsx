@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { getPlayer } from '../data/players';
 import { getTier, TIER_META, TIER_ORDER, type Tier } from '../data/tiers';
+import { track } from '../data/analytics';
 import { useLeagueBoard, useMyLeagues, type BoardEntry } from '../data/leagueBoard';
 import { lastName } from '../data/format';
 import { ROUNDS, isPlayerOut, getPlayerExit } from '../data/tournament';
@@ -13,6 +14,7 @@ import {
   createLeague, joinLeague, deleteLeague, leaveLeague, removeMember,
   fetchLeagueMembers, type LeagueMember,
 } from '../data/cloud';
+import { shareInvite } from '../data/invite';
 import type { RoundId } from '../types';
 
 const MEDAL = ['#E8B923', '#AEB6C2', '#C77B3B']; // gold, silver, bronze
@@ -31,7 +33,9 @@ function RankBadge({ i }: { i: number }) {
 function Standings({ rows, revealed, compact }: { rows: BoardEntry[]; revealed: RoundId[]; compact?: boolean }) {
   const { openTeam, openPlayer } = useGameStore();
   if (rows.length === 0) {
-    return <div className="rounded-2xl px-5 py-8 text-center text-sm" style={{ background: '#fff', border: '1px solid rgba(10,27,51,0.08)', color: 'var(--ink-3)' }}>No squads here yet — draft yours, and invite friends with the code above.</div>;
+    return <div className="rounded-2xl px-5 py-8 text-center text-sm" style={{ background: '#fff', border: '1px solid rgba(10,27,51,0.08)', color: 'var(--ink-3)' }}>
+      {compact ? 'No squads yet — draft yours to join the public leaderboard.' : 'No squads here yet — draft yours, and invite friends with the code above.'}
+    </div>;
   }
   // Public league: a plain, tidy table — rank · team + @handle · score.
   if (compact) {
@@ -110,7 +114,7 @@ function Standings({ rows, revealed, compact }: { rows: BoardEntry[]; revealed: 
                 if (players.length === 0) return null;
                 return (
                   <div key={tier} className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: TIER_META[tier as Tier].color }} title={tier} />
+                    <span className="w-4 h-4 rounded shrink-0 flex items-center justify-center text-[9px] font-extrabold text-white" style={{ background: TIER_META[tier as Tier].color }} title={tier}>{tier[0]}</span>
                     <div className="flex flex-wrap gap-1.5">
                       {players.map(id => {
                         const p = getPlayer(id);
@@ -202,11 +206,29 @@ function Standings({ rows, revealed, compact }: { rows: BoardEntry[]; revealed: 
   );
 }
 
+// The public global board, isolated in its own component so its 20s poll only runs while
+// the Public tab is actually on screen (not in the background during Private view).
+function PublicBoard({ revealed }: { revealed: RoundId[] }) {
+  const publicBoard = useLeagueBoard(null);
+  return (
+    <>
+      <h2 className="text-sm font-bold mb-2.5 px-1" style={{ color: 'var(--ink-2)' }}>🌍 Grand Slam Open League · {publicBoard.length} manager{publicBoard.length === 1 ? '' : 's'}</h2>
+      <Standings rows={publicBoard} revealed={revealed} compact />
+    </>
+  );
+}
+
 export default function LeaguePage() {
   const { currentRoundIndex } = useGameStore();
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
   const [view, setView] = useState<'public' | 'private'>('public');
-  const publicBoard = useLeagueBoard(null);
+  // The private friends board is the emotional core for this audience — open on it
+  // once we know the player belongs to a private league (until they toggle).
+  const myLeagues = useMyLeagues();
+  const defaultedView = useRef(false);
+  useEffect(() => {
+    if (!defaultedView.current && myLeagues.length > 0) { setView('private'); defaultedView.current = true; }
+  }, [myLeagues]);
 
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-3 py-6 fade-in">
@@ -228,10 +250,7 @@ export default function LeaguePage() {
       </div>
 
       {view === 'public' ? (
-        <>
-          <h2 className="text-sm font-bold mb-2.5 px-1" style={{ color: 'var(--ink-2)' }}>🌍 Grand Slam Open League · {publicBoard.length} manager{publicBoard.length === 1 ? '' : 's'}</h2>
-          <Standings rows={publicBoard} revealed={revealed} compact />
-        </>
+        <PublicBoard revealed={revealed} />
       ) : (
         <PrivateLeagues revealed={revealed} />
       )}
@@ -262,8 +281,12 @@ function PrivateLeagues({ revealed }: { revealed: RoundId[] }) {
     setConfirmDelete(false);
     if (!selected) { setMembers([]); return; }
     let cancelled = false;
-    void fetchLeagueMembers(selected).then(m => { if (!cancelled) setMembers(m); });
-    return () => { cancelled = true; };
+    const load = () => { void fetchLeagueMembers(selected).then(m => { if (!cancelled) setMembers(m); }); };
+    load();
+    // Poll so a friend who just joined shows up in the member list + count within ~20s,
+    // matching the leaderboard's own refresh cadence (no manual reload needed).
+    const t = setInterval(load, 20000);
+    return () => { cancelled = true; clearInterval(t); };
   }, [selected, nonce]);
 
   const refresh = () => setNonce(n => n + 1);
@@ -290,13 +313,13 @@ function PrivateLeagues({ revealed }: { revealed: RoundId[] }) {
 
   const doCreate = async () => {
     setBusy(true);
-    try { const { code: c } = await createLeague(name); setName(''); toast(`Created — invite code ${c}`, 'good'); refresh(); }
+    try { const { code: c } = await createLeague(name); setName(''); track('league_created'); toast(`Created — invite code ${c}`, 'good'); refresh(); }
     catch (e) { toast(e instanceof Error ? e.message : 'Could not create the league', 'warn'); }
     finally { setBusy(false); }
   };
   const doJoin = async () => {
     setBusy(true);
-    try { const { name: n } = await joinLeague(code); setCode(''); toast(`Joined ${n}!`, 'good'); refresh(); }
+    try { const { name: n } = await joinLeague(code); setCode(''); track('league_joined'); toast(`Joined ${n}!`, 'good'); refresh(); }
     catch { toast('No league found with that code', 'warn'); }
     finally { setBusy(false); }
   };
@@ -320,7 +343,7 @@ function PrivateLeagues({ revealed }: { revealed: RoundId[] }) {
     catch (e) { toast(e instanceof Error ? e.message : 'Could not remove', 'warn'); }
   };
 
-  const copy = (text: string) => { navigator.clipboard?.writeText(text).then(() => toast('Copied', 'good')); };
+  const copy = (text: string) => { track('invite_copied'); navigator.clipboard?.writeText(text).then(() => toast('Copied', 'good')); };
 
   return (
     <>
@@ -331,15 +354,15 @@ function PrivateLeagues({ revealed }: { revealed: RoundId[] }) {
         <div className="rounded-2xl p-2.5 sm:p-4" style={{ background: '#fff', border: '1px solid rgba(10,27,51,0.09)' }}>
           <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wide mb-1.5 sm:mb-2" style={{ color: 'var(--ink-2)' }}>Create a league</div>
           <div className="flex gap-2">
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="League name" className="flex-1 min-w-0 text-sm outline-none px-3 py-1.5 sm:py-2 rounded-xl" style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.12)', color: 'var(--ink)' }} />
+            <input value={name} onChange={e => setName(e.target.value)} placeholder="League name" className="flex-1 min-w-0 text-sm px-3 py-1.5 sm:py-2 rounded-xl" style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.12)', color: 'var(--ink)' }} />
             <button onClick={doCreate} disabled={busy} className="px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold text-white shrink-0 disabled:opacity-60" style={{ background: 'var(--blue)' }}>Create</button>
           </div>
         </div>
         <div className="rounded-2xl p-2.5 sm:p-4" style={{ background: '#fff', border: '1px solid rgba(10,27,51,0.09)' }}>
           <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wide mb-1.5 sm:mb-2" style={{ color: 'var(--ink-2)' }}>Join with a code</div>
           <div className="flex gap-2">
-            <input value={code} onChange={e => setCode(e.target.value.toUpperCase())} placeholder="6-char code" maxLength={6} className="flex-1 min-w-0 text-sm outline-none px-3 py-1.5 sm:py-2 rounded-xl font-num tracking-widest uppercase" style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.12)', color: 'var(--ink)' }} />
-            <button onClick={doJoin} disabled={busy || code.length < 4} className="px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold shrink-0 disabled:opacity-60" style={{ background: 'rgba(14,111,196,0.1)', color: 'var(--blue)' }}>Join</button>
+            <input value={code} onChange={e => setCode(e.target.value.toUpperCase())} placeholder="6-char code" maxLength={6} className="flex-1 min-w-0 text-sm px-3 py-1.5 sm:py-2 rounded-xl font-num tracking-widest uppercase" style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.12)', color: 'var(--ink)' }} />
+            <button onClick={doJoin} disabled={busy || code.length !== 6} className="px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold shrink-0 disabled:opacity-60" style={{ background: 'rgba(14,111,196,0.1)', color: 'var(--blue)' }}>Join</button>
           </div>
         </div>
       </div>
@@ -362,12 +385,23 @@ function PrivateLeagues({ revealed }: { revealed: RoundId[] }) {
             <>
               <div className="flex items-center justify-between px-1 flex-wrap gap-2 mb-2">
                 <h2 className="text-sm font-bold" style={{ color: 'var(--ink-2)' }}>{current.name} · {members.length} member{members.length === 1 ? '' : 's'}</h2>
-                {current.code && (
-                  <button onClick={() => copy(current.code!)} className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'rgba(14,111,196,0.1)', color: 'var(--blue)' }} title="Copy invite code">
-                    Invite code: <span className="font-num tracking-widest">{current.code}</span> ⧉
-                  </button>
-                )}
               </div>
+
+              {/* Invite CTA — a real shareable link (native share sheet on mobile), with the
+                  code shown for manual entry. This is the app's viral loop, so it's prominent. */}
+              {current.code && (
+                <div className="rounded-2xl p-3 mb-3 flex items-center gap-3" style={{ background: 'linear-gradient(120deg,rgba(14,111,196,0.10),rgba(18,161,80,0.08))', border: '1px solid rgba(14,111,196,0.22)' }}>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-extrabold" style={{ color: 'var(--ink)' }}>Invite your friends 🎾</div>
+                    <div className="text-[11px] mt-0.5" style={{ color: 'var(--ink-2)' }}>
+                      Share the link, or give them the code <button onClick={() => copy(current.code!)} className="font-num font-bold tracking-widest" style={{ color: 'var(--blue)' }} title="Copy code">{current.code} ⧉</button>
+                    </div>
+                  </div>
+                  <button onClick={() => shareInvite(current.name, current.code!)} className="shrink-0 px-4 min-h-[40px] rounded-xl text-sm font-bold text-white transition-transform active:scale-[0.98]" style={{ background: 'var(--blue)', boxShadow: '0 6px 16px rgba(14,111,196,0.35)' }}>
+                    Invite friends
+                  </button>
+                </div>
+              )}
 
               <Standings rows={board} revealed={revealed} />
 

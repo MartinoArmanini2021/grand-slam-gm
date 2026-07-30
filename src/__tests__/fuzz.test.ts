@@ -4,6 +4,7 @@ import { PLAYERS } from '../data/players';
 import { ROUNDS, isPlayerOut } from '../data/tournament';
 import { getTier } from '../data/tiers';
 import { isSquadValid } from '../data/squadRules';
+import { loadSampleTournament } from './fixtures/sampleDraw';
 
 // Deterministic PRNG so failures reproduce.
 function rng(seed: number) {
@@ -15,6 +16,7 @@ const store = () => useGameStore.getState();
 // Build a random VALID squad (10 · 2 Platinum · 3 Gold · 5 Silver) within $200M by
 // adding through the real store guards until valid.
 function draftValidSquad(rand: () => number) {
+  loadSampleTournament(); // the live engine needs a resolved draw to score
   store().resetGame();
   const byPrice = (arr: typeof PLAYERS) => [...arr].sort((a, b) => a.price - b.price);
   const platinum = byPrice(PLAYERS.filter(p => getTier(p.ranking) === 'Platinum'));

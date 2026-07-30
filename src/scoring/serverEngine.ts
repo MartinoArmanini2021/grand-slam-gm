@@ -42,15 +42,20 @@ function upsetBonus(winnerRank: number, loserRank: number): number {
   return Math.min(15, Math.round((winnerRank - loserRank) * 0.4));
 }
 
-export function winPoints(base: number, winnerRank: number, loserRank: number): number {
-  const upset = Math.min(upsetBonus(winnerRank, loserRank), Math.round(base * 1.5));
+// loserRank may be undefined when the beaten opponent is off-roster (an early-round
+// player with no rank on record). Like the client, we award NO upset then — we can't
+// know it was one, and assuming a rank would over-credit beating an unknown qualifier.
+export function winPoints(base: number, winnerRank: number, loserRank: number | undefined): number {
+  const upset = loserRank == null ? 0 : Math.min(upsetBonus(winnerRank, loserRank), Math.round(base * 1.5));
   return Math.round(base * rankingMultiplier(winnerRank)) + upset;
 }
 
 // The authoritative total for one entry across every round it has played.
 export function scoreEntry(state: EntryState, ctx: ScoreCtx): number {
   const idx = (r: string) => ctx.roundsInOrder.indexOf(r);
-  const rank = (id: string) => ctx.rankById[id] ?? 40; // off-roster opponents → neutral
+  // Winner's rank for the multiplier (roster players are always known; default is a
+  // safety net). The LOSER's rank is passed raw (may be undefined → no upset).
+  const rank = (id: string) => ctx.rankById[id] ?? 40;
   const base0 = state.initialSquad?.length ? state.initialSquad : (state.myTeam ?? []);
   let total = 0;
 
@@ -71,7 +76,7 @@ export function scoreEntry(state: EntryState, ctx: ScoreCtx): number {
       const m = roundMatches.find(x => x.p1 === id || x.p2 === id);
       if (!m || m.winner !== id) continue; // no match, or didn't win
       const oppId = m.p1 === id ? m.p2 : m.p1;
-      const pts = winPoints(base, rank(id), rank(oppId));
+      const pts = winPoints(base, rank(id), ctx.rankById[oppId]); // raw opp rank → undefined = no upset
       total += id === captain ? pts * CAPTAIN_MULTIPLIER
         : id === vice ? Math.round(pts * VICE_MULTIPLIER)
         : pts;

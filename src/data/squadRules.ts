@@ -4,7 +4,7 @@ import { getTier, type Tier } from './tiers';
 // Squad composition rule. A 10-player squad is exactly 2 Platinum, 3 Gold and
 // 5 Silver. Because the minimums (2+3+5) add up to the squad size, they are in
 // effect an EXACT quota — you can't stack marquee names, nor fill the draw with
-// cheap wildcards. Budget is roomy ($200M) so most builds are affordable; the
+// cheap wildcards. Budget is $150M so most builds are affordable; the
 // squeeze is choosing WHICH two Platinum / three Gold you can pair with strong
 // Silver value.
 export const SQUAD_SIZE = 10;

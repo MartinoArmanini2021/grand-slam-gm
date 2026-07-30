@@ -78,17 +78,20 @@ export interface EntryWrite {
   state: unknown;       // the persisted gameStore snapshot
 }
 
+// Returns null for a CONFIRMED absence (no row), and THROWS on a load failure
+// (network/query/RLS error). Callers must distinguish the two: treating a failed
+// load as "no entry" would let the onboarding gate reset+overwrite a real cloud squad.
 export async function fetchEntry(
   userId: string, leagueId: string, tournamentId: string,
-): Promise<{ score: number; state: Record<string, unknown> } | null> {
+): Promise<{ score: number; state: Record<string, unknown>; updatedAt: string | null } | null> {
   if (!supabase) return null;
   const { data, error } = await supabase
     .from('entries')
-    .select('score, state')
+    .select('score, state, updated_at')
     .eq('user_id', userId).eq('league_id', leagueId).eq('tournament_id', tournamentId)
     .maybeSingle();
-  if (error) { console.warn('[cloud] fetchEntry:', error.message); return null; }
-  return data ? { score: data.score as number, state: (data.state ?? {}) as Record<string, unknown> } : null;
+  if (error) { console.warn('[cloud] fetchEntry:', error.message); throw new Error(`fetchEntry: ${error.message}`); }
+  return data ? { score: data.score as number, state: (data.state ?? {}) as Record<string, unknown>, updatedAt: (data.updated_at as string) ?? null } : null;
 }
 
 // ── Leagues (public + private, join-by-code) ─────────────────────────────────
@@ -171,57 +174,97 @@ export interface CloudBoardRow {
   viceCaptain: string | null;
 }
 
-// The leaderboard for a league = its members' entries for the tournament, joined to
-// their (safe) profiles. Membership-based: read the league's members, then their
-// entries. Works for the public global league (everyone is a member) and any private
-// league you belong to. (Score is client-sourced from the snapshot until the server
-// scorer is live; the board swaps to the authoritative entries.score column then.)
-export async function fetchLeaderboard(leagueId: string, tournamentId: string): Promise<CloudBoardRow[]> {
-  if (!supabase) return [];
-  const { data: members, error: memberError } = await supabase
-    .from('league_members').select('user_id').eq('league_id', leagueId);
-  if (memberError) { console.warn('[cloud] fetchLeaderboard members:', memberError.message); return []; }
-  const memberIds = (members ?? []).map(m => m.user_id as string);
-  if (!memberIds.length) return [];
+type EntryRow = { user_id: string; score: number | null; budget: number | null; state: unknown };
+type ProfRow = { id: string; team_name: string | null; team_emblem: string | null; username: string | null };
 
+// Build a board row from a member id + their (optional) entry + (optional) profile.
+// A member with no entry yet still appears — score 0, empty squad — so friends who've
+// joined but not drafted are visible (the "who still needs to pick" signal).
+function boardRow(userId: string, entry: EntryRow | undefined, prof: ProfRow | undefined): CloudBoardRow {
+  const st = (entry?.state ?? {}) as { myTeam?: string[]; captain?: string | null; viceCaptain?: string | null };
+  return {
+    userId,
+    teamName: prof?.team_name || 'Team',
+    teamEmblem: prof?.team_emblem || '🎾',
+    username: prof?.username || '',
+    // Score is the SERVER-authoritative column only (the client can't write `score`).
+    // We deliberately do NOT fall back to the client-written `state.myScore` — that would
+    // be spoofable. Everyone reads 0 until the server scorer runs, then it's truth.
+    score: (entry?.score as number | null) ?? 0,
+    budget: (entry?.budget as number) ?? 0,
+    squad: Array.isArray(st.myTeam) ? st.myTeam : [],
+    captain: st.captain ?? null,
+    viceCaptain: st.viceCaptain ?? null,
+  };
+}
+
+const PUBLIC_BOARD_LIMIT = 250; // top managers shown on the global board (bounded for scale)
+
+// The leaderboard for a league. Two shapes, so the data is always complete AND scalable:
+//  • allMembers (PRIVATE league): one row per MEMBER — including friends who joined but
+//    haven't drafted yet (they show with no squad). Small, so we list everyone.
+//  • otherwise (PUBLIC global league): the top entries by score, read DIRECTLY (never a
+//    full-membership scan — the public league can hold hundreds of thousands of rows).
+// Names come from the public_profiles view (safe columns only; PII stays private).
+export async function fetchLeaderboard(
+  leagueId: string, tournamentId: string, opts: { allMembers?: boolean } = {},
+): Promise<CloudBoardRow[]> {
+  if (!supabase) return [];
+
+  if (opts.allMembers) {
+    const { data: members, error: mErr } = await supabase
+      .from('league_members').select('user_id').eq('league_id', leagueId);
+    if (mErr) { console.warn('[cloud] leaderboard members:', mErr.message); return []; }
+    const ids = (members ?? []).map(m => m.user_id as string);
+    if (!ids.length) return [];
+    const [entriesRes, profsRes] = await Promise.all([
+      supabase.from('entries').select('user_id, score, budget, state').in('user_id', ids).eq('tournament_id', tournamentId),
+      supabase.from('public_profiles').select('id, team_name, team_emblem, username').in('id', ids),
+    ]);
+    if (entriesRes.error) console.warn('[cloud] leaderboard entries:', entriesRes.error.message);
+    const entryBy = new Map((entriesRes.data as EntryRow[] ?? []).map(e => [e.user_id, e]));
+    const profBy = new Map((profsRes.data as ProfRow[] ?? []).map(p => [p.id, p]));
+    return ids.map(uid => boardRow(uid, entryBy.get(uid), profBy.get(uid)));
+  }
+
+  // Public board: prefer the CACHED edge endpoint (/api/leaderboard/:tid) so board reads
+  // scale with the cache, not the user count. Fall back to a direct Supabase query when
+  // it's unavailable (local dev, or before the function is deployed).
+  try {
+    const res = await fetch(`/api/leaderboard/${encodeURIComponent(tournamentId)}`);
+    if (res.ok) {
+      const rows = await res.json();
+      // Require a NON-EMPTY result to trust the cache: an empty [] is ambiguous (a truly
+      // empty board vs. anon can't read yet because public_leaderboard.sql isn't applied),
+      // so fall back to the authenticated direct query, which is always correct.
+      if (Array.isArray(rows) && rows.length > 0) return rows as CloudBoardRow[];
+    }
+  } catch { /* fall through to a direct query */ }
+
+  // Fallback: ranked entries, bounded, direct from Supabase.
   const { data: entries, error } = await supabase
     .from('entries')
     .select('user_id, score, budget, state')
-    .in('user_id', memberIds)
-    .eq('tournament_id', tournamentId);
-  if (error) { console.warn('[cloud] fetchLeaderboard:', error.message); return []; }
-  if (!entries?.length) return [];
-
-  const ids = entries.map(e => e.user_id as string);
-  // Read names from the public_profiles view (safe columns only) — the base profiles
-  // table is locked to own-row reads so PII (first/last name, country) isn't exposed.
+    .eq('tournament_id', tournamentId)
+    .order('score', { ascending: false })
+    .limit(PUBLIC_BOARD_LIMIT);
+  if (error) { console.warn('[cloud] leaderboard:', error.message); return []; }
+  const rows = (entries as EntryRow[] ?? []);
+  if (!rows.length) return [];
+  const ids = rows.map(e => e.user_id);
   const { data: profs } = await supabase
     .from('public_profiles').select('id, team_name, team_emblem, username').in('id', ids);
-  const byId = new Map((profs ?? []).map(p => [p.id, p]));
-
-  return entries.map(e => {
-    const st = (e.state ?? {}) as { myScore?: number; myTeam?: string[]; captain?: string | null; viceCaptain?: string | null };
-    const p = byId.get(e.user_id as string);
-    return {
-      userId: e.user_id as string,
-      teamName: p?.team_name || 'Team',
-      teamEmblem: p?.team_emblem || '🎾',
-      username: p?.username || '',
-      // Prefer the authoritative column once the server sets it; else the snapshot.
-      score: (e.score as number) || (typeof st.myScore === 'number' ? st.myScore : 0),
-      budget: (e.budget as number) ?? 0,
-      squad: Array.isArray(st.myTeam) ? st.myTeam : [],
-      captain: st.captain ?? null,
-      viceCaptain: st.viceCaptain ?? null,
-    };
-  });
+  const profBy = new Map((profs as ProfRow[] ?? []).map(p => [p.id, p]));
+  return rows.map(e => boardRow(e.user_id, e, profBy.get(e.user_id)));
 }
 
+// Returns true on success. Retries once on a transient failure so a squad change isn't
+// silently lost; the caller (CloudSync) can surface a "not saved" state on a false.
 export async function saveEntry(
   userId: string, leagueId: string, tournamentId: string, e: EntryWrite,
-): Promise<void> {
-  if (!supabase) return;
-  const { error } = await supabase.from('entries').upsert({
+): Promise<boolean> {
+  if (!supabase) return false;
+  const row = {
     user_id: userId,
     league_id: leagueId,
     tournament_id: tournamentId,
@@ -232,6 +275,12 @@ export async function saveEntry(
     budget: e.budget,
     state: e.state,
     updated_at: new Date().toISOString(),
-  }, { onConflict: 'user_id,league_id,tournament_id' });
-  if (error) console.warn('[cloud] saveEntry:', error.message);
+  };
+  const opts = { onConflict: 'user_id,league_id,tournament_id' } as const;
+  const { error } = await supabase.from('entries').upsert(row, opts);
+  if (!error) return true;
+  console.warn('[cloud] saveEntry (retrying):', error.message);
+  const { error: retryErr } = await supabase.from('entries').upsert({ ...row, updated_at: new Date().toISOString() }, opts);
+  if (retryErr) { console.warn('[cloud] saveEntry failed:', retryErr.message); return false; }
+  return true;
 }

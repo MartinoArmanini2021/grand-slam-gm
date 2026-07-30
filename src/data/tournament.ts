@@ -1,6 +1,5 @@
 import type { Match, RoundId, TournamentResult } from '../types';
-import { findPlayer, PLAYERS } from './players';
-import { WIMBLEDON_2026, WIMBLEDON_2026_EARLY } from './wimbledon2026';
+import { findPlayer } from './players';
 import { TOURNAMENT, ROUND_META, ROUND_ORDER } from './tournamentConfig';
 import { useLiveStore } from '../store/liveStore';
 import { liveMatches, liveExit, roundComplete } from './liveResults';
@@ -13,52 +12,22 @@ import { liveMatches, liveExit, roundComplete } from './liveResults';
 export const ROUNDS: { id: RoundId; label: string; short: string; points: number }[] =
   TOURNAMENT.rounds.map(id => ({ id, ...ROUND_META[id] }));
 
-// ── The real Wimbledon 2026 draw (R32 → Final) ──────────────────────────────
-// Built from wimbledon2026.ts (Wikipedia-sourced). Names are matched to roster
-// ids accent-insensitively; every last-32 participant exists in PLAYERS.
-const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
-const ID_BY_NAME = new Map(PLAYERS.map(p => [norm(p.name), p.id]));
-export const unmappedBracketNames: string[] = [];
-const toId = (name: string): string => {
-  const id = ID_BY_NAME.get(norm(name));
-  if (!id) { unmappedBracketNames.push(name); return norm(name); }
-  return id;
-};
-
-// The whole draw is now scored — R128 → Final. Early-round opponents who aren't
-// in the 52-player roster map to a synthetic id (they're never drafted); scoring
-// tolerates that (see winPoints/upsetBonus, which use the safe findPlayer).
-export const MATCHES: Match[] = [...WIMBLEDON_2026_EARLY, ...WIMBLEDON_2026].map(m => ({
-  id: `${m.round.toLowerCase()}_${m.slot}`,
-  round: m.round as RoundId,
-  p1Id: toId(m.p1.name),
-  p2Id: toId(m.p2.name),
-  winnerId: toId(m.winner),
-  score: m.score,
-}));
-
-// The matches the app scores right now. In replay mode that's the baked draw; in
-// live mode it's the completed matches projected from the live store (unplayed
-// matches are simply absent until their result is recorded). Every scoring/display
-// helper below reads through this, so the engine is identical in both modes — only
-// the source of results differs.
+// ── The live tournament's results ────────────────────────────────────────────
+// The app is LIVE-only: the draw's pairings and each result arrive over time (from
+// the feed / admin panel) into the live store. Until they do there simply are no
+// matches — "not decided yet" is a real, first-class state. Every scoring/display
+// helper below reads through activeMatches()/rawExit(), so the engine is agnostic to
+// how many results have landed.
 function activeMatches(): Match[] {
-  if (TOURNAMENT.mode === 'live') {
-    const { draw, results } = useLiveStore.getState();
-    return liveMatches(draw, results);
-  }
-  return MATCHES;
+  const { draw, results } = useLiveStore.getState();
+  return liveMatches(draw, results);
 }
 
-// A player's exit for the ACTIVE tournament: the baked Wimbledon field in replay
-// mode ('W' = champion, undefined = unknown id), or derived from recorded live
-// results in live mode (null = still alive / champion).
-function rawExit(playerId: string): TournamentResult | 'W' | null | undefined {
-  if (TOURNAMENT.mode === 'live') {
-    const { draw, results } = useLiveStore.getState();
-    return liveExit(draw, results, playerId);
-  }
-  return findPlayer(playerId)?.exit;
+// The round a player was knocked out in, derived from the recorded live results
+// (null = still alive, or the champion).
+function rawExit(playerId: string): TournamentResult | null {
+  const { draw, results } = useLiveStore.getState();
+  return liveExit(draw, results, playerId);
 }
 
 export const getMatchesForRound = (round: RoundId) =>
@@ -74,15 +43,24 @@ export const getMatchesForRound = (round: RoundId) =>
 export const TRANSFER_LOCK_INDEX = ROUNDS.length - 1;
 export const transfersOpen = (currentRoundIndex: number) => currentRoundIndex < TRANSFER_LOCK_INDEX;
 
-// Can the round at this index be played (scored) yet? In live mode a round is only
-// playable once the real world has finished it — every pairing has a recorded
-// result. In replay mode the baked draw is always complete, so this is always true.
+// Can the round at this index be played (scored) yet? A round is playable only once
+// the real world has finished it. Two guards, because the live draw is published
+// INCREMENTALLY by the feed:
+//   1. every pairing currently in the draw for this round has a recorded result, AND
+//   2. the NEXT round's pairings have been drawn — the feed publishes those as the
+//      current round resolves, so their presence proves the current round is fully
+//      played, not just partially published. (Without this, a round showing only a
+//      few decided pairings would look "complete" and silently drop the points of a
+//      still-alive player whose match hasn't been published yet.)
+// The final round needs only its own pairing decided. Before the draw exists, nothing
+// is playable.
 export function roundPlayable(roundIndex: number): boolean {
-  if (TOURNAMENT.mode !== 'live') return true;
   const round = ROUNDS[roundIndex];
   if (!round) return false;
   const { draw, results } = useLiveStore.getState();
-  return roundComplete(draw, results, round.id);
+  if (!roundComplete(draw, results, round.id)) return false;
+  const next = ROUNDS[roundIndex + 1];
+  return !next || draw.some(m => m.round === next.id);
 }
 
 // A player's opponent in a given round (null if they weren't in it).
@@ -95,11 +73,14 @@ export function getOpponentId(playerId: string, round: RoundId): string | null {
 // Upset bonus: reward a lower-ranked player for beating a higher-ranked one.
 // The bigger the ranking gap, the bigger the bonus (capped at +15).
 export function upsetBonus(winnerId: string, loserId: string): number {
-  // findPlayer (not getPlayer) — an early-round opponent may be off-roster and
-  // have no ranking; treat that as "no upset" rather than throwing.
-  const w = findPlayer(winnerId)?.ranking;
+  // Symmetric with the server engine (serverEngine.ts / recompute-score): an unknown
+  // WINNER — which never happens in practice, since squad winners are always rostered —
+  // defaults to a neutral rank 40; an unknown LOSER (an off-roster early-round opponent)
+  // yields NO upset, because we can't know it was one. findPlayer (not getPlayer) so a
+  // missing id never throws.
+  const w = findPlayer(winnerId)?.ranking ?? 40;
   const l = findPlayer(loserId)?.ranking;
-  if (!w || !l || w <= l) return 0; // winner is equal/higher-ranked → no upset
+  if (l == null || w <= l) return 0; // unknown loser, or winner equal/higher-ranked → no upset
   return Math.min(15, Math.round((w - l) * 0.4));
 }
 

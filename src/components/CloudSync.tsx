@@ -1,11 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../auth/AuthProvider';
-import { useProfile } from '../store/profileStore';
-import { useGameStore } from '../store/gameStore';
+import { useProfile, markTournamentJoined } from '../store/profileStore';
+import { useGameStore, sanitizeState } from '../store/gameStore';
+import { useSync } from '../store/syncStore';
 import { TOURNAMENT } from '../data/tournamentConfig';
-import { findPlayer } from '../data/players';
-import { STARTING_BUDGET } from '../data/squadRules';
-import { round1 } from '../data/format';
 import {
   fetchProfile, saveProfile, type CloudProfile,
   publicLeagueId, fetchEntry, saveEntry, type EntryWrite,
@@ -19,6 +17,10 @@ import {
 // a value the cloud already has wins (cross-device), otherwise the local value is
 // kept and pushed up (so anything entered while playing as a guest isn't lost).
 // After that: debounce-save profile edits back to the cloud.
+
+// Record when we last successfully pushed this tournament's entry to the cloud, so the
+// hydrate can tell whether the cloud copy is newer than local (freshest-wins).
+const markSaved = () => { try { localStorage.setItem(`gsgm-entry-ts-${TOURNAMENT.id}`, String(Date.now())); } catch { /* ignore */ } };
 
 const toCloud = (s: ReturnType<typeof useProfile.getState>): CloudProfile => ({
   username: s.username || null,
@@ -53,13 +55,9 @@ export default function CloudSync() {
   const hydratedFor = useRef<string | null>(null);
   // Game-entry sync state.
   const gameHydratedFor = useRef<string | null>(null);
-  const phase = useGameStore(s => s.phase);
-  const myTeam = useGameStore(s => s.myTeam);
-  const currentRoundIndex = useGameStore(s => s.currentRoundIndex);
-  const captainHistory = useGameStore(s => s.captainHistory);
-  const budget = useGameStore(s => s.budget);
-  const transfers = useGameStore(s => s.transfers);
-  const roundScores = useGameStore(s => s.roundScores);
+  // True only while WE apply the cloud snapshot, so the store subscription below can tell
+  // a cloud restore apart from a real user edit (a restore must not flag "unsaved").
+  const applyingCloud = useRef(false);
 
   // Hydrate + merge on login.
   useEffect(() => {
@@ -81,7 +79,7 @@ export default function CloudSync() {
         teamName: cloud?.team_name && cloud.team_name !== 'My Team' ? cloud.team_name : local.teamName,
         teamEmblem: cloud?.team_emblem && cloud.team_emblem !== '🎾' ? cloud.team_emblem : local.teamEmblem,
       };
-      local.set(merged);
+      local.set({ ...merged, hydrated: true }); // signal to App that the profile is loaded (see the set-your-name prompt)
       hydratedFor.current = user.id;
       // Push the merged result up so guest-entered data lands in the cloud.
       await saveProfile(user.id, toCloud(useProfile.getState()));
@@ -98,44 +96,105 @@ export default function CloudSync() {
 
   // Hydrate the game entry on login. Cloud state wins (cross-device); if the cloud
   // has no entry yet but this device has a squad in progress, push it up so nothing
-  // played as a guest is lost.
+  // played as a guest is lost. Always flips profile.entryHydrated so the onboarding
+  // gate (App) knows the cloud verdict is in — and a returning player who already has
+  // a cloud entry is marked "joined" so the Join gate is never shown to them again.
   useEffect(() => {
     if (!user) { gameHydratedFor.current = null; return; }
     if (gameHydratedFor.current === user.id) return;
     let cancelled = false;
-    (async () => {
-      const lid = await publicLeagueId();
-      if (!lid || cancelled) return;
-      const entry = await fetchEntry(user.id, lid, TOURNAMENT.id);
-      if (cancelled) return;
-      const hasCloud = entry && entry.state && Object.keys(entry.state).length > 0;
-      if (hasCloud) {
-        useGameStore.setState(entry!.state);            // restore this device from cloud
-        // Existing accounts may carry a budget from the old $100 / 8-player era; for
-        // an in-progress draft, re-derive it from the squad + current price curve.
-        const st = useGameStore.getState();
-        if (st.phase === 'draft') {
-          const spent = st.myTeam.reduce((sum, id) => sum + (findPlayer(id)?.price ?? 0), 0);
-          useGameStore.setState({ budget: round1(STARTING_BUDGET - spent) });
-        }
-        useGameStore.getState().ensureLeaders(); // always field two on-court leaders
-      } else if (useGameStore.getState().myTeam.length > 0) {
-        await saveEntry(user.id, lid, TOURNAMENT.id, gameSnapshot()); // first push-up
+    // Hard timeout: Supabase fetches over a flaky mobile network can hang without ever
+    // rejecting, which would strand the user on the gate's "Loading…" forever. If the
+    // hydrate doesn't settle in 8s, resolve the gate defensively (entryLoadFailed
+    // suppresses the destructive reset) so the app always renders.
+    const bail = window.setTimeout(() => {
+      if (!cancelled && gameHydratedFor.current !== user.id) {
+        gameHydratedFor.current = user.id;
+        useProfile.getState().set({ entryLoadFailed: true, entryHydrated: true });
       }
-      gameHydratedFor.current = user.id;
+    }, 8000);
+    (async () => {
+      try {
+        const lid = await publicLeagueId();
+        if (cancelled || !lid) return; // accounts not configured / no public league
+        const entry = await fetchEntry(user.id, lid, TOURNAMENT.id); // throws on load failure
+        if (cancelled) return;
+        const hasCloud = entry && entry.state && Object.keys(entry.state).length > 0;
+        // Freshest-wins: never let an OLDER cloud snapshot clobber newer local progress
+        // (e.g. edits made offline that reached localStorage but not the cloud). Apply the
+        // cloud only when it's strictly newer than our last successful push, OR when this
+        // device has no squad to lose (a fresh device restoring from cloud).
+        const localTs = Number(localStorage.getItem(`gsgm-entry-ts-${TOURNAMENT.id}`)) || 0;
+        const cloudTs = entry?.updatedAt ? Date.parse(entry.updatedAt) : 0;
+        const localEmpty = useGameStore.getState().myTeam.length === 0;
+        if (hasCloud && (cloudTs > localTs || localEmpty)) {
+          // Sanitize BEFORE applying: the cloud snapshot can hold ids removed from the
+          // roster since it was saved, an out-of-range round index, or an eliminated
+          // leader — sanitizeState drops/repairs all of that (same path as localStorage),
+          // re-derives the draft budget, and re-fields two alive leaders.
+          const restored = { ...entry!.state } as Partial<ReturnType<typeof useGameStore.getState>>;
+          sanitizeState(restored);
+          applyingCloud.current = true;
+          useGameStore.setState(restored);              // restore this device from cloud
+          applyingCloud.current = false;
+          useSync.getState().setStatus('saved');        // in sync with the cloud
+          markTournamentJoined(TOURNAMENT.id);          // they already have an entry → already joined
+        } else if (hasCloud) {
+          markTournamentJoined(TOURNAMENT.id);          // entry exists → joined; keep newer local, push it up
+          if (await saveEntry(user.id, lid, TOURNAMENT.id, gameSnapshot())) markSaved();
+        } else if (useGameStore.getState().myTeam.length > 0) {
+          if (await saveEntry(user.id, lid, TOURNAMENT.id, gameSnapshot())) markSaved(); // first push-up
+        }
+      } catch (err) {
+        // We could NOT determine the cloud entry. Suppress the onboarding gate (whose
+        // fresh-start reset would overwrite a squad we merely failed to load); a reload
+        // re-attempts the fetch. Never treat "load failed" as "brand-new player".
+        if (!cancelled) { console.warn('[cloud] game-entry hydrate failed:', err); useProfile.getState().set({ entryLoadFailed: true }); }
+      } finally {
+        // Always resolve the gate so a signed-in user can never get stuck on "Loading…".
+        if (!cancelled) { window.clearTimeout(bail); gameHydratedFor.current = user.id; useProfile.getState().set({ entryHydrated: true }); }
+      }
     })();
-    return () => { cancelled = true; };
+    return () => { cancelled = true; window.clearTimeout(bail); };
   }, [user]);
 
-  // Debounced save of the game entry on any scoring-relevant change.
-  useEffect(() => {
+  // Save the current squad to the cloud NOW, driving the visible save status. Used by
+  // both the debounce below and the manual Save button (via useSync.saveNow).
+  const doSave = useCallback(async () => {
     if (!user || gameHydratedFor.current !== user.id) return;
-    const t = setTimeout(async () => {
+    useSync.getState().setStatus('saving');
+    try {
       const lid = await publicLeagueId();
-      if (lid) await saveEntry(user.id, lid, TOURNAMENT.id, gameSnapshot());
-    }, 1000);
-    return () => clearTimeout(t);
-  }, [user, phase, myTeam, currentRoundIndex, captainHistory, budget, transfers, roundScores]);
+      const ok = lid ? await saveEntry(user.id, lid, TOURNAMENT.id, gameSnapshot()) : false;
+      if (ok) { markSaved(); useSync.getState().setStatus('saved'); }
+      else useSync.getState().setStatus('error');
+    } catch { useSync.getState().setStatus('error'); }
+  }, [user]);
+
+  // Expose an immediate save for the Save button.
+  useEffect(() => { useSync.getState().setSaveNow(() => { void doSave(); }); }, [doSave]);
+
+  // Watch the persisted game state. A real USER edit (incl. captain/vice — which the old
+  // field-list deps missed) flags the squad "unsaved" and debounces a save; a cloud
+  // restore (applyingCloud) is ignored so it never shows as unsaved.
+  useEffect(() => {
+    const snap = (s: ReturnType<typeof useGameStore.getState>) => JSON.stringify([
+      s.myTeam, s.captain, s.viceCaptain, s.phase, s.currentRoundIndex,
+      s.budget, s.transfers, s.captainHistory, s.roundScores,
+    ]);
+    let prev = snap(useGameStore.getState());
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const unsub = useGameStore.subscribe((state) => {
+      const cur = snap(state);
+      if (cur === prev) return;
+      prev = cur;
+      if (applyingCloud.current || !user || gameHydratedFor.current !== user.id) return;
+      useSync.getState().markDirty();
+      clearTimeout(timer);
+      timer = setTimeout(() => { void doSave(); }, 1000);
+    });
+    return () => { unsub(); clearTimeout(timer); };
+  }, [user, doSave]);
 
   return null;
 }

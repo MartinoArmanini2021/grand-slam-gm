@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGameStore } from './store/gameStore';
+import { track } from './data/analytics';
 import { ROUNDS } from './data/tournament';
 import HomePage from './pages/HomePage';
 import DraftPage from './pages/DraftPage';
@@ -13,10 +14,16 @@ import HowToPlay from './components/HowToPlay';
 import Logo from './components/Logo';
 import { NAV_ICONS } from './components/NavIcons';
 import AuthScreen from './components/AuthScreen';
+import JoinTournament from './components/JoinTournament';
+import TournamentSwitcher from './components/TournamentSwitcher';
 import UserProfile from './components/UserProfile';
 import ErrorBoundary from './components/ErrorBoundary';
 import CloudSync from './components/CloudSync';
 import { useAuth } from './auth/AuthProvider';
+import { useProfile, markTournamentJoined } from './store/profileStore';
+import { TOURNAMENT } from './data/tournamentConfig';
+import { joinLeague } from './data/cloud';
+import { toast } from './store/toastStore';
 
 const NAVY = 'var(--ink)';
 
@@ -35,13 +42,79 @@ export default function App() {
   const currentRound = currentRoundIndex < ROUNDS.length ? ROUNDS[currentRoundIndex] : null;
   const [showRules, setShowRules] = useState(() => !seenRules());
   const [showProfile, setShowProfile] = useState(false);
-  const { ready, user, guest } = useAuth();
+  const [welcome, setWelcome] = useState(false); // show the celebratory Home overlay right after joining
+  const { ready, user } = useAuth();
   const tabs = TABS; // Match Admin is disabled until player roles & permissions are defined
+
+  // Onboarding gate: has this player joined the ACTIVE tournament yet? A fresh
+  // tournament id is absent from joinedTournaments, so they onboard (and get a
+  // clean squad) once per event. For signed-in players we wait on the cloud verdict
+  // (entryHydrated) so a returning player with a saved entry never sees the gate.
+  const joinedFlag = useProfile(s => s.joinedTournaments.includes(TOURNAMENT.id));
+  const entryHydrated = useProfile(s => s.entryHydrated);
+  const entryLoadFailed = useProfile(s => s.entryLoadFailed);
+  // Migration / safety: anyone who ALREADY has a squad or has moved past the draft for
+  // this tournament has effectively joined — never show them the gate (its reset would
+  // wipe their in-progress squad). Covers players who drafted before this gate existed.
+  const hasProgress = useGameStore(s => s.myTeam.length > 0 || s.phase !== 'draft' || s.currentRoundIndex > 0);
+  const joined = joinedFlag || hasProgress;
+  // Persist that inferred join so it survives even if they later reset their squad.
+  useEffect(() => { if (hasProgress && !joinedFlag) markTournamentJoined(TOURNAMENT.id); }, [hasProgress, joinedFlag]);
+  // The welcome overlay is a one-shot: if the player navigates off Home it's spent, so
+  // it never re-appears on a later Home visit within the session.
+  useEffect(() => { if (activeTab !== 'home') setWelcome(false); }, [activeTab]);
+
+  // Deep-link invite: capture ?join=CODE once, strip it from the URL, and stash it.
+  useEffect(() => {
+    try {
+      const u = new URL(window.location.href);
+      const code = u.searchParams.get('join');
+      if (code) {
+        sessionStorage.setItem('gsgm-pending-join', code.toUpperCase());
+        u.searchParams.delete('join');
+        window.history.replaceState({}, '', u.toString());
+      }
+    } catch { /* ignore */ }
+  }, []);
+  // Apply a pending invite once the player is signed in AND inside the app (so the
+  // toast + tab switch land where they can see them). Guests keep it pending until they
+  // create an account, at which point it applies automatically.
+  useEffect(() => {
+    if (!user || !joined) return;
+    let code: string | null = null;
+    try { code = sessionStorage.getItem('gsgm-pending-join'); } catch { /* ignore */ }
+    if (!code) return;
+    const clearPending = () => { try { sessionStorage.removeItem('gsgm-pending-join'); } catch { /* ignore */ } };
+    (async () => {
+      try {
+        const { name } = await joinLeague(code!);
+        clearPending(); // only drop the code AFTER a successful join
+        toast(`Joined ${name}! 🎾 You're on their leaderboard.`, 'good');
+        track('league_joined', { via: 'link' });
+        setActiveTab('league');
+      } catch (e) {
+        const msg = (e instanceof Error ? e.message : '').toLowerCase();
+        if (msg.includes('no league') || msg.includes('not found')) {
+          clearPending(); // genuinely bad/expired code — stop trying
+          toast('That invite link is invalid or expired.', 'warn');
+        } else {
+          // transient (network) — keep it pending so it retries on the next load
+          toast("Couldn't join the league right now — we'll retry when you're back online.", 'info');
+        }
+      }
+    })();
+  }, [user, joined, setActiveTab]);
+
+  // Each screen the user opens is a "page view" for analytics (SPA — no URL changes).
+  useEffect(() => { if (user) track('tab_view', { tab: activeTab }); }, [activeTab, user]);
+
+  // (No post-join name prompt — the Join gate already collects the team name + handle,
+  // so a new player lands straight in the game. Profile edits live behind the header icon.)
 
   const closeRules = () => { setShowRules(false); markSeen(); };
 
   // Auth gate — while checking the session, then the login screen until the
-  // visitor signs in or chooses to continue as a guest.
+  // visitor signs in or creates an account (an account is required to play).
   if (!ready) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--ink)' }}>
@@ -49,11 +122,62 @@ export default function App() {
       </div>
     );
   }
-  if (!user && !guest) return <AuthScreen />;
+  if (!user) return <AuthScreen />;
+
+  // Signed-in: hold briefly until CloudSync reports whether a cloud entry exists, so a
+  // returning player is never flashed the join gate (which would offer a fresh start).
+  const awaitingCloud = !joined && !entryHydrated && !entryLoadFailed;
+  // Never show the gate if we couldn't confirm the cloud state — its reset could wipe a
+  // squad we failed to load; a reload re-checks.
+  const showJoinGate = !joined && !awaitingCloud && !entryLoadFailed;
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
+    <>
+      {/* CloudSync is mounted for every signed-in session — including during the gate —
+          so entryHydrated resolves and the gate can make its decision. */}
       <CloudSync />
+      {awaitingCloud ? (
+        <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--ink)' }}>
+          <div className="flex flex-col items-center gap-3 fade-in">
+            <Logo height={40} reversed />
+            <span className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--on-navy-2)' }}>
+              <span className="w-1.5 h-1.5 rounded-full pulse-dot" style={{ background: 'var(--green-bright)', display: 'inline-block' }} />
+              Loading…
+            </span>
+          </div>
+        </div>
+      ) : showJoinGate ? (
+        // The Join + Welcome flow IS the onboarding, so don't also pop the first-run
+        // rules modal on top of it (the "?" button still opens it anytime).
+        <JoinTournament onJoined={() => { setActiveTab('home'); setWelcome(true); setShowRules(false); markSeen(); }} />
+      ) : (
+        <AppShell
+          tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab}
+          phase={phase} myScore={myScore} currentRound={currentRound}
+          showRules={showRules} setShowRules={setShowRules}
+          showProfile={showProfile} setShowProfile={setShowProfile}
+          closeRules={closeRules}
+          welcome={welcome} onWelcomeClose={() => setWelcome(false)}
+        />
+      )}
+    </>
+  );
+}
+
+function AppShell({
+  tabs, activeTab, setActiveTab, phase, myScore, currentRound,
+  showRules, setShowRules, showProfile, setShowProfile, closeRules, welcome, onWelcomeClose,
+}: {
+  tabs: typeof TABS;
+  activeTab: ReturnType<typeof useGameStore.getState>['activeTab'];
+  setActiveTab: (t: ReturnType<typeof useGameStore.getState>['activeTab']) => void;
+  phase: string; myScore: number; currentRound: { short: string } | null;
+  showRules: boolean; setShowRules: (v: boolean) => void;
+  showProfile: boolean; setShowProfile: (v: boolean) => void;
+  closeRules: () => void; welcome: boolean; onWelcomeClose: () => void;
+}) {
+  return (
+    <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
       {/* ── ATP-style navy header ── */}
       <header className="sticky top-0 z-50" style={{ background: NAVY, boxShadow: '0 1px 0 rgba(255,255,255,0.06), 0 6px 20px rgba(10,27,51,0.18)' }}>
         <div className="w-full px-3 sm:px-5">
@@ -78,7 +202,7 @@ export default function App() {
                     onClick={() => setActiveTab(tab.id)}
                     aria-label={tab.label}
                     aria-current={active ? 'page' : undefined}
-                    className="relative flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-all shrink-0 whitespace-nowrap"
+                    className="relative flex items-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-xl text-sm font-bold transition-all shrink-0 whitespace-nowrap"
                     style={{
                       color: active ? '#fff' : '#9FB0CC',
                       background: active ? 'rgba(255,255,255,0.13)' : 'transparent',
@@ -118,10 +242,11 @@ export default function App() {
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
+              <TournamentSwitcher />
               <button
-                onClick={() => setShowRules(true)}
+                onClick={() => { track('howtoplay_opened'); setShowRules(true); }}
                 aria-label="How to play"
-                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors"
+                className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold transition-colors"
                 style={{ background: 'rgba(255,255,255,0.12)', color: '#B9C6DA' }}
                 onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
                 onMouseLeave={e => (e.currentTarget.style.color = '#B9C6DA')}
@@ -133,7 +258,7 @@ export default function App() {
                 onClick={() => setShowProfile(true)}
                 aria-label="Your profile"
                 title="Your profile"
-                className="w-7 h-7 rounded-full flex items-center justify-center transition-colors"
+                className="w-11 h-11 rounded-full flex items-center justify-center transition-colors"
                 style={{ background: 'rgba(255,255,255,0.12)', color: '#B9C6DA' }}
                 onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
                 onMouseLeave={e => (e.currentTarget.style.color = '#B9C6DA')}
@@ -150,7 +275,7 @@ export default function App() {
 
       <main className="fade-in">
         <ErrorBoundary>
-          {activeTab === 'home'       && <HomePage />}
+          {activeTab === 'home'       && <HomePage welcome={welcome} onWelcomeClose={onWelcomeClose} />}
           {activeTab === 'draft'      && <DraftPage />}
           {activeTab === 'tournament' && <TournamentPage />}
           {activeTab === 'league'     && <LeaguePage />}

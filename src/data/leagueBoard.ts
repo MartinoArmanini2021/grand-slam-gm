@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { useAuth } from '../auth/AuthProvider';
+import { findPlayer } from './players';
 import { TOURNAMENT } from './tournamentConfig';
 import { publicLeagueId, fetchLeaderboard, fetchMyLeagues, type CloudBoardRow, type MyLeague } from './cloud';
 
@@ -36,7 +37,9 @@ function useCloudBoard(leagueId: string | null): CloudBoardRow[] {
     const load = async () => {
       const lid = leagueId ?? await publicLeagueId();
       if (!lid || cancelled) return;
-      const r = await fetchLeaderboard(lid, TOURNAMENT.id);
+      // A specific (private) league lists EVERY member — including friends who joined but
+      // haven't drafted. The public global board shows the ranked field.
+      const r = await fetchLeaderboard(lid, TOURNAMENT.id, { allMembers: leagueId !== null });
       if (!cancelled) setRows(r);
     };
     void load();
@@ -50,27 +53,36 @@ function useCloudBoard(leagueId: string | null): CloudBoardRow[] {
 // Only REAL players: the league's signed-in members from the cloud, plus your own
 // team. No AI bots. Shared by the Home leaderboard and the League page.
 export function useLeagueBoard(leagueId: string | null = null): BoardEntry[] {
-  const { myTeam, myScore, budget } = useGameStore();
+  const { myTeam, myScore, budget, captain, viceCaptain } = useGameStore();
   const { teamName, teamEmblem, username } = useProfile();
   const { user } = useAuth();
   const cloud = useCloudBoard(leagueId);
 
-  // Real other players (exclude yourself — your live local row represents you).
+  // Real other players (exclude yourself — your live local row represents you). Their
+  // cloud squad is sanitized against the CURRENT roster: a foreign entry can hold a
+  // player id removed from the field since it was saved, and the detail views resolve
+  // ids with the throwing getPlayer() — an unfiltered stale id would white-screen the
+  // League/Team page. (Own state is already sanitized on hydrate.)
   const cloudRows: BoardEntry[] = cloud
     .filter(r => r.userId !== user?.id)
     .map(r => ({
       id: r.userId, name: r.teamName, emblem: r.teamEmblem,
       manager: r.username ? `@${r.username}` : '@player',
-      motto: '', color: colorFor(r.userId), squad: r.squad, budget: r.budget, score: r.score, you: false,
-      captain: r.captain, viceCaptain: r.viceCaptain,
+      motto: '', color: colorFor(r.userId), squad: r.squad.filter(id => !!findPlayer(id)),
+      budget: r.budget, score: r.score, you: false,
+      captain: r.captain && findPlayer(r.captain) ? r.captain : null,
+      viceCaptain: r.viceCaptain && findPlayer(r.viceCaptain) ? r.viceCaptain : null,
     }));
 
+  // Always show YOUR OWN row once you're signed in — even before you've drafted
+  // (empty squad → "No squad yet"). A freshly-created account must see itself on the
+  // board immediately; we filter the cloud copy of you (above) so this is the only one.
   const board: BoardEntry[] = [
     ...cloudRows,
-    ...(myTeam.length > 0 ? [{
+    ...(user ? [{
       id: 'you', name: teamName, emblem: teamEmblem, manager: username ? `@${username}` : '@you',
-      motto: 'Your squad', color: '#0e6fc4', squad: myTeam, budget, score: myScore, you: true,
-      captain: useGameStore.getState().captain, viceCaptain: useGameStore.getState().viceCaptain,
+      motto: myTeam.length > 0 ? 'Your squad' : 'Draft your squad', color: '#0e6fc4',
+      squad: myTeam, budget, score: myScore, you: true, captain, viceCaptain,
     }] : []),
   ];
 

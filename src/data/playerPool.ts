@@ -18,6 +18,18 @@ export interface PoolPlayer {
   country: string;   // display name
   flag: string;      // emoji
   photoUrl: string;  // official ATP headshot
+  // ── real last-12-month stats (added by scripts/refresh-stats.mjs) ──────────
+  // Optional/nullable: present only after a stats refresh; null when Sackmann has
+  // no data for that player in the window. Never fabricated — see the script.
+  age?: number | null;
+  hand?: 'R' | 'L';
+  price?: number;                                          // millions, priceFor(rank)
+  surface?: { hard: number | null; clay: number | null; grass: number | null } | null;
+  ytd?: { wins: number; losses: number; titles: number } | null;
+  statsYear?: number;                                      // which season `ytd`/`surface` describe (2026 = current)
+  // Per-tournament 2026 results (round reached at each M500/M1000/Slam), newest/biggest
+  // first — shape matches YearResult so it drops straight into the player page.
+  results2026?: { tournament: string; surface: string; short: string; result: string }[];
 }
 
 export const PLAYER_POOL = poolRaw as PoolPlayer[];

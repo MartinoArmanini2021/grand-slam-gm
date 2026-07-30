@@ -4,10 +4,11 @@ import { useAuth } from '../auth/AuthProvider';
 import { useGameStore } from '../store/gameStore';
 import { toast } from '../store/toastStore';
 import { useEscapeToClose } from '../hooks';
+import CountrySelect from './CountrySelect';
 
 export default function UserProfile({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { firstName, lastName, username, phone, country, email, teamName, teamEmblem, set } = useProfile();
-  const { user, guest, enabled, signOut, updatePassword } = useAuth();
+  const { user, enabled, signOut, updatePassword } = useAuth();
   const openTeam = useGameStore(s => s.openTeam);
   const resetGame = useGameStore(s => s.resetGame);
 
@@ -31,8 +32,10 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
   const accountEmail = user?.email ?? '';
   const field = { background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.12)', color: 'var(--ink)' } as const;
   const initials = ((firstName[0] ?? '') + (lastName[0] ?? '')) || (username[0] ?? accountEmail[0] ?? 'U');
-  // Required for the live league: username, name, surname, email, phone, country.
-  const incomplete = [username, firstName, lastName, accountEmail || email, phone, country].some(v => !v.trim());
+  // What actually matters + syncs to your account (and distinguishes you to friends):
+  // username, name, country. Phone isn't stored server-side, so it's optional — asking
+  // for it "required" while silently discarding it would be dishonest.
+  const incomplete = [username, firstName, lastName, accountEmail || email, country].some(v => !v.trim());
   const reqStyle = (v: string) => (v.trim() ? field : { ...field, border: '1px solid rgba(229,71,43,0.55)' });
 
   const changePassword = async (): Promise<boolean> => {
@@ -66,7 +69,7 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
             <div className="text-white font-extrabold text-base leading-tight truncate">
               {firstName || lastName ? `${firstName} ${lastName}`.trim() : (username || 'Your profile')}
             </div>
-            <div className="text-xs font-num truncate" style={{ color: 'var(--on-navy)' }}>{accountEmail || email || (guest ? 'Guest' : '')}</div>
+            <div className="text-xs font-num truncate" style={{ color: 'var(--on-navy)' }}>{accountEmail || email || ''}</div>
           </div>
           <button onClick={onClose} className="text-white text-sm font-bold px-3 py-1.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.15)' }}>Done</button>
         </div>
@@ -78,14 +81,14 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
             </div>
           )}
           <Row label="Username" req>
-            <input value={username} onChange={e => set({ username: e.target.value })} placeholder="Pick a username" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={reqStyle(username)} />
+            <input value={username} onChange={e => set({ username: e.target.value })} placeholder="Pick a username" className="w-full text-sm px-3 py-2.5 rounded-xl" style={reqStyle(username)} />
           </Row>
           <div className="grid grid-cols-2 gap-3">
             <Row label="First name" req>
-              <input value={firstName} onChange={e => set({ firstName: e.target.value })} placeholder="First name" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={reqStyle(firstName)} />
+              <input value={firstName} onChange={e => set({ firstName: e.target.value })} placeholder="First name" className="w-full text-sm px-3 py-2.5 rounded-xl" style={reqStyle(firstName)} />
             </Row>
             <Row label="Surname" req>
-              <input value={lastName} onChange={e => set({ lastName: e.target.value })} placeholder="Surname" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={reqStyle(lastName)} />
+              <input value={lastName} onChange={e => set({ lastName: e.target.value })} placeholder="Surname" className="w-full text-sm px-3 py-2.5 rounded-xl" style={reqStyle(lastName)} />
             </Row>
           </div>
           <Row label="Email" req>
@@ -95,15 +98,15 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(18,161,80,0.12)', color: 'var(--green)' }}>VERIFIED</span>
               </div>
             ) : (
-              <input value={email} onChange={e => set({ email: e.target.value })} placeholder="you@email.com" type="email" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={reqStyle(email)} />
+              <input value={email} onChange={e => set({ email: e.target.value })} placeholder="you@email.com" type="email" className="w-full text-sm px-3 py-2.5 rounded-xl" style={reqStyle(email)} />
             )}
           </Row>
           <div className="grid grid-cols-2 gap-3">
-            <Row label="Phone" req>
-              <input value={phone} onChange={e => set({ phone: e.target.value })} placeholder="+00 000 000" type="tel" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={reqStyle(phone)} />
+            <Row label="Phone">
+              <input value={phone} onChange={e => set({ phone: e.target.value })} placeholder="Optional" type="tel" className="w-full text-sm px-3 py-2.5 rounded-xl" style={field} />
             </Row>
             <Row label="Country" req>
-              <input value={country} onChange={e => set({ country: e.target.value })} placeholder="Country" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={reqStyle(country)} />
+              <CountrySelect value={country} onChange={v => set({ country: v })} />
             </Row>
           </div>
 
@@ -152,9 +155,9 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
             )}
           </div>
 
-          {(user || guest) && (
+          {user && (
             <button onClick={() => { signOut(); onClose(); }} className="w-full py-2.5 rounded-xl text-sm font-bold" style={{ background: 'rgba(229,71,43,0.1)', color: 'var(--ember)', border: '1px solid rgba(229,71,43,0.25)' }}>
-              {user ? 'Sign out' : 'Exit guest & sign in'}
+              Sign out
             </button>
           )}
         </div>
@@ -170,8 +173,8 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
             <button onClick={() => setShowPw(false)} className="text-sm font-bold px-2.5 py-1 rounded-lg" style={{ background: 'var(--raised)', color: 'var(--ink-2)' }}>✕</button>
           </div>
           <div className="space-y-2">
-            <input value={newPw} onChange={e => setNewPw(e.target.value)} type="password" placeholder="New password" autoComplete="new-password" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={field} />
-            <input value={confirmPw} onChange={e => setConfirmPw(e.target.value)} type="password" placeholder="Confirm new password" autoComplete="new-password" className="w-full text-sm outline-none px-3 py-2.5 rounded-xl" style={field} />
+            <input value={newPw} onChange={e => setNewPw(e.target.value)} type="password" placeholder="New password" autoComplete="new-password" className="w-full text-sm px-3 py-2.5 rounded-xl" style={field} />
+            <input value={confirmPw} onChange={e => setConfirmPw(e.target.value)} type="password" placeholder="Confirm new password" autoComplete="new-password" className="w-full text-sm px-3 py-2.5 rounded-xl" style={field} />
             {pwMsg && (
               <div className="text-xs rounded-xl px-3 py-2" style={{ background: pwMsg.ok ? 'rgba(18,161,80,0.08)' : 'rgba(229,71,43,0.08)', color: pwMsg.ok ? 'var(--green)' : '#c0341c', border: `1px solid ${pwMsg.ok ? 'rgba(18,161,80,0.25)' : 'rgba(229,71,43,0.25)'}` }}>{pwMsg.text}</div>
             )}

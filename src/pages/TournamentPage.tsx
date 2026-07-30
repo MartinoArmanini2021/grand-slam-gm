@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useGameStore, eliminatedSquad, substitutionCandidates } from '../store/gameStore';
-import { ROUNDS, getPlayerExit, isPlayerOut, transfersOpen } from '../data/tournament';
+import { ROUNDS, getPlayerExit, isPlayerOut, transfersOpen, roundPlayable } from '../data/tournament';
 import { getPlayer } from '../data/players';
 import { lastName } from '../data/format';
 import type { RoundId } from '../types';
@@ -22,16 +22,23 @@ export default function TournamentPage() {
   const headerRound = phase === 'round_complete' ? (ROUNDS[currentRoundIndex - 1] ?? currentRound) : currentRound;
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
   const aliveSquad = myTeam.filter(id => !isPlayerOut(id, revealed));
-  // Ready to play once a captain is chosen — or when no players remain to
-  // captain (all eliminated), so the tournament can still be played out.
-  const canPlay = phase === 'pre_round' && (!!captain || aliveSquad.length === 0);
+  // A round can be scored only once the real tournament has FINISHED it (every pairing
+  // has a live result). Before the draw is played, nothing is playable — you're locked
+  // in and waiting for the National Bank Open to begin.
+  const playable = currentRound ? roundPlayable(currentRoundIndex) : false;
+  // Ready to play once the round is live AND a captain is chosen — or all players are
+  // out (nothing left to captain), so the tournament can still be played out.
+  const canPlay = phase === 'pre_round' && playable && (!!captain || aliveSquad.length === 0);
+  const playLabel = !playable ? '⏳ Awaiting live results'
+    : canPlay ? `▶ Play ${currentRound!.label}`
+    : 'Select a captain first';
 
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-3 py-6 fade-in">
       <div className="mb-4">
         <h1 className="text-lg font-extrabold" style={{ color: 'var(--ink)' }}>{TOURNAMENT.edition} — the draw</h1>
         <p className="text-xs mt-0.5" style={{ color: 'var(--ink-2)' }}>
-          The real men's singles bracket. Highlight any team's players and tap anyone to trace their route to the final.
+          The live men's singles bracket. Once the draw is out you can highlight any team's players and trace their route to the final.
         </p>
       </div>
 
@@ -103,7 +110,7 @@ export default function TournamentPage() {
                     cursor: canPlay ? 'pointer' : 'not-allowed',
                   }}
                 >
-                  {canPlay ? `▶ Play ${currentRound.label}` : 'Select a captain first'}
+                  {playLabel}
                 </button>
               </>
             )}
@@ -138,7 +145,7 @@ export default function TournamentPage() {
       {/* ── Transfers ── */}
       <TransfersPanel />
 
-      {/* ── The real Wimbledon 2026 draw ── */}
+      {/* ── The live tournament draw (empty until pairings publish) ── */}
       <BracketTree />
     </div>
   );

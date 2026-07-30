@@ -114,7 +114,7 @@ function TeamView({ emblem, name, manager, color, score, budget, squad, captainI
             onChange={e => setDraftName(e.target.value)}
             maxLength={24}
             placeholder="Your team name"
-            className="w-full text-sm outline-none px-3 py-2.5 rounded-xl mb-4"
+            className="w-full text-sm px-3 py-2.5 rounded-xl mb-4"
             style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.12)', color: 'var(--ink)' }}
           />
           <div className="text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--ink-2)' }}>Team logo</div>

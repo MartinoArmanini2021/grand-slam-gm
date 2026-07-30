@@ -1,18 +1,21 @@
 import { useState, useEffect, useRef, Fragment } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
-import { ROUNDS, isPlayerOut } from '../data/tournament';
+import { ROUNDS, isPlayerOut, roundPlayable } from '../data/tournament';
 import { isSquadValid, SQUAD_SIZE } from '../data/squadRules';
 import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
 import { onActivate } from '../hooks';
 import { toast } from '../store/toastStore';
 import { useLeagueBoard, useMyLeagues } from '../data/leagueBoard';
 import SquadCourt from '../components/SquadCourt';
+import TournamentWelcome from '../components/TournamentWelcome';
+import Countdown from '../components/Countdown';
+import { shareInvite } from '../data/invite';
 import type { GamePhase, RoundId } from '../types';
 
 const TEAM_TARGET = SQUAD_SIZE;
 
-export default function HomePage() {
+export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?: boolean; onWelcomeClose?: () => void } = {}) {
   const {
     phase, myTeam, budget, myScore, currentRoundIndex,
     roundScores, setActiveTab, openTeam, playNextRound, continueToNextRound,
@@ -21,6 +24,9 @@ export default function HomePage() {
 
   const squadReady = isSquadValid(myTeam);
   const currentRound = currentRoundIndex < ROUNDS.length ? ROUNDS[currentRoundIndex] : null;
+  // A round can only be played once its real-world results are in the live feed. Until
+  // then the banner shows "awaiting results" instead of an enabled (no-op) Play button.
+  const playable = currentRound ? roundPlayable(currentRoundIndex) : false;
   const revealedRounds = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
   const activePlayers = myTeam.filter(id => !isPlayerOut(id, revealedRounds));
   const winRate = roundScores.length > 0
@@ -41,12 +47,14 @@ export default function HomePage() {
 
   // Play the upcoming round right from Home (captains are set on the court above).
   const playRound = () => {
-    if (!currentRound) return;
+    if (!currentRound || !roundPlayable(currentRoundIndex)) return; // not live yet → no-op, no false toast
     const label = currentRound.label;
+    const before = useGameStore.getState().roundScores.length;
     playNextRound();
     const rs = useGameStore.getState().roundScores;
+    if (rs.length <= before) return; // nothing was actually scored → don't toast a stale round
     const last = rs[rs.length - 1];
-    if (last) toast(last.points > 0 ? `+${last.points} in the ${label}! 🎾` : `No points in the ${label}`, last.points > 0 ? 'good' : 'info');
+    toast(last.points > 0 ? `+${last.points} in the ${label}! 🎾` : `No points in the ${label}`, last.points > 0 ? 'good' : 'info');
   };
   // Show only the top slice on Home (scales to 200+ managers); if you're below it,
   // pin your own row underneath so you always see your standing.
@@ -67,7 +75,7 @@ export default function HomePage() {
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-none" style={{ color: 'var(--ink)' }}>{TOURNAMENT.edition}</h1>
             <span className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: SURFACE.accent }}>{TOURNAMENT.location.split(',')[0]} · {SURFACE.label}</span>
           </div>
-          <div className="text-[9px] sm:text-xs font-bold uppercase tracking-[0.08em] sm:tracking-[0.2em] mt-1.5 whitespace-nowrap" style={{ color: 'var(--ember)' }}>
+          <div className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.08em] sm:tracking-[0.2em] mt-1.5" style={{ color: 'var(--ember)' }}>
             {courtStatus(phase, currentRound, ROUNDS[currentRoundIndex - 1]?.short)}
           </div>
         </div>
@@ -97,10 +105,15 @@ export default function HomePage() {
         <ActionBanner color="var(--blue)" title={squadReady ? 'Squad ready — lock it in' : 'Build your squad'}
           body={`$${budget.toFixed(1)}M budget · ${myTeam.length}/${TEAM_TARGET} picked · 2 Platinum · 3 Gold · 5 Silver`} cta="Go to Market" onClick={() => setActiveTab('draft')} />
       )}
-      {phase === 'pre_round' && currentRound && (
+      {phase === 'pre_round' && currentRound && playable && (
         <ActionBanner color="var(--gold)" title={`Captains set — play the ${currentRound.label}`}
           body={`Captain ×2 · Vice ×1.5 · tap a player on court to change · ${activePlayers.length} still in`}
           cta={`▶ Play ${currentRound.short}`} onClick={playRound} />
+      )}
+      {phase === 'pre_round' && currentRound && !playable && (
+        <ActionBanner color="var(--blue)" title={`Squad locked — waiting on the ${currentRound.label}`}
+          body={`Results go live as ${TOURNAMENT.edition} is played. Your captains are set; scores post automatically.`}
+          cta="⏳ Awaiting live results" onClick={() => {}} />
       )}
       {phase === 'round_complete' && currentRound && (
         <ActionBanner color="var(--green)" title={`${ROUNDS[currentRoundIndex - 1]?.label} results are in`}
@@ -111,6 +124,39 @@ export default function HomePage() {
           body={`Final score ${myScore} pts${winRate !== null ? ` · ${winRate}% round win rate` : ''}`} cta="View Bracket" onClick={() => setActiveTab('tournament')} />
       )}
 
+      {/* Deadline countdowns: lock your squad before the draft closes, and set your
+          captain/vice before each round begins. */}
+      {phase === 'draft' && (
+        <Countdown target={TOURNAMENT.schedule?.[TOURNAMENT.rounds[0]]}
+          title={squadReady ? 'Draft closes soon — lock in your squad' : 'Draft closes soon — pick your 10 & lock in'}
+          note="Once it closes your squad is set for the first round." />
+      )}
+      {phase === 'pre_round' && currentRound && (
+        <Countdown target={TOURNAMENT.schedule?.[currentRound.id]}
+          title={`Set your Captain & Vice for the ${currentRound.label}`}
+          note="Captain ×2 · Vice ×1.5 — they lock when the round begins." />
+      )}
+
+      {/* Virality: once you've got a squad, the fun is beating people you know. Surface the
+          invite right here — share a private league link, or spin one up in one tap. */}
+      {myTeam.length > 0 && (() => {
+        const priv = myLeagues.find(l => !l.isPublic && l.code);
+        return (
+          <button
+            onClick={() => (priv ? shareInvite(priv.name, priv.code!) : setActiveTab('league'))}
+            className="w-full mt-3 flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-transform active:scale-[0.99]"
+            style={{ background: 'linear-gradient(120deg,rgba(14,111,196,0.09),rgba(18,161,80,0.07))', border: '1px solid rgba(14,111,196,0.2)' }}
+          >
+            <span className="text-xl shrink-0">🤝</span>
+            <div className="flex-1 min-w-0">
+              <div className="font-bold text-sm" style={{ color: 'var(--ink)' }}>{priv ? `Invite friends to ${priv.name}` : 'Play with friends'}</div>
+              <div className="text-xs" style={{ color: 'var(--ink-2)' }}>{priv ? 'Share the link — everyone drafts, one leaderboard.' : 'Create a private league and challenge your friends.'}</div>
+            </div>
+            <span className="shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold text-white" style={{ background: 'var(--blue)' }}>{priv ? 'Invite' : 'Create'}</span>
+          </button>
+        );
+      })()}
+
         {/* ── League leaderboard (below the court) ── */}
         <div className="mt-6">
         <div className="flex items-center justify-between mb-2.5 px-1 gap-2">
@@ -119,7 +165,7 @@ export default function HomePage() {
               value={boardLeague ?? ''}
               onChange={e => setBoardLeague(e.target.value || null)}
               aria-label="Choose which league to show"
-              className="text-sm font-bold rounded-lg px-2 py-1 outline-none max-w-[60%]"
+              className="text-sm font-bold rounded-lg px-2 py-1 max-w-[60%]"
               style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.12)', color: 'var(--ink)' }}
             >
               <option value="">🌍 Public League</option>
@@ -170,6 +216,15 @@ export default function HomePage() {
                           <span className="font-bold truncate" style={{ color: 'var(--ink)' }}>{row.name}</span>
                           {row.you && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0" style={{ background: 'var(--blue)', color: '#fff' }}>YOU</span>}
                         </div>
+                        {/* Rivalry hook: how far you are from the manager just above you. */}
+                        {row.you && rank > 0 && board[rank - 1] && board[rank - 1].score > row.score && (
+                          <div className="text-[10px] font-semibold mt-0.5 pl-9 truncate" style={{ color: 'var(--blue)' }}>
+                            +{board[rank - 1].score - row.score} to catch {board[rank - 1].name}
+                          </div>
+                        )}
+                        {row.you && rank === 0 && row.score > 0 && (
+                          <div className="text-[10px] font-semibold mt-0.5 pl-9" style={{ color: 'var(--gold)' }}>🥇 Top of the league</div>
+                        )}
                       </td>
                       <td className="px-3 py-2 text-right font-num text-base font-extrabold" style={{ color: 'var(--blue)' }}>{row.score}</td>
                     </tr>
@@ -185,6 +240,14 @@ export default function HomePage() {
           </div>
         )}
         </div>{/* /leaderboard */}
+
+      {/* The celebratory "you're in" moment, shown once right after joining. */}
+      {welcome && (
+        <TournamentWelcome
+          onDone={() => onWelcomeClose?.()}
+          onBuild={() => { setActiveTab('draft'); onWelcomeClose?.(); }}
+        />
+      )}
     </div>
   );
 }

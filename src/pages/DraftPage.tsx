@@ -2,13 +2,14 @@ import { useState, useMemo } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { PLAYERS, getPlayer } from '../data/players';
 import { ROUNDS, isPlayerOut, getPlayerExit } from '../data/tournament';
-import { getTier, TIER_META } from '../data/tiers';
+import { getTier, TIER_META, type Tier } from '../data/tiers';
 import { tierCounts, squadShortfall, isSquadValid, isTierFull, TIER_MINIMUMS, SQUAD_SIZE, STARTING_BUDGET } from '../data/squadRules';
 import PlayerAvatar from '../components/PlayerAvatar';
 import PlayerTag from '../components/PlayerTag';
 import PurchaseConfirmModal from '../components/PurchaseConfirmModal';
 import PlayerPickerModal from '../components/PlayerPickerModal';
-import { toast } from '../store/toastStore';
+import SquadLockedModal from '../components/SquadLockedModal';
+import Countdown from '../components/Countdown';
 import { onActivate } from '../hooks';
 import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
 import type { RoundId, Player } from '../types';
@@ -19,16 +20,18 @@ const TEAM_SIZE = SQUAD_SIZE;
 // The tournament's own surface (e.g. hard for Montréal) — drives which win% the
 // market emphasises (sort option, bold column, squad-row stat).
 const SURF = TOURNAMENT.surface;
-// Price is a strict function of ranking (priceFor), so a "$ Price" sort would be
-// identical to "# Rank" — we offer Rank + the surface win% instead.
+// Price tracks ranking closely (rank base × form × surface), so a "$ Price" sort
+// would nearly mirror "# Rank" — we offer Rank + the surface win% for a distinct axis.
 const SORT_LABEL: Record<SortKey, string> = { ranking: '# Rank', surface: `${SURFACE.label} %` };
 
 export default function DraftPage() {
-  const { myTeam, captain, viceCaptain, budget, phase, currentRoundIndex, removePlayer, setCaptain, setViceCaptain, finalizeDraft, openPlayer } = useGameStore();
+  const { myTeam, captain, viceCaptain, budget, phase, currentRoundIndex, removePlayer, setCaptain, setViceCaptain, finalizeDraft, openPlayer, setActiveTab } = useGameStore();
   const [sort, setSort] = useState<SortKey>('ranking');
   const [search, setSearch] = useState('');
+  const [tierFilter, setTierFilter] = useState<Tier | null>(null);
   const [confirm, setConfirm] = useState<Player | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [showLocked, setShowLocked] = useState(false);
 
   const locked = phase !== 'draft'; // squad is locked after the draft — transfers happen on the Bracket page
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
@@ -38,11 +41,12 @@ export default function DraftPage() {
 
   const sorted = useMemo(() => [...PLAYERS]
     .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()))
+    .filter(p => !tierFilter || getTier(p.ranking) === tierFilter)
     .sort((a, b) => {
       if (sort === 'ranking') return a.ranking - b.ranking;
       if (sort === 'surface') return b.surface[SURF] - a.surface[SURF];
       return 0;
-    }), [sort, search]);
+    }), [sort, search, tierFilter]);
 
   const th = 'text-left px-2 py-2 text-[11px] font-bold uppercase tracking-wide';
 
@@ -63,6 +67,12 @@ export default function DraftPage() {
             ? `Build your squad — $${budget.toFixed(1)}M to spend · ${myTeam.length}/${TEAM_SIZE} picked`
             : 'Squad locked for the tournament — swap eliminated players via transfers on the Bracket page.'}
         </p>
+        {phase === 'draft' && (
+          <div className="max-w-xl">
+            <Countdown target={TOURNAMENT.schedule?.[TOURNAMENT.rounds[0]]}
+              title="Draft closes when the first round starts" note="Lock your squad before then." />
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 lg:items-start">
@@ -83,22 +93,61 @@ export default function DraftPage() {
               aria-label="Search players"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="text-sm outline-none px-3 py-2 rounded-xl w-44"
+              className="text-sm px-3 py-2 rounded-xl w-44"
               style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.09)', color: 'var(--ink)' }}
             />
-            <div className="flex rounded-xl overflow-hidden ml-auto" style={{ border: '1px solid rgba(10,27,51,0.07)' }}>
-              {(['ranking', 'surface'] as SortKey[]).map(s => (
-                <button
-                  key={s}
-                  onClick={() => setSort(s)}
-                  className="px-3 py-2 text-xs font-semibold transition-colors"
-                  style={{ background: sort === s ? 'rgba(10,27,51,0.08)' : 'transparent', color: sort === s ? 'var(--ink)' : 'var(--ink-2)' }}
-                >
-                  {SORT_LABEL[s]}
-                </button>
-              ))}
+            <div className="flex items-center gap-2 ml-auto">
+              <span className="text-[10px] font-bold uppercase tracking-wide shrink-0" style={{ color: 'var(--ink-3)' }}>Sort by</span>
+              <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.07)' }}>
+                {(['ranking', 'surface'] as SortKey[]).map(s => (
+                  <button
+                    key={s}
+                    onClick={() => setSort(s)}
+                    className="px-3 py-2 min-h-[40px] text-xs font-semibold transition-colors"
+                    style={{ background: sort === s ? 'rgba(10,27,51,0.08)' : 'transparent', color: sort === s ? 'var(--ink)' : 'var(--ink-2)' }}
+                  >
+                    {SORT_LABEL[s]}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
+
+          {/* Tier filter — the squad is an exact 2 Platinum · 3 Gold · 5 Silver quota, so the
+              tier IS the puzzle. These chips both filter the market and show your progress;
+              a tier you still need pulses so you know where to look. */}
+          {!locked && (
+            <div className="flex items-center gap-2 mb-3 overflow-x-auto no-scrollbar">
+              <span className="text-[10px] font-bold uppercase tracking-wide shrink-0" style={{ color: 'var(--ink-3)' }}>Filter</span>
+              <button
+                onClick={() => setTierFilter(null)}
+                className="shrink-0 px-3 min-h-[38px] rounded-xl text-xs font-bold transition-colors"
+                style={{ background: tierFilter === null ? 'var(--ink)' : '#FFFFFF', color: tierFilter === null ? '#fff' : 'var(--ink-2)', border: '1px solid rgba(10,27,51,0.1)' }}
+              >All</button>
+              {TIER_MINIMUMS.map(({ tier, min }) => {
+                const have = counts[tier];
+                const need = have < min;
+                const active = tierFilter === tier;
+                const color = TIER_META[tier].color;
+                return (
+                  <button
+                    key={tier}
+                    onClick={() => setTierFilter(active ? null : tier)}
+                    className="shrink-0 flex items-center gap-1.5 px-3 min-h-[38px] rounded-xl text-xs font-bold transition-all"
+                    style={{
+                      background: active ? color : need ? `${color}14` : '#FFFFFF',
+                      color: active ? '#fff' : color,
+                      border: `1px solid ${active ? color : `${color}44`}`,
+                      boxShadow: need && !active ? `0 0 0 2px ${color}22` : 'none',
+                    }}
+                  >
+                    <span>{tier}</span>
+                    <span className="font-num" style={{ opacity: 0.9 }}>{have}/{min}{have === min ? ' ✓' : ''}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {/* Table */}
           <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.08)' }}>
@@ -157,7 +206,9 @@ export default function DraftPage() {
                               {player.name}
                               {out && <span className="text-[9px] font-bold px-1 py-0.5 rounded" style={{ background: 'rgba(229,71,43,0.12)', color: 'var(--ember)' }}>OUT {getPlayerExit(player.id)}</span>}
                             </div>
-                            <div className="text-[10px] leading-tight truncate" style={{ color: 'var(--ink-3)' }}>{player.style}</div>
+                            <div className="text-[10px] leading-tight truncate" style={{ color: 'var(--ink-3)' }}>
+                              <span style={{ color: tierColor, fontWeight: 700 }}>{tier}</span> · {player.style}
+                            </div>
                             {/* Compact surface win% for small screens (the dedicated columns show from md up) */}
                             <div className="md:hidden mt-0.5 flex items-center gap-1.5 font-num text-[10px] leading-none whitespace-nowrap">
                               <span style={{ color: 'var(--green)', fontWeight: SURF === 'grass' ? 700 : 500 }}>G {player.surface.grass}</span>
@@ -189,15 +240,16 @@ export default function DraftPage() {
                               if (addable) setConfirm(player);
                             }}
                             disabled={!isSelected && !addable}
-                            className="text-[11px] font-bold px-2.5 py-1 rounded-lg transition-all whitespace-nowrap"
+                            title={isSelected ? 'Remove from squad' : out ? 'Eliminated' : full ? 'Squad already full (10/10)' : tierFull ? `You already have your ${tier} players` : !canAfford ? `Costs $${player.price}M — over your remaining budget` : 'Add to squad'}
+                            className="text-[11px] font-bold px-3 min-h-[36px] rounded-lg transition-transform active:scale-95 whitespace-nowrap"
                             style={{
-                              background: isSelected ? 'rgba(229,71,43,0.12)' : addable ? 'rgba(18,161,80,0.12)' : 'rgba(10,27,51,0.04)',
-                              border: `1px solid ${isSelected ? 'rgba(229,71,43,0.25)' : addable ? 'rgba(18,161,80,0.25)' : 'rgba(10,27,51,0.06)'}`,
-                              color: isSelected ? 'var(--ember)' : addable ? 'var(--green)' : 'var(--ink-3)',
+                              background: isSelected ? 'rgba(229,71,43,0.12)' : addable ? 'var(--green)' : 'rgba(10,27,51,0.04)',
+                              border: `1px solid ${isSelected ? 'rgba(229,71,43,0.25)' : addable ? 'var(--green)' : 'rgba(10,27,51,0.06)'}`,
+                              color: isSelected ? 'var(--ember)' : addable ? '#fff' : 'var(--ink-3)',
                               cursor: (!isSelected && !addable) ? 'not-allowed' : 'pointer',
                             }}
                           >
-                            {isSelected ? 'Remove' : out ? 'Out' : full ? 'Full' : tierFull ? 'Limit' : !canAfford ? 'Too $' : '+ Add'}
+                            {isSelected ? 'Remove' : out ? 'Out' : full ? 'Full' : tierFull ? `${tier} full` : !canAfford ? 'Over $' : '+ Add'}
                           </button>
                         )}
                       </td>
@@ -266,9 +318,9 @@ export default function DraftPage() {
                     {/* Captain / Vice-captain toggles */}
                     {!locked && (
                       <>
-                        <button onClick={() => setCaptain(id)} title="Captain (×2)" className="text-[11px] font-extrabold w-6 h-6 rounded-lg shrink-0 flex items-center justify-center transition-all" style={{ background: isCap ? 'var(--gold)' : 'rgba(10,27,51,0.05)', color: isCap ? '#fff' : 'var(--ink-3)', border: `1px solid ${isCap ? 'var(--gold)' : 'rgba(10,27,51,0.08)'}` }}>C</button>
-                        <button onClick={() => setViceCaptain(id)} title="Vice-captain (×1.5)" className="text-[11px] font-extrabold w-6 h-6 rounded-lg shrink-0 flex items-center justify-center transition-all" style={{ background: isVice ? 'var(--blue)' : 'rgba(10,27,51,0.05)', color: isVice ? '#fff' : 'var(--ink-3)', border: `1px solid ${isVice ? 'var(--blue)' : 'rgba(10,27,51,0.08)'}` }}>V</button>
-                        <button onClick={() => removePlayer(id)} title="Remove" className="text-xs w-6 h-6 rounded-lg shrink-0 flex items-center justify-center" style={{ background: 'rgba(10,27,51,0.04)', border: '1px solid rgba(10,27,51,0.06)', color: 'var(--ink-2)' }}>✕</button>
+                        <button onClick={() => setCaptain(id)} title="Captain (×2)" aria-label={`Make ${p.name} captain`} className="text-xs font-extrabold w-9 h-9 rounded-lg shrink-0 flex items-center justify-center transition-transform active:scale-90" style={{ background: isCap ? 'var(--gold)' : 'rgba(10,27,51,0.05)', color: isCap ? '#fff' : 'var(--ink-3)', border: `1px solid ${isCap ? 'var(--gold)' : 'rgba(10,27,51,0.08)'}` }}>C</button>
+                        <button onClick={() => setViceCaptain(id)} title="Vice-captain (×1.5)" aria-label={`Make ${p.name} vice-captain`} className="text-xs font-extrabold w-9 h-9 rounded-lg shrink-0 flex items-center justify-center transition-transform active:scale-90" style={{ background: isVice ? 'var(--blue)' : 'rgba(10,27,51,0.05)', color: isVice ? '#fff' : 'var(--ink-3)', border: `1px solid ${isVice ? 'var(--blue)' : 'rgba(10,27,51,0.08)'}` }}>V</button>
+                        <button onClick={() => removePlayer(id)} title="Remove" aria-label={`Remove ${p.name}`} className="text-xs w-9 h-9 rounded-lg shrink-0 flex items-center justify-center transition-transform active:scale-90" style={{ background: 'rgba(10,27,51,0.04)', border: '1px solid rgba(10,27,51,0.06)', color: 'var(--ink-2)' }}>✕</button>
                       </>
                     )}
                     {locked && isCap && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0" style={{ background: 'var(--gold)', color: '#fff' }}>C</span>}
@@ -291,9 +343,9 @@ export default function DraftPage() {
               <div className="w-full py-2.5 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(18,161,80,0.1)', color: 'var(--green)' }}>Squad locked ✓</div>
             ) : (
               <button
-                onClick={() => { finalizeDraft(); toast('Squad locked in — good luck! 🎾', 'good'); }}
+                onClick={() => { finalizeDraft(); setShowLocked(true); }}
                 disabled={!valid}
-                className="w-full py-2.5 rounded-xl font-bold text-sm transition-all"
+                className="w-full py-3 rounded-xl font-bold text-sm transition-transform active:scale-[0.99]"
                 style={{ background: valid ? 'var(--blue)' : 'rgba(10,27,51,0.05)', color: valid ? '#fff' : 'var(--ink-3)', cursor: valid ? 'pointer' : 'not-allowed' }}
               >
                 {valid ? 'Lock Squad →'
@@ -313,6 +365,7 @@ export default function DraftPage() {
       {/* Purchase confirmation */}
       <PurchaseConfirmModal player={confirm} onClose={() => setConfirm(null)} />
       <PlayerPickerModal open={pickerOpen} onClose={() => setPickerOpen(false)} />
+      <SquadLockedModal open={showLocked} onClose={() => setShowLocked(false)} onInvite={() => { setShowLocked(false); setActiveTab('league'); }} />
     </div>
   );
 }

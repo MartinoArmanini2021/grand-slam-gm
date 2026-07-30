@@ -1,6 +1,7 @@
 import { Component } from 'react';
 import type { ReactNode, ErrorInfo } from 'react';
 import { useGameStore } from '../store/gameStore';
+import { track } from '../data/analytics';
 
 // Safety net: if a render ever throws (e.g. persisted state referencing a player
 // id that no longer exists after a roster change), show a recovery screen with a
@@ -16,6 +17,7 @@ export default class ErrorBoundary extends Component<{ children: ReactNode }, { 
     // Surface the crash so a field failure isn't silent (and is available to any
     // error-reporting integration added later).
     console.error('[GrandSlamGM] render error caught by ErrorBoundary:', error, info.componentStack);
+    track('app_error', { message: error.message });
   }
 
   handleReset = () => {

@@ -1,12 +1,18 @@
 import { useEscapeToClose } from '../hooks';
+import { ROUNDS } from '../data/tournament';
+
+// Describe THIS tournament's scored rounds + points, derived from config so the copy is
+// always accurate (a 6-round Masters and a 7-round Slam each read correctly).
+const scoringLine = ROUNDS.map(r => `${r.short} +${r.points}`).join(', ');
 
 const RULES: { icon: string; title: string; body: string }[] = [
   { icon: '🎾', title: 'Draft 10 players', body: 'You get $150M to sign a 10-player squad — exactly 2 Platinum, 3 Gold and 5 Silver. Stars cost more, so choose: two galácticos and bargain support, or a deeper balanced squad.' },
-  { icon: '📈', title: 'Win rounds, score points', body: 'Every round your player wins scores — from the Round of 128 (+1) up through R64 +1, R32 +2, R16 +5, QF +10, SF +20, Final +40. Lower-ranked winners score more per win.' },
+  { icon: '📈', title: 'Win rounds, score points', body: `Every round your player wins scores — ${scoringLine}. Lower-ranked winners score more per win.` },
   { icon: '👑', title: 'Captain & Vice-Captain', body: 'Two of your squad lead on court: your Captain scores ×2 and your Vice-Captain ×1.5. The other 8 sit on the bench (they still score ×1). Re-pick your two leaders each round.' },
   { icon: '🔥', title: 'Upset bonus', body: 'When a lower-ranked player beats a higher seed, you earn bonus points (bigger in the later rounds). Backing the right underdog pays off.' },
   { icon: '💸', title: 'Elimination = money back', body: 'When your player is knocked out you get part of their price back — more the further they reached — and can spend it to transfer in someone still alive.' },
   { icon: '🔒', title: 'Transfers close before the final', body: 'Reinforce your squad through the semi-finals — a quarter-final casualty can still be replaced for the semis. Only the final squad is locked, so plan ahead.' },
+  { icon: '🤝', title: 'Play with friends', body: 'Sign up (it\'s free), then go to League → Private → Create a league and share its 6-letter code. Your friends sign up, open League → Private, and enter the code — now you\'re all on the same leaderboard.' },
   { icon: '🏆', title: 'Beat your league', body: 'Everyone gets the same $150M. Climb the League standings and be crowned Grand Slam GM.' },
 ];
 
@@ -19,7 +25,7 @@ export default function HowToPlay({ open, onClose }: { open: boolean; onClose: (
       style={{
         position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(10,27,51,0.55)',
         backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center',
-        justifyContent: 'center', padding: 16,
+        justifyContent: 'center', padding: 16, overflowY: 'auto',
       }}
     >
       <div
@@ -27,7 +33,10 @@ export default function HowToPlay({ open, onClose }: { open: boolean; onClose: (
         className="fade-in"
         style={{
           background: '#FFFFFF', borderRadius: 18, maxWidth: 520, width: '100%',
-          maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(10,27,51,0.35)',
+          // dvh (not vh) respects the mobile browser chrome, so the card never spills past
+          // the visible top/bottom; it scrolls internally if the rules are taller.
+          maxHeight: 'calc(100dvh - 32px)', overflowY: 'auto', WebkitOverflowScrolling: 'touch',
+          boxShadow: '0 20px 60px rgba(10,27,51,0.35)',
         }}
       >
         {/* Header */}

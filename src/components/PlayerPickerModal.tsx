@@ -11,7 +11,7 @@ import type { Player } from '../types';
 
 const TEAM_SIZE = SQUAD_SIZE;
 
-export default function PlayerPickerModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+export default function PlayerPickerModal({ open, onClose, assignRole }: { open: boolean; onClose: () => void; assignRole?: 'C' | 'V' | null }) {
   const { myTeam, budget, removePlayer } = useGameStore();
   const [search, setSearch] = useState('');
   const [confirm, setConfirm] = useState<Player | null>(null);
@@ -33,8 +33,9 @@ export default function PlayerPickerModal({ open, onClose }: { open: boolean; on
           <div style={{ background: 'linear-gradient(120deg,var(--ink),var(--navy-2))', padding: '16px 18px', borderRadius: '18px 18px 0 0' }}>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-white font-extrabold text-base">Add players</div>
+                <div className="text-white font-extrabold text-base">{assignRole === 'C' ? 'Sign your Captain' : assignRole === 'V' ? 'Sign your Vice' : 'Add players'}</div>
                 <div className="text-xs" style={{ color: 'var(--on-navy)' }}>
+                  {assignRole ? <>pick a player — they’re signed {assignRole === 'C' ? 'as Captain ×2' : 'as Vice ×1.5'} · </> : null}
                   <span className="font-num">${budget.toFixed(1)}M</span> left · {myTeam.length}/{TEAM_SIZE} picked
                 </div>
               </div>
@@ -45,7 +46,7 @@ export default function PlayerPickerModal({ open, onClose }: { open: boolean; on
               placeholder="Search player…"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="mt-3 w-full text-sm outline-none px-3 py-2 rounded-lg"
+              className="mt-3 w-full text-sm px-3 py-2 rounded-lg"
               style={{ background: 'rgba(255,255,255,0.14)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }}
             />
           </div>
@@ -94,7 +95,7 @@ export default function PlayerPickerModal({ open, onClose }: { open: boolean; on
 
       {/* Purchase confirmation — shared with the Market. On a successful buy it
           closes the picker too, so the selection window shuts after each pick. */}
-      <PurchaseConfirmModal player={confirm} onClose={() => setConfirm(null)} onPurchased={onClose} />
+      <PurchaseConfirmModal player={confirm} onClose={() => setConfirm(null)} onPurchased={onClose} assignRole={assignRole} />
     </>
   );
 }

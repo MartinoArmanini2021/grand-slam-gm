@@ -1,7 +1,8 @@
 import { PLAYERS, getPlayer } from './players';
-import { ROUNDS, MATCHES, getOpponentId, winPoints, getPlayerExit, isPlayerOut, BUDGET_RETURN_RATES, transfersOpen } from './tournament';
+import { ROUNDS, getMatchesForRound, getOpponentId, winPoints, getPlayerExit, isPlayerOut, BUDGET_RETURN_RATES, transfersOpen } from './tournament';
 import { getTier, type Tier } from './tiers';
 import { SQUAD_SIZE, STARTING_BUDGET, TIER_MINIMUMS } from './squadRules';
+import { TOURNAMENT } from './tournamentConfig';
 import { round1 } from './format';
 import type { Player, RoundId, Transfer } from '../types';
 
@@ -28,17 +29,21 @@ const ytdRate = (p: Player) => {
   const g = p.ytd.wins + p.ytd.losses;
   return g > 0 ? p.ytd.wins / g : 0;
 };
+// Strategies weigh the ACTIVE tournament's surface (hard for Montréal), so the rival
+// personalities track whatever event is live rather than a fixed surface.
+const SURF = TOURNAMENT.surface;
+const surf = (p: Player) => p.surface[SURF];
 
 export const RIVALS: Rival[] = [
-  { id: 'stars',    name: 'Galácticos FC',   manager: '@carlosdeluxe', emblem: '🌌', tag: 'Stars & scrubs',        color: '#0e6fc4', rank: (a, b) => b.price - a.price },
-  { id: 'value',    name: 'Value Vultures',  manager: '@moneyball_m',  emblem: '🦅', tag: 'Best grass per $',      color: '#12A150', rank: (a, b) => (b.surface.grass / b.price) - (a.surface.grass / a.price) },
-  { id: 'grass',    name: 'Grass Gods',      manager: '@sw19_sam',     emblem: '🌱', tag: 'Grass-court merchants',  color: '#37B24D', rank: (a, b) => b.surface.grass - a.surface.grass },
-  { id: 'form',     name: 'Momentum FC',     manager: '@hot_streak',   emblem: '🔥', tag: 'Chasing hot form',      color: '#E5472B', rank: (a, b) => (ytdRate(b) - ytdRate(a)) || (b.surface.grass - a.surface.grass) },
-  { id: 'balanced', name: 'The Allrounders', manager: '@steady_eddie', emblem: '⚖️', tag: 'Balanced build',        color: '#D99A00', rank: (a, b) => balancedScore(b) - balancedScore(a) },
+  { id: 'stars',    name: 'Galácticos FC',   manager: '@carlosdeluxe', emblem: '🌌', tag: 'Stars & scrubs',         color: '#0e6fc4', rank: (a, b) => b.price - a.price },
+  { id: 'value',    name: 'Value Vultures',  manager: '@moneyball_m',  emblem: '🦅', tag: `Best ${SURF}-court per $`, color: '#12A150', rank: (a, b) => (surf(b) / b.price) - (surf(a) / a.price) },
+  { id: 'grass',    name: 'Baseline Bosses', manager: '@court_king',   emblem: '🎾', tag: `${SURF}-court merchants`,  color: '#37B24D', rank: (a, b) => surf(b) - surf(a) },
+  { id: 'form',     name: 'Momentum FC',     manager: '@hot_streak',   emblem: '🔥', tag: 'Chasing hot form',        color: '#E5472B', rank: (a, b) => (ytdRate(b) - ytdRate(a)) || (surf(b) - surf(a)) },
+  { id: 'balanced', name: 'The Allrounders', manager: '@steady_eddie', emblem: '⚖️', tag: 'Balanced build',          color: '#D99A00', rank: (a, b) => balancedScore(b) - balancedScore(a) },
 ];
 
 function balancedScore(p: Player) {
-  return p.surface.grass + ytdRate(p) * 25 - Math.abs(p.price - 12) * 2;
+  return surf(p) + ytdRate(p) * 25 - Math.abs(p.price - 12) * 2;
 }
 
 // Greedy squad build that follows the strategy order while always keeping a legal
@@ -92,13 +97,10 @@ export function buildSquad(rank: (a: Player, b: Player) => number): string[] {
   return squad.map(p => p.id);
 }
 
-// Rounds each player won (for scoring).
-const wonRounds = new Map<string, Set<string>>();
-for (const m of MATCHES) {
-  if (!wonRounds.has(m.winnerId)) wonRounds.set(m.winnerId, new Set());
-  wonRounds.get(m.winnerId)!.add(m.round);
-}
-const playerWon = (id: string, roundId: RoundId) => wonRounds.get(id)?.has(roundId) ?? false;
+// Did a player win their match in a given round — read LIVE from recorded results
+// (dynamic, not baked): before a round is played there are no matches, so no wins.
+const playerWon = (id: string, roundId: RoundId) =>
+  getMatchesForRound(roundId).some(m => m.winnerId === id);
 
 // A manager captains their star — the priciest still-alive player they drafted —
 // declared BEFORE the round, no hindsight (the same pre-commit discipline the human

@@ -15,7 +15,7 @@
   --navy-2:    #123163;  /* navy gradient partner */
   --ink:       #0a1f44;  /* brand navy — header + primary text */
   --ink-2:     #5B6B84;
-  --ink-3:     #9AA7BC;
+  --ink-3:     #6B7C96;  /* captions/hints — darkened from #9AA7BC to ~4.5:1 (WCAG AA) */
   --blue:      #0e6fc4;  /* brand accent blue */
   --blue-light:#4aa8ea;
   --green:     #12A150;
@@ -45,6 +45,15 @@ html, body {
 }
 
 #root { min-height: 100svh; overflow-x: hidden; }
+
+/* Visible keyboard focus everywhere — many controls set outline-none for the mouse,
+   which left keyboard/switch users with no indication of where they are. This ring
+   only shows for keyboard focus (:focus-visible), so it never bothers mouse users. */
+:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
 
 /* Brand display type for headings */
 h1, h2 {

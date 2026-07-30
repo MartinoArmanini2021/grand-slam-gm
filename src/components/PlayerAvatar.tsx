@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { getAvatarUri } from '../data/playerAvatars';
 import { photoUrlFor } from '../data/playerPool';
 import { getPlayer } from '../data/players';
 import { getTier, TIER_META } from '../data/tiers';
@@ -42,11 +41,12 @@ export default function PlayerAvatar({ playerId, name, size = 'md', dimension, c
   const clickable = onClick ? { cursor: 'pointer' } : {};
 
   const photo = photoUrlFor(playerId); // ATP headshot URL; null if the id isn't in the pool
-  // Pooled players: hotlink the ATP headshot, then fall straight to the initials
-  // monogram (matching the HTML) — never mix in the illustrated cartoon, which would
-  // itself read as inconsistent next to real photos. Off-roster ids: illustrated icon.
-  const sources = (photo ? [photo] : [getAvatarUri(playerId)]).filter(Boolean) as string[];
-  const src = sources[stage] ?? null; // exhausted → initials monogram
+  // Pooled players hotlink the ATP headshot, then fall straight to the initials monogram
+  // on error (matching the design spec). Off-roster ids (no pool photo) go straight to
+  // the monogram — no illustrated-cartoon library, which would read inconsistent next to
+  // real photos and bloated the bundle for a branch the live roster never hits.
+  const sources = (photo ? [photo] : []) as string[];
+  const src = sources[stage] ?? null; // exhausted / off-roster → initials monogram
 
   if (src) {
     // Match the ZIP's avatar treatment exactly: the image sits inside a clipped
@@ -63,6 +63,8 @@ export default function PlayerAvatar({ playerId, name, size = 'md', dimension, c
           key={src}
           src={src}
           alt={name}
+          loading="lazy"
+          decoding="async"
           onError={() => setStage(s => s + 1)}
           style={{
             position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block',

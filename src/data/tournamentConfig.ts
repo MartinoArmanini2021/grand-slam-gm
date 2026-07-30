@@ -102,26 +102,51 @@ export interface Tournament {
   drawSize: number;  // 128 for a Slam; Masters draws differ
   rounds: RoundId[]; // the ordered rounds this tournament plays & scores
   mode: TournamentMode;
+  // Playable in PRODUCTION? Only `live` tournaments appear in the in-app switcher, so an
+  // upcoming one can be fully built + config'd (and tested on staging) without exposing it
+  // to players. Flip to true to launch it. (Staging can still force any id via env.)
+  live: boolean;
+  // The ISO datetime (UTC) each round's play begins = the LOCK DEADLINE for that round:
+  //   • schedule[firstRound] is when the draft closes (you must have a squad by then).
+  //   • schedule[round] is when captain/vice lock for that round.
+  // Optional/partial — a round with no time shows no countdown. Update with the official
+  // order of play when it publishes.
+  schedule?: Partial<Record<RoundId, string>>;
   court?: SurfaceTheme['court']; // optional court palette override (else the surface default)
 }
 
 // Every tournament the app knows about. One is active at a time (ACTIVE_TOURNAMENT_ID);
 // the rest are staged, ready to switch to once their field + data are wired.
 export const TOURNAMENTS: Record<string, Tournament> = {
-  // Active tournament for the friends demo: branded as the National Bank Open
-  // (Montréal). It still plays the baked 128-draw bracket as STAND-IN data until the
-  // real Montréal field/draw is wired (W4); only the branding + court are Montréal.
+  // Active tournament: the National Bank Open (Montréal) — run LIVE. Results arrive
+  // from the feed/admin as the tournament is played; nothing is pre-baked. The real
+  // 74-entrant Montréal field (montreal2026Field.json) is the draftable roster; only
+  // the live match RESULTS/pairings are still pending until the draw publishes.
   // Montréal hard court: green surround (stands), blue playing surface.
-  wimbledon_2026: {
-    id: 'wimbledon_2026',
+  montreal_2026: {
+    id: 'montreal_2026',
     name: 'National Bank Open',
     edition: 'National Bank Open 2026',
     year: 2026,
     surface: 'hard',
     location: 'Montréal, Canada',
-    drawSize: 128,
-    rounds: ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'],
-    mode: 'replay',
+    // The real 96-player Masters draw: the 32 seeds get first-round byes, so every
+    // drafted player (all top-rank entrants) enters at the Round of 64 — a clean 6-round
+    // scored draw. The 32 opening qualifier matches sit below where any drafted player enters.
+    drawSize: 96,
+    rounds: ['R64', 'R32', 'R16', 'QF', 'SF', 'F'],
+    mode: 'live',
+    live: true, // ← the live production tournament
+    // ESTIMATED order of play (UTC) — replace with the official schedule when it publishes.
+    // schedule.R64 doubles as the draft deadline (squad must be locked before play starts).
+    schedule: {
+      R64: '2026-08-02T15:00:00Z',
+      R32: '2026-08-04T15:00:00Z',
+      R16: '2026-08-06T15:00:00Z',
+      QF:  '2026-08-08T15:00:00Z',
+      SF:  '2026-08-10T17:00:00Z',
+      F:   '2026-08-12T18:00:00Z',
+    },
     court: {
       standTop: '#0c2433', standBottom: '#071726',  // dark stadium seating
       apron: '#1f7a44',                              // GREEN outside court
@@ -130,28 +155,68 @@ export const TOURNAMENTS: Record<string, Tournament> = {
       net: '#eef4f0', netShadow: '#0a1f44', crowdLight: '#dfe6d8', crowdDark: '#9fb6a0',
     },
   },
-  // National Bank Open 2026 (men's) — Montréal, IGA Stadium, Aug 1–13. The new
-  // 12-day, 96-player Masters format: the top 32 seeds get first-round byes, so for
-  // our roster of top players the scored draw is a clean 6-round R64 → Final (the 32
-  // opening qualifier matches sit below where any drafted player enters). This is a
-  // LIVE event — results arrive as it's played (see the live-results feed).
-  canada_2026: {
-    id: 'canada_2026',
-    name: 'National Bank Open',
-    edition: 'National Bank Open 2026',
+
+  // ── NEXT UP: the Cincinnati Open (staged, not yet active) ────────────────────
+  // Built and tested on a STAGING deployment (VITE_ACTIVE_TOURNAMENT=cincinnati_2026)
+  // while Montréal runs live. Its field/draw/player_stats are wired when Cincinnati's
+  // entry list publishes; until then staging borrows a placeholder field (see players.ts).
+  // Cincinnati hard court: its signature teal-blue surround + deep-blue playing surface.
+  cincinnati_2026: {
+    id: 'cincinnati_2026',
+    name: 'Cincinnati Open',
+    edition: 'Cincinnati Open 2026',
     year: 2026,
     surface: 'hard',
-    location: 'Montréal, Canada',
+    location: 'Cincinnati, USA',
     drawSize: 96,
     rounds: ['R64', 'R32', 'R16', 'QF', 'SF', 'F'],
     mode: 'live',
+    live: false, // ← not launched yet; flip to true (with the real field wired) to go live
+    court: {
+      standTop: '#0a2230', standBottom: '#06161f',
+      apron: '#0e7490',                              // teal surround (Cincinnati's look)
+      surface: '#1e40af',                            // deep-blue inside court
+      line: '#ffffff',
+      net: '#eef4f0', netShadow: '#0a1f44', crowdLight: '#dbeafe', crowdDark: '#93a4bc',
+    },
   },
 };
 
-// The tournament the app is currently running. Switch this id (once the target's
-// field + data are wired) to point the whole app at a different tournament.
-export const ACTIVE_TOURNAMENT_ID = 'wimbledon_2026';
+const DEFAULT_TOURNAMENT_ID = 'montreal_2026';
+const ACTIVE_STORE_KEY = 'gsgm-active-tournament';
+
+// The tournaments a player can pick between in the app — the `live` ones, ordered as
+// declared. When there's only one, the switcher hides entirely.
+export const LIVE_TOURNAMENTS: Tournament[] = Object.values(TOURNAMENTS).filter(t => t.live);
+
+// Which tournament is running THIS session. Precedence:
+//   1. VITE_ACTIVE_TOURNAMENT env — a STAGING build forces a specific (even not-yet-live)
+//      tournament onto its own URL, without touching production.
+//   2. the player's saved switcher choice (only honoured if that tournament is `live`).
+//   3. the default (Montréal).
+// Resolved ONCE at boot; switching re-boots the app (see switchTournament) so every
+// per-tournament constant (config, field, store keys) re-initialises cleanly.
+function resolveActiveId(): string {
+  const env = import.meta.env.VITE_ACTIVE_TOURNAMENT as string | undefined;
+  if (env && TOURNAMENTS[env]) return env;
+  try {
+    const stored = localStorage.getItem(ACTIVE_STORE_KEY);
+    if (stored && TOURNAMENTS[stored]?.live) return stored;
+  } catch { /* ignore */ }
+  return DEFAULT_TOURNAMENT_ID;
+}
+
+export const ACTIVE_TOURNAMENT_ID = resolveActiveId();
 export const TOURNAMENT: Tournament = TOURNAMENTS[ACTIVE_TOURNAMENT_ID];
+
+// Switch the active tournament: persist the choice and reload so the whole app re-inits
+// for it (each tournament has its own squad/leaderboard, isolated by id). No-op for the
+// current one or a non-live id.
+export function switchTournament(id: string): void {
+  if (id === ACTIVE_TOURNAMENT_ID || !TOURNAMENTS[id]?.live) return;
+  try { localStorage.setItem(ACTIVE_STORE_KEY, id); } catch { /* ignore */ }
+  window.location.reload();
+}
 
 // Convenience: the active surface's theme, with any per-tournament court override
 // applied (e.g. Montréal's green-surround / blue-surface hard court).

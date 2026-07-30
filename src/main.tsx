@@ -8,6 +8,9 @@ import './index.css'
 import App from './App.tsx'
 import { AuthProvider } from './auth/AuthProvider'
 import ErrorBoundary from './components/ErrorBoundary'
+import { initAnalytics } from './data/analytics'
+
+void initAnalytics() // no-op unless VITE_POSTHOG_KEY is set
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -21,11 +21,11 @@ export interface Player {
   hand: 'R' | 'L';
   style: string;
   price: number; // in millions
-  exit: TournamentResult; // real Wimbledon 2026 exit round ('W' = champion)
   surface: { hard: number; clay: number; grass: number };
   ytd: { wins: number; losses: number; titles: number };
   form: FormResult[]; // last 5 (retired from the UI; kept optional-empty)
   yearResults: YearResult[];
+  statsYear?: number; // which season surface/ytd/yearResults describe (2026 = current)
 }
 
 export interface Match {

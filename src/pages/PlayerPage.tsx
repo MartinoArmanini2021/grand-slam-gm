@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
-import { findPlayer, PLAYERS } from '../data/players';
+import { findPlayer, PLAYERS, priceBreakdown } from '../data/players';
 import { getTier, TIER_META } from '../data/tiers';
-import { WIMBLEDON_2026 } from '../data/wimbledon2026';
-import { ROUNDS, isPlayerOut, getPlayerExit, getOpponentId } from '../data/tournament';
+import { ROUNDS, isPlayerOut, getPlayerExit, getOpponentId, getMatchesForRound } from '../data/tournament';
 import { lastName } from '../data/format';
 import { nickOf } from '../data/nicknames';
-import { TOURNAMENT } from '../data/tournamentConfig';
+import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
 import type { Player, RoundId, TournamentResult } from '../types';
 import PlayerAvatar from '../components/PlayerAvatar';
 import SurfaceBar from '../components/SurfaceBar';
@@ -44,6 +43,10 @@ export default function PlayerPage() {
   const tm = TIER_META[tier];
   const ytdPlayed = p.ytd.wins + p.ytd.losses;
   const winRate = ytdPlayed > 0 ? Math.round(p.ytd.wins / ytdPlayed * 100) : 0;
+  const statsYr = p.statsYear ?? 2026;
+  // Transparent pricing: rank base × current-form × active-surface (see priceBreakdown).
+  const pb = priceBreakdown(p.ranking, p.ytd, p.surface[TOURNAMENT.surface]);
+  const pct = (m: number) => `${m >= 1 ? '+' : ''}${Math.round((m - 1) * 100)}%`;
   const first = p.name.split(' ')[0];
   const hand = p.hand === 'R' ? 'right' : 'left';
   const article = /^[aeiou]/i.test(p.style) ? 'an' : 'a';
@@ -110,14 +113,37 @@ export default function PlayerPage() {
         ))}
       </div>
 
-      <div className="mb-4">
-        <Panel title="Surface win rate">
+      <div className="grid md:grid-cols-2 gap-4 mb-4">
+        <Panel title={`Surface win rate · ${statsYr}`}>
           <SurfaceBar hard={p.surface.hard} clay={p.surface.clay} grass={p.surface.grass} highlight={TOURNAMENT.surface} />
+        </Panel>
+
+        {/* Detailed pricing breakdown — rank base × form × surface = price */}
+        <Panel title="How the price is set">
+          <div className="space-y-2">
+            {[
+              { label: `Rank base · #${p.ranking}`, val: `$${pb.base}M`, note: 'ATP rank curve', strong: false },
+              { label: 'Form', val: pct(pb.formMult), note: pb.winRate != null ? `${statsYr} ${pb.winRate}% wins · ${p.ytd.titles} titles` : 'not enough matches', pos: pb.formMult >= 1 },
+              { label: `${SURFACE.label} surface`, val: pct(pb.surfMult), note: pb.surfaceWin != null ? `${pb.surfaceWin}% on ${SURFACE.label.toLowerCase()}` : '—', pos: pb.surfMult >= 1 },
+            ].map((row, i) => (
+              <div key={i} className="flex items-baseline gap-2">
+                <span className="text-xs font-semibold w-28 shrink-0" style={{ color: 'var(--ink-2)' }}>{row.label}</span>
+                <span className="font-num text-sm font-bold" style={{ color: row.pos === undefined ? 'var(--ink)' : row.pos ? 'var(--green)' : 'var(--ember)' }}>{row.val}</span>
+                <span className="text-[10px] truncate" style={{ color: 'var(--ink-3)' }}>{row.note}</span>
+              </div>
+            ))}
+            <div className="flex items-center justify-between pt-2 mt-1" style={{ borderTop: '1px solid rgba(10,27,51,0.08)' }}>
+              <span className="text-xs font-bold uppercase tracking-wide" style={{ color: 'var(--ink-2)' }}>
+                Price{pb.capped && <span className="ml-1 font-semibold normal-case tracking-normal" style={{ color: 'var(--ink-3)' }}>· at ${p.price}M ceiling</span>}
+              </span>
+              <span className="font-num text-xl font-extrabold" style={{ color: 'var(--blue)' }}>${p.price}M</span>
+            </div>
+          </div>
         </Panel>
       </div>
 
       {/* 2026 tournament results */}
-      <Panel title="2026 tournament results">
+      <Panel title={`${statsYr} tournament results`}>
         <div className="flex gap-3 flex-wrap">
           {p.yearResults.map((r, i) => {
             const [bg, color] = resultStyle(r.result);
@@ -135,7 +161,7 @@ export default function PlayerPage() {
             );
           })}
         </div>
-        <div className="flex gap-4 mt-4 pt-3 text-[11px]" style={{ borderTop: '1px solid rgba(10,27,51,0.06)', color: 'var(--ink-3)' }}>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-4 pt-3 text-[11px]" style={{ borderTop: '1px solid rgba(10,27,51,0.06)', color: 'var(--ink-3)' }}>
           <span><span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: SURFACE_DOT.hard }} />Hard</span>
           <span><span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: SURFACE_DOT.clay }} />Clay</span>
           <span><span className="w-1.5 h-1.5 rounded-full inline-block mr-1" style={{ background: SURFACE_DOT.grass }} />Grass</span>
@@ -159,11 +185,11 @@ function H2HSection({ player, defaultOppId }: { player: Player; defaultOppId?: s
   const opp = opponents.find(o => o.id === oppId) ?? opponents[0];
   if (!opp) return null;
 
-  // Real Wimbledon 2026 meeting (if both are in the draw)
-  const meeting = WIMBLEDON_2026.find(m =>
-    (m.p1.name === player.name && m.p2.name === opp.name) ||
-    (m.p2.name === player.name && m.p1.name === opp.name));
-  const ROUND_FULL: Record<string, string> = { R32: 'Round of 32', R16: 'Round of 16', QF: 'Quarter-final', SF: 'Semi-final', F: 'Final' };
+  // A meeting in THIS tournament, if they've already played (from live results).
+  const meeting = ROUNDS.map(r => getMatchesForRound(r.id).find(m =>
+    (m.p1Id === player.id && m.p2Id === opp.id) || (m.p2Id === player.id && m.p1Id === opp.id),
+  )).find(Boolean);
+  const ROUND_FULL: Record<string, string> = { R128: 'Round of 128', R64: 'Round of 64', R32: 'Round of 32', R16: 'Round of 16', QF: 'Quarter-final', SF: 'Semi-final', F: 'Final' };
 
   const rows: { label: string; a: number; b: number; higher: boolean; fmt: (n: number) => string }[] = [
     { label: 'ATP ranking', a: player.ranking, b: opp.ranking, higher: false, fmt: n => `#${n}` },
@@ -188,7 +214,7 @@ function H2HSection({ player, defaultOppId }: { player: Player; defaultOppId?: s
             value={oppId}
             onChange={e => setOppId(e.target.value)}
             aria-label="Compare with player"
-            className="text-sm font-semibold rounded-lg px-2 py-1.5 outline-none max-w-[150px]"
+            className="text-sm font-semibold rounded-lg px-2 py-1.5 max-w-[150px]"
             style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.12)', color: 'var(--ink)' }}
           >
             {opponents.map(o => (
@@ -200,14 +226,14 @@ function H2HSection({ player, defaultOppId }: { player: Player; defaultOppId?: s
         </div>
       </div>
 
-      {/* Real meeting at Wimbledon 2026 */}
+      {/* Meeting in this tournament, once they've played (live results) */}
       <div className="rounded-xl px-3 py-2.5 mb-3 text-xs" style={{ background: meeting ? 'rgba(18,161,80,0.06)' : 'rgba(10,27,51,0.03)', border: `1px solid ${meeting ? 'rgba(18,161,80,0.18)' : 'rgba(10,27,51,0.06)'}` }}>
         {meeting ? (
           <span style={{ color: 'var(--ink)' }}>
-            🎾 Met at {TOURNAMENT.edition} · <b>{ROUND_FULL[meeting.round]}</b> — <b style={{ color: 'var(--green)' }}>{lastName(meeting.winner)}</b> won <span className="font-num" style={{ color: 'var(--ink-2)' }}>{meeting.score}</span>
+            🎾 Met at {TOURNAMENT.edition} · <b>{ROUND_FULL[meeting.round]}</b> — <b style={{ color: 'var(--green)' }}>{lastName(findPlayer(meeting.winnerId)?.name ?? meeting.winnerId)}</b> won
           </span>
         ) : (
-          <span style={{ color: 'var(--ink-3)' }}>They didn't meet in the {TOURNAMENT.edition} draw. Full career H2H arrives with the live-data feed.</span>
+          <span style={{ color: 'var(--ink-3)' }}>They haven’t met yet at the {TOURNAMENT.edition}. Head-to-head fills in as the tournament is played.</span>
         )}
       </div>
 

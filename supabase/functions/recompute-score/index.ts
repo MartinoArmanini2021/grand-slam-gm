@@ -28,8 +28,9 @@ const VICE_MULTIPLIER = 1.5;
 // ── pure scoring (keep identical to src/scoring/serverEngine.ts) ──────────────
 const rankingMultiplier = (rank: number) => 0.8 + 0.5 * ((Math.max(1, Math.min(40, rank)) - 1) / 39);
 const upsetBonus = (w: number, l: number) => (w <= l ? 0 : Math.min(15, Math.round((w - l) * 0.4)));
-const winPoints = (base: number, w: number, l: number) =>
-  Math.round(base * rankingMultiplier(w)) + Math.min(upsetBonus(w, l), Math.round(base * 1.5));
+// l may be undefined (off-roster opponent, no rank) → no upset, matching the client.
+const winPoints = (base: number, w: number, l: number | undefined) =>
+  Math.round(base * rankingMultiplier(w)) + (l == null ? 0 : Math.min(upsetBonus(w, l), Math.round(base * 1.5)));
 
 interface MatchRow { round: string; p1: string; p2: string; winner: string | null }
 interface EntryState {
@@ -57,7 +58,7 @@ function scoreEntry(state: EntryState, matches: MatchRow[], rankById: Record<str
       const m = rm.find(x => x.p1 === id || x.p2 === id);
       if (!m || m.winner !== id) continue;
       const opp = m.p1 === id ? m.p2 : m.p1;
-      const pts = winPoints(base, rank(id), rank(opp));
+      const pts = winPoints(base, rank(id), rankById[opp]); // raw opp rank → undefined = no upset
       total += id === captain ? pts * CAPTAIN_MULTIPLIER : id === vice ? Math.round(pts * VICE_MULTIPLIER) : pts;
     }
   }
@@ -71,7 +72,10 @@ Deno.serve(async (req) => {
     const db = createClient(url, serviceKey);
 
     // Optional { tournamentId } body; default to the active tournament id.
-    let tournamentId = 'wimbledon_2026';
+    // Default MUST equal ACTIVE_TOURNAMENT_ID in src/data/tournamentConfig.ts — keep in
+    // sync when switching tournaments (this file is standalone Deno, so it can't import it).
+    // The cron should also post {"tournamentId":"montreal_2026"} explicitly (see docs/GO_LIVE.md).
+    let tournamentId = 'montreal_2026';
     try { const b = await req.json(); if (b?.tournamentId) tournamentId = b.tournamentId; } catch { /* no body */ }
 
     // Results the server holds → the rounds that are actually "done".
@@ -89,11 +93,20 @@ Deno.serve(async (req) => {
       .from('entries').select('user_id, state').eq('tournament_id', tournamentId);
     if (eErr) throw eErr;
 
+    // Compute every score in memory, then apply them SET-BASED via one RPC per chunk
+    // (a single `update … from jsonb_to_recordset`) instead of one round-trip per entry —
+    // the serial loop would never finish inside the cron window at 100k+ entries.
+    const scores = (entries ?? []).map(e => ({
+      user_id: e.user_id,
+      score: scoreEntry((e.state ?? {}) as EntryState, matches, rankById, playedRounds),
+    }));
     let updated = 0;
-    for (const e of entries ?? []) {
-      const score = scoreEntry((e.state ?? {}) as EntryState, matches, rankById, playedRounds);
-      const { error } = await db.from('entries').update({ score }).eq('user_id', e.user_id).eq('tournament_id', tournamentId);
-      if (!error) updated++;
+    const CHUNK = 5000;
+    for (let i = 0; i < scores.length; i += CHUNK) {
+      const chunk = scores.slice(i, i + CHUNK);
+      const { error } = await db.rpc('apply_entry_scores', { p_tournament: tournamentId, p_scores: chunk });
+      if (error) throw error;
+      updated += chunk.length;
     }
 
     return new Response(JSON.stringify({ ok: true, tournamentId, playedRounds, entriesScored: updated }), {

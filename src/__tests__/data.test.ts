@@ -1,11 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { PLAYERS, getPlayer } from '../data/players';
+import { PLAYERS, getPlayer, priceFor } from '../data/players';
 import { getTier, TIER_ORDER, type Tier } from '../data/tiers';
 import { isSquadValid, tierCounts, SQUAD_SIZE, STARTING_BUDGET } from '../data/squadRules';
 
+// Field-agnostic helpers: build a legal squad from whatever the live field is (so these
+// tests don't hard-code player ids and survive a field/tournament change).
+const byTier = (t: Tier) => PLAYERS.filter(p => getTier(p.ranking) === t).sort((a, b) => a.ranking - b.ranking);
+const cheapestValidSquad = () =>
+  [...byTier('Platinum').slice(0, 2), ...byTier('Gold').slice(0, 3), ...byTier('Silver').slice(0, 5)].map(p => p.id);
+
 describe('squad composition rule (2 Platinum, 3 Gold, 5 Silver of 10)', () => {
-  // 5 Silver (rank ≥26), 3 Gold (11–25), 2 Platinum (≤10)
-  const valid = ['munar', 'giron', 'safiullin', 'mochizuki', 'bergs', 'bublik', 'ruud', 'rublev', 'sinner', 'zverev'];
+  const valid = cheapestValidSquad();
   it('accepts a squad meeting every minimum', () => {
     expect(valid).toHaveLength(SQUAD_SIZE);
     const c = tierCounts(valid);
@@ -15,8 +20,8 @@ describe('squad composition rule (2 Platinum, 3 Gold, 5 Silver of 10)', () => {
     expect(isSquadValid(valid)).toBe(true);
   });
   it('rejects too few Gold', () => {
-    // swap a Gold (rublev #13) for a Silver (brooksby #82) → only 2 Gold left (need 3)
-    const twoGold = ['munar', 'giron', 'safiullin', 'mochizuki', 'bergs', 'bublik', 'ruud', 'brooksby', 'sinner', 'zverev'];
+    // swap a Gold for a 6th Silver → only 2 Gold left (need 3)
+    const twoGold = [...byTier('Platinum').slice(0, 2), ...byTier('Gold').slice(0, 2), ...byTier('Silver').slice(0, 6)].map(p => p.id);
     expect(tierCounts(twoGold).Gold).toBe(2);
     expect(isSquadValid(twoGold)).toBe(false);
   });
@@ -26,8 +31,9 @@ describe('squad composition rule (2 Platinum, 3 Gold, 5 Silver of 10)', () => {
 });
 
 describe('players data integrity', () => {
-  it('is the full real Wimbledon 2026 field (52 players: last-32 + notable entrants)', () => {
-    expect(PLAYERS.length).toBe(52);
+  it('is the live tournament field (enough players for a full draw)', () => {
+    expect(PLAYERS.length).toBeGreaterThanOrEqual(64); // the sample draw seeds 64
+    expect(PLAYERS.length).toBeLessThanOrEqual(128);
   });
 
   it('has unique ids and unique rankings', () => {
@@ -35,44 +41,47 @@ describe('players data integrity', () => {
     expect(new Set(PLAYERS.map(p => p.ranking)).size).toBe(PLAYERS.length);
   });
 
-  it('every player has valid stats and a real exit round', () => {
-    const EXITS = ['W', 'F', 'SF', 'QF', 'R16', 'R32', 'R64', 'R128'];
+  it('every player has valid stats', () => {
     for (const p of PLAYERS) {
       expect(Array.isArray(p.form)).toBe(true);
       for (const s of [p.surface.hard, p.surface.clay, p.surface.grass]) {
         expect(s).toBeGreaterThanOrEqual(0);
         expect(s).toBeLessThanOrEqual(100);
       }
-      expect(p.yearResults.length).toBeGreaterThan(0);
       expect(p.price).toBeGreaterThan(0);
-      expect(EXITS).toContain(p.exit);
     }
   });
 
-  it('getPlayer returns the right player', () => {
-    expect(getPlayer('sinner').ranking).toBe(1);   // champion
-    expect(getPlayer('fery').ranking).toBe(178);   // wildcard semi-finalist
+  it('getPlayer resolves a known field player, throws on an unknown id', () => {
+    const best = [...PLAYERS].sort((a, b) => a.ranking - b.ranking)[0];
+    expect(getPlayer(best.id).ranking).toBe(best.ranking);
+    expect(() => getPlayer('no-such-player-xyz')).toThrow();
   });
 });
 
 describe('pricing curve', () => {
-  it('the #1 is the $50M ceiling; deep-ranked entrants are single-digit value', () => {
-    expect(getPlayer('sinner').price).toBe(50);
-    expect(getPlayer('fery').price).toBe(6);
-    expect(Math.max(...PLAYERS.map(p => p.price))).toBe(50);
+  it('the best-ranked entrant is the most expensive; prices stay in the $4–50M band', () => {
+    const best = [...PLAYERS].sort((a, b) => a.ranking - b.ranking)[0];
+    const max = Math.max(...PLAYERS.map(p => p.price));
+    expect(getPlayer(best.id).price).toBe(max);
+    expect(max).toBeLessThanOrEqual(50);
+    expect(Math.min(...PLAYERS.map(p => p.price))).toBeGreaterThanOrEqual(4);
   });
 
-  it('price is non-increasing as ranking worsens', () => {
-    const byRank = [...PLAYERS].sort((a, b) => a.ranking - b.ranking);
-    for (let i = 1; i < byRank.length; i++) {
-      expect(byRank[i].price).toBeLessThanOrEqual(byRank[i - 1].price);
+  it('the rank base curve is monotonic; detailed prices stay in the $4–50M band', () => {
+    // Detailed price = rank base × form × surface, so final prices are NOT strictly
+    // monotonic in rank. The rank BASE curve is monotonic; final prices stay in range.
+    for (let r = 1; r < 300; r++) expect(priceFor(r + 1)).toBeLessThanOrEqual(priceFor(r));
+    for (const p of PLAYERS) {
+      expect(p.price).toBeGreaterThanOrEqual(4);
+      expect(p.price).toBeLessThanOrEqual(50);
     }
   });
 
   it('the most expensive legal 2/3/5 squad is unaffordable (budget tension)', () => {
-    const byTier = (t: Tier) => PLAYERS.filter(p => getTier(p.ranking) === t).sort((a, b) => b.price - a.price);
-    const priciest = [...byTier('Platinum').slice(0, 2), ...byTier('Gold').slice(0, 3), ...byTier('Silver').slice(0, 5)];
-    const cost = priciest.reduce((s, p) => s + p.price, 0);
+    const priciest = (t: Tier) => PLAYERS.filter(p => getTier(p.ranking) === t).sort((a, b) => b.price - a.price);
+    const squad = [...priciest('Platinum').slice(0, 2), ...priciest('Gold').slice(0, 3), ...priciest('Silver').slice(0, 5)];
+    const cost = squad.reduce((s, p) => s + p.price, 0);
     expect(cost).toBeGreaterThan(STARTING_BUDGET); // all-elite build infeasible → real trade-off
   });
 });

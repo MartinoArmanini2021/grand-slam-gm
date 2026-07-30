@@ -8,6 +8,7 @@ import { SQUAD_SIZE } from '../data/squadRules';
 import { useEscapeToClose } from '../hooks';
 import PlayerAvatar from './PlayerAvatar';
 import PlayerPickerModal from './PlayerPickerModal';
+import SaveButton from './SaveButton';
 
 // The two captains stand ON the court (mid-height, one each side of the net);
 // their avatars scale with the court height (the court is a size container).
@@ -28,6 +29,7 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
   const [manageId, setManageId] = useState<string | null>(null);
   const [subFor, setSubFor] = useState<string | null>(null); // eliminated player being transferred out
   const [assignRole, setAssignRole] = useState<'C' | 'V' | null>(null); // picking a player for an empty leader slot
+  const [signRole, setSignRole] = useState<'C' | 'V' | null>(null);     // signing a NEW player straight into a leader slot (draft)
   const team = squad ?? myTeam;
   const cap = captainId ?? (squad ? undefined : captain ?? undefined);
   const vice = viceCaptainId ?? (squad ? undefined : viceCaptain ?? undefined);
@@ -142,6 +144,13 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
           </button>
         )}
 
+        {/* Save your squad — top-right, only on your own team */}
+        {isOwnTeam && (
+          <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-10">
+            <SaveButton />
+          </div>
+        )}
+
         {/* The two captains — on the court, one each side of the net */}
         {LEADERS.map(({ id, role, x }) => {
           const isC = role === 'C';
@@ -162,7 +171,7 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
                 <div className="rounded-full flex items-center justify-center" style={{ width: LEADER_SIZE, height: LEADER_SIZE, background: 'rgba(12,26,46,0.38)', border: `2px dashed ${badgeColor}` }}>
                   <span style={{ color: badgeColor, fontWeight: 800, fontSize: 'clamp(11px,4cqh,15px)' }}>{onEmpty ? '+' : role}</span>
                 </div>
-                <span className="mt-1 text-[9px] font-bold uppercase tracking-wide" style={{ color: '#fff', opacity: 0.85 }}>{canCaptain ? `Pick ${label}` : label}</span>
+                <span className="mt-1 text-[10px] font-bold uppercase tracking-wide" style={{ color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.55)' }}>{canCaptain ? `Pick ${label}` : label}</span>
               </button>
             );
           }
@@ -183,10 +192,10 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
               </div>
               <div className="mt-1 px-1.5 py-0.5 rounded-md flex items-center gap-1 whitespace-nowrap" style={{ background: 'rgba(10,31,68,0.82)' }}>
                 <span className="text-[11px] font-bold text-white leading-none">{lastName(p.name)}</span>
-                <span className="font-num text-[9px] leading-none" style={{ color: '#7DE2FC' }}>${p.price}M</span>
+                <span className="font-num text-[10px] leading-none" style={{ color: '#7DE2FC' }}>${p.price}M</span>
               </div>
-              <span className="text-[8px] font-bold uppercase tracking-wide mt-0.5" style={{ color: badgeColor }}>{isC ? 'Captain ×2' : 'Vice ×1.5'}</span>
-              {out && <div className="text-[8px] font-bold mt-0.5" style={{ color: '#ffd0c6' }}>OUT {exit}</div>}
+              <span className="text-[10px] font-bold uppercase tracking-wide mt-0.5" style={{ color: badgeColor, textShadow: '0 1px 4px rgba(0,0,0,0.55)' }}>{isC ? 'Captain ×2' : 'Vice ×1.5'}</span>
+              {out && <div className="text-[10px] font-bold mt-0.5" style={{ color: '#ffd0c6', textShadow: '0 1px 4px rgba(0,0,0,0.55)' }}>OUT {exit}</div>}
             </button>
           );
         })}
@@ -254,7 +263,7 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
             onClick={() => setManageId(null)}
             style={{ position: 'fixed', inset: 0, zIndex: 210, background: 'rgba(10,27,51,0.55)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
           >
-            <div onClick={e => e.stopPropagation()} className="fade-in w-full" style={{ maxWidth: 340, background: '#FFFFFF', borderRadius: 18, overflow: 'hidden', boxShadow: '0 20px 60px rgba(10,27,51,0.4)' }}>
+            <div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={`Manage ${mp.name}`} className="fade-in w-full" style={{ maxWidth: 340, maxHeight: '85vh', background: '#FFFFFF', borderRadius: 18, overflow: 'hidden auto', boxShadow: '0 20px 60px rgba(10,27,51,0.4)' }}>
               <div className="flex items-center gap-3 px-4 py-4" style={{ background: 'linear-gradient(120deg,var(--ink),var(--navy-2))' }}>
                 <PlayerAvatar playerId={id} name={mp.name} size="sm" />
                 <div className="min-w-0">
@@ -340,7 +349,7 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
             onClick={() => setSubFor(null)}
             style={{ position: 'fixed', inset: 0, zIndex: 220, background: 'rgba(10,27,51,0.55)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
           >
-            <div onClick={e => e.stopPropagation()} className="fade-in w-full" style={{ maxWidth: 520, background: '#FFFFFF', borderRadius: '18px 18px 0 0', maxHeight: '82vh', display: 'flex', flexDirection: 'column' }}>
+            <div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Choose a player" className="fade-in w-full" style={{ maxWidth: 520, background: '#FFFFFF', borderRadius: '18px 18px 0 0', maxHeight: '82vh', display: 'flex', flexDirection: 'column' }}>
               <div style={{ background: 'linear-gradient(120deg,var(--ink),var(--navy-2))', padding: '16px 18px', borderRadius: '18px 18px 0 0' }}>
                 <div className="flex items-center justify-between">
                   <div className="min-w-0">
@@ -383,7 +392,7 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
         const options = byRank(team.filter(id => id !== other && !isPlayerOut(id, revealed)));
         return (
           <div onClick={() => setAssignRole(null)} style={{ position: 'fixed', inset: 0, zIndex: 220, background: 'rgba(10,27,51,0.55)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-            <div onClick={e => e.stopPropagation()} className="fade-in w-full" style={{ maxWidth: 520, background: '#FFFFFF', borderRadius: '18px 18px 0 0', maxHeight: '82vh', display: 'flex', flexDirection: 'column' }}>
+            <div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Choose a player" className="fade-in w-full" style={{ maxWidth: 520, background: '#FFFFFF', borderRadius: '18px 18px 0 0', maxHeight: '82vh', display: 'flex', flexDirection: 'column' }}>
               <div style={{ background: 'linear-gradient(120deg,var(--ink),var(--navy-2))', padding: '16px 18px', borderRadius: '18px 18px 0 0' }}>
                 <div className="flex items-center justify-between">
                   <div className="text-white font-extrabold text-base">Pick your {isC ? 'Captain (×2)' : 'Vice-Captain (×1.5)'}</div>
@@ -391,6 +400,25 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
                 </div>
               </div>
               <div className="overflow-y-auto p-2" style={{ flex: 1 }}>
+                {/* Draft: you don't need a full squad to name a captain — sign a brand-new
+                    player straight into this slot from the market. */}
+                {canEdit && team.length < SQUAD_SIZE && (
+                  <button
+                    onClick={() => { setAssignRole(null); setSignRole(assignRole); }}
+                    className="flex items-center gap-3 w-full text-left px-2 py-2.5 mb-1 rounded-xl transition-colors"
+                    style={{ background: isC ? 'rgba(217,154,0,0.1)' : 'rgba(14,111,196,0.1)', border: `1px solid ${isC ? 'rgba(217,154,0,0.28)' : 'rgba(14,111,196,0.28)'}` }}
+                  >
+                    <span className="w-9 h-9 rounded-full flex items-center justify-center text-lg shrink-0" style={{ background: isC ? 'rgba(217,154,0,0.16)' : 'rgba(14,111,196,0.16)' }}>🛒</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-bold" style={{ color: 'var(--ink)' }}>Sign a new player as {isC ? 'Captain' : 'Vice'}</div>
+                      <div className="text-[11px]" style={{ color: 'var(--ink-3)' }}>Pick from the market — no need to fill your squad first</div>
+                    </div>
+                    <span className="text-lg" style={{ color: isC ? 'var(--gold)' : 'var(--blue)' }}>›</span>
+                  </button>
+                )}
+                {canEdit && options.length > 0 && (
+                  <div className="text-[11px] text-center my-1.5" style={{ color: 'var(--ink-3)' }}>— or promote a player already in your squad —</div>
+                )}
                 {options.map(id => {
                   const op = findPlayer(id);
                   if (!op) return null;
@@ -406,14 +434,14 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
                     </button>
                   );
                 })}
-                {options.length === 0 && <div className="text-center py-8 text-sm" style={{ color: 'var(--ink-3)' }}>No eligible players.</div>}
+                {options.length === 0 && !canEdit && <div className="text-center py-8 text-sm" style={{ color: 'var(--ink-3)' }}>No eligible players.</div>}
               </div>
             </div>
           </div>
         );
       })()}
 
-      <PlayerPickerModal open={pickerOpen} onClose={() => setPickerOpen(false)} />
+      <PlayerPickerModal open={pickerOpen || !!signRole} onClose={() => { setPickerOpen(false); setSignRole(null); }} assignRole={signRole} />
     </>
   );
 }
