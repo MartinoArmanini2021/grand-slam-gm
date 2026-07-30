@@ -76,15 +76,18 @@ export function useLeagueBoard(leagueId: string | null = null): BoardEntry[] {
       viceCaptain: r.viceCaptain && findPlayer(r.viceCaptain) ? r.viceCaptain : null,
     }));
 
-  // Always show YOUR OWN row once you're signed in — even before you've drafted
-  // (empty squad → "No squad yet"). A freshly-created account must see itself on the
-  // board immediately; we filter the cloud copy of you (above) so this is the only one.
+  // Your OWN board row. Squad/captain/budget come from local state (fresher — reflects an
+  // edit before it has round-tripped), but the SCORE is the server-authoritative value from
+  // your own cloud entry, so your row matches exactly what everyone else sees for you (the
+  // client's local myScore can lag or diverge from the server's number). Falls back to the
+  // local score only before your first cloud entry exists (pre-draft, both are 0 anyway).
+  const myCloud = user ? cloud.find(r => r.userId === user.id) : undefined;
   const board: BoardEntry[] = [
     ...cloudRows,
     ...(user ? [{
       id: 'you', name: teamName, emblem: teamEmblem, manager: username ? `@${username}` : '@you',
       motto: myTeam.length > 0 ? 'Your squad' : 'Draft your squad', color: '#0e6fc4',
-      squad: myTeam, budget, score: myScore, you: true, captain, viceCaptain,
+      squad: myTeam, budget, score: myCloud?.score ?? myScore, you: true, captain, viceCaptain,
     }] : []),
   ];
 

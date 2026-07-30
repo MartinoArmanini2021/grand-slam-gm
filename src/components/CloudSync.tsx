@@ -3,6 +3,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { useProfile, markTournamentJoined } from '../store/profileStore';
 import { useGameStore, sanitizeState } from '../store/gameStore';
 import { useSync } from '../store/syncStore';
+import { toast } from '../store/toastStore';
 import { TOURNAMENT } from '../data/tournamentConfig';
 import {
   fetchProfile, saveProfile, type CloudProfile,
@@ -70,6 +71,9 @@ export default function CloudSync() {
   // True only while WE apply the cloud snapshot, so the store subscription below can tell
   // a cloud restore apart from a real user edit (a restore must not flag "unsaved").
   const applyingCloud = useRef(false);
+  // The optimistic-concurrency rev we last read/wrote for this entry (F2). Every save guards
+  // on it; a conflict means another tab/device advanced it, and we re-fetch to converge.
+  const entryRev = useRef(0);
 
   // Hydrate + merge on login.
   useEffect(() => {
@@ -149,14 +153,18 @@ export default function CloudSync() {
           applyingCloud.current = true;
           useGameStore.setState(restored);              // restore this device from cloud
           applyingCloud.current = false;
+          entryRev.current = entry!.rev;                // adopt the cloud rev as our save base
           clearLocalDirty();                            // local now equals the cloud
           useSync.getState().setStatus('saved');        // in sync with the cloud
           markTournamentJoined(TOURNAMENT.id);          // they already have an entry → already joined
         } else if (hasCloud) {
           markTournamentJoined(TOURNAMENT.id);          // entry exists → joined; keep newer local, push it up
-          if (await saveEntry(user.id, lid, TOURNAMENT.id, gameSnapshot())) markSaved();
+          entryRev.current = entry!.rev;                // guard the push-up on the cloud's current rev
+          const r = await saveEntry(user.id, lid, TOURNAMENT.id, gameSnapshot(), entryRev.current);
+          if (r.ok) { entryRev.current = r.rev; markSaved(); }
         } else if (useGameStore.getState().myTeam.length > 0) {
-          if (await saveEntry(user.id, lid, TOURNAMENT.id, gameSnapshot())) markSaved(); // first push-up
+          const r = await saveEntry(user.id, lid, TOURNAMENT.id, gameSnapshot(), entryRev.current); // first push-up (insert)
+          if (r.ok) { entryRev.current = r.rev; markSaved(); }
         }
       } catch (err) {
         // We could NOT determine the cloud entry. Suppress the onboarding gate (whose
@@ -178,9 +186,25 @@ export default function CloudSync() {
     useSync.getState().setStatus('saving');
     try {
       const lid = await publicLeagueId();
-      const ok = lid ? await saveEntry(user.id, lid, TOURNAMENT.id, gameSnapshot()) : false;
-      if (ok) { markSaved(); useSync.getState().setStatus('saved'); }
-      else useSync.getState().setStatus('error');
+      if (!lid) { useSync.getState().setStatus('error'); return; }
+      const res = await saveEntry(user.id, lid, TOURNAMENT.id, gameSnapshot(), entryRev.current);
+      if (res.ok) {
+        entryRev.current = res.rev; markSaved(); useSync.getState().setStatus('saved');
+      } else if (res.conflict) {
+        // Another tab/device saved first. Converge on the cloud copy (both devices agree)
+        // rather than blindly overwriting it — the honest resolution for two live editors.
+        const entry = await fetchEntry(user.id, lid, TOURNAMENT.id);
+        if (entry && entry.state && Object.keys(entry.state).length > 0) {
+          const restored = { ...entry.state } as Partial<ReturnType<typeof useGameStore.getState>>;
+          sanitizeState(restored);
+          applyingCloud.current = true; useGameStore.setState(restored); applyingCloud.current = false;
+          entryRev.current = entry.rev; clearLocalDirty();
+          useSync.getState().setStatus('saved');
+          toast('Squad updated from another device', 'info');
+        } else { useSync.getState().setStatus('error'); }
+      } else {
+        useSync.getState().setStatus('error');
+      }
     } catch { useSync.getState().setStatus('error'); }
   }, [user]);
 

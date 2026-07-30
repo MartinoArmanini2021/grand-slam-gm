@@ -4,11 +4,10 @@ import { useAuth } from '../auth/AuthProvider';
 import { useGameStore } from '../store/gameStore';
 import { toast } from '../store/toastStore';
 import { useEscapeToClose } from '../hooks';
-import { saveProfile } from '../data/cloud';
 import CountrySelect from './CountrySelect';
 
 export default function UserProfile({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { firstName, lastName, username, phone, country, gender, email, teamName, teamEmblem, set } = useProfile();
+  const { firstName, lastName, username, country, email, teamName, teamEmblem, set } = useProfile();
   const { user, enabled, signOut, updatePassword } = useAuth();
   const openTeam = useGameStore(s => s.openTeam);
 
@@ -17,36 +16,12 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
   const [confirmPw, setConfirmPw] = useState('');
   const [pwBusy, setPwBusy] = useState(false);
   const [pwMsg, setPwMsg] = useState<{ ok: boolean; text: string } | null>(null);
-  // Explicit Save so the user KNOWS their details are stored. Fields still persist to the
-  // device on every keystroke; this pushes the synced fields to the account now and shows
-  // a clear status: edits mark it "unsaved", a save flips it back to "Saved ✓".
-  const [saving, setSaving] = useState(false);
-  const [dirty, setDirty] = useState(false);
-  // Any edit goes through here so it both updates the store AND flags unsaved changes.
-  const setField = (patch: Parameters<typeof set>[0]) => { set(patch); setDirty(true); };
-  const saveNow = async () => {
-    setSaving(true);
-    try {
-      const p = useProfile.getState();
-      if (user) {
-        await saveProfile(user.id, {
-          username: p.username || null, first_name: p.firstName || null, last_name: p.lastName || null,
-          country: p.country || null, team_name: p.teamName || null, team_emblem: p.teamEmblem || null,
-        });
-      }
-      setDirty(false);
-      toast('Profile saved ✓', 'good');
-    } catch {
-      toast('Could not save — check your connection and try again.', 'warn');
-    } finally {
-      setSaving(false);
-    }
-  };
 
-  // Reset transient password state + the unsaved flag when the panel closes, so stale
-  // text/messages don't linger and a fresh open starts from a clean "Saved" baseline.
+  // Reset transient password state when the panel closes so stale text/messages don't linger.
+  // (Profile fields auto-save: `set` persists to the device instantly and CloudSync pushes the
+  // synced fields — username/name/country/team — to the account debounced. No explicit Save.)
   useEffect(() => {
-    if (!open) { setShowPw(false); setPwMsg(null); setNewPw(''); setConfirmPw(''); setDirty(false); }
+    if (!open) { setShowPw(false); setPwMsg(null); setNewPw(''); setConfirmPw(''); }
   }, [open]);
   useEscapeToClose(onClose, open);
 
@@ -56,8 +31,7 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
   const field = { background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.12)', color: 'var(--ink)' } as const;
   const initials = ((firstName[0] ?? '') + (lastName[0] ?? '')) || (username[0] ?? accountEmail[0] ?? 'U');
   // Required = what identifies you on the league: username, email, country. First/last
-  // name are OPTIONAL (many players go by a username), and phone/gender aren't stored
-  // server-side, so requiring any of them would be dishonest.
+  // name are OPTIONAL (many players go by a username).
   const incomplete = [username, accountEmail || email, country].some(v => !v.trim());
   const reqStyle = (v: string) => (v.trim() ? field : { ...field, border: '1px solid rgba(229,71,43,0.55)' });
 
@@ -103,9 +77,9 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
               Please complete the <b>required</b> fields (marked <span style={{ color: 'var(--ember)' }}>*</span>) — they'll be needed to join the live league.
             </div>
           )}
-          {/* Order: Username · Email · Phone+Country · First/Last name (optional) · Gender */}
+          {/* Order: Username · Email · Country · First/Last name (optional). Edits auto-save. */}
           <Row label="Username" req>
-            <input value={username} onChange={e => setField({ username: e.target.value })} placeholder="Pick a username" className="w-full text-sm px-3 py-2.5 rounded-xl" style={reqStyle(username)} />
+            <input value={username} onChange={e => set({ username: e.target.value })} placeholder="Pick a username" className="w-full text-sm px-3 py-2.5 rounded-xl" style={reqStyle(username)} />
           </Row>
           <Row label="Email" req>
             {accountEmail ? (
@@ -114,46 +88,21 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(18,161,80,0.12)', color: 'var(--green)' }}>VERIFIED</span>
               </div>
             ) : (
-              <input value={email} onChange={e => setField({ email: e.target.value })} placeholder="you@email.com" type="email" className="w-full text-sm px-3 py-2.5 rounded-xl" style={reqStyle(email)} />
+              <input value={email} onChange={e => set({ email: e.target.value })} placeholder="you@email.com" type="email" className="w-full text-sm px-3 py-2.5 rounded-xl" style={reqStyle(email)} />
             )}
           </Row>
-          <div className="grid grid-cols-2 gap-3">
-            <Row label="Phone">
-              <input value={phone} onChange={e => setField({ phone: e.target.value })} placeholder="Optional" type="tel" className="w-full text-sm px-3 py-2.5 rounded-xl" style={field} />
-            </Row>
-            <Row label="Country" req>
-              <CountrySelect value={country} onChange={v => setField({ country: v })} />
-            </Row>
-          </div>
+          <Row label="Country" req>
+            <CountrySelect value={country} onChange={v => set({ country: v })} />
+          </Row>
           <div className="grid grid-cols-2 gap-3">
             <Row label="First name">
-              <input value={firstName} onChange={e => setField({ firstName: e.target.value })} placeholder="Optional" className="w-full text-sm px-3 py-2.5 rounded-xl" style={field} />
+              <input value={firstName} onChange={e => set({ firstName: e.target.value })} placeholder="Optional" className="w-full text-sm px-3 py-2.5 rounded-xl" style={field} />
             </Row>
             <Row label="Surname">
-              <input value={lastName} onChange={e => setField({ lastName: e.target.value })} placeholder="Optional" className="w-full text-sm px-3 py-2.5 rounded-xl" style={field} />
+              <input value={lastName} onChange={e => set({ lastName: e.target.value })} placeholder="Optional" className="w-full text-sm px-3 py-2.5 rounded-xl" style={field} />
             </Row>
           </div>
-          <Row label="Gender">
-            <select value={gender} onChange={e => setField({ gender: e.target.value })} className="w-full text-sm px-3 py-2.5 rounded-xl" style={field}>
-              <option value="">Prefer not to say</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
-            </select>
-          </Row>
-
-          {/* Save — explicit so the user always knows their details are stored. */}
-          <button
-            onClick={saveNow}
-            disabled={saving || !dirty}
-            className="w-full py-2.5 rounded-xl text-sm font-bold transition-colors"
-            style={dirty
-              ? { background: 'var(--blue)', color: '#fff' }
-              : { background: 'rgba(18,161,80,0.1)', color: 'var(--green)', border: '1px solid rgba(18,161,80,0.25)' }}
-          >
-            {saving ? 'Saving…' : dirty ? 'Save changes' : 'Saved ✓'}
-          </button>
-          <p className="text-[11px]" style={{ color: 'var(--ink-3)' }}>Your details save to your account. Phone &amp; gender are kept on this device.</p>
+          <p className="text-[11px]" style={{ color: 'var(--ink-3)' }}>Changes save automatically and sync to your account.</p>
 
           {/* ── break ── Your Team */}
           <div className="pt-3" style={{ borderTop: '1px solid rgba(10,27,51,0.07)' }}>

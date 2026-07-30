@@ -9,7 +9,6 @@ import Logo from './Logo';
 import CountrySelect from './CountrySelect';
 
 const EMBLEMS = ['🎾', '🏆', '🔥', '⚡', '🐐', '🦅', '💥', '🎯', '🚀', '🧨'];
-const GENDERS = [['', 'Select…'], ['female', 'Female'], ['male', 'Male'], ['other', 'Other'], ['prefer_not', 'Prefer not to say']] as const;
 
 // ── Onboarding gate ──────────────────────────────────────────────────────────
 // Shown once, the first time a player enters a given tournament (they haven't
@@ -28,7 +27,6 @@ export default function JoinTournament({ onJoined }: { onJoined: () => void }) {
   const [teamName, setTeamName] = useState(profile.teamName && profile.teamName !== 'My Team' ? profile.teamName : (nice ? `${nice}'s Squad` : ''));
   const [username, setUsername] = useState(profile.username || emailLocal);
   const [country, setCountry] = useState(profile.country);
-  const [gender, setGender] = useState(profile.gender);
   const [emblem, setEmblem] = useState(profile.teamEmblem && profile.teamEmblem !== '🎾' ? profile.teamEmblem : '🎾');
   const [error, setError] = useState<string | null>(null);
 
@@ -43,7 +41,6 @@ export default function JoinTournament({ onJoined }: { onJoined: () => void }) {
       teamName: teamName.trim(),
       username: handle,
       country: country.trim(),
-      gender,
       teamEmblem: emblem,
     });
     markTournamentJoined(TOURNAMENT.id);
@@ -98,22 +95,9 @@ export default function JoinTournament({ onJoined }: { onJoined: () => void }) {
                 className="w-full text-sm px-3 py-2.5 rounded-xl mt-1" style={field} />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-2)' }}>Country</label>
-                <div className="mt-1"><CountrySelect value={country} onChange={setCountry} /></div>
-              </div>
-              <div>
-                <label className="text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-2)' }}>Gender</label>
-                <div className="relative mt-1">
-                  <select value={gender} onChange={e => setGender(e.target.value)} aria-label="Gender"
-                    className="w-full text-sm pl-3 pr-8 py-2.5 rounded-xl appearance-none cursor-pointer"
-                    style={{ ...field, color: gender ? 'var(--ink)' : 'var(--ink-3)' }}>
-                    {GENDERS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                  </select>
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] pointer-events-none" style={{ color: 'var(--ink-3)' }}>▾</span>
-                </div>
-              </div>
+            <div>
+              <label className="text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-2)' }}>Country</label>
+              <div className="mt-1"><CountrySelect value={country} onChange={setCountry} /></div>
             </div>
 
 

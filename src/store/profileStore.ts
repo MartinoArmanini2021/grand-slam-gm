@@ -7,9 +7,7 @@ interface ProfileState {
   firstName: string;
   lastName: string;
   username: string;
-  phone: string;
   country: string;
-  gender: string; // '', 'male', 'female', 'other', 'prefer_not' — collected at onboarding
   email: string; // used when playing as a guest; the signed-in email takes precedence in the UI
   teamName: string;
   teamEmblem: string;
@@ -29,7 +27,7 @@ interface ProfileState {
 }
 
 const DEFAULTS = {
-  firstName: '', lastName: '', username: '', phone: '', country: '', gender: '', email: '',
+  firstName: '', lastName: '', username: '', country: '', email: '',
   teamName: 'My Team', teamEmblem: '🎾', joinedTournaments: [] as string[],
 } as const;
 
@@ -48,7 +46,7 @@ export const useProfile = create<ProfileState>()(
       version: 2,
       partialize: (s) => ({
         firstName: s.firstName, lastName: s.lastName, username: s.username,
-        phone: s.phone, country: s.country, gender: s.gender, email: s.email,
+        country: s.country, email: s.email,
         teamName: s.teamName, teamEmblem: s.teamEmblem,
         joinedTournaments: s.joinedTournaments,
       }),

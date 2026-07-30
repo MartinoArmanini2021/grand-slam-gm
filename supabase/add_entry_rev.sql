@@ -1,0 +1,12 @@
+-- F2 — optimistic-concurrency version guard for entries.
+-- Adds a client-owned `rev` counter so two tabs/devices editing the same squad can't
+-- silently clobber each other: a save only lands if the row's rev still equals the rev the
+-- client last read; otherwise it's a detected conflict (the client re-fetches and converges).
+--
+-- Why not `updated_at`? The server scorer bumps score + updated_at every cycle, which would
+-- false-conflict a client every 3 minutes. `rev` is bumped ONLY by client squad writes
+-- (the recompute-score path never touches it), so it's a clean concurrency token.
+--
+-- Idempotent. Existing rows default to 0; a client's first post-migration save reads 0,
+-- guards on rev=0 (matches), and advances to 1 — a seamless migration.
+alter table public.entries add column if not exists rev bigint not null default 0;
