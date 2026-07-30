@@ -79,7 +79,7 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
           )}
           {/* Order: Username · Email · Country · First/Last name (optional). Edits auto-save. */}
           <Row label="Username" req>
-            <input value={username} onChange={e => set({ username: e.target.value })} placeholder="Pick a username" className="w-full text-sm px-3 py-2.5 rounded-xl" style={reqStyle(username)} />
+            <input value={username} onChange={e => set({ username: e.target.value })} placeholder="Pick a username" maxLength={30} className="w-full text-sm px-3 py-2.5 rounded-xl" style={reqStyle(username)} />
           </Row>
           <Row label="Email" req>
             {accountEmail ? (
@@ -96,10 +96,10 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
           </Row>
           <div className="grid grid-cols-2 gap-3">
             <Row label="First name">
-              <input value={firstName} onChange={e => set({ firstName: e.target.value })} placeholder="Optional" className="w-full text-sm px-3 py-2.5 rounded-xl" style={field} />
+              <input value={firstName} onChange={e => set({ firstName: e.target.value })} placeholder="Optional" maxLength={50} className="w-full text-sm px-3 py-2.5 rounded-xl" style={field} />
             </Row>
             <Row label="Surname">
-              <input value={lastName} onChange={e => set({ lastName: e.target.value })} placeholder="Optional" className="w-full text-sm px-3 py-2.5 rounded-xl" style={field} />
+              <input value={lastName} onChange={e => set({ lastName: e.target.value })} placeholder="Optional" maxLength={50} className="w-full text-sm px-3 py-2.5 rounded-xl" style={field} />
             </Row>
           </div>
           <p className="text-[11px]" style={{ color: 'var(--ink-3)' }}>Changes save automatically and sync to your account.</p>

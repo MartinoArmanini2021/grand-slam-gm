@@ -119,6 +119,7 @@ Deno.serve(async (req) => {
       ranAt: new Date().toISOString(),
     });
   } catch (err) {
-    return json({ ok: false, error: String(err) }, 500);
+    console.error('ingest-draw error:', err); // B6: log detail server-side, don't leak it
+    return json({ ok: false, error: 'internal error' }, 500);
   }
 });
