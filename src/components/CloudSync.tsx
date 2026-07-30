@@ -5,10 +5,16 @@ import { useGameStore, sanitizeState } from '../store/gameStore';
 import { useSync } from '../store/syncStore';
 import { toast } from '../store/toastStore';
 import { TOURNAMENT } from '../data/tournamentConfig';
+import { PLAYERS } from '../data/players';
+import { validateSquadLegality, type RosterPricing } from '../data/entryValidation';
 import {
   fetchProfile, saveProfile, type CloudProfile,
   publicLeagueId, fetchEntry, saveEntry, type EntryWrite,
 } from '../data/cloud';
+
+// Client-side roster for PRE-validation (same rules the server RPC enforces) — catches an
+// illegal squad before the round-trip and surfaces the reason instantly.
+const ROSTER: Map<string, RosterPricing> = new Map(PLAYERS.map(p => [p.id, { id: p.id, price: p.price, ranking: p.ranking }]));
 
 // ── Cloud sync (mounted once, renders nothing) ───────────────────────────────
 // Keeps the signed-in user's profile in sync with Supabase. Guests are untouched
@@ -184,12 +190,20 @@ export default function CloudSync() {
   const doSave = useCallback(async () => {
     if (!user || gameHydratedFor.current !== user.id) return;
     useSync.getState().setStatus('saving');
+    // Pre-validate with the SAME rules the server enforces — fail fast, no round-trip.
+    const st = useGameStore.getState();
+    const illegal = validateSquadLegality(
+      { squad: st.myTeam, phase: st.phase, hasTransfers: (st.transfers?.length ?? 0) > 0 }, ROSTER,
+    );
+    if (illegal) { toast(illegal, 'warn'); useSync.getState().setStatus('error'); return; }
     try {
       const lid = await publicLeagueId();
       if (!lid) { useSync.getState().setStatus('error'); return; }
       const res = await saveEntry(user.id, lid, TOURNAMENT.id, gameSnapshot(), entryRev.current);
       if (res.ok) {
         entryRev.current = res.rev; markSaved(); useSync.getState().setStatus('saved');
+      } else if (res.invalid) {
+        toast(res.invalid, 'warn'); useSync.getState().setStatus('error');
       } else if (res.conflict) {
         // Another tab/device saved first. Converge on the cloud copy (both devices agree)
         // rather than blindly overwriting it — the honest resolution for two live editors.

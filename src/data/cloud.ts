@@ -277,16 +277,37 @@ export async function fetchLeaderboard(
   return rows.map(e => boardRow(e.user_id, e, profBy.get(e.user_id)));
 }
 
-// Save with OPTIMISTIC CONCURRENCY (F2). `baseRev` is the rev the caller last read; the
-// write only lands if the row's rev still equals it, so a stale writer (a second tab/device
-// that edited from an older read) can't silently clobber a newer save. Returns:
-//   { ok:true, rev }         — saved; `rev` is the new value to remember
-//   { ok:false, conflict }   — someone else wrote first; caller should re-fetch + converge
-//   { ok:false }             — a transient/other failure; caller surfaces "not saved"
-// The server scorer bumps score/updated_at but NOT rev, so this never false-conflicts on a
-// scoring cycle. (Migration-safe: pre-existing rows are rev=0, matching a first baseRev of 0.)
+// Save an entry — the SINGLE validated write path (F1). Primary route is the server
+// `save_entry` RPC, which validates squad legality + captain/vice lock + the F2 rev guard
+// ATOMICALLY server-side, and is the only way a client can write an entry once
+// save_entry_rpc.sql is applied (direct writes are revoked there). Returns:
+//   { ok:true, rev }          — saved; `rev` is the new value to remember
+//   { ok:false, conflict }    — another tab/device wrote first; caller re-fetches + converges
+//   { ok:false, invalid:msg } — server rejected the squad/lineup (illegal or retroactive)
+//   { ok:false }              — a transient/other failure
 export async function saveEntry(
   userId: string, leagueId: string, tournamentId: string, e: EntryWrite, baseRev = 0,
+): Promise<{ ok: boolean; rev: number; conflict?: boolean; invalid?: string }> {
+  if (!supabase) return { ok: false, rev: baseRev };
+  const rpc = await supabase.rpc('save_entry', {
+    p_tournament: tournamentId, p_league: leagueId, p_state: e.state, p_base_rev: baseRev,
+  });
+  if (!rpc.error) return { ok: true, rev: Number(rpc.data) };
+  if (rpc.error.code === '40001') return { ok: false, rev: baseRev, conflict: true };      // rev conflict
+  if (rpcMissing(rpc.error)) return guardedSave(userId, leagueId, tournamentId, e, baseRev); // pre-migration
+  console.warn('[cloud] save_entry rejected:', rpc.error.message);
+  return { ok: false, rev: baseRev, invalid: rpc.error.message };                          // validation reject
+}
+
+function rpcMissing(e: { code?: string; message?: string }): boolean {
+  return e.code === 'PGRST202' || /save_entry.*does not exist|could not find the function/i.test(e.message ?? '');
+}
+
+// Pre-migration fallback (the save_entry RPC isn't applied yet): the F2 client-side guarded
+// write — optimistic-concurrency UPDATE on the rev the caller last read, else insert. Keeps
+// deploys safe in the window before save_entry_rpc.sql runs; the RPC supersedes it after.
+async function guardedSave(
+  userId: string, leagueId: string, tournamentId: string, e: EntryWrite, baseRev: number,
 ): Promise<{ ok: boolean; rev: number; conflict?: boolean }> {
   if (!supabase) return { ok: false, rev: baseRev };
   const base = {
