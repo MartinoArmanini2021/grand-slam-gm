@@ -17,6 +17,7 @@
 //   POST { "overrides": [ { "round": "QF", "slot": 0, "winnerId": "shelton" } ] }
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { assertServiceRole } from '../_shared/serviceGuard.ts';
 import { parseFullDraw, buildResolver, buildMatchRows } from '../../../src/data/drawParser.ts';
 import field from '../../../src/data/montreal2026Field.json' with { type: 'json' };
 
@@ -40,6 +41,11 @@ const roster = field as { id: string; name: string }[];
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
+  // B1 — CRITICAL: only the cron/service-role may invoke this. Without the guard, any visitor
+  // with the public anon key could POST `overrides` and write arbitrary match winners, setting
+  // everyone's score. The cron sends the service-role key; anon/user JWTs are rejected 401.
+  const denied = assertServiceRole(req);
+  if (denied) return denied;
   try {
     const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 

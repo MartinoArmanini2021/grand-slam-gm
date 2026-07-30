@@ -16,6 +16,7 @@
 // Invoke:  supabase functions invoke recompute-score      (or via a cron / webhook)
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { assertServiceRole } from '../_shared/serviceGuard.ts';
 
 // Base points per round — the one canonical curve (a Masters final = a Slam final).
 const ROUND_POINTS: Record<string, number> = {
@@ -66,6 +67,10 @@ function scoreEntry(state: EntryState, matches: MatchRow[], rankById: Record<str
 }
 
 Deno.serve(async (req) => {
+  // B1: only the cron/service-role may invoke this — reject anon/user JWTs (the public anon
+  // key is a valid JWT and would otherwise let any visitor trigger a rescore = DoS).
+  const denied = assertServiceRole(req);
+  if (denied) return denied;
   try {
     const url = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
