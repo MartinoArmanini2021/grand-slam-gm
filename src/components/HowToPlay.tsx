@@ -23,9 +23,12 @@ export default function HowToPlay({ open, onClose }: { open: boolean; onClose: (
     <div
       onClick={onClose}
       style={{
-        position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(10,27,51,0.55)',
-        backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center',
-        justifyContent: 'center', padding: 16, overflowY: 'auto',
+        // Pin the overlay's HEIGHT to the DYNAMIC viewport (100dvh) — not `inset:0`, which
+        // stretches to the layout viewport BEHIND the mobile URL bar and made the card spill
+        // past the visible top/bottom. box-sizing:border-box keeps padding inside 100dvh.
+        position: 'fixed', top: 0, left: 0, right: 0, height: '100dvh', boxSizing: 'border-box',
+        zIndex: 200, background: 'rgba(10,27,51,0.55)', backdropFilter: 'blur(3px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, overflowY: 'auto',
       }}
     >
       <div
@@ -33,9 +36,10 @@ export default function HowToPlay({ open, onClose }: { open: boolean; onClose: (
         className="fade-in"
         style={{
           background: '#FFFFFF', borderRadius: 18, maxWidth: 520, width: '100%',
-          // dvh (not vh) respects the mobile browser chrome, so the card never spills past
-          // the visible top/bottom; it scrolls internally if the rules are taller.
-          maxHeight: 'calc(100dvh - 32px)', overflowY: 'auto', WebkitOverflowScrolling: 'touch',
+          // Relative to the overlay (already =100dvh minus its 16px padding), so the card can
+          // never exceed the VISIBLE area regardless of vh/svh/dvh quirks; it scrolls
+          // internally when the rules are taller than the screen.
+          maxHeight: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch',
           boxShadow: '0 20px 60px rgba(10,27,51,0.35)',
         }}
       >
