@@ -85,3 +85,12 @@ steps I gave you; move the `VITE_*` env vars into Cloudflare build settings.
 ## 🚧 Nice-to-have follow-ups
 - An in-app admin health banner ("last updated / N unmatched players") — the data for it is already
   in the `ingest-draw` response (`draftedMissing`); just needs surfacing in the UI.
+
+## ⚠️ Known gaps (accepted for launch)
+- **B7 — no app-level rate limiting.** There is no per-user throttle on the write path
+  (`save_entry`, the league RPCs) and no CAPTCHA on signup (email autoconfirm is on, so signup is
+  low-friction but unthrottled). Supabase Auth applies *some* built-in limits (login/signup attempts
+  per IP), but nothing app-level. **Risk:** a scripted actor could spam signups or `save_entry` calls.
+  **Acceptable for a friends launch; before wider sharing:** enable **Turnstile CAPTCHA** in Supabase
+  Auth (also covers bot signups) and add **Cloudflare rate-limiting rules** on `/rest/v1/*` and
+  `/functions/v1/*`. Revisit if abuse appears or the audience grows.
