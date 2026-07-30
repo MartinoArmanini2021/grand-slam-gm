@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLiveStore } from '../store/liveStore';
 import { fetchLiveUpdate, LIVE } from './liveData';
 import { TOURNAMENT } from './tournamentConfig';
-import { ROUNDS } from './tournament';
 
 // ── Live feed hook ───────────────────────────────────────────────────────────
 // Orchestrates the automated results feed: fetch → parse → merge into the live
@@ -22,7 +21,7 @@ export function useLiveFeed(autoPoll = false) {
     setBusy(true);
     setError(null);
     try {
-      const { draw, results } = await fetchLiveUpdate(ROUNDS.map(r => r.id));
+      const { draw, results } = await fetchLiveUpdate();
       if (draw.length) setDraw(draw);      // refresh pairings as the draw fills out
       mergeResults(results, Date.now());   // overrides are preserved
     } catch (e) {

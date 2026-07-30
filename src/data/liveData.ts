@@ -53,10 +53,18 @@ export async function fetchWikipediaWikitext(page = LIVE.wikipediaPage): Promise
 
 // ── Name → roster id ─────────────────────────────────────────────────────────
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+// Wikipedia disambiguates some articles: "[[Alex de Minaur (tennis)|…]]" or
+// "[[Taylor Fritz (tennis player)|…]]". The parenthetical is NOT part of the name and
+// must be dropped before matching the roster, or the drafted player silently never scores.
+const stripDisambig = (s: string) => s.replace(/\s*\((?:tennis|tennis player|[^)]*)\)\s*$/i, '').trim();
 const ID_BY_NAME = new Map(PLAYERS.map(p => [norm(p.name), p.id]));
 // Off-roster opponents (never draftable) map to a stable synthetic id from their
-// name, exactly as the baked draw does — scoring tolerates unknown ids.
-const toId = (name: string): string => ID_BY_NAME.get(norm(name)) ?? `x_${norm(name).replace(/\s+/g, '_')}`;
+// name, exactly as the baked draw does — scoring tolerates unknown ids. We try the raw
+// normalized name first, then the disambiguation-stripped form, so both link styles match.
+const toId = (name: string): string =>
+  ID_BY_NAME.get(norm(name))
+  ?? ID_BY_NAME.get(norm(stripDisambig(name)))
+  ?? `x_${norm(stripDisambig(name)).replace(/\s+/g, '_')}`;
 
 // Strip Wikipedia team markup to a bare player name: "{{flagicon|ITA}} [[Jannik
 // Sinner]]" → "Jannik Sinner"; "[[Name (tennis)|Name]]" → "Name".
@@ -75,6 +83,14 @@ export function cleanTeam(raw: string): string {
 function teamTarget(raw: string): string {
   const m = raw.match(/\[\[([^\]|]+)/);
   return m ? m[1].trim() : cleanTeam(raw);
+}
+
+// The roster id for a raw Wikipedia team cell: its wikilink target, resolved to a player
+// (disambiguation + accents handled). This is the single identity used everywhere, and
+// it's exported so name-reconciliation against the roster is directly testable — a
+// drafted player that fails to resolve here would silently never score.
+export function teamId(raw: string): string {
+  return toId(teamTarget(raw));
 }
 
 // A real Masters draw (e.g. the 96-player National Bank Open) is published as SEVERAL
@@ -108,7 +124,7 @@ export function parseBracket(wikitext: string, roundIds: RoundId[]): { draw: Liv
     const raw = m[3];
     if (!cleanTeam(raw)) continue; // empty / bye
     // Wikipedia marks the match winner by making the advancing team '''bold'''.
-    (teams[rd] ??= {})[idx] = { id: toId(teamTarget(raw)), bold: /'''/.test(raw) };
+    (teams[rd] ??= {})[idx] = { id: teamId(raw), bold: /'''/.test(raw) };
   }
 
   const draw: LiveMatch[] = [];
@@ -148,10 +164,52 @@ export function parseBracket(wikitext: string, roundIds: RoundId[]): { draw: Liv
   return { draw, results };
 }
 
-// One end-to-end sync: fetch → parse → return the draw + results for the caller to
-// merge into the live store. Kept side-effect-free (no store import) so it stays
+// ── Full 96-draw stitching ───────────────────────────────────────────────────
+// A 96-player Masters draw is published as 8 SECTION brackets ({{16TeamBracket…}},
+// rounds RD1..RD4 = R128→R64→R32→R16) that each feed one winner into a single FINALS
+// bracket ({{8TeamBracket…}}, RD1..RD3 = QF→SF→F). Verified against the real 2025 NBO
+// page: this yields 32/32/16/8/4/2/1 matches for R128…F and the correct champion.
+const SECTION_ROUNDS: RoundId[] = ['R128', 'R64', 'R32', 'R16'];
+const FINALS_ROUNDS: RoundId[] = ['QF', 'SF', 'F'];
+
+// Parse the WHOLE draw page into one stitched draw + results. Each bracket is parsed on
+// its own (their RD-team keys would otherwise collide), then slots are renumbered
+// GLOBALLY per round (section order = draw order) so results never overwrite each other,
+// and only the tournament's SCORED rounds are emitted (R128 is dropped — advancement into
+// R64 is already resolved by that point, and the app doesn't score the opening round).
+export function parseFullDraw(wikitext: string): { draw: LiveMatch[]; results: LiveResults } {
+  const brackets = splitBrackets(wikitext);
+  const sections = brackets.filter(b => /^16TeamBracket/i.test(b.type));
+  const finals = brackets.find(b => /^8TeamBracket/i.test(b.type));
+
+  // Not the 8-section Masters shape (e.g. a single test bracket, or a future format) →
+  // fall back to parsing the page as one bracket over the tournament's own rounds.
+  if (sections.length === 0) return parseBracket(wikitext, TOURNAMENT.rounds);
+
+  const perRound: Partial<Record<RoundId, { m: LiveMatch; winner: string | undefined }[]>> = {};
+  const collect = (text: string, roundIds: RoundId[]) => {
+    const { draw, results } = parseBracket(text, roundIds);
+    for (const m of draw) (perRound[m.round] ??= []).push({ m, winner: results[matchKey(m.round, m.slot)] });
+  };
+  for (const s of sections) collect(s.text, SECTION_ROUNDS);
+  if (finals) collect(finals.text, FINALS_ROUNDS);
+
+  const draw: LiveMatch[] = [];
+  const results: LiveResults = {};
+  for (const round of TOURNAMENT.rounds) {
+    const list = perRound[round] ?? [];
+    list.forEach((item, slot) => {
+      draw.push({ round, slot, half: slot < list.length / 2 ? 'top' : 'bottom', p1Id: item.m.p1Id, p2Id: item.m.p2Id });
+      if (item.winner) results[matchKey(round, slot)] = item.winner;
+    });
+  }
+  return { draw, results };
+}
+
+// One end-to-end sync: fetch → parse the full draw → return the draw + results for the
+// caller to merge into the live store. Side-effect-free (no store import) so it stays
 // unit-testable and the store wiring lives with the store.
-export async function fetchLiveUpdate(roundIds: RoundId[]): Promise<{ draw: LiveMatch[]; results: LiveResults }> {
+export async function fetchLiveUpdate(): Promise<{ draw: LiveMatch[]; results: LiveResults }> {
   const wikitext = await fetchWikipediaWikitext();
-  return parseBracket(wikitext, roundIds);
+  return parseFullDraw(wikitext);
 }
