@@ -32,10 +32,22 @@ leaderboard grant lets anyone dump the tables unbounded.
 Needed for the cached public leaderboard endpoint to serve real data.
 - Supabase → SQL Editor → run [`supabase/public_leaderboard.sql`](../supabase/public_leaderboard.sql).
 
-### 5. Turn on server scoring (cron)  — *required for the live leaderboard to move*
-- Supabase → SQL Editor → run [`supabase/setup_scoring_cron.sql`](../supabase/setup_scoring_cron.sql),
-  replacing `<SERVICE_ROLE_KEY>` with your real service-role key (Settings → API).
-- ⚠️ This scores against the `matches` table — see **Live results** below; that table still needs a data source.
+### 5. Turn on server scoring (cron)  — ✅ *you've done this*
+- `supabase/setup_scoring_cron.sql` — recomputes everyone's score from `matches` every 3 min.
+
+### 5b. Turn on the results feed (the bridge — now built)  — *do this when the draw publishes (~31 Jul)*
+This is what actually fills the `matches` table, so scores move for everyone. Two steps:
+1. **Deploy the function:**
+   ```
+   supabase functions deploy ingest-draw
+   ```
+2. **Schedule it:** SQL Editor → run [`supabase/setup_ingest_cron.sql`](../supabase/setup_ingest_cron.sql)
+   (replace `<SERVICE_ROLE_KEY>`, same as the scoring cron). Runs every 5 min.
+- **Smoke test after deploy:** `supabase functions invoke ingest-draw` → the JSON shows
+  `pairings`, `resultsKnown`, `matchesWritten`, and `draftedMissing` (names that didn't match
+  the roster — should be empty once the draw is up). Pre-draw it returns 0s, which is correct.
+- **Manual override** if the feed ever gets a match wrong: invoke with a body, e.g.
+  `{"overrides":[{"round":"QF","slot":0,"winnerId":"shelton"}]}` — a human always wins.
 
 ---
 
@@ -62,11 +74,14 @@ steps I gave you; move the `VITE_*` env vars into Cloudflare build settings.
 ---
 
 ## ⚙️ Code-side items already handled
-- ✅ Leaderboard polling now pauses on hidden tabs + jitters (protects the backend at scale).
+- ✅ **The live-results bridge is built** — `ingest-draw` (Wikipedia → `matches`), sharing the exact
+  parser 90+ unit tests validate. Deploy it per step 5b when the draw publishes.
+- ✅ Full 96-draw parser + roster name reconciliation (all 74 players, tested against the real 2025 draw).
+- ✅ Leaderboard polling pauses on hidden tabs + jitters (protects the backend at scale).
 - ✅ The scorer paginates entries (won't silently score only the first 1000 at scale).
 - ✅ Score column is server-authoritative (clients can't write it).
 - ✅ Public board is edge-cached.
 
-## 🚧 Still to build (the live-results pipeline)
-The server leaderboard is scored from the `matches` table, but **nothing writes it yet**. Until the
-feed→`matches` bridge is built, real results won't reach other players. This is the next major task.
+## 🚧 Nice-to-have follow-ups
+- An in-app admin health banner ("last updated / N unmatched players") — the data for it is already
+  in the `ingest-draw` response (`draftedMissing`); just needs surfacing in the UI.
