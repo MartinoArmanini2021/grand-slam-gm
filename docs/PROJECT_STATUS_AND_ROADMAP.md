@@ -21,10 +21,10 @@
 
 **Where it stands today.** The app is **live and working** for the current tournament (National Bank Open, Montréal, Aug 2026), with real users (a private friends league). The core game, the account system, and the live‑scoring data pipeline are all built. Over the last stretch the project went through an intensive **security and data‑integrity hardening pass** — the parts that make sure nobody's squad is lost and nobody's score is wrong — plus a live‑event debugging pass as the real tournament began.
 
-**The headline risks / decisions right now.**
-1. **First‑round scoring.** The app scores from the Round of 64 onward and treats the opening round as a non‑scored "play‑in." That's a deliberate design choice, but it means early matches don't earn points, and the automated result‑reader does not reliably parse that opening round. This matters much more for the US Open (see below).
-2. **The US Open is a different animal.** It is a 128‑player Grand Slam, not a 96‑player Masters. Switching to it is real work: new player field, new pricing, new tournament config, and — critically — **validating the automated draw reader against the Grand Slam draw format**.
-3. **Operational maturity.** Monitoring is manual, there's no automated test gate on deploys, email delivery for new sign‑ups is unverified, and there's no bot/abuse protection. These are fine for a handful of friends but must be addressed before a larger US Open audience.
+**The headline status / decisions right now.**
+1. ✅ **First‑round scoring — resolved for the US Open.** The Montréal app scores from the Round of 64 onward (its opening round is a bye‑heavy "play‑in" the reader parses poorly). For the US Open, the automated draw reader has now been **validated against the real 2025 Grand Slam draw** — all seven rounds, including the fully‑played first round, parse perfectly (127/127 matches) — and the config scores all seven. So at the US Open every match counts from round one.
+2. 🟡 **The US Open port — de‑risked, one piece pending.** It is a 128‑player Grand Slam, not a 96‑player Masters. The tournament config is now scaffolded and the draw reader is validated; the main remaining piece is the real **128‑player field + pricing**, which simply waits for the official entry list to publish (~1–2 weeks out).
+3. 🔴 **Operational maturity.** Monitoring is manual, there's no automated test gate on deploys, email delivery for new sign‑ups is unverified, and there's no bot/abuse protection. Fine for a handful of friends; must be addressed before a larger US Open audience.
 
 **The goal.** A flawless live experience for the US Open, and a foundation good enough to run the whole tennis season and stand up as a best‑in‑class product.
 
@@ -157,7 +157,7 @@ The two non‑negotiable guarantees driving this work: **(1) every piece of user
 
 | # | Item | Severity | Notes |
 |---|---|---|---|
-| 1 | **First‑round scoring + parser** | 🔴 High | The opening round is not scored, and the parser does not reliably read that round's results (it was built and tested for Round‑of‑64 onward). Decision + parser work required — **critical for the US Open**, where all 128 players play round 1. |
+| 1 | **First‑round scoring + parser** | ✅ Resolved for the Slam | The parser is now **validated against the real 2025 US Open draw** — all 7 rounds, 127/127 matches captured, first round included (locked in as a regression test). At the US Open every round scores. (Montréal's own opening round stays an unscored play‑in — a minor, event‑specific choice, since its byes make that round unreliable to parse.) |
 | 2 | **Shang name fix — server redeploy pending** | 🟡 | A name‑matching fix (family‑name‑first names like "Shang Juncheng") is deployed to the client; the ingest Edge Function still needs the one‑click redeploy to store the correct id. |
 | 3 | **No email delivery verified (custom SMTP)** | 🔴 High | Supabase's built‑in email sender is rate‑limited and "not for production." Without a real email provider, new sign‑ups may never receive a confirmation and **cannot log in**. Fine for existing users; a blocker for a wider US Open audience. |
 | 4 | **No bot/abuse protection** | 🟡 | No CAPTCHA on sign‑up and no app‑level rate limiting. Acceptable for a private friends league; needed before public/wider sharing. |
@@ -184,13 +184,13 @@ Small, closes out Montréal cleanly and de‑risks the pipeline.
 - **A2** Decide first‑round scoring policy (see B‑stream) and, if scoring it, **fix + validate the first‑round parser** against live data. *(1–2 days)*
 - **A3** Stand up basic monitoring: a simple recurring check that alerts if `ingest_health` goes stale or a cron stops. *(0.5 day)*
 
-### Workstream B — US Open readiness (weeks 1–2) 🔴 *the critical path*
-The US Open is not a config toggle; it's a genuine port. The app already supports multiple tournaments (a Cincinnati entry is stubbed), which helps — but the Grand Slam format is different.
-- **B1** Add the **US Open tournament config**: 128 draw, **7 rounds (R128 → F)**, dates/schedule, hard‑court theme (its blue court). *(0.5 day)*
-- **B2** Build the **player field** (128 entrants) and the **pricing model + tier seed** (`player_stats`), mirroring the Montréal setup. *(1–2 days)*
-- **B3** **Validate the draw parser against the real US Open draw.** A Grand Slam has **no byes**, so every player plays round 1 — the exact case the current parser handles poorly. This is the single biggest technical risk and must be tested against the live Wikipedia page before launch. *(2–3 days, includes fixing first‑round result capture)*
-- **B4** **Scoring‑rules decision:** score all 7 rounds (so round 1 counts for everyone) — recommended for a Slam — and set the round‑1 point value. Update the engine + tests accordingly. *(1 day)*
-- **B5** **Stage it** on the preview URL (`VITE_ACTIVE_TOURNAMENT=usopen_2026`) and run the full pipeline end‑to‑end on the real draw before flipping it live. *(0.5 day)*
+### Workstream B — US Open readiness (weeks 1–2) 🟡 *mostly de‑risked; the field is the remaining piece*
+The US Open is a genuine port, not a config toggle — but the two hardest parts are now done: the config is scaffolded and the draw reader is proven on the real Grand Slam format.
+- ✅ **B1 (done)** Added the **US Open tournament config** (staged, off): 128 draw, **7 rounds (R128 → F)**, placeholder schedule, US Open blue court.
+- 🔴 **B2 (the remaining piece — waiting on data)** Build the **128‑player field** and the **pricing model + tier seed** (`player_stats`), mirroring the Montréal setup. Blocked only on the official entry list publishing (~1–2 weeks before the event). *(1–2 days once the list is out)*
+- ✅ **B3 (done — the big de‑risk)** Validated the draw parser against the **real 2025 US Open draw**: all 7 rounds, 127/127 matches captured, first round included — locked in as a regression test. Grand Slams have no byes, so the opening round parses cleanly (unlike Montréal's).
+- 🟢 **B4 (handled)** The config scores all 7 rounds, so round 1 counts for everyone; the engine already carries a round‑1 point value. Revisit only to tune the value.
+- 🟡 **B5** **Stage it** on the preview URL (`VITE_ACTIVE_TOURNAMENT=usopen_2026`) and run the full pipeline end‑to‑end on the real draw before flipping it live. *(0.5 day, once B2 is in)*
 
 ### Workstream C — Reliability & scale (weeks 1–3) 🟡
 Turn "works for friends" into "works for a crowd."
@@ -213,9 +213,9 @@ Make it feel best‑in‑class.
 
 | Week | Focus |
 |---|---|
-| **Week 1** | A1–A3 (close Montréal) · B1–B2 (config + field) · C1 (email) · C4 (git remote + CI) |
-| **Week 2** | **B3 (parser validation — the critical one)** · B4 (scoring rules) · C2–C3 (bot protection + Pro) |
-| **Week 3** | B5 (staging dry‑run on the live US Open draw) · C5 (monitoring) · D1–D2 (onboarding, admin banner) |
+| **Week 1** | A1–A3 (close Montréal) · ✅ *B1 + B3 already done — config scaffolded, parser validated* · C1 (email) · C4 (git remote + CI) |
+| **Week 2** | **B2 the moment the entry list publishes** (field + pricing) · C2–C3 (bot protection + Pro) · D1 (onboarding) |
+| **Week 3** | B5 (staging dry‑run on the live US Open draw) · C5 (monitoring) · D2 (admin banner) |
 | **Week 4** | Buffer + final go‑live checklist · D3–D5 (polish) · launch |
 
 ---
