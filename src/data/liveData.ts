@@ -39,9 +39,12 @@ export function parseBracket(wikitext: string, roundIds: RoundId[]): { draw: Liv
   return parseBracketCore(wikitext, roundIds, resolve);
 }
 
-// Parse the whole draw page into the tournament's scored rounds.
+// Parse the whole draw page into the tournament's scored rounds. includeIncomplete=true so the
+// CLIENT bracket shows the draw the moment it publishes — seeds paired with a "TBD" opponent
+// that fills in as the first round is played. (The server ingest uses the default, false, so
+// public.matches only ever holds fully-known pairings for scoring.)
 export function parseFullDraw(wikitext: string): { draw: LiveMatch[]; results: LiveResults } {
-  return parseFullDrawCore(wikitext, { scoredRounds: TOURNAMENT.rounds, resolve });
+  return parseFullDrawCore(wikitext, { scoredRounds: TOURNAMENT.rounds, resolve, includeIncomplete: true });
 }
 
 // Runs client-side via the MediaWiki API with origin=* — the CORS-enabled path. (The plain

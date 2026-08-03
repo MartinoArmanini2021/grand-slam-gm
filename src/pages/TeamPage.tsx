@@ -3,13 +3,13 @@ import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { useLeagueBoard } from '../data/leagueBoard';
 import { getPlayer } from '../data/players';
-import { ROUNDS } from '../data/tournament';
+import { ROUNDS, playerRoundPoints, playedScoredRounds } from '../data/tournament';
 import { lastName } from '../data/format';
 import SquadCourt from '../components/SquadCourt';
 import PlayerAvatar from '../components/PlayerAvatar';
 import PlayerTag from '../components/PlayerTag';
 import { toast } from '../store/toastStore';
-import type { Transfer } from '../types';
+import type { Transfer, RoundId } from '../types';
 
 const roundShort = (id: string) => ROUNDS.find(r => r.id === id)?.short ?? id;
 
@@ -25,7 +25,7 @@ function BackToLeague() {
 }
 
 export default function TeamPage() {
-  const { myTeam, initialSquad, transfers, captain, viceCaptain, budget, myScore, viewTeam, setActiveTab } = useGameStore();
+  const { myTeam, initialSquad, transfers, captain, viceCaptain, captainHistory, viceCaptainHistory, budget, myScore, viewTeam, setActiveTab } = useGameStore();
   const { teamName, teamEmblem, username } = useProfile();
   // Real league members come from the public board (everyone is a member of it).
   const board = useLeagueBoard(null);
@@ -37,6 +37,7 @@ export default function TeamPage() {
         emblem={teamEmblem} name={teamName} manager={username ? `@${username}` : '@you'} color="var(--blue)"
         score={myScore} budget={budget} squad={myTeam} captainId={captain ?? myTeam[0] ?? ''} viceCaptainId={viceCaptain ?? ''} editable
         initialSquad={initialSquad} transfers={transfers}
+        captainHistory={captainHistory} viceCaptainHistory={viceCaptainHistory}
       />
     );
   }
@@ -64,10 +65,11 @@ export default function TeamPage() {
   );
 }
 
-function TeamView({ emblem, name, manager, color, score, budget, squad, captainId, viceCaptainId, editable, initialSquad = [], transfers = [] }: {
+function TeamView({ emblem, name, manager, color, score, budget, squad, captainId, viceCaptainId, editable, initialSquad = [], transfers = [], captainHistory = [], viceCaptainHistory = [] }: {
   emblem: string; name: string; manager: string; color: string;
   score: number; budget: number; squad: string[]; captainId: string; viceCaptainId?: string; editable?: boolean;
   initialSquad?: string[]; transfers?: Transfer[];
+  captainHistory?: { round: string; playerId: string }[]; viceCaptainHistory?: { round: string; playerId: string }[];
 }) {
   const setProfile = useProfile(s => s.set);
   const [editing, setEditing] = useState(false);
@@ -149,11 +151,102 @@ function TeamView({ emblem, name, manager, color, score, budget, squad, captainI
           : <>Tap a player to see their profile</>}
       </div>
 
+      {/* Points each player has earned, round by round — your own team only, where the full
+          captain/transfer history is available to make the breakdown exact. */}
+      {editable && (
+        <PointsByRound
+          initialSquad={initialSquad.length ? initialSquad : squad}
+          transfers={transfers}
+          captainHistory={captainHistory}
+          viceCaptainHistory={viceCaptainHistory}
+        />
+      )}
+
       {/* Squad stats + transfer history — side by side on desktop, stacked on mobile */}
-      <div className="grid md:grid-cols-2 gap-3 items-start">
+      <div className="grid md:grid-cols-2 gap-3 items-start mt-3">
         <SquadStats squad={squad} captainId={captainId} viceCaptainId={viceCaptainId} budget={budget} />
         <TransferHistory initialSquad={initialSquad.length ? initialSquad : squad} transfers={transfers} />
       </div>
+    </div>
+  );
+}
+
+// Points each squad member has earned, round by round — mirrors exactly what the board
+// scored (win points × captain/vice multiplier, respecting who was in the squad each round
+// after transfers).
+function PointsByRound({ initialSquad, transfers, captainHistory, viceCaptainHistory }: {
+  initialSquad: string[]; transfers: Transfer[];
+  captainHistory: { round: string; playerId: string }[]; viceCaptainHistory: { round: string; playerId: string }[];
+}) {
+  const openPlayer = useGameStore(s => s.openPlayer);
+  const rounds = playedScoredRounds();
+
+  // The squad as it stood in a given round (initial squad + transfers logged in earlier rounds).
+  const squadAt = (round: RoundId): Set<string> => {
+    const ri = ROUNDS.findIndex(r => r.id === round);
+    let s = [...initialSquad];
+    for (const t of transfers) if (ROUNDS.findIndex(r => r.id === t.round) < ri) s = s.map(id => (id === t.out ? t.in : id));
+    return new Set(s);
+  };
+  const squads = new Map(rounds.map(r => [r, squadAt(r)]));
+
+  // Every player who was ever on the squad, with their per-round points + total.
+  const everOnSquad = [...new Set([...initialSquad, ...transfers.map(t => t.in)])];
+  const rows = everOnSquad
+    .map(id => {
+      const cells = rounds.map(r => (squads.get(r)!.has(id) ? playerRoundPoints(id, r, captainHistory, viceCaptainHistory) : null));
+      const total = cells.reduce<number>((sum, c) => sum + (c ?? 0), 0);
+      return { id, cells, total };
+    })
+    .sort((a, b) => b.total - a.total);
+
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.08)' }}>
+      <div className="px-4 py-3" style={{ borderBottom: '1px solid rgba(10,27,51,0.06)' }}>
+        <h2 className="text-sm font-bold" style={{ color: 'var(--ink)' }}>Points by round</h2>
+      </div>
+      {rounds.length === 0 ? (
+        <div className="px-4 py-6 text-center text-[12px]" style={{ color: 'var(--ink-3)' }}>
+          No rounds scored yet — points will appear here, round by round, as your players win.
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr style={{ background: 'var(--raised)', borderBottom: '1px solid rgba(10,27,51,0.1)' }}>
+                <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wide sticky left-0" style={{ color: 'var(--ink-2)', background: 'var(--raised)' }}>Player</th>
+                {rounds.map(r => (
+                  <th key={r} className="text-center px-2 py-2 text-[10px] font-bold uppercase tracking-wide font-num" style={{ color: 'var(--ink-3)', minWidth: 40 }}>
+                    {ROUNDS.find(x => x.id === r)?.short ?? r}
+                  </th>
+                ))}
+                <th className="text-right px-3 py-2 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--blue)' }}>Pts</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(({ id, cells, total }) => {
+                const p = getPlayer(id);
+                return (
+                  <tr key={id} onClick={() => openPlayer(id)} className="cursor-pointer transition-colors hover:bg-black/[0.02]" style={{ borderBottom: '1px solid rgba(10,27,51,0.05)' }}>
+                    <td className="px-3 py-1.5 sticky left-0" style={{ background: '#fff' }}>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <PlayerAvatar playerId={id} name={p.name} size="sm" ring={false} />
+                        <span className="text-xs font-semibold truncate" style={{ color: 'var(--ink)' }}>{lastName(p.name)}</span>
+                      </div>
+                    </td>
+                    {cells.map((c, i) => (
+                      <td key={i} className="text-center px-2 py-1.5 font-num text-xs" style={{ color: c ? 'var(--ink)' : 'var(--ink-3)', fontWeight: c ? 700 : 400 }}>
+                        {c == null ? '·' : c === 0 ? '–' : c}
+                      </td>
+                    ))}
+                    <td className="text-right px-3 py-1.5 font-num text-sm font-extrabold" style={{ color: 'var(--blue)' }}>{total}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { PLAYERS, getPlayer } from '../data/players';
-import { ROUNDS, isPlayerOut, getPlayerExit } from '../data/tournament';
+import { ROUNDS, isPlayerOut, getPlayerExit, tournamentStarted } from '../data/tournament';
 import { getTier, TIER_META, type Tier } from '../data/tiers';
 import { tierCounts, squadShortfall, isSquadValid, isTierFull, TIER_MINIMUMS, SQUAD_SIZE, STARTING_BUDGET } from '../data/squadRules';
 import PlayerAvatar from '../components/PlayerAvatar';
@@ -15,15 +15,13 @@ import { onActivate } from '../hooks';
 import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
 import type { RoundId, Player } from '../types';
 
-type SortKey = 'ranking' | 'surface';
+type SortKey = 'ranking' | 'surface' | 'price';
 
 const TEAM_SIZE = SQUAD_SIZE;
 // The tournament's own surface (e.g. hard for Montréal) — drives which win% the
 // market emphasises (sort option, bold column, squad-row stat).
 const SURF = TOURNAMENT.surface;
-// Price tracks ranking closely (rank base × form × surface), so a "$ Price" sort
-// would nearly mirror "# Rank" — we offer Rank + the surface win% for a distinct axis.
-const SORT_LABEL: Record<SortKey, string> = { ranking: '# Rank', surface: `${SURFACE.label} %` };
+const SORT_LABEL: Record<SortKey, string> = { ranking: '# Rank', surface: `${SURFACE.label} %`, price: '$ Price' };
 
 export default function DraftPage() {
   const { myTeam, captain, viceCaptain, budget, phase, currentRoundIndex, removePlayer, setCaptain, setViceCaptain, finalizeDraft, openPlayer, setActiveTab } = useGameStore();
@@ -39,6 +37,7 @@ export default function DraftPage() {
   const dismissVideoHint = () => { setVideoHint(false); try { localStorage.setItem('gsgm-video-hint', 'off'); } catch { /* ignore */ } };
 
   const locked = phase !== 'draft'; // squad is locked after the draft — transfers happen on the Bracket page
+  const draftClosed = tournamentStarted(); // P6: no locking once the tournament has a result
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
   const counts = tierCounts(myTeam);
   const valid = isSquadValid(myTeam);
@@ -50,6 +49,7 @@ export default function DraftPage() {
     .sort((a, b) => {
       if (sort === 'ranking') return a.ranking - b.ranking;
       if (sort === 'surface') return b.surface[SURF] - a.surface[SURF];
+      if (sort === 'price') return b.price - a.price || a.ranking - b.ranking; // dearest first; rank breaks ties
       return 0;
     }), [sort, search, tierFilter]);
 
@@ -104,7 +104,7 @@ export default function DraftPage() {
             <div className="flex items-center gap-2 ml-auto">
               <span className="text-[10px] font-bold uppercase tracking-wide shrink-0" style={{ color: 'var(--ink-3)' }}>Sort by</span>
               <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.07)' }}>
-                {(['ranking', 'surface'] as SortKey[]).map(s => (
+                {(['ranking', 'surface', 'price'] as SortKey[]).map(s => (
                   <button
                     key={s}
                     onClick={() => setSort(s)}
@@ -360,6 +360,10 @@ export default function DraftPage() {
 
             {locked ? (
               <div className="w-full py-2.5 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(18,161,80,0.1)', color: 'var(--green)' }}>Squad locked ✓</div>
+            ) : draftClosed ? (
+              <div className="w-full py-2.5 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(229,71,43,0.08)', color: 'var(--ember)', border: '1px solid rgba(229,71,43,0.25)' }}>
+                Draft closed — the tournament has started
+              </div>
             ) : (
               <button
                 onClick={() => { finalizeDraft(); setShowLocked(true); }}

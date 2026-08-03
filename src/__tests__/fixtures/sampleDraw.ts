@@ -82,3 +82,29 @@ export const roles = {
 export function loadSampleTournament(): void {
   useLiveStore.setState({ draw: sampleDraw, results: sampleResults, overrides: {}, lastSync: null });
 }
+
+// The recorded results only THROUGH a given round (later rounds undecided) — `null` = none.
+function resultsThrough(through: RoundId | null): LiveResults {
+  if (through == null) return {};
+  const upto = ROUND_SEQ.indexOf(through);
+  const out: LiveResults = {};
+  for (const m of sampleDraw) {
+    if (ROUND_SEQ.indexOf(m.round) <= upto) {
+      const k = matchKey(m.round, m.slot);
+      out[k] = sampleResults[k];
+    }
+  }
+  return out;
+}
+
+// Load the FULL draw (all pairings) but with results revealed only through `through`
+// (null = draw only, no results). Models the live cadence: pairings are known, outcomes
+// arrive over time — letting a test set a captain while the upcoming round is still open.
+export function loadSampleThrough(through: RoundId | null): void {
+  useLiveStore.setState({ draw: sampleDraw, results: resultsThrough(through), overrides: {}, lastSync: null });
+}
+
+// Reveal one more round's results (cumulative), keeping the same draw.
+export function revealThrough(through: RoundId): void {
+  useLiveStore.setState(s => ({ ...s, results: resultsThrough(through) }));
+}

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, Fragment } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
-import { ROUNDS, isPlayerOut, roundPlayable } from '../data/tournament';
+import { ROUNDS, isPlayerOut, roundPlayable, tournamentStarted } from '../data/tournament';
 import { isSquadValid, SQUAD_SIZE } from '../data/squadRules';
 import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
 import { onActivate } from '../hooks';
@@ -10,6 +10,7 @@ import { useLeagueBoard, useMyLeagues } from '../data/leagueBoard';
 import SquadCourt from '../components/SquadCourt';
 import TournamentWelcome from '../components/TournamentWelcome';
 import Countdown from '../components/Countdown';
+import ScoringPendingNote from '../components/ScoringPendingNote';
 import { shareInvite } from '../data/invite';
 import type { GamePhase, RoundId } from '../types';
 
@@ -184,6 +185,8 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
             {boardLeague ? `Draft your squad to join ${boardName}.` : 'Draft your squad to join the Public League.'}
           </div>
         ) : (
+          <>
+          {!tournamentStarted() && <ScoringPendingNote />}
           <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.08)' }}>
             <table className="w-full text-sm border-collapse bg-white">
               <thead>
@@ -226,7 +229,7 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
                           <div className="text-[10px] font-semibold mt-0.5 pl-9" style={{ color: 'var(--gold)' }}>🥇 Top of the league</div>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-right font-num text-base font-extrabold" style={{ color: 'var(--blue)' }}>{row.score}</td>
+                      <td className="px-3 py-2 text-right font-num text-base font-extrabold" style={{ color: 'var(--blue)' }}>{tournamentStarted() ? row.score : '–'}</td>
                     </tr>
                   </Fragment>
                 ))}
@@ -238,6 +241,7 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
               </button>
             )}
           </div>
+          </>
         )}
         </div>{/* /leaderboard */}
 

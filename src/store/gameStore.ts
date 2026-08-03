@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { GamePhase, RoundId, RoundScore, BudgetReturn, Transfer } from '../types';
 import {
-  ROUNDS, getMatchesForRound, isPlayerOut, BUDGET_RETURN_RATES, winPoints, transfersOpen, roundPlayable,
+  ROUNDS, getMatchesForRound, isPlayerOut, BUDGET_RETURN_RATES, winPoints, transfersOpen, roundPlayable, roundHasResult,
+  tournamentStarted,
 } from '../data/tournament';
 import { ACTIVE_TOURNAMENT_ID } from '../data/tournamentConfig';
 import { track } from '../data/analytics';
@@ -30,6 +31,29 @@ function pickLeaders(team: string[], captain: string | null, vice: string | null
   if (!cap) cap = byRank.find(id => id !== vc) ?? null;
   if (!vc) vc = byRank.find(id => id !== cap) ?? null;
   return { captain: cap, viceCaptain: vc };
+}
+
+// STRICT captain-of-record (P1): a round's captain/vice counts only if it was committed
+// BEFORE that round produced a result — mirroring the server's save_entry lock, which
+// rejects a post-result change. So we stamp the current leaders into the history the moment
+// they're set during pre_round while the round is still open; once the round has any result
+// the pick is frozen (setCaptain refuses, the court disables it). Upsert = replace this
+// round's entry, or drop it when the slot is vacated (playerId null). Recording after the
+// round has a result is a no-op — the server would reject that write, and it would be a
+// retroactive captain pick (the captain twin of the P3 squad hole).
+function recordLeaders(
+  roundId: RoundId | undefined,
+  captain: string | null,
+  viceCaptain: string | null,
+  captainHistory: { round: RoundId; playerId: string }[],
+  viceCaptainHistory: { round: RoundId; playerId: string }[],
+) {
+  if (!roundId || roundHasResult(roundId)) return { captainHistory, viceCaptainHistory };
+  const upsert = (hist: { round: RoundId; playerId: string }[], playerId: string | null) => {
+    const rest = hist.filter(c => c.round !== roundId);
+    return playerId ? [...rest, { round: roundId, playerId }] : rest;
+  };
+  return { captainHistory: upsert(captainHistory, captain), viceCaptainHistory: upsert(viceCaptainHistory, viceCaptain) };
 }
 
 // Make ANY restored state safe to run — used by every hydration path (localStorage
@@ -157,9 +181,12 @@ export const useGameStore = create<GameStore>()(
       },
 
       setCaptain: (id) => {
-        const { myTeam, captain, viceCaptain, currentRoundIndex, phase } = get();
+        const { myTeam, captain, viceCaptain, currentRoundIndex, phase, captainHistory, viceCaptainHistory } = get();
         // Captaining only makes sense while choosing a squad or a round's captain.
         if (phase !== 'draft' && phase !== 'pre_round') return;
+        const round = ROUNDS[currentRoundIndex]?.id;
+        // P1: once the round has a result the captain is frozen (the server rejects a change).
+        if (phase === 'pre_round' && round && roundHasResult(round)) return;
         if (!myTeam.includes(id)) return;
         // An eliminated player can't captain (guards callers that don't pre-filter).
         const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
@@ -167,26 +194,38 @@ export const useGameStore = create<GameStore>()(
         if (id === captain) return;
         // Promoting your vice swaps the two roles; a bench player drops the old captain
         // to the bench. Either way there are still exactly two on-court leaders.
-        set({ captain: id, viceCaptain: id === viceCaptain ? captain : viceCaptain });
+        const newVice = id === viceCaptain ? captain : viceCaptain;
+        const hist = phase === 'pre_round' ? recordLeaders(round, id, newVice, captainHistory, viceCaptainHistory) : {};
+        set({ captain: id, viceCaptain: newVice, ...hist });
       },
 
       setViceCaptain: (id) => {
-        const { myTeam, captain, viceCaptain, currentRoundIndex, phase } = get();
+        const { myTeam, captain, viceCaptain, currentRoundIndex, phase, captainHistory, viceCaptainHistory } = get();
         if (phase !== 'draft' && phase !== 'pre_round') return;
+        const round = ROUNDS[currentRoundIndex]?.id;
+        if (phase === 'pre_round' && round && roundHasResult(round)) return;
         if (!myTeam.includes(id)) return;
         const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
         if (isPlayerOut(id, revealed)) return;
         if (id === viceCaptain) return;
-        set({ viceCaptain: id, captain: id === captain ? viceCaptain : captain });
+        const newCap = id === captain ? viceCaptain : captain;
+        const hist = phase === 'pre_round' ? recordLeaders(round, newCap, id, captainHistory, viceCaptainHistory) : {};
+        set({ viceCaptain: id, captain: newCap, ...hist });
       },
 
       // Send a captain/vice back to the bench, leaving the slot BLANK (no auto-fill)
       // so the manager can deliberately choose who fills it.
       benchLeader: (id) => {
-        const { captain, viceCaptain, phase } = get();
+        const { captain, viceCaptain, currentRoundIndex, phase, captainHistory, viceCaptainHistory } = get();
         if (phase !== 'draft' && phase !== 'pre_round') return;
-        if (id === captain) set({ captain: null });
-        else if (id === viceCaptain) set({ viceCaptain: null });
+        const round = ROUNDS[currentRoundIndex]?.id;
+        if (phase === 'pre_round' && round && roundHasResult(round)) return;
+        let newCap = captain, newVice = viceCaptain;
+        if (id === captain) newCap = null;
+        else if (id === viceCaptain) newVice = null;
+        else return;
+        const hist = phase === 'pre_round' ? recordLeaders(round, newCap, newVice, captainHistory, viceCaptainHistory) : {};
+        set({ captain: newCap, viceCaptain: newVice, ...hist });
       },
 
       // Re-field two on-court leaders after a state restore (cloud / localStorage),
@@ -201,13 +240,21 @@ export const useGameStore = create<GameStore>()(
       finalizeDraft: () => {
         const { myTeam, captain, viceCaptain, phase } = get();
         if (phase !== 'draft') return; // already locked in
+        if (tournamentStarted()) return; // P6: the draft is closed once the tournament has a result
         // The full composition rule (10 · 2 Platinum · 3 Gold · 5 Silver) is enforced
         // at the UI (the Lock button is gated on isSquadValid). The store stays
         // permissive so unit tests can lock a small squad to isolate scoring; no
         // production caller ever passes an illegal squad.
         if (myTeam.length === 0) return;
         // Snapshot the drafted squad; keep the two leaders (they're kept defaulted).
-        set({ phase: 'pre_round', ...pickLeaders(myTeam, captain, viceCaptain, []), initialSquad: [...myTeam] });
+        const leaders = pickLeaders(myTeam, captain, viceCaptain, []);
+        const { captainHistory, viceCaptainHistory } = get();
+        // Commit R64's captain-of-record now (while it's still open) so the server accepts
+        // it and the board applies the multiplier; a no-op if R64 already has a result.
+        set({
+          phase: 'pre_round', ...leaders, initialSquad: [...myTeam],
+          ...recordLeaders(ROUNDS[0].id, leaders.captain, leaders.viceCaptain, captainHistory, viceCaptainHistory),
+        });
         track('squad_locked', { size: myTeam.length, spend: STARTING_BUDGET - get().budget });
       },
 
@@ -217,6 +264,9 @@ export const useGameStore = create<GameStore>()(
         const { myTeam, budget, captain, viceCaptain, currentRoundIndex, phase } = get();
         if (phase === 'finished' || phase === 'draft') return;
         if (!transfersOpen(currentRoundIndex)) return; // window shut after the QF
+        // P6: can't transfer into a round that's already under way — the swap first scores the
+        // current round, so once it has a result the move would be retroactive (server rejects it).
+        if (roundHasResult(ROUNDS[currentRoundIndex]?.id)) return;
         if (!myTeam.includes(oldId) || myTeam.includes(newId)) return;
         const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
         if (!isPlayerOut(oldId, revealed)) return; // old player isn't eliminated yet
@@ -240,7 +290,7 @@ export const useGameStore = create<GameStore>()(
       },
 
       playNextRound: () => {
-        const { currentRoundIndex, myTeam, captain, viceCaptain, captainHistory, viceCaptainHistory, budgetReturns, myScore, roundScores, phase } = get();
+        const { currentRoundIndex, myTeam, captainHistory, viceCaptainHistory, budgetReturns, myScore, roundScores, phase } = get();
         if (currentRoundIndex >= ROUNDS.length) return;
         // Only playable from pre_round. Guards a double-tap that would otherwise
         // burn the next round with no captain and skip its transfer window.
@@ -251,6 +301,12 @@ export const useGameStore = create<GameStore>()(
 
         const round = ROUNDS[currentRoundIndex];
         const roundMatches = getMatchesForRound(round.id);
+        // The captain/vice OF RECORD for this round — committed during pre_round while the
+        // round was still open (recordLeaders). Empty if the manager only arrived after the
+        // round already had results → no multiplier here, matching the server's strict lock.
+        // We score off this, NOT the transient captain field, so local == authoritative board.
+        const roundCap = captainHistory.find(c => c.round === round.id)?.playerId ?? null;
+        const roundVice = viceCaptainHistory.find(c => c.round === round.id)?.playerId ?? null;
 
         // Calculate points
         let roundPoints = 0;
@@ -268,11 +324,11 @@ export const useGameStore = create<GameStore>()(
           if (won) {
             const oppId = match.p1Id === playerId ? match.p2Id : match.p1Id;
             const pts = winPoints(round.id, playerId, oppId); // ranking-weighted + upset bonus
-            if (playerId === captain) {
+            if (playerId === roundCap) {
               const total = pts * CAPTAIN_MULTIPLIER;
               captainBonus += total - pts; // +pts extra (total 2×)
               roundPoints += total;
-            } else if (playerId === viceCaptain) {
+            } else if (playerId === roundVice) {
               const total = Math.round(pts * VICE_MULTIPLIER);
               viceBonus += total - pts; // +half extra (total 1.5×, rounded)
               roundPoints += total;
@@ -291,22 +347,15 @@ export const useGameStore = create<GameStore>()(
         const totalReturn = newReturns.reduce((sum, r) => sum + r.amount, 0);
         const isLastRound = currentRoundIndex === ROUNDS.length - 1;
 
-        // Record who captained / vice-captained this round for the history.
-        const newCaptainHistory = captain
-          ? [...captainHistory, { round: round.id, playerId: captain }]
-          : captainHistory;
-        const newViceCaptainHistory = viceCaptain
-          ? [...viceCaptainHistory, { round: round.id, playerId: viceCaptain }]
-          : viceCaptainHistory;
-
+        // captainHistory/viceCaptainHistory are NOT written here — the captain-of-record was
+        // already committed during pre_round (recordLeaders), before this round had results.
+        // Clearing captain/vice readies the next round's fresh pick.
         set({
           myScore: myScore + roundPoints,
           roundScores: [...roundScores, { round: round.id, points: roundPoints, captainBonus, viceBonus }],
           budgetReturns: [...budgetReturns, ...newReturns],
           budget: round1(get().budget + totalReturn),
           currentRoundIndex: currentRoundIndex + 1,
-          captainHistory: newCaptainHistory,
-          viceCaptainHistory: newViceCaptainHistory,
           captain: null,
           viceCaptain: null,
           phase: isLastRound ? 'finished' : 'round_complete',
@@ -317,12 +366,19 @@ export const useGameStore = create<GameStore>()(
       // Move from the results screen to captain-picking for the next round. Guarded
       // so it can only advance from round_complete (never re-open a finished game).
       continueToNextRound: () => {
-        const { phase, myTeam, currentRoundIndex } = get();
+        const { phase, myTeam, currentRoundIndex, captainHistory, viceCaptainHistory } = get();
         if (phase !== 'round_complete') return;
         // Re-field two leaders by default (best-ranked still-alive members) so a
         // manager who doesn't touch the captaincy still gets ×2 / ×1.5 each round.
         const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
-        set({ phase: 'pre_round', ...pickLeaders(myTeam, null, null, revealed) });
+        const leaders = pickLeaders(myTeam, null, null, revealed);
+        // Commit this round's default captain-of-record while it's still open. If the
+        // round already has a result (a manager returning late), it's a no-op → no
+        // multiplier this round, exactly as the server would enforce.
+        set({
+          phase: 'pre_round', ...leaders,
+          ...recordLeaders(ROUNDS[currentRoundIndex]?.id, leaders.captain, leaders.viceCaptain, captainHistory, viceCaptainHistory),
+        });
       },
 
       setActiveTab: (tab) => set({ activeTab: tab }),

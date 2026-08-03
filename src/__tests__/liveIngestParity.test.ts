@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fullDraw from './fixtures/nbo2025-fulldraw.txt?raw';
 import fieldJson from '../data/montreal2026Field.json';
-import { buildResolver, parseFullDraw, buildMatchRows } from '../data/drawParser';
+import { buildResolver, parseFullDraw, buildMatchRows, parseBracket } from '../data/drawParser';
 import type { LiveMatch, LiveResults } from '../data/liveResults';
 import { matchKey } from '../data/liveResults';
 import { TOURNAMENT, ACTIVE_TOURNAMENT_ID } from '../data/tournamentConfig';
@@ -78,5 +78,49 @@ describe('ingest never-regress (buildMatchRows)', () => {
     const [row] = buildMatchRows('t', draw, {}, {}, {});
     expect(row.winner_id).toBeNull();
     expect(row).toMatchObject({ tournament_id: 't', round: 'QF', slot: 0, p1_id: 'shelton', p2_id: 'khachanov' });
+  });
+});
+
+describe('resolver folds hyphen/space differences (live 2026 draw)', () => {
+  const resolve = buildResolver(fieldJson as { id: string; name: string }[]);
+  it('resolves "Jan-Lennard Struff" (Wikipedia hyphen) to the roster id "struff"', () => {
+    // Regression from the live 2026 Montréal draw: Wikipedia writes "Jan-Lennard Struff"
+    // while the roster has "Jan Lennard Struff". Before hyphen-folding he resolved to a
+    // synthetic id and would have silently never scored for anyone who drafted him.
+    expect(resolve('{{flagicon|GER}} [[Jan-Lennard Struff|J-L Struff]]')).toBe('struff');
+    // A genuine non-roster qualifier still resolves to a synthetic id (unchanged).
+    expect(resolve('{{flagicon|CAN}} [[Liam Draxl]]')).toMatch(/^x_/);
+  });
+  it('resolves a family-name-first name ("Shang Juncheng") to the roster id "shang"', () => {
+    // The live 2026 draw writes the Chinese convention "Shang Juncheng"; the roster has
+    // "Juncheng Shang". Without the word-order fallback he resolved to a synthetic id and
+    // would never score. A genuine non-roster qualifier stays synthetic.
+    expect(resolve('{{flagicon|CHN}} [[Shang Juncheng]]')).toBe('shang');
+    expect(resolve('{{flagicon|AUS}} [[Aleksandar Vukic]]')).toMatch(/^x_/);
+  });
+});
+
+describe('display mode shows a seed vs a to-be-decided opponent (bracket visibility)', () => {
+  // A just-published section: one seed placed, its first-round opponent still empty ("bye" slot).
+  const wt = '{{16TeamBracket\n| RD1-team1={{flagicon|GER}} [[Alexander Zverev|A Zverev]]\n| RD1-team2={{flagicon|}}\n}}';
+  const resolve = (raw: string) => (raw.includes('Zverev') ? 'zverev' : 'x');
+  it('drops the half-known pairing by default, but emits it (seed vs tbd) in display mode', () => {
+    // Scoring/ingest path: nothing to score yet.
+    expect(parseBracket(wt, ['R64'], resolve).draw).toHaveLength(0);
+    // Display path: the seed shows against a placeholder that fills in when the round is played.
+    const shown = parseBracket(wt, ['R64'], resolve, true).draw;
+    expect(shown).toHaveLength(1);
+    expect(shown[0]).toMatchObject({ p1Id: 'zverev', p2Id: 'tbd' });
+  });
+});
+
+describe('an override applies only for a real participant (F4-5 / durable overrides)', () => {
+  const oneMatch: LiveMatch[] = [{ round: 'QF', slot: 0, half: 'top', p1Id: 'shelton', p2Id: 'khachanov' }];
+  it('applies a valid override, and IGNORES one that names a non-participant', () => {
+    // A durable override that names one of the two players wins…
+    expect(buildMatchRows('t', oneMatch, {}, {}, { QF_0: 'khachanov' })[0].winner_id).toBe('khachanov');
+    // …but a typo'd / stale-slot override that names someone NOT in the pairing is ignored
+    // (never written as an impossible winner — would fail the matches winner-in-pairing CHECK).
+    expect(buildMatchRows('t', oneMatch, {}, {}, { QF_0: 'zverev' })[0].winner_id).toBeNull();
   });
 });

@@ -2,16 +2,20 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useGameStore, eliminatedSquad, substitutionCandidates } from '../store/gameStore';
 import { getPlayer, PLAYERS } from '../data/players';
 import { getTier } from '../data/tiers';
-import { ROUNDS, winPoints } from '../data/tournament';
-import { sampleMatches, loadSampleTournament, roles } from './fixtures/sampleDraw';
+import { ROUNDS, winPoints, playerRoundPoints } from '../data/tournament';
+import { sampleMatches, loadSampleThrough, revealThrough, loadSampleTournament, roles } from './fixtures/sampleDraw';
 
 const store = () => useGameStore.getState();
 const price = (id: string) => getPlayer(id).price;
-// Mirror the real UI flow: a completed round returns to pre_round (via the
-// "Set Captain" step) before the next round can be played.
+// Mirror the real UI flow AND the strict captain lock (P1): the captain is set while the
+// round is still open, THEN its result lands, then it's played. (These unit tests set the
+// captain via the pre_round shortcut rather than the continue-button so they can assert a
+// specific captain/vice without the auto-defaulted vice the real transition would add.)
 const play = (captain: string) => {
   if (store().phase === 'round_complete') useGameStore.setState({ phase: 'pre_round' });
-  store().setCaptain(captain);
+  const round = ROUNDS[store().currentRoundIndex]; // the round about to be played
+  store().setCaptain(captain);                     // committed while the round is still open
+  if (round) revealThrough(round.id);              // result lands after the captain is set
   store().playNextRound();
 };
 const NUM_ROUNDS = ROUNDS.length; // Montréal: R64 → Final (6)
@@ -30,7 +34,7 @@ const cheapestOfTier = (t: string, n: number) =>
   PLAYERS.filter(p => getTier(p.ranking) === t).sort((a, b) => a.price - b.price).slice(0, n).map(p => p.id);
 const validSquad = [...cheapestOfTier('Platinum', 2), ...cheapestOfTier('Gold', 3), ...cheapestOfTier('Silver', 5)];
 
-beforeEach(() => { loadSampleTournament(); store().resetGame(); });
+beforeEach(() => { loadSampleThrough(null); store().resetGame(); });
 
 // Roles come from the fixture (sampleDraw.ts) so tests never hard-code a player id:
 //   champion  — wins the title (captainScore 132), never eliminated
@@ -146,6 +150,7 @@ describe('scoring — captain ×2 and vice-captain ×1.5', () => {
     store().setViceCaptain(roles.runnerUp);
     expect(store().captain).toBe(roles.champion);
     expect(store().viceCaptain).toBe(roles.runnerUp);
+    revealThrough('R64');    // captain/vice committed while R64 was open; now the result lands
     store().playNextRound(); // R64 — both win
     const r = store().roundScores.at(-1)!;
     const oppOf = (id: string) => {
@@ -321,6 +326,42 @@ describe('guards', () => {
     expect(store().myScore).toBe(0);
     expect(store().phase).toBe('draft');
     expect(store().currentRoundIndex).toBe(0);
+  });
+});
+
+describe('P6: draft + transfer freeze once the tournament starts', () => {
+  it('finalizeDraft is refused once a result is in — the draft is closed', () => {
+    store().addPlayer(roles.champion);
+    revealThrough('R64');                  // the tournament has produced a result
+    store().finalizeDraft();
+    expect(store().phase).toBe('draft');   // refused — never left the draft
+    expect(store().initialSquad).toEqual([]);
+  });
+
+  it('a transfer into a round already under way is refused', () => {
+    store().addPlayer(roles.champion);
+    store().addPlayer(roles.r16Exit);
+    store().finalizeDraft();
+    play(roles.champion); // R64
+    play(roles.champion); // R32
+    play(roles.champion); // R16 → r16Exit out; now round_complete, index 3 (QF up next)
+    useGameStore.setState({ phase: 'pre_round' });
+    revealThrough('QF');                   // the QF already has results → too late to sub for it
+    store().replacePlayer(roles.r16Exit, roles.runnerUp);
+    expect(store().myTeam).toContain(roles.r16Exit);       // refused
+    expect(store().myTeam).not.toContain(roles.runnerUp);
+  });
+});
+
+describe('playerRoundPoints — per-player per-round breakdown (Team page)', () => {
+  it('is 0 for a round the player did not win, the win value otherwise, and doubles for the captain', () => {
+    loadSampleTournament(); // full results in the live store
+    const base = playerRoundPoints(roles.champion, 'R64');           // champion won R64, no captaincy
+    expect(base).toBeGreaterThan(0);
+    expect(playerRoundPoints(roles.r64Exit, 'R64')).toBe(0);          // lost R64 → nothing
+    // Captain doubles; vice is 1.5× (rounded) — matches the scoring engine.
+    expect(playerRoundPoints(roles.champion, 'R64', [{ round: 'R64', playerId: roles.champion }])).toBe(base * 2);
+    expect(playerRoundPoints(roles.champion, 'R64', [], [{ round: 'R64', playerId: roles.champion }])).toBe(Math.round(base * 1.5));
   });
 });
 

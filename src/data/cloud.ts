@@ -267,6 +267,7 @@ export async function fetchLeaderboard(
     .select('user_id, score, budget, state')
     .eq('tournament_id', tournamentId)
     .order('score', { ascending: false })
+    .order('user_id', { ascending: true }) // P5: deterministic tiebreak so the truncated set is stable across refreshes
     .limit(PUBLIC_BOARD_LIMIT);
   if (error) { console.warn('[cloud] leaderboard:', error.message); return []; }
   const rows = (entries as EntryRow[] ?? []);

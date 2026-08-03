@@ -19,6 +19,7 @@ import TournamentSwitcher from './components/TournamentSwitcher';
 import UserProfile from './components/UserProfile';
 import ErrorBoundary from './components/ErrorBoundary';
 import CloudSync from './components/CloudSync';
+import LiveFeed from './components/LiveFeed';
 import { useAuth } from './auth/AuthProvider';
 import { useProfile, markTournamentJoined } from './store/profileStore';
 import { TOURNAMENT } from './data/tournamentConfig';
@@ -136,6 +137,9 @@ export default function App() {
       {/* CloudSync is mounted for every signed-in session — including during the gate —
           so entryHydrated resolves and the gate can make its decision. */}
       <CloudSync />
+      {/* LiveFeed pulls the draw + results for EVERY signed-in user (not just the admin),
+          so the bracket and live scoring populate for everyone once play begins. */}
+      <LiveFeed />
       {awaitingCloud ? (
         <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--ink)' }}>
           <div className="flex flex-col items-center gap-3 fade-in">

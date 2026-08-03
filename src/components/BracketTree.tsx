@@ -89,16 +89,18 @@ export default function BracketTree() {
 }
 
 function Side({ id, won, decided, mine }: { id: string; won: boolean; decided: boolean; mine: boolean }) {
-  const p = findPlayer(id);
-  const name = p?.name ?? id;
+  const isTbd = id === 'tbd';                // a seed's opponent, still to be decided in the first round
+  const p = isTbd ? undefined : findPlayer(id);
+  const name = isTbd ? 'TBD' : (p?.name ?? id);
   return (
     <div
       className="flex items-center gap-1.5 px-2 py-1.5 text-xs"
       style={{
         background: mine ? 'rgba(217,154,0,0.12)' : '#FFFFFF',
-        color: decided && !won ? 'var(--ink-3)' : 'var(--ink)',
+        color: isTbd ? 'var(--ink-3)' : decided && !won ? 'var(--ink-3)' : 'var(--ink)',
         fontWeight: won ? 700 : 500,
         opacity: decided && !won ? 0.7 : 1,
+        fontStyle: isTbd ? 'italic' : 'normal',
       }}
     >
       {p?.flag && <span>{p.flag}</span>}

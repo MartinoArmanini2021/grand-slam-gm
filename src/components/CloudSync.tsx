@@ -199,23 +199,33 @@ export default function CloudSync() {
     try {
       const lid = await publicLeagueId();
       if (!lid) { useSync.getState().setStatus('error'); return; }
+      // Roll local state back to the server's stored truth — used when the server REJECTS a
+      // write or another device won a race. Returns false if there's no cloud row to revert
+      // to, in which case the local state is the only truth and there's nothing to undo.
+      const revertToCloud = async (): Promise<boolean> => {
+        const entry = await fetchEntry(user.id, lid, TOURNAMENT.id);
+        if (!entry || !entry.state || Object.keys(entry.state).length === 0) return false;
+        const restored = { ...entry.state } as Partial<ReturnType<typeof useGameStore.getState>>;
+        sanitizeState(restored);
+        applyingCloud.current = true; useGameStore.setState(restored); applyingCloud.current = false;
+        entryRev.current = entry.rev; clearLocalDirty();
+        return true;
+      };
       const res = await saveEntry(user.id, lid, TOURNAMENT.id, gameSnapshot(), entryRev.current);
       if (res.ok) {
         entryRev.current = res.rev; markSaved(); useSync.getState().setStatus('saved');
       } else if (res.invalid) {
-        toast(res.invalid, 'warn'); useSync.getState().setStatus('error');
+        // The server rejected this edit (e.g. a captain change after its round locked). Undo
+        // the optimistic local change instead of leaving it on screen to silently revert on
+        // reload (P1/P4). After a successful revert local == server, so we're back in sync.
+        const reverted = await revertToCloud();
+        toast(res.invalid, 'warn');
+        useSync.getState().setStatus(reverted ? 'saved' : 'error');
       } else if (res.conflict) {
         // Another tab/device saved first. Converge on the cloud copy (both devices agree)
         // rather than blindly overwriting it — the honest resolution for two live editors.
-        const entry = await fetchEntry(user.id, lid, TOURNAMENT.id);
-        if (entry && entry.state && Object.keys(entry.state).length > 0) {
-          const restored = { ...entry.state } as Partial<ReturnType<typeof useGameStore.getState>>;
-          sanitizeState(restored);
-          applyingCloud.current = true; useGameStore.setState(restored); applyingCloud.current = false;
-          entryRev.current = entry.rev; clearLocalDirty();
-          useSync.getState().setStatus('saved');
-          toast('Squad updated from another device', 'info');
-        } else { useSync.getState().setStatus('error'); }
+        if (await revertToCloud()) { useSync.getState().setStatus('saved'); toast('Squad updated from another device', 'info'); }
+        else { useSync.getState().setStatus('error'); }
       } else {
         useSync.getState().setStatus('error');
       }

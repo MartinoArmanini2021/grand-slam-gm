@@ -63,6 +63,21 @@ export function roundPlayable(roundIndex: number): boolean {
   return !next || draw.some(m => m.round === next.id);
 }
 
+// Has the tournament produced its FIRST result yet? False across the whole pre-tournament
+// window — the board uses it to show a "scoring pending" state instead of a wall of 0s that
+// reads as broken. Flips true the moment any round has a recorded winner.
+export function tournamentStarted(): boolean {
+  return ROUNDS.some(r => roundHasResult(r.id));
+}
+
+// Has this round produced ANY result yet? Mirrors the server's save_entry captain lock,
+// which freezes a round's captain/vice the moment public.matches holds a winner for it.
+// The store + the court use this so the UI never invites a captain change the server will
+// reject, and the captain-of-record is committed only while the round is still open.
+export function roundHasResult(round: RoundId): boolean {
+  return getMatchesForRound(round).some(m => !!m.winnerId);
+}
+
 // A player's opponent in a given round (null if they weren't in it).
 export function getOpponentId(playerId: string, round: RoundId): string | null {
   const m = activeMatches().find(x => x.round === round && (x.p1Id === playerId || x.p2Id === playerId));
@@ -104,6 +119,35 @@ export function winPoints(roundId: RoundId, winnerId: string, loserId: string): 
   const wRank = findPlayer(winnerId)?.ranking ?? 40;
   const upset = Math.min(upsetBonus(winnerId, loserId), Math.round(base * 1.5));
   return Math.round(base * rankingMultiplier(wRank)) + upset;
+}
+
+// Captain doubles their round points; vice earns 1.5× (kept identical to gameStore /
+// serverEngine so the per-round breakdown on the Team page matches the scored total).
+const CAPTAIN_MULT = 2;
+const VICE_MULT = 1.5;
+
+// Points a squad member ACTUALLY earned in one scored round (0 if they had no match, or
+// lost it), with the captain ×2 / vice ×1.5 multiplier applied per that round's recorded
+// leaders. Reads live results, so it reflects exactly what the board scored. Pass the
+// entry's captain/vice history for the multiplier (empty → base points only).
+export function playerRoundPoints(
+  playerId: string,
+  round: RoundId,
+  captainHistory: { round: string; playerId: string }[] = [],
+  viceCaptainHistory: { round: string; playerId: string }[] = [],
+): number {
+  const m = getMatchesForRound(round).find(x => x.p1Id === playerId || x.p2Id === playerId);
+  if (!m || m.winnerId !== playerId) return 0; // no match this round, or didn't win
+  const oppId = m.p1Id === playerId ? m.p2Id : m.p1Id;
+  const pts = winPoints(round, playerId, oppId);
+  if (captainHistory.find(c => c.round === round)?.playerId === playerId) return pts * CAPTAIN_MULT;
+  if (viceCaptainHistory.find(c => c.round === round)?.playerId === playerId) return Math.round(pts * VICE_MULT);
+  return pts;
+}
+
+// Which scored rounds have produced any result yet (so the breakdown only shows played rounds).
+export function playedScoredRounds(): RoundId[] {
+  return ROUNDS.map(r => r.id).filter(id => getMatchesForRound(id).length > 0);
 }
 
 // Exit stage of each result, earliest → latest. Champion ('W') never exits.

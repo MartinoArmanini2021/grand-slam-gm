@@ -4,7 +4,7 @@ import { PLAYERS } from '../data/players';
 import { ROUNDS, isPlayerOut } from '../data/tournament';
 import { getTier } from '../data/tiers';
 import { isSquadValid } from '../data/squadRules';
-import { loadSampleTournament } from './fixtures/sampleDraw';
+import { loadSampleThrough, revealThrough } from './fixtures/sampleDraw';
 
 // Deterministic PRNG so failures reproduce.
 function rng(seed: number) {
@@ -16,7 +16,7 @@ const store = () => useGameStore.getState();
 // Build a random VALID squad (10 · 2 Platinum · 3 Gold · 5 Silver) within $200M by
 // adding through the real store guards until valid.
 function draftValidSquad(rand: () => number) {
-  loadSampleTournament(); // the live engine needs a resolved draw to score
+  loadSampleThrough(null); // draw known, NO results yet — so the draft can lock before play starts
   store().resetGame();
   const byPrice = (arr: typeof PLAYERS) => [...arr].sort((a, b) => a.price - b.price);
   const platinum = byPrice(PLAYERS.filter(p => getTier(p.ranking) === 'Platinum'));
@@ -50,10 +50,11 @@ describe('FUZZ — many random full games never break an invariant', () => {
 
       let prevScore = 0;
       for (let r = 0; r < ROUNDS.length; r++) {
-        if (store().phase === 'round_complete') useGameStore.setState({ phase: 'pre_round' });
+        if (store().phase === 'round_complete') store().continueToNextRound();
         const revealed = ROUNDS.slice(0, store().currentRoundIndex).map(x => x.id);
 
-        // Occasionally transfer out an eliminated player for a valid candidate.
+        // Transfers + captain are set while THIS round is still open (no results yet) — the
+        // only window the strict P1/P6 locks allow. Occasionally sub an eliminated player.
         if (rand() < 0.5) {
           const outs = eliminatedSquad(store().myTeam, store().currentRoundIndex);
           const cands = substitutionCandidates(store().myTeam, store().budget, store().currentRoundIndex);
@@ -65,6 +66,7 @@ describe('FUZZ — many random full games never break an invariant', () => {
         const alive2 = store().myTeam.filter(id => !isPlayerOut(id, revealed));
         if (alive2.length) store().setCaptain(alive2[Math.floor(rand() * alive2.length)]);
 
+        revealThrough(ROUNDS[r].id); // this round's results arrive AFTER picks are committed
         store().playNextRound();
 
         // Invariants after every round:

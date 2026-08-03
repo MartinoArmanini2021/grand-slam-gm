@@ -5,8 +5,9 @@ import { getTier, TIER_META, TIER_ORDER, type Tier } from '../data/tiers';
 import { track } from '../data/analytics';
 import { useLeagueBoard, useMyLeagues, type BoardEntry } from '../data/leagueBoard';
 import { lastName } from '../data/format';
-import { ROUNDS, isPlayerOut, getPlayerExit } from '../data/tournament';
+import { ROUNDS, isPlayerOut, getPlayerExit, tournamentStarted } from '../data/tournament';
 import PlayerAvatar from '../components/PlayerAvatar';
+import ScoringPendingNote from '../components/ScoringPendingNote';
 import { toast } from '../store/toastStore';
 import { onActivate, useVisiblePoll } from '../hooks';
 import { useAuth } from '../auth/AuthProvider';
@@ -37,9 +38,15 @@ function Standings({ rows, revealed, compact }: { rows: BoardEntry[]; revealed: 
       {compact ? 'No squads yet — draft yours to join the public leaderboard.' : 'No squads here yet — draft yours, and invite friends with the code above.'}
     </div>;
   }
+  // Before the first result lands, every score is a legitimate 0 — show a dash + a note so
+  // the board reads as "not started" rather than broken.
+  const pending = !tournamentStarted();
+  const pts = (score: number) => (pending ? '–' : score);
   // Public league: a plain, tidy table — rank · team + @handle · score.
   if (compact) {
     return (
+      <>
+      {pending && <ScoringPendingNote />}
       <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.08)' }}>
         <table className="w-full text-sm border-collapse bg-white">
           <thead>
@@ -67,16 +74,18 @@ function Standings({ rows, revealed, compact }: { rows: BoardEntry[]; revealed: 
                     </div>
                   </div>
                 </td>
-                <td className="px-3 py-2.5 text-right font-num text-xl font-extrabold" style={{ color: 'var(--blue)' }}>{row.score}</td>
+                <td className="px-3 py-2.5 text-right font-num text-xl font-extrabold" style={{ color: 'var(--blue)' }}>{pts(row.score)}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      </>
     );
   }
   return (
     <>
+    {pending && <ScoringPendingNote />}
     {/* Mobile: a card per manager, squad grouped by tier (Platinum → Gold → Silver) */}
     <div className="lg:hidden space-y-3">
       {rows.map((row, i) => (
@@ -98,7 +107,7 @@ function Standings({ rows, revealed, compact }: { rows: BoardEntry[]; revealed: 
               <div className="text-[11px] truncate" style={{ color: 'var(--ink-3)' }}>{row.motto || row.manager}</div>
             </div>
             <div className="text-right shrink-0">
-              <div className="font-num text-xl font-extrabold leading-none" style={{ color: 'var(--blue)' }}>{row.score}</div>
+              <div className="font-num text-xl font-extrabold leading-none" style={{ color: 'var(--blue)' }}>{pts(row.score)}</div>
               <div className="font-num text-[10px]" style={{ color: 'var(--green)' }}>${row.budget.toFixed(1)}M</div>
             </div>
           </div>
@@ -195,7 +204,7 @@ function Standings({ rows, revealed, compact }: { rows: BoardEntry[]; revealed: 
                   </div>
                 </td>
                 <td className="px-2 py-2.5 text-right font-num text-[11px] font-semibold whitespace-nowrap" style={{ color: 'var(--green)' }}>${row.budget.toFixed(1)}M</td>
-                <td className="px-3 py-2.5 text-right font-num text-xl font-extrabold whitespace-nowrap" style={{ color: 'var(--blue)' }}>{row.score}</td>
+                <td className="px-3 py-2.5 text-right font-num text-xl font-extrabold whitespace-nowrap" style={{ color: 'var(--blue)' }}>{pts(row.score)}</td>
               </tr>
             ))}
           </tbody>

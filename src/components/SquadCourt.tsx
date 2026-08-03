@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useGameStore, substitutionCandidates } from '../store/gameStore';
 import { findPlayer } from '../data/players';
-import { getPlayerExit, isPlayerOut, ROUNDS, transfersOpen } from '../data/tournament';
+import { getPlayerExit, isPlayerOut, ROUNDS, transfersOpen, roundHasResult } from '../data/tournament';
 import { lastName } from '../data/format';
 import { SURFACE, TOURNAMENT } from '../data/tournamentConfig';
 import { SQUAD_SIZE } from '../data/squadRules';
@@ -36,9 +36,15 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
   const isOwnTeam = !readOnly && !squad; // your own court (home / your team page)
   const canEdit = isOwnTeam && phase === 'draft';
-  const canCaptain = isOwnTeam && (phase === 'draft' || phase === 'pre_round'); // captaincy is editable
+  // P1: the captain-of-record for a round is frozen once that round produces a result —
+  // mirroring the server's save_entry lock. So the court stops inviting a captain change the
+  // moment the current round is underway; otherwise the (optimistic) save would be rejected.
+  const currentRoundId = ROUNDS[currentRoundIndex]?.id;
+  const roundLive = phase === 'pre_round' && !!currentRoundId && roundHasResult(currentRoundId);
+  const canCaptain = isOwnTeam && (phase === 'draft' || (phase === 'pre_round' && !roundLive)); // captaincy editable until the round starts
   useEscapeToClose(() => { setManageId(null); setSubFor(null); setAssignRole(null); }, !!(manageId || subFor || assignRole));
   const C = SURFACE.court; // stands / apron (outside court) / surface (inside court)
+  const VENUE = TOURNAMENT.location.split(',')[0].trim().toUpperCase(); // host city painted on court ("MONTRÉAL")
 
   // Everything is ordered by tier: Platinum → Gold → Silver (i.e. best rank first).
   const byRank = (ids: string[]) => [...ids].sort((a, b) => (findPlayer(a)?.ranking ?? 9999) - (findPlayer(b)?.ranking ?? 9999));
@@ -90,6 +96,11 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
           {/* ── ZONE 2 · OUTSIDE COURT (painted run-off apron) ── */}
           <rect x="34" y="30" width="572" height="300" rx="12" fill={C.apron} />
           <rect x="34" y="30" width="572" height="300" rx="12" fill="none" stroke="#000000" strokeOpacity="0.22" strokeWidth="2.5" />
+          {/* Host-city name painted in the run-off behind each baseline — like a real TV court */}
+          <text x="65" y="180" transform="rotate(-90 65 180)" textAnchor="middle" dominantBaseline="central"
+            fill={C.line} fillOpacity="0.42" style={{ fontWeight: 800, fontSize: 20, letterSpacing: 4 }}>{VENUE}</text>
+          <text x="575" y="180" transform="rotate(90 575 180)" textAnchor="middle" dominantBaseline="central"
+            fill={C.line} fillOpacity="0.42" style={{ fontWeight: 800, fontSize: 20, letterSpacing: 4 }}>{VENUE}</text>
 
           {/* ── ZONE 3 · INSIDE COURT (playing surface + lines) ── */}
           <g>
@@ -205,6 +216,16 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
           <div className="absolute inset-x-0 bottom-3 flex items-center justify-center pointer-events-none">
             <div className="px-4 py-1.5 rounded-full text-xs font-semibold" style={{ background: 'rgba(10,31,68,0.78)', color: '#fff' }}>
               {canEdit ? 'Draft your squad in the Market' : 'No squad selected'}
+            </div>
+          </div>
+        )}
+
+        {/* Captain lock: once this round has a result the captain is frozen (matches the
+            server), so we say so rather than leave the picker silently inert. */}
+        {roundLive && (
+          <div className="absolute inset-x-0 top-3 flex items-center justify-center pointer-events-none">
+            <div className="px-3 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(10,31,68,0.78)', color: '#fff' }}>
+              🔒 Captains locked — round underway
             </div>
           </div>
         )}

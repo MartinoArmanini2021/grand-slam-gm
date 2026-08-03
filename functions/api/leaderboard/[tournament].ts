@@ -47,7 +47,7 @@ export const onRequestGet: PagesFunction = async (context) => {
     // always but hides squad/captain for entries still in `phase='draft'` (except the owner),
     // so a rival can't copy an in-progress draft. Post-lock squads are shown as before.
     const entriesRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/board_entries?tournament_id=eq.${tid}&select=user_id,score,budget,state&order=score.desc&limit=${LIMIT}`,
+      `${SUPABASE_URL}/rest/v1/board_entries?tournament_id=eq.${tid}&select=user_id,score,budget,state&order=score.desc,user_id.asc&limit=${LIMIT}`,
       { headers: h },
     );
     // 503 (not 200 []) so the client FALLS BACK to its direct query rather than showing

@@ -17,7 +17,10 @@ import type { LiveMatch, LiveResults } from './liveResults';
 // liveResults.matchKey — same `${round}_${slot}` format — so keys line up across modules.
 const matchKey = (round: RoundId, slot: number): string => `${round}_${slot}`;
 
-const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+// Fold accents (NFD strip), case, AND hyphen/space differences — Wikipedia writes
+// "Jan-Lennard Struff" while a roster may have "Jan Lennard Struff"; without this the
+// drafted player resolves to a synthetic id and silently never scores.
+const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[-\s]+/g, ' ').trim();
 // Wikipedia disambiguates some articles: "[[Alex de Minaur (tennis)|…]]",
 // "[[Taylor Fritz (tennis player)|…]]". The parenthetical isn't part of the name and must
 // be dropped before matching the roster, or the drafted player silently never scores.
@@ -49,11 +52,18 @@ export function teamTarget(raw: string): string {
 // resolves to their real id. This is the ONE identity used everywhere, client and server.
 export function buildResolver(roster: { id: string; name: string }[]): (raw: string) => string {
   const byName = new Map(roster.map(p => [norm(p.name), p.id]));
+  // Word-order-insensitive fallback: Wikipedia writes some names family-name-first
+  // ("Shang Juncheng") while the roster has given-name-first ("Juncheng Shang"). Sorting the
+  // name words makes the two match. It's only a FALLBACK (an exact match always wins), and the
+  // roster has no sorted-key collisions, so this can never mis-resolve one roster player to another.
+  const sortWords = (s: string) => s.split(' ').filter(Boolean).sort().join(' ');
+  const bySorted = new Map(roster.map(p => [sortWords(norm(p.name)), p.id]));
   return (raw: string) => {
-    const name = teamTarget(raw);
-    return byName.get(norm(name))
-      ?? byName.get(norm(stripDisambig(name)))
-      ?? `x_${norm(stripDisambig(name)).replace(/\s+/g, '_')}`;
+    const stripped = stripDisambig(teamTarget(raw));
+    return byName.get(norm(teamTarget(raw)))
+      ?? byName.get(norm(stripped))
+      ?? bySorted.get(sortWords(norm(stripped)))
+      ?? `x_${norm(stripped).replace(/\s+/g, '_')}`;
   };
 }
 
@@ -68,8 +78,13 @@ export function splitBrackets(wikitext: string): { type: string; text: string }[
 // Parse a single {{NTeamBracket…}} template into a draw + the results implied by
 // advancement. `roundIds` maps template rounds RD1..RDn onto this tournament's round ids;
 // `resolve` turns a raw team cell into a player id.
+// A pairing where one side isn't decided yet (a seed awaiting a first-round winner). Only
+// EMITTED in display mode (includeIncomplete) so the bracket can show the draw the moment it
+// publishes — scoring/ingest never see it (they pass includeIncomplete=false, the default).
+const TBD = { id: 'tbd', bold: false };
+
 export function parseBracket(
-  wikitext: string, roundIds: RoundId[], resolve: (raw: string) => string,
+  wikitext: string, roundIds: RoundId[], resolve: (raw: string) => string, includeIncomplete = false,
 ): { draw: LiveMatch[]; results: LiveResults } {
   const teams: Record<number, Record<number, { id: string; bold: boolean }>> = {};
   // Non-greedy capture up to the NEXT "| RD…" key, so a "|" inside {{flagicon|ITA}} or a
@@ -93,15 +108,19 @@ export function parseBracket(
     for (let slot = 0; slot < pairCount; slot++) {
       const a = thisRound[slot * 2];
       const b = thisRound[slot * 2 + 1];
-      if (!a || !b) continue; // pairing not published yet
-      draw.push({ round, slot, half: slot < pairCount / 2 ? 'top' : 'bottom', p1Id: a.id, p2Id: b.id });
+      if (!a && !b) continue;                          // neither side known — nothing to show
+      if ((!a || !b) && !includeIncomplete) continue;  // one side still TBD — display mode only
+      const p1 = a ?? TBD;
+      const p2 = b ?? TBD;
+      draw.push({ round, slot, half: slot < pairCount / 2 ? 'top' : 'bottom', p1Id: p1.id, p2Id: p2.id });
       // Winner: the '''bold''' team; else fall back to advancement (who fills the next slot).
-      // Only recorded when it's actually one of this pairing (never a wrong result).
+      // Only recorded when it's actually one of this pairing (never a wrong result; 'tbd' can
+      // never win — it's not bold and never fills a next-round slot).
       let winnerId: string | undefined;
-      if (a.bold && !b.bold) winnerId = a.id;
-      else if (b.bold && !a.bold) winnerId = b.id;
+      if (p1.bold && !p2.bold) winnerId = p1.id;
+      else if (p2.bold && !p1.bold) winnerId = p2.id;
       else winnerId = nextRound[slot]?.id;
-      if (winnerId === a.id || winnerId === b.id) results[matchKey(round, slot)] = winnerId;
+      if (winnerId === p1.id || winnerId === p2.id) results[matchKey(round, slot)] = winnerId;
     }
   }
   return { draw, results };
@@ -128,7 +147,12 @@ export function buildMatchRows(
 ): MatchRow[] {
   return draw.map((m) => {
     const key = matchKey(m.round, m.slot);
-    const winner = overrides[key] ?? results[key] ?? existingWinners[key] ?? null;
+    // An override only counts if it names one of THIS pairing's two players — a typo'd id or a
+    // stale-slot override is ignored, never written as an impossible winner (would fail the
+    // matches winner-in-pairing CHECK and freeze the whole ingest).
+    const ov = overrides[key];
+    const validOverride = ov === m.p1Id || ov === m.p2Id ? ov : undefined;
+    const winner = validOverride ?? results[key] ?? existingWinners[key] ?? null;
     return { tournament_id: tournamentId, round: m.round, slot: m.slot, p1_id: m.p1Id, p2_id: m.p2Id, winner_id: winner };
   });
 }
@@ -147,20 +171,20 @@ const FINALS_ROUNDS: RoundId[] = ['QF', 'SF', 'F'];
 // tournament's SCORED rounds are emitted (R128 is dropped — advancement into R64 is already
 // resolved and the app doesn't score the opening round).
 export function parseFullDraw(
-  wikitext: string, opts: { scoredRounds: RoundId[]; resolve: (raw: string) => string },
+  wikitext: string, opts: { scoredRounds: RoundId[]; resolve: (raw: string) => string; includeIncomplete?: boolean },
 ): { draw: LiveMatch[]; results: LiveResults } {
-  const { scoredRounds, resolve } = opts;
+  const { scoredRounds, resolve, includeIncomplete = false } = opts;
   const brackets = splitBrackets(wikitext);
   const sections = brackets.filter(b => /^16TeamBracket/i.test(b.type));
   const finals = brackets.find(b => /^8TeamBracket/i.test(b.type));
 
   // Not the 8-section Masters shape (a single test bracket, or a future format) → parse the
   // page as one bracket over the tournament's own rounds.
-  if (sections.length === 0) return parseBracket(wikitext, scoredRounds, resolve);
+  if (sections.length === 0) return parseBracket(wikitext, scoredRounds, resolve, includeIncomplete);
 
   const perRound: Partial<Record<RoundId, { m: LiveMatch; winner: string | undefined }[]>> = {};
   const collect = (text: string, roundIds: RoundId[]) => {
-    const { draw, results } = parseBracket(text, roundIds, resolve);
+    const { draw, results } = parseBracket(text, roundIds, resolve, includeIncomplete);
     for (const m of draw) (perRound[m.round] ??= []).push({ m, winner: results[matchKey(m.round, m.slot)] });
   };
   for (const s of sections) collect(s.text, SECTION_ROUNDS);

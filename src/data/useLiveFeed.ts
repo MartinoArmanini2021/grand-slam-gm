@@ -35,6 +35,7 @@ export function useLiveFeed(autoPoll = false) {
 
   useEffect(() => {
     if (!autoPoll || TOURNAMENT.mode !== 'live') return;
+    void syncRef.current(); // sync ONCE on mount so the bracket populates immediately, not after the first interval
     const id = setInterval(() => { void syncRef.current(); }, LIVE.pollIntervalMs);
     return () => clearInterval(id);
   }, [autoPoll]);

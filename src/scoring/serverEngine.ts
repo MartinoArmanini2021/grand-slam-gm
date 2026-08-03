@@ -12,7 +12,7 @@ export interface MatchRow { round: string; p1: string; p2: string; winner: strin
 
 export interface EntryState {
   initialSquad: string[];
-  myTeam?: string[]; // current squad — fallback if a squad isn't locked yet (initialSquad empty)
+  myTeam?: string[]; // current (live) squad — NOT used for scoring; see scoreEntry (P3)
   transfers?: { out: string; in: string; round: string }[];
   captainHistory?: { round: string; playerId: string }[];
   viceCaptainHistory?: { round: string; playerId: string }[];
@@ -56,7 +56,12 @@ export function scoreEntry(state: EntryState, ctx: ScoreCtx): number {
   // Winner's rank for the multiplier (roster players are always known; default is a
   // safety net). The LOSER's rank is passed raw (may be undefined → no upset).
   const rank = (id: string) => ctx.rankById[id] ?? 40;
-  const base0 = state.initialSquad?.length ? state.initialSquad : (state.myTeam ?? []);
+  // INTEGRITY (P3): score ONLY off the frozen draft snapshot. A never-locked entry has no
+  // initialSquad → it scores 0 (pending) rather than falling back to the LIVE, still-editable
+  // myTeam. Otherwise a user who never locks could swap in a round's winners AFTER the result
+  // is known and retroactively bank the points — the squad-membership twin of the F1 captain
+  // lock. Locking (finalizeDraft) is the commit that makes an entry scorable.
+  const base0 = state.initialSquad ?? [];
   let total = 0;
 
   for (const round of state.playedRounds) {

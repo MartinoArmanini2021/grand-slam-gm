@@ -3,8 +3,9 @@ import { useGameStore } from '../store/gameStore';
 import { ROUNDS, getMatchesForRound, winPoints } from '../data/tournament';
 import { PLAYERS } from '../data/players';
 import { scoreEntry, type ScoreCtx, type EntryState } from '../scoring/serverEngine';
-import { loadSampleTournament, roles } from './fixtures/sampleDraw';
+import { loadSampleTournament, loadSampleThrough, revealThrough, roles } from './fixtures/sampleDraw';
 import { ROUND_META, ROUND_ORDER } from '../data/tournamentConfig';
+import type { RoundId } from '../types';
 import edgeSrc from '../../supabase/functions/recompute-score/index.ts?raw';
 import seedSrc from '../../supabase/server_scoring.sql?raw';
 
@@ -33,11 +34,14 @@ function stateFromStore(): EntryState {
   };
 }
 
-// Mirror the real UI flow: round_complete → pre_round before playing the next round.
-const play = (cap: string, vice?: string) => {
-  if (store().phase === 'round_complete') useGameStore.setState({ phase: 'pre_round' });
+// Realistic live cadence (P1 strict lock): set the captain while the round is still OPEN,
+// THEN its result arrives, then play it. This is the only way a captain-of-record counts,
+// so it genuinely exercises the multipliers — a results-already-in fixture never could.
+const play = (round: RoundId, cap: string, vice?: string) => {
+  if (store().phase === 'round_complete') store().continueToNextRound();
   store().setCaptain(cap);
   if (vice) store().setViceCaptain(vice);
+  revealThrough(round);           // outcomes land AFTER the captain is committed
   store().playNextRound();
 };
 
@@ -91,21 +95,24 @@ describe('server engine handles an off-roster (unknown-rank) opponent like the c
 });
 
 describe('server-authoritative scoring == client engine (parity)', () => {
-  beforeEach(() => { loadSampleTournament(); store().resetGame(); });
+  // Start with the draw known but NO results in — the parity tests reveal each round as
+  // they go (via play()), so captains are committed while the round is open (strict lock).
+  beforeEach(() => { loadSampleThrough(null); store().resetGame(); });
 
   it('matches the client score for a captained + viced champion run', () => {
     store().addPlayer(roles.champion);  // champion (Platinum)
     store().addPlayer(roles.runnerUp);  // reaches the final (Platinum)
     store().finalizeDraft();
-    for (let i = 0; i < ROUNDS.length; i++) play(roles.champion, roles.runnerUp);
+    for (const r of ROUNDS) play(r.id, roles.champion, roles.runnerUp);
     expect(store().phase).toBe('finished');
+    expect(store().myScore).toBeGreaterThan(0);
     expect(scoreEntry(stateFromStore(), buildCtx())).toBe(store().myScore);
   });
 
   it('matches for a low-ranked underdog whose run banks real upset bonuses', () => {
     store().addPlayer(roles.underdog);
     store().finalizeDraft();
-    for (let i = 0; i < ROUNDS.length; i++) play(roles.underdog);
+    for (const r of ROUNDS) play(r.id, roles.underdog);
     expect(store().phase).toBe('finished');
     expect(store().myScore).toBeGreaterThan(0);
     expect(scoreEntry(stateFromStore(), buildCtx())).toBe(store().myScore);
@@ -115,33 +122,141 @@ describe('server-authoritative scoring == client engine (parity)', () => {
     store().addPlayer(roles.champion);  // champion
     store().addPlayer(roles.r16Exit);   // out in R16 → gets transferred
     store().finalizeDraft();
-    play(roles.champion, roles.r16Exit); // R64
-    play(roles.champion, roles.r16Exit); // R32
-    play(roles.champion);                // R16 — r16Exit out
+    play('R64', roles.champion, roles.r16Exit);
+    play('R32', roles.champion, roles.r16Exit);
+    play('R16', roles.champion);                // R16 — r16Exit out
     store().replacePlayer(roles.r16Exit, roles.runnerUp); // buy a still-alive finalist
-    for (let i = store().currentRoundIndex; i < ROUNDS.length; i++) play(roles.champion, roles.runnerUp);
+    for (const r of ROUNDS.slice(store().currentRoundIndex)) play(r.id, roles.champion, roles.runnerUp);
     expect(store().phase).toBe('finished');
     // score is identical whether computed by the client or the portable server engine
     expect(scoreEntry(stateFromStore(), buildCtx())).toBe(store().myScore);
   });
 
-  it('falls back to the current squad when a squad is not yet locked (initialSquad empty)', () => {
-    store().addPlayer(roles.champion);
-    store().addPlayer(roles.runnerUp);
-    const locked: EntryState = { initialSquad: [roles.champion, roles.runnerUp], playedRounds: ROUNDS.map(r => r.id) };
-    const notLocked: EntryState = { initialSquad: [], myTeam: [roles.champion, roles.runnerUp], playedRounds: ROUNDS.map(r => r.id) };
+  it('P3: a never-locked squad (initialSquad empty) scores 0 — cannot bank points off a live, editable squad', () => {
+    // The integrity twin of the F1 captain lock: a user who never locks must NOT be scored
+    // off their still-editable myTeam, or they could swap in a round's winners after the
+    // result is known and retroactively claim the points. Only the frozen snapshot scores.
+    loadSampleTournament(); // full results in, so a locked run would bank real points
     const ctx = buildCtx();
-    expect(scoreEntry(notLocked, ctx)).toBe(scoreEntry(locked, ctx));
-    expect(scoreEntry(notLocked, ctx)).toBeGreaterThan(0);
+    const locked: EntryState = { initialSquad: [roles.champion, roles.runnerUp], playedRounds: ROUNDS.map(r => r.id) };
+    const neverLocked: EntryState = { initialSquad: [], myTeam: [roles.champion, roles.runnerUp], playedRounds: ROUNDS.map(r => r.id) };
+    expect(scoreEntry(locked, ctx)).toBeGreaterThan(0);      // a real locked run banks points
+    expect(scoreEntry(neverLocked, ctx)).toBe(0);            // the same players, unlocked → pending/0
   });
 
   it('a manipulated client score would NOT match the authoritative recompute', () => {
     store().addPlayer(roles.champion);
     store().finalizeDraft();
-    for (let i = 0; i < ROUNDS.length; i++) play(roles.champion);
+    for (const r of ROUNDS) play(r.id, roles.champion);
     const honest = scoreEntry(stateFromStore(), buildCtx());
     // The leaderboard trusts `honest`, not a self-reported number.
     expect(honest).toBe(store().myScore);
     expect(honest).not.toBe(store().myScore + 999);
+  });
+});
+
+describe('P1: captain-of-record survives the server lock (no doomed edit)', () => {
+  // Mirror of save_entry_rpc.sql's F1 captain lock: for any round that already has a result,
+  // the incoming captain/vice-of-record must equal what's stored, else the write is rejected.
+  const serverRejects = (
+    stored: Pick<EntryState, 'captainHistory' | 'viceCaptainHistory'>,
+    incoming: Pick<EntryState, 'captainHistory' | 'viceCaptainHistory'>,
+    roundsWithResults: string[],
+  ): string | null => {
+    const at = (h: { round: string; playerId: string }[] | undefined, r: string) => h?.find(c => c.round === r)?.playerId ?? '';
+    for (const r of roundsWithResults) {
+      if (at(incoming.captainHistory, r) !== at(stored.captainHistory, r)) return `Cannot change your ${r} captain`;
+      if (at(incoming.viceCaptainHistory, r) !== at(stored.viceCaptainHistory, r)) return `Cannot change your ${r} vice-captain`;
+    }
+    return null;
+  };
+
+  beforeEach(() => { loadSampleThrough(null); store().resetGame(); });
+
+  it('records the round captain BEFORE its results, so the post-result save is ACCEPTED', () => {
+    store().addPlayer(roles.champion);
+    store().addPlayer(roles.runnerUp);
+    store().finalizeDraft(); // pre_round R64, R64 still open → captain-of-record committed now
+    // What the server has stored from this pre-result save:
+    const stored = { captainHistory: [...store().captainHistory], viceCaptainHistory: [...store().viceCaptainHistory] };
+    expect(stored.captainHistory.find(c => c.round === 'R64')?.playerId).toBe(roles.champion);
+
+    revealThrough('R64');        // results land, THEN the manager plays the round
+    store().playNextRound();
+    const incoming = { captainHistory: store().captainHistory, viceCaptainHistory: store().viceCaptainHistory };
+
+    // The server now locks R64 — but incoming == stored for R64, so it ACCEPTS (no ghost edit).
+    expect(serverRejects(stored, incoming, ['R64'])).toBeNull();
+  });
+
+  it('the OLD play-time-append flow WOULD have been rejected (regression guard)', () => {
+    // Before the fix, captainHistory[R64] was written only at play time — AFTER R64 had a
+    // result — so the server saw an add-from-empty and rejected it. Encoded to prove the fix
+    // changed the OUTCOME, not just the code.
+    const stored = { captainHistory: [] as { round: string; playerId: string }[], viceCaptainHistory: [] };
+    const oldIncoming = { captainHistory: [{ round: 'R64', playerId: roles.champion }], viceCaptainHistory: [] };
+    expect(serverRejects(stored, oldIncoming, ['R64'])).toMatch(/Cannot change your R64 captain/);
+  });
+
+  it('a captain not committed before its round has results earns no multiplier (mid-tournament)', () => {
+    // Strict fairness twin of P3: you can't pick a captain for a round whose result you can
+    // already see. (Locking late is closed by P6; here the manager locked in time but returned
+    // to set the R32 captain only after R32 had already resolved.)
+    store().addPlayer(roles.champion);
+    store().addPlayer(roles.runnerUp);
+    store().finalizeDraft();                          // locked before any result — R64 captain recorded
+    revealThrough('R64'); store().playNextRound();    // R64 played (captain applies)
+    revealThrough('R32');                             // R32 resolves BEFORE the manager sets its captain
+    store().continueToNextRound();                    // recordLeaders is a no-op (R32 has a result)
+    expect(store().captainHistory.find(c => c.round === 'R32')).toBeUndefined();
+    store().setCaptain(roles.champion);               // refused — R32 is frozen
+    expect(store().captainHistory.find(c => c.round === 'R32')).toBeUndefined();
+
+    store().playNextRound();                          // scores R32 WITHOUT a captain
+    const r32 = store().roundScores.find(rs => rs.round === 'R32');
+    expect(r32?.captainBonus).toBe(0);                // no multiplier — they missed the window
+  });
+});
+
+describe('P6: the server freezes squad + transfers once results are in', () => {
+  // Mirror of save_entry_rpc.sql (h)+(i): the squad-membership twin of the captain lock.
+  const ROUND_ORDER = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'];
+  type P6State = { initialSquad?: string[]; transfers?: { out: string; in: string; round: string }[] };
+  const serverP6Rejects = (stored: P6State, incoming: P6State, resultRounds: string[]): string | null => {
+    if (resultRounds.length === 0) return null; // tournament hasn't started → nothing frozen
+    const sortKey = (a: string[] = []) => [...a].sort().join(',');
+    if (sortKey(incoming.initialSquad) !== sortKey(stored.initialSquad)) {
+      return (stored.initialSquad?.length ?? 0) === 0 ? 'the draft is closed' : 'your squad is locked';
+    }
+    const stoT = new Set((stored.transfers ?? []).map(t => JSON.stringify(t)));
+    for (const t of incoming.transfers ?? []) {
+      if (stoT.has(JSON.stringify(t))) continue;                 // pre-existing transfer, fine
+      const next = ROUND_ORDER[ROUND_ORDER.indexOf(t.round) + 1]; // the round it first scores
+      if (next && resultRounds.includes(next)) return `Too late to transfer for the ${next}`;
+    }
+    return null;
+  };
+
+  it('a LATE lock (initialSquad first set after results) is rejected', () => {
+    const stored: P6State = { initialSquad: [], transfers: [] };
+    const incoming: P6State = { initialSquad: [roles.champion, roles.runnerUp], transfers: [] };
+    expect(serverP6Rejects(stored, incoming, ['R64'])).toMatch(/draft is closed/);
+  });
+
+  it('an on-time lock (before any result) is accepted, and unchanged re-saves after are fine', () => {
+    const before: P6State = { initialSquad: [], transfers: [] };
+    const locked: P6State = { initialSquad: [roles.champion, roles.runnerUp], transfers: [] };
+    expect(serverP6Rejects(before, locked, [])).toBeNull();              // lock pre-tournament: OK
+    expect(serverP6Rejects(locked, locked, ['R64', 'R32'])).toBeNull();  // same squad re-saved after: OK
+  });
+
+  it('a retroactive transfer (into a round already resolved) is rejected, a timely one is not', () => {
+    const stored: P6State = { initialSquad: [roles.champion, roles.r16Exit], transfers: [] };
+    // A transfer logged against R32 first scores R16; if R16 is already resolved → retroactive.
+    const retro: P6State = { ...stored, transfers: [{ out: roles.r16Exit, in: roles.runnerUp, round: 'R32' }] };
+    expect(serverP6Rejects(stored, retro, ['R64', 'R32', 'R16'])).toMatch(/Too late to transfer for the R16/);
+    // Logged against QF → first scores SF; SF not yet resolved → allowed.
+    const timely: P6State = { ...stored, transfers: [{ out: roles.r16Exit, in: roles.runnerUp, round: 'QF' }] };
+    expect(serverP6Rejects(stored, timely, ['R64', 'R32', 'R16', 'QF'])).toBeNull();
   });
 });
