@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "typecheck": "tsc -b --noEmit",
     "deploy": "node scripts/deploy.mjs",
+    "deploy:preview": "node scripts/deploy.mjs preview",
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",
