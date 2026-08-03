@@ -46,13 +46,14 @@ Deno.serve(async (req) => {
   // everyone's score. The cron sends the service-role key; anon/user JWTs are rejected 401.
   const denied = assertServiceRole(req);
   if (denied) return denied;
+  let tournamentId = TOURNAMENT_ID; // hoisted so the catch can record WHICH tournament failed
   try {
     const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
-    let body: { page?: string; tournamentId?: string; overrides?: Override[] } = {};
+    let body: { page?: string; tournamentId?: string; overrides?: Override[]; clearOverrides?: { round: string; slot: number }[] } = {};
     try { body = await req.json(); } catch { /* cron/no-body invoke */ }
     const page = body.page ?? WIKI_PAGE;
-    const tournamentId = body.tournamentId ?? TOURNAMENT_ID;
+    tournamentId = body.tournamentId ?? TOURNAMENT_ID;
 
     // 1) Fetch the draw wikitext (CORS-open MediaWiki API). Retry once on a transient
     //    failure so a single flaky request never skips an ingest cycle.
@@ -84,9 +85,32 @@ Deno.serve(async (req) => {
       for (const r of prior ?? []) existingWinners[`${r.round}_${r.slot}`] = r.winner_id;
     }
 
-    // 4) Manual overrides beat everything (a human always wins over a stale/incorrect feed).
+    // 4) DURABLE manual overrides (F4-4): persisted in public.match_overrides so a human
+    //    correction survives EVERY future cron run — not just the request that carried it. A
+    //    body `overrides` entry upserts into the table; `clearOverrides` removes one. We then
+    //    read the whole table and apply it with top precedence (buildMatchRows ignores any
+    //    override that doesn't name one of the pairing's two players).
+    for (const o of body.overrides ?? []) {
+      const { error } = await db.from('match_overrides').upsert(
+        { tournament_id: tournamentId, round: o.round, slot: o.slot, winner_id: o.winnerId },
+        { onConflict: 'tournament_id,round,slot' });
+      if (error) throw error;
+    }
+    for (const c of body.clearOverrides ?? []) {
+      const { error } = await db.from('match_overrides').delete()
+        .eq('tournament_id', tournamentId).eq('round', c.round).eq('slot', c.slot);
+      if (error) throw error;
+    }
+    // Resilient READ: a missing/broken overrides table must NEVER freeze the scoring cron —
+    // log and carry on with no overrides. (The body upsert/delete above DO throw, but they
+    // only run on a manual admin invoke, where a loud failure is what you want.)
     const overrides: Record<string, string> = {};
-    for (const o of body.overrides ?? []) overrides[`${o.round}_${o.slot}`] = o.winnerId;
+    try {
+      const { data: ov, error } = await db.from('match_overrides')
+        .select('round, slot, winner_id').eq('tournament_id', tournamentId);
+      if (error) throw error;
+      for (const o of ov ?? []) overrides[`${o.round}_${o.slot}`] = o.winner_id as string;
+    } catch (e) { console.error('match_overrides read failed (continuing without overrides):', e); }
 
     // 5) Build rows (override > parsed > previously stored > null) and upsert. PK
     //    (tournament_id, round, slot) → idempotent; re-running is safe and cheap.
@@ -106,20 +130,38 @@ Deno.serve(async (req) => {
     for (const m of draw) { inDraw.add(m.p1Id); inDraw.add(m.p2Id); }
     const draftedMissing = draw.length ? roster.map((p) => p.id).filter((id) => !inDraw.has(id)) : [];
 
+    const ranAt = new Date().toISOString();
+    // F4-2: write a durable, queryable health row (the cron discards the HTTP response, so
+    // this is the only place a silent freeze becomes visible). Best-effort — never fail the
+    // ingest over a health-write hiccup.
+    await db.from('ingest_health').upsert({
+      tournament_id: tournamentId, last_run_at: ranAt, ok: true,
+      pairings: draw.length, results_known: Object.keys(results).length, matches_written: written,
+      drafted_missing_count: draftedMissing.length, drafted_missing: draftedMissing.slice(0, 40), error: null,
+    }, { onConflict: 'tournament_id' }).then(({ error }) => { if (error) console.error('ingest_health write:', error); });
+
     return json({
       ok: true,
       tournamentId,
       page,
       pairings: draw.length,
       resultsKnown: Object.keys(results).length,
-      overridesApplied: override.size,
+      overridesApplied: Object.keys(overrides).length,
       matchesWritten: written,
       draftedMissingCount: draftedMissing.length,
       draftedMissing: draftedMissing.slice(0, 20), // sample, so the response stays small
-      ranAt: new Date().toISOString(),
+      ranAt,
     });
   } catch (err) {
     console.error('ingest-draw error:', err); // B6: log detail server-side, don't leak it
+    // F4-2: record the failure so a broken ingest is VISIBLE (queryable), not silent.
+    try {
+      const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+      await db.from('ingest_health').upsert({
+        tournament_id: tournamentId, last_run_at: new Date().toISOString(), ok: false,
+        error: String(err instanceof Error ? err.message : err).slice(0, 500),
+      }, { onConflict: 'tournament_id' });
+    } catch { /* best-effort — never throw from the failure handler */ }
     return json({ ok: false, error: 'internal error' }, 500);
   }
 });

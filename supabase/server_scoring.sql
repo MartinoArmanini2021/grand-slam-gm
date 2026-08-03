@@ -22,7 +22,11 @@ create table if not exists public.matches (
   p1_id         text not null,
   p2_id         text not null,
   winner_id     text,
-  primary key (tournament_id, round, slot)
+  primary key (tournament_id, round, slot),
+  -- F4-5: a winner MUST be one of the two players (or null/undecided). Stops a corrupt
+  -- ingest (e.g. a slot-shift attaching a stored winner to the wrong pairing, or a typo'd
+  -- override) from ever persisting a nonsensical winner_id — the upsert fails loudly instead.
+  constraint matches_winner_in_pairing check (winner_id is null or winner_id in (p1_id, p2_id))
 );
 alter table public.matches enable row level security;
 drop policy if exists "matches readable" on public.matches;

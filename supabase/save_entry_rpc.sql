@@ -2,7 +2,9 @@
 -- F1 (+ Phase-2 B2/B3) — Server-side entry validation + the SINGLE validated write path.
 -- Apply in the Supabase SQL editor (idempotent). RE-RUN this if you applied an earlier
 -- version — it now also (B3) pins the entry to the canonical public league inside save_entry
--- and rejects a crafted p_league, and (B2) revokes the direct write path to `leagues`.
+-- and rejects a crafted p_league, (B2) revokes the direct write path to `leagues`, and
+-- (P6) freezes the drafted squad + transfers once the tournament has a result (so a late lock
+-- can't capture winners into initialSquad, and a transfer can't score an already-played round).
 --
 -- F1: the client can no longer write entries.state directly, so it can never field an illegal
 -- squad or retroactively re-pick a captain after a round's results are in. Every entry write
@@ -119,6 +121,12 @@ declare
   v_found boolean;
   v_public uuid;
   r_round text; v_inc text; v_sto text;
+  -- P6 — result-based squad/transfer freeze
+  v_started boolean;
+  v_result_rounds text[];
+  v_inc_init text[]; v_sto_init text[];
+  v_round_order text[] := array['R128','R64','R32','R16','QF','SF','F'];
+  t_elem jsonb; v_tr_round text; v_next_round text;
 begin
   if v_uid is null then raise exception 'Not authenticated'; end if;
 
@@ -185,6 +193,44 @@ begin
     v_sto := (select c->>'playerId' from jsonb_array_elements(coalesce(v_existing.state->'viceCaptainHistory','[]'::jsonb)) c where c->>'round' = r_round limit 1);
     if coalesce(v_inc,'') <> coalesce(v_sto,'') then raise exception 'Cannot change your % vice-captain — that round has already been played', r_round; end if;
   end loop;
+
+  -- (f2) P6 — result-based squad + transfer freeze: the squad-membership twin of the captain
+  --      lock above. Once a result is in you can't lock/re-lock a squad whose results you can
+  --      already see (a late draft picking winners — the twin of the P3 hole), nor transfer a
+  --      player into a round that's already under way.
+  v_result_rounds := array(select distinct m.round from public.matches m
+    where m.tournament_id = p_tournament and m.winner_id is not null);
+  v_started := array_length(v_result_rounds, 1) is not null;
+  if v_started then
+    -- (h) the drafted squad (initialSquad) is frozen once the tournament has a result. Compared
+    --     order-insensitively — only a genuine change (or a first, too-late lock) is rejected.
+    v_inc_init := array(select jsonb_array_elements_text(coalesce(p_state->'initialSquad','[]'::jsonb)));
+    v_sto_init := array(select jsonb_array_elements_text(coalesce(v_existing.state->'initialSquad','[]'::jsonb)));
+    if (select array(select unnest(v_inc_init) x order by x))
+         is distinct from
+       (select array(select unnest(v_sto_init) x order by x)) then
+      if coalesce(array_length(v_sto_init, 1), 0) = 0
+        then raise exception 'The tournament has started — the draft is closed';
+        else raise exception 'The tournament has started — your squad is locked';
+      end if;
+    end if;
+
+    -- (i) a NEWLY added transfer can't score a round whose result is already in. A transfer is
+    --     logged against round X and first scores the NEXT round; reject it if that next round
+    --     already has a result (you'd be swapping in a player after seeing that round play out).
+    for t_elem in
+      select jsonb_array_elements(coalesce(p_state->'transfers','[]'::jsonb))
+      except
+      select jsonb_array_elements(coalesce(v_existing.state->'transfers','[]'::jsonb))
+    loop
+      v_tr_round := t_elem->>'round';
+      v_next_round := (select v_round_order[i + 1] from generate_subscripts(v_round_order, 1) i
+                       where v_round_order[i] = v_tr_round limit 1);
+      if v_next_round is not null and v_next_round = any(v_result_rounds) then
+        raise exception 'Too late to transfer for the % — that round has already started', v_next_round;
+      end if;
+    end loop;
+  end if;
 
   -- (g) write. rev advances; score is never set here.
   insert into public.entries (user_id, league_id, tournament_id, squad, captain_history, phase, current_round_index, budget, state, rev, updated_at)

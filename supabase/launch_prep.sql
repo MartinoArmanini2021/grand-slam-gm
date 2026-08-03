@@ -1,5 +1,7 @@
--- === Launch prep: league management + clean slate (public league KEPT) ===
--- Run once before handing the app to friends. §A/§B are idempotent; §C wipes test data.
+-- === Launch prep: league management functions (SAFE / idempotent) ===
+-- Re-runnable any time. The DESTRUCTIVE pre-launch wipe that used to live here (§C:
+-- `delete from public.entries`) has been MOVED OUT to _DANGER_wipe_all_data.sql so that
+-- re-running this file to (re)apply the league functions can never nuke every squad.
 
 -- A. League management functions (owner-gated where noted).
 -- Delete a private league you own (cascades its memberships).
@@ -37,8 +39,5 @@ insert into public.league_members (league_id, user_id)
   select l.id, u.id from public.leagues l cross join auth.users u
   where l.is_public on conflict do nothing;
 
--- C. Clean slate for the launch — wipe every squad and every PRIVATE league (the
---    public league + its memberships stay, so the global board still works). Accounts
---    are kept. ⚠️ DELETES TEST DATA.
-delete from public.entries;
-delete from public.leagues where is_public = false;  -- cascades private memberships
+-- (The one-time clean-slate wipe is NOT here — see _DANGER_wipe_all_data.sql. Keeping it
+--  out of this re-runnable file is deliberate: this file is safe to apply repeatedly.)

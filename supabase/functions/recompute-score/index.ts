@@ -36,7 +36,7 @@ const winPoints = (base: number, w: number, l: number | undefined) =>
 interface MatchRow { round: string; p1: string; p2: string; winner: string | null }
 interface EntryState {
   initialSquad?: string[];
-  myTeam?: string[]; // current squad — fallback if a squad isn't locked yet
+  myTeam?: string[]; // current (live) squad — NOT used for scoring (P3)
   transfers?: { out: string; in: string; round: string }[];
   captainHistory?: { round: string; playerId: string }[];
   viceCaptainHistory?: { round: string; playerId: string }[];
@@ -45,7 +45,10 @@ interface EntryState {
 function scoreEntry(state: EntryState, matches: MatchRow[], rankById: Record<string, number>, playedRounds: string[]): number {
   const idx = (r: string) => ROUND_ORDER.indexOf(r);
   const rank = (id: string) => rankById[id] ?? 40;
-  const initial = (state.initialSquad?.length ? state.initialSquad : state.myTeam) ?? [];
+  // INTEGRITY (P3): score ONLY off the frozen initialSquad snapshot; a never-locked entry
+  // scores 0 (pending). Never fall back to the live myTeam, or an unlocked user could bank
+  // points off a squad edited AFTER results are known. Keep identical to serverEngine.ts.
+  const initial = state.initialSquad ?? [];
   let total = 0;
   for (const round of playedRounds) {
     const ri = idx(round);

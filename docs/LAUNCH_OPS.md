@@ -87,6 +87,13 @@ steps I gave you; move the `VITE_*` env vars into Cloudflare build settings.
   in the `ingest-draw` response (`draftedMissing`); just needs surfacing in the UI.
 
 ## ⚠️ Known gaps (accepted for launch)
+- **Accessibility (WCAG) — no formal pass done.** Phase 3 deliberately skipped a full WCAG
+  2.1 AA audit (contrast ratios, focus-visible on every control, ARIA roles/labels, keyboard
+  traps, reduced-motion, screen-reader flow). The app is a visual, mouse/touch-first fantasy
+  game shared with friends, so this is acceptable for launch. **Before wider/public sharing:**
+  run an axe-core/Lighthouse pass, add visible focus states + ARIA labels to the court and
+  modal controls, verify colour contrast on the surface themes, and honour
+  `prefers-reduced-motion`. Revisit if the audience broadens beyond the friends league.
 - **B7 — no app-level rate limiting.** There is no per-user throttle on the write path
   (`save_entry`, the league RPCs) and no CAPTCHA on signup (email autoconfirm is on, so signup is
   low-friction but unthrottled). Supabase Auth applies *some* built-in limits (login/signup attempts

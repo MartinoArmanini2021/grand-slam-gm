@@ -9,10 +9,17 @@
 -- exposed — those live in `profiles`, which stays locked to own-row reads.
 -- Writes are unchanged: a client still cannot write another row or the score column.
 
-grant select on public.entries to anon;
-
-drop policy if exists "entries readable by anon (public board)" on public.entries;
-create policy "entries readable by anon (public board)" on public.entries
-  for select to anon using (true);
+-- ⚠️ SUPERSEDED BY B8 — DO NOT RE-RUN the entries grant/policy below.
+-- The public board now reads the REDACTED `board_entries` view (which hides in-progress
+-- draft squads), and anon SELECT was granted on that view in hide_draft_squads_1_view.sql.
+-- hide_draft_squads_2_restrict.sql deliberately REVOKED anon's direct read of the base
+-- `public.entries` table. Re-running the two statements below would re-open every user's
+-- pre-lock squad to anyone — so they are commented out. Only `public_profiles` (safe,
+-- non-PII) is still granted.
+--
+--   grant select on public.entries to anon;
+--   drop policy if exists "entries readable by anon (public board)" on public.entries;
+--   create policy "entries readable by anon (public board)" on public.entries
+--     for select to anon using (true);
 
 grant select on public.public_profiles to anon;

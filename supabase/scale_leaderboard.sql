@@ -9,14 +9,13 @@
 create index if not exists entries_tournament_score_idx
   on public.entries (tournament_id, score desc);
 
--- 2) Simplify the entries READ policy. Entries hold only leaderboard-public data
---    (squad, score, budget) — the same fields already shown to everyone on the board;
---    all PII lives in `profiles` and is exposed solely through the `public_profiles`
---    view. The old policy re-derived "do we share a league?" per row via a subquery over
---    league_members, which is O(members) and won't hold up on the huge public league.
---    Since every signed-in user is a member of the public league anyway, that check
---    always passed — so `using (true)` is equivalent for reads and far faster.
---    (Writes stay locked to your own row — those policies are unchanged.)
-drop policy if exists "league entries readable" on public.entries;
-create policy "league entries readable" on public.entries
-  for select to authenticated using (true);
+-- 2) ⚠️ SUPERSEDED BY B8 — DO NOT RE-RUN the policy below.
+--    This `using (true)` policy let ANY authenticated user read EVERY row of the base
+--    `public.entries` table. B8 (hide_draft_squads_2_restrict.sql) replaced it with an
+--    own-row-only policy and routed all board reads through the REDACTED `board_entries`
+--    view, so a rival can't read an in-progress draft squad. Re-running the statements
+--    below would re-open that leak, so they are commented out.
+--
+--      drop policy if exists "league entries readable" on public.entries;
+--      create policy "league entries readable" on public.entries
+--        for select to authenticated using (true);
