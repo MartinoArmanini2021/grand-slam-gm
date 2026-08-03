@@ -182,6 +182,37 @@ export const TOURNAMENTS: Record<string, Tournament> = {
       net: '#eef4f0', netShadow: '#0a1f44', crowdLight: '#dbeafe', crowdDark: '#93a4bc',
     },
   },
+
+  // ── LATER: the US Open (staged, not yet active) ──────────────────────────────
+  // The season's Grand Slam. A 128-player draw with NO byes, so — unlike a Masters — every
+  // player plays Round 1 and ALL SEVEN rounds are scored (R128 → F). The shared draw parser
+  // is already validated against the real Grand Slam format (see usOpenDraw.test.ts). Before
+  // launch: wire the real 128-entrant field + player_stats seed when the entry list publishes,
+  // confirm the official order of play, then flip `live` to true.
+  usopen_2026: {
+    id: 'usopen_2026',
+    name: 'US Open',
+    edition: 'US Open 2026',
+    year: 2026,
+    surface: 'hard',
+    location: 'New York, USA',
+    drawSize: 128,
+    rounds: ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'], // all seven — Grand Slams have no byes
+    mode: 'live',
+    live: false, // staged — flip to true once the field is wired + schedule confirmed
+    // Placeholder — the US Open main draw runs late Aug into Sep 2026. Replace with the official
+    // order of play when it publishes. schedule[R128] doubles as the DRAFT DEADLINE.
+    schedule: {
+      R128: '2026-08-24T15:00:00Z', // first day of main-draw play — DRAFT CLOSES (CONFIRM DATE)
+    },
+    court: {
+      standTop: '#0a1e33', standBottom: '#06121f',   // night-session dark seating
+      apron: '#2a5db0',                              // US Open blue surround
+      surface: '#3f7bd6',                            // lighter blue Laykold inside court
+      line: '#ffffff',
+      net: '#eef4f0', netShadow: '#0a1f44', crowdLight: '#dbeafe', crowdDark: '#8ea6c8',
+    },
+  },
 };
 
 const DEFAULT_TOURNAMENT_ID = 'montreal_2026';
