@@ -51,6 +51,19 @@ This is what actually fills the `matches` table, so scores move for everyone. Tw
 
 ---
 
+### 5c. Reconcile the field against the published draw  — *the #1 field-quality gate (US Open)*
+The draftable field must match the **final** main draw, not the original entry list. Montréal
+shipped from an entry-list snapshot and drifted: 3 withdrawn players stayed draftable (silent
+zero-score picks) and 25 real main-draw entrants were missing. **Before shipping any tournament
+field, run the guard:**
+```
+npm run reconcile:field -- "2026 US Open – Men's singles" src/data/usopen2026Field.json
+```
+It fetches the real draw, resolves every main-draw player through the app's own parser, and
+**exits non-zero** unless the field matches exactly — listing MISSING (in draw, not draftable)
+and PHANTOM (draftable, withdrew) players. Rebuild the field until it prints ✓. Re-run right
+before lock-in, since late withdrawals/lucky-losers shift the field until play begins.
+
 ## 🟡 Nice to have before launch
 
 ### 6. Custom domain

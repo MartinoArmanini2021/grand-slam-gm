@@ -12,6 +12,7 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",
+    "reconcile:field": "node scripts/reconcile-field.mjs",
     "gen:avatars": "node scripts/generate-avatars.mjs"
   },
   "dependencies": {
