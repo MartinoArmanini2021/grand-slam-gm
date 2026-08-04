@@ -40,8 +40,19 @@ export default function BracketTree() {
     );
   }
 
-  // ── Live draw: render each round's matches, winners highlighted ─────────────
-  const rounds = ROUNDS.map(r => r.id as RoundId).filter(rid => draw.some(m => m.round === rid));
+  // ── The FULL bracket, drawn to the final from day one ───────────────────────
+  // Every scored round with its exact number of slots (round-of-64 → 32 matches, R32 → 16, …
+  // Final → 1), so you can trace where players will meet before those rounds are drawn. Known
+  // pairings are placed; the rest read "TBD vs TBD" until the draw fills in. Slots are numbered
+  // in bracket order — round i's match s is fed by round i-1's matches 2s and 2s+1 (verified) —
+  // so equal-height columns with justify-around center each match between its two feeders.
+  const K = ROUNDS.length;
+  const bracket = ROUNDS.map((r, i) => {
+    const bySlot = new Map(draw.filter(m => m.round === r.id).map(m => [m.slot, m]));
+    const matches = Array.from({ length: 2 ** (K - 1 - i) }, (_, slot) =>
+      bySlot.get(slot) ?? { round: r.id as RoundId, slot, half: 'top' as const, p1Id: 'tbd', p2Id: 'tbd' });
+    return { id: r.id as RoundId, label: r.label, matches };
+  });
 
   return (
     <div>
@@ -59,29 +70,28 @@ export default function BracketTree() {
         </div>
       )}
 
-      <div className="overflow-x-auto">
-        <div className="flex gap-3" style={{ minWidth: 'min-content' }}>
-          {rounds.map(rid => {
-            const label = ROUNDS.find(r => r.id === rid)!.label;
-            const ms = draw.filter(m => m.round === rid).sort((a, b) => a.slot - b.slot);
-            return (
-              <div key={rid} className="shrink-0" style={{ width: 190 }}>
-                <div className="text-[10px] font-bold uppercase tracking-wider mb-2 text-center" style={{ color: 'var(--ink-2)' }}>{label}</div>
-                <div className="flex flex-col gap-2">
-                  {ms.map(m => {
-                    const winner = results[matchKey(m.round, m.slot)];
-                    return (
-                      <div key={m.slot} className="rounded-lg overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.1)' }}>
-                        <Side id={m.p1Id} won={winner === m.p1Id} decided={!!winner} mine={highlight.has(m.p1Id)} />
-                        <div style={{ height: 1, background: 'rgba(10,27,51,0.08)' }} />
-                        <Side id={m.p2Id} won={winner === m.p2Id} decided={!!winner} mine={highlight.has(m.p2Id)} />
-                      </div>
-                    );
-                  })}
-                </div>
+      <div className="overflow-x-auto pb-1">
+        {/* Equal-height columns (items-stretch) with matches spread evenly (justify-around) so each
+            round's match sits centred between the two matches that feed it — a readable tree. */}
+        <div className="flex gap-3 items-stretch" style={{ minWidth: 'min-content' }}>
+          {bracket.map(({ id, label, matches }) => (
+            <div key={id} className="shrink-0 flex flex-col" style={{ width: 168 }}>
+              <div className="text-[10px] font-bold uppercase tracking-wider mb-2 text-center" style={{ color: 'var(--ink-2)' }}>{label}</div>
+              <div className="flex-1 flex flex-col justify-around">
+                {matches.map(m => {
+                  const winner = results[matchKey(m.round, m.slot)];
+                  const live = highlight.has(m.p1Id) || highlight.has(m.p2Id);
+                  return (
+                    <div key={m.slot} className="rounded-lg overflow-hidden shrink-0" style={{ border: `1px solid ${live ? 'rgba(217,154,0,0.5)' : 'rgba(10,27,51,0.1)'}`, margin: '3px 0' }}>
+                      <Side id={m.p1Id} won={winner === m.p1Id} decided={!!winner} mine={highlight.has(m.p1Id)} />
+                      <div style={{ height: 1, background: 'rgba(10,27,51,0.08)' }} />
+                      <Side id={m.p2Id} won={winner === m.p2Id} decided={!!winner} mine={highlight.has(m.p2Id)} />
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </div>
     </div>
