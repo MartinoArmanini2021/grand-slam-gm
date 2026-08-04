@@ -12,7 +12,7 @@ import type { RoundId } from '../types';
 describe('draw parser — full 128 Grand Slam (2025 US Open)', () => {
   const SLAM_ROUNDS = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'] as RoundId[];
   const resolve = buildResolver(fieldJson as { id: string; name: string }[]);
-  const { draw, results } = parseFullDraw(usoDraw, { scoredRounds: SLAM_ROUNDS, resolve });
+  const { draw, results, meta } = parseFullDraw(usoDraw, { scoredRounds: SLAM_ROUNDS, resolve });
   const count = (r: string) => draw.filter(m => m.round === r).length;
 
   it('reconstructs all seven rounds with the exact Grand Slam match counts', () => {
@@ -31,5 +31,17 @@ describe('draw parser — full 128 Grand Slam (2025 US Open)', () => {
     const everyMatchDecided = SLAM_ROUNDS.every(r =>
       draw.filter(m => m.round === r).every(m => !!results[`${r}_${m.slot}`]));
     expect(everyMatchDecided).toBe(true);
+  });
+
+  it('captures the real (accented) name + flag code for off-roster opponents', () => {
+    // Alcaraz didn't play Montréal, so he's off the draftable roster → a synthetic "x_" id.
+    // The meta must carry his proper name + IOC flag code so the bracket shows "🇪🇸 Carlos
+    // Alcaraz", not the placeholder id.
+    expect(meta['x_carlos_alcaraz']).toEqual({ name: 'Carlos Alcaraz', country: 'ESP' });
+    // Every off-roster id in the draw has a meta entry (real name captured, not left as an id).
+    const offRoster = new Set(draw.flatMap(m => [m.p1Id, m.p2Id]).filter(id => id.startsWith('x_')));
+    for (const id of offRoster) expect(meta[id]?.name).toBeTruthy();
+    // Roster players (real ids) are NOT in meta — they carry their own name/flag.
+    expect(Object.keys(meta).every(id => id.startsWith('x_'))).toBe(true);
   });
 });

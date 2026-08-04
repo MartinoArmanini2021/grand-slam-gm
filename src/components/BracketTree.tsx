@@ -5,7 +5,7 @@ import { useLiveStore } from '../store/liveStore';
 import { findPlayer } from '../data/players';
 import { useLeagueBoard } from '../data/leagueBoard';
 import { ROUNDS } from '../data/tournament';
-import { matchKey } from '../data/liveResults';
+import { matchKey, type PlayerMetaMap } from '../data/liveResults';
 import { TOURNAMENT } from '../data/tournamentConfig';
 import type { RoundId } from '../types';
 
@@ -13,7 +13,7 @@ import type { RoundId } from '../types';
 // into the live store. Before the draw is published there is nothing to show — a real,
 // first-class "not started yet" state, not an empty grid.
 export default function BracketTree() {
-  const { draw, results } = useLiveStore();
+  const { draw, results, meta } = useLiveStore();
   const { myTeam } = useGameStore();
   const { teamName, username } = useProfile();
 
@@ -83,9 +83,9 @@ export default function BracketTree() {
                   const live = highlight.has(m.p1Id) || highlight.has(m.p2Id);
                   return (
                     <div key={m.slot} className="rounded-lg overflow-hidden shrink-0" style={{ border: `1px solid ${live ? 'rgba(217,154,0,0.5)' : 'rgba(10,27,51,0.1)'}`, margin: '3px 0' }}>
-                      <Side id={m.p1Id} won={winner === m.p1Id} decided={!!winner} mine={highlight.has(m.p1Id)} />
+                      <Side id={m.p1Id} meta={meta} won={winner === m.p1Id} decided={!!winner} mine={highlight.has(m.p1Id)} />
                       <div style={{ height: 1, background: 'rgba(10,27,51,0.08)' }} />
-                      <Side id={m.p2Id} won={winner === m.p2Id} decided={!!winner} mine={highlight.has(m.p2Id)} />
+                      <Side id={m.p2Id} meta={meta} won={winner === m.p2Id} decided={!!winner} mine={highlight.has(m.p2Id)} />
                     </div>
                   );
                 })}
@@ -113,10 +113,14 @@ function prettifyId(id: string): string {
     .join(' ');
 }
 
-function Side({ id, won, decided, mine }: { id: string; won: boolean; decided: boolean; mine: boolean }) {
+function Side({ id, meta, won, decided, mine }: { id: string; meta: PlayerMetaMap; won: boolean; decided: boolean; mine: boolean }) {
   const isTbd = id === 'tbd';                // a seed's opponent, still to be decided in the first round
   const p = isTbd ? undefined : findPlayer(id);
-  const name = isTbd ? 'TBD' : (p?.name ?? prettifyId(id));
+  // Off-roster opponent (not in the draftable field): use the real name + flag the feed
+  // pulled from the draw; fall back to a prettified id if the feed hasn't loaded it yet.
+  const m = p || isTbd ? undefined : meta[id];
+  const name = isTbd ? 'TBD' : (p?.name ?? m?.name ?? prettifyId(id));
+  const flag = p?.flag ?? m?.flag;
   return (
     <div
       className="flex items-center gap-1.5 px-2 py-1.5 text-xs"
@@ -128,7 +132,7 @@ function Side({ id, won, decided, mine }: { id: string; won: boolean; decided: b
         fontStyle: isTbd ? 'italic' : 'normal',
       }}
     >
-      {p?.flag && <span>{p.flag}</span>}
+      {flag && <span>{flag}</span>}
       <span className="truncate">{name}</span>
       {won && <span className="ml-auto text-[10px]" style={{ color: 'var(--green)' }}>✓</span>}
     </div>

@@ -28,6 +28,12 @@ export interface LiveMatch {
 // Recorded outcomes so far: matchKey → winner's player id.
 export type LiveResults = Record<string, string>;
 
+// Display info for OFF-roster opponents (id "x_...") who aren't in the draftable field:
+// their real (accented) name and flag emoji, pulled from the draw so the bracket shows a
+// proper name/flag instead of a placeholder. Roster players carry their own name + flag.
+export interface PlayerMeta { name: string; flag?: string }
+export type PlayerMetaMap = Record<string, PlayerMeta>;
+
 // Stable identity for a match within a tournament (round + draw slot).
 export const matchKey = (round: RoundId, slot: number): string => `${round}_${slot}`;
 

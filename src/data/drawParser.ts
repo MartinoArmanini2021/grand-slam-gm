@@ -83,10 +83,24 @@ export function splitBrackets(wikitext: string): { type: string; text: string }[
 // publishes — scoring/ingest never see it (they pass includeIncomplete=false, the default).
 const TBD = { id: 'tbd', bold: false };
 
+// Display info for a player who ISN'T on the draftable roster (a qualifier/low-ranked
+// opponent, id "x_..."). Roster players already carry a name + flag, so meta is only
+// populated for off-roster ids — it lets the bracket show their real (accented) name and
+// flag instead of a placeholder. `country` is the raw flag code from the draw ({{flagicon|
+// ESP}} → "ESP"); the client turns it into an emoji (see flags.ts) — kept out of this pure,
+// dependency-free file so it still runs verbatim in the Deno ingest function.
+export interface DrawMeta { name: string; country?: string }
+export type DrawMetaMap = Record<string, DrawMeta>;
+
+// Pull the first flag code out of a team cell: "{{flagicon|ESP}} [[…]]" → "ESP".
+const flagCode = (raw: string): string | undefined =>
+  raw.match(/\{\{\s*flag[a-z]*\s*\|\s*([A-Za-z]{2,3})\b/i)?.[1];
+
 export function parseBracket(
   wikitext: string, roundIds: RoundId[], resolve: (raw: string) => string, includeIncomplete = false,
-): { draw: LiveMatch[]; results: LiveResults } {
+): { draw: LiveMatch[]; results: LiveResults; meta: DrawMetaMap } {
   const teams: Record<number, Record<number, { id: string; bold: boolean }>> = {};
+  const meta: DrawMetaMap = {};
   // Non-greedy capture up to the NEXT "| RD…" key, so a "|" inside {{flagicon|ITA}} or a
   // piped [[link|label]] doesn't prematurely end the value.
   const re = /\|\s*RD(\d+)-team(\d+)\s*=\s*(.*?)(?=\s*\|\s*RD|$)/gm;
@@ -94,7 +108,14 @@ export function parseBracket(
   while ((m = re.exec(wikitext)) !== null) {
     const rd = Number(m[1]); const idx = Number(m[2]) - 1; const raw = m[3];
     if (!cleanTeam(raw)) continue; // empty / bye
-    (teams[rd] ??= {})[idx] = { id: resolve(raw), bold: /'''/.test(raw) }; // Wikipedia bolds the winner
+    const id = resolve(raw);
+    (teams[rd] ??= {})[idx] = { id, bold: /'''/.test(raw) }; // Wikipedia bolds the winner
+    // Capture the real name + flag for off-roster opponents (the wikilink target stays the
+    // full accented name even when a later round abbreviates the visible label).
+    if (id.startsWith('x_') && !meta[id]) {
+      const country = flagCode(raw);
+      meta[id] = country ? { name: stripDisambig(teamTarget(raw)), country } : { name: stripDisambig(teamTarget(raw)) };
+    }
   }
 
   const draw: LiveMatch[] = [];
@@ -123,7 +144,7 @@ export function parseBracket(
       if (winnerId === p1.id || winnerId === p2.id) results[matchKey(round, slot)] = winnerId;
     }
   }
-  return { draw, results };
+  return { draw, results, meta };
 }
 
 // ── Upsert rows with NEVER-REGRESS semantics (used by the ingest Edge Function) ──
@@ -172,7 +193,7 @@ const FINALS_ROUNDS: RoundId[] = ['QF', 'SF', 'F'];
 // resolved and the app doesn't score the opening round).
 export function parseFullDraw(
   wikitext: string, opts: { scoredRounds: RoundId[]; resolve: (raw: string) => string; includeIncomplete?: boolean },
-): { draw: LiveMatch[]; results: LiveResults } {
+): { draw: LiveMatch[]; results: LiveResults; meta: DrawMetaMap } {
   const { scoredRounds, resolve, includeIncomplete = false } = opts;
   const brackets = splitBrackets(wikitext);
   const sections = brackets.filter(b => /^16TeamBracket/i.test(b.type));
@@ -183,8 +204,10 @@ export function parseFullDraw(
   if (sections.length === 0) return parseBracket(wikitext, scoredRounds, resolve, includeIncomplete);
 
   const perRound: Partial<Record<RoundId, { m: LiveMatch; winner: string | undefined }[]>> = {};
+  const meta: DrawMetaMap = {};
   const collect = (text: string, roundIds: RoundId[]) => {
-    const { draw, results } = parseBracket(text, roundIds, resolve, includeIncomplete);
+    const { draw, results, meta: sectionMeta } = parseBracket(text, roundIds, resolve, includeIncomplete);
+    Object.assign(meta, sectionMeta);
     for (const m of draw) (perRound[m.round] ??= []).push({ m, winner: results[matchKey(m.round, m.slot)] });
   };
   for (const s of sections) collect(s.text, SECTION_ROUNDS);
@@ -199,5 +222,5 @@ export function parseFullDraw(
       if (item.winner) results[matchKey(round, slot)] = item.winner;
     });
   }
-  return { draw, results };
+  return { draw, results, meta };
 }

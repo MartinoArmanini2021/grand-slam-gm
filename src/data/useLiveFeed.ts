@@ -10,6 +10,7 @@ import { TOURNAMENT } from './tournamentConfig';
 // tournament's interval. No-ops entirely outside live mode.
 export function useLiveFeed(autoPoll = false) {
   const setDraw = useLiveStore(s => s.setDraw);
+  const setMeta = useLiveStore(s => s.setMeta);
   const mergeResults = useLiveStore(s => s.mergeResults);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,15 +22,16 @@ export function useLiveFeed(autoPoll = false) {
     setBusy(true);
     setError(null);
     try {
-      const { draw, results } = await fetchLiveUpdate();
+      const { draw, results, meta } = await fetchLiveUpdate();
       if (draw.length) setDraw(draw);      // refresh pairings as the draw fills out
+      if (Object.keys(meta).length) setMeta(meta); // off-roster opponents' real name + flag
       mergeResults(results, Date.now());   // overrides are preserved
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Sync failed');
     } finally {
       setBusy(false);
     }
-  }, [setDraw, mergeResults]);
+  }, [setDraw, setMeta, mergeResults]);
 
   syncRef.current = sync;
 

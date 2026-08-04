@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ACTIVE_TOURNAMENT_ID } from '../data/tournamentConfig';
-import { matchKey, type LiveMatch, type LiveResults } from '../data/liveResults';
+import { matchKey, type LiveMatch, type LiveResults, type PlayerMetaMap } from '../data/liveResults';
 import type { RoundId } from '../types';
 
 // ── Live tournament store ────────────────────────────────────────────────────
@@ -17,10 +17,14 @@ import type { RoundId } from '../types';
 interface LiveStore {
   draw: LiveMatch[];                 // pairings, once the draw is published/entered
   results: LiveResults;              // matchKey → winner id, as recorded
+  meta: PlayerMetaMap;               // off-roster opponents' real name + flag (from the draw)
   overrides: Record<string, true>;   // matchKeys an admin has manually set/corrected
   lastSync: number | null;           // ms timestamp of the last successful feed merge
 
   setDraw: (draw: LiveMatch[]) => void;
+  // Feed: merge off-roster player display info (name/flag). Accumulates, never drops known
+  // entries — a later partial parse can't erase a name/flag we already learned.
+  setMeta: (meta: PlayerMetaMap) => void;
   // Admin: set/correct a result. Marks it an override so the feed won't overwrite it.
   recordResult: (round: RoundId, slot: number, winnerId: string) => void;
   // Admin: clear a result (and drop its override, so the feed may repopulate it).
@@ -35,10 +39,13 @@ export const useLiveStore = create<LiveStore>()(
     (set) => ({
       draw: [],
       results: {},
+      meta: {},
       overrides: {},
       lastSync: null,
 
       setDraw: (draw) => set({ draw }),
+
+      setMeta: (meta) => set((s) => ({ meta: { ...s.meta, ...meta } })),
 
       recordResult: (round, slot, winnerId) =>
         set((s) => {
@@ -69,7 +76,7 @@ export const useLiveStore = create<LiveStore>()(
           return { results, lastSync: syncedAt };
         }),
 
-      resetLive: () => set({ draw: [], results: {}, overrides: {}, lastSync: null }),
+      resetLive: () => set({ draw: [], results: {}, meta: {}, overrides: {}, lastSync: null }),
     }),
     { name: `gsgm-live-${ACTIVE_TOURNAMENT_ID}` }
   )
