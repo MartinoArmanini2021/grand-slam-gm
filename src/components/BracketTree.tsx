@@ -98,10 +98,25 @@ export default function BracketTree() {
   );
 }
 
+// Name particles that stay lowercase when we rebuild a name from a placeholder id.
+const NAME_PARTICLES = new Set(['de', 'del', 'della', 'di', 'da', 'dos', 'van', 'von', 'der', 'den', 'la', 'le', 'el', 'bin', 'ben']);
+
+// Opponents who aren't in the draftable roster (qualifiers, low-ranked entrants) resolve to a
+// synthetic id like "x_daniel_merida". Turn that into a readable name ("Daniel Merida") instead of
+// showing the raw id. Roster players keep their real name; this only runs for the "x_" fallback.
+function prettifyId(id: string): string {
+  if (!id.startsWith('x_')) return id;
+  const words = id.slice(2).split('_').filter(Boolean);
+  if (words.length === 0) return id;
+  return words
+    .map((w) => (NAME_PARTICLES.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1)))
+    .join(' ');
+}
+
 function Side({ id, won, decided, mine }: { id: string; won: boolean; decided: boolean; mine: boolean }) {
   const isTbd = id === 'tbd';                // a seed's opponent, still to be decided in the first round
   const p = isTbd ? undefined : findPlayer(id);
-  const name = isTbd ? 'TBD' : (p?.name ?? id);
+  const name = isTbd ? 'TBD' : (p?.name ?? prettifyId(id));
   return (
     <div
       className="flex items-center gap-1.5 px-2 py-1.5 text-xs"
