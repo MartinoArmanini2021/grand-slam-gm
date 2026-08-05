@@ -206,7 +206,7 @@ function AppShell({
                     onClick={() => setActiveTab(tab.id)}
                     aria-label={tab.label}
                     aria-current={active ? 'page' : undefined}
-                    className="relative flex items-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-xl text-sm font-bold transition-all shrink-0 whitespace-nowrap"
+                    className="relative flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2.5 min-h-[44px] rounded-xl text-sm font-bold transition-all shrink-0 whitespace-nowrap"
                     style={{
                       color: active ? '#fff' : '#9FB0CC',
                       background: active ? 'rgba(255,255,255,0.13)' : 'transparent',
@@ -216,7 +216,7 @@ function AppShell({
                     onMouseLeave={e => { if (!active) e.currentTarget.style.color = '#9FB0CC'; }}
                   >
                     <Icon size={17} style={{ color: active ? tab.accent : 'currentColor' }} />
-                    <span className="hidden sm:inline">{tab.label}</span>
+                    <span className="text-[10px] leading-none sm:text-sm">{tab.label}</span>
                     {tab.id === 'tournament' && phase === 'pre_round' && (
                       <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full pulse-dot" style={{ background: 'var(--green-bright)' }} />
                     )}
