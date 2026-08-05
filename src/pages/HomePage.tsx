@@ -138,7 +138,7 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
       {phase === 'pre_round' && currentRound && !playable && (
         <ActionBanner color="var(--blue)" title={`Squad locked — waiting on the ${currentRound.label}`}
           body={`Results go live as ${TOURNAMENT.edition} is played. Your captains are set; scores post automatically.`}
-          cta="⏳ Awaiting live results" onClick={() => {}} />
+          cta="⏳ See live results →" onClick={() => setActiveTab('tournament')} />
       )}
       {phase === 'round_complete' && currentRound && (
         <ActionBanner color="var(--green)" title={`${ROUNDS[currentRoundIndex - 1]?.label} results are in`}
