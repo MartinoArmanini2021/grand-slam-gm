@@ -1,12 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
-import { getPlayer } from '../data/players';
-import { getTier, TIER_META, TIER_ORDER, type Tier } from '../data/tiers';
 import { track } from '../data/analytics';
 import { useLeagueBoard, useMyLeagues, type BoardEntry } from '../data/leagueBoard';
-import { lastName } from '../data/format';
-import { ROUNDS, isPlayerOut, getPlayerExit, tournamentStarted, isEliminated, playerRoundPoints } from '../data/tournament';
-import PlayerAvatar from '../components/PlayerAvatar';
+import { tournamentStarted, isEliminated, playerRoundPoints } from '../data/tournament';
 import ScoringPendingNote from '../components/ScoringPendingNote';
 import { toast } from '../store/toastStore';
 import { onActivate, useVisiblePoll } from '../hooks';
@@ -30,191 +26,6 @@ function RankBadge({ i }: { i: number }) {
   );
 }
 
-// The standings table — one row per manager.
-function Standings({ rows, revealed, compact }: { rows: BoardEntry[]; revealed: RoundId[]; compact?: boolean }) {
-  const { openTeam, openPlayer } = useGameStore();
-  if (rows.length === 0) {
-    return <div className="rounded-2xl px-5 py-8 text-center text-sm" style={{ background: '#fff', border: '1px solid rgba(10,27,51,0.08)', color: 'var(--ink-3)' }}>
-      {compact ? 'No squads yet — draft yours to join the public leaderboard.' : 'No squads here yet — draft yours, and invite friends with the code above.'}
-    </div>;
-  }
-  // Before the first result lands, every score is a legitimate 0 — show a dash + a note so
-  // the board reads as "not started" rather than broken.
-  const pending = !tournamentStarted();
-  const pts = (score: number) => (pending ? '–' : score);
-  // Public league: a plain, tidy table — rank · team + @handle · score.
-  if (compact) {
-    return (
-      <>
-      {pending && <ScoringPendingNote />}
-      <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.08)' }}>
-        <table className="w-full text-sm border-collapse bg-white">
-          <thead>
-            <tr style={{ background: 'var(--raised)', borderBottom: '1px solid rgba(10,27,51,0.1)' }}>
-              <th className="text-center px-2 py-2.5 text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-3)', width: 48 }}>#</th>
-              <th className="text-left px-2 py-2.5 text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-2)' }}>Team</th>
-              <th className="text-right px-3 py-2.5 text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--blue)' }}>Pts</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, i) => (
-              <tr key={row.id} onClick={() => openTeam(row.id)} role="button" tabIndex={0} onKeyDown={onActivate(() => openTeam(row.id))}
-                className="cursor-pointer transition-colors"
-                style={{ borderBottom: '1px solid rgba(10,27,51,0.05)', background: row.you ? 'rgba(14,111,196,0.05)' : 'transparent' }}>
-                <td className="px-2 py-2.5"><div className="flex justify-center"><RankBadge i={i} /></div></td>
-                <td className="px-2 py-2.5">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-7 h-7 rounded-lg flex items-center justify-center text-sm shrink-0" style={{ background: `${row.color}1a`, border: `1px solid ${row.color}44` }}>{row.emblem}</span>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-bold truncate" style={{ color: 'var(--ink)' }}>{row.name}</span>
-                        {row.you && <span className="text-[9px] font-bold px-1 py-0.5 rounded shrink-0" style={{ background: 'var(--blue)', color: '#fff' }}>YOU</span>}
-                      </div>
-                      <div className="text-[11px] truncate" style={{ color: 'var(--ink-3)' }}>{row.manager}</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-3 py-2.5 text-right font-num text-xl font-extrabold" style={{ color: 'var(--blue)' }}>{pts(row.score)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      </>
-    );
-  }
-  return (
-    <>
-    {pending && <ScoringPendingNote />}
-    {/* Mobile: a card per manager, squad grouped by tier (Platinum → Gold → Silver) */}
-    <div className="lg:hidden space-y-3">
-      {rows.map((row, i) => (
-        <div
-          key={row.id}
-          onClick={() => openTeam(row.id)}
-          role="button" tabIndex={0} onKeyDown={onActivate(() => openTeam(row.id))}
-          className="rounded-2xl p-3 cursor-pointer"
-          style={{ background: '#fff', border: `1px solid ${row.you ? 'rgba(14,111,196,0.35)' : 'rgba(10,27,51,0.08)'}` }}
-        >
-          <div className="flex items-center gap-2.5">
-            <RankBadge i={i} />
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0" style={{ background: `${row.color}1a`, border: `1px solid ${row.color}55` }}>{row.emblem}</div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold text-sm truncate" style={{ color: 'var(--ink)' }}>{row.name}</span>
-                {row.you && <span className="text-[9px] font-bold px-1 py-0.5 rounded shrink-0" style={{ background: 'var(--blue)', color: '#fff' }}>YOU</span>}
-              </div>
-              <div className="text-[11px] truncate" style={{ color: 'var(--ink-3)' }}>{row.motto || row.manager}</div>
-            </div>
-            <div className="text-right shrink-0">
-              <div className="font-num text-xl font-extrabold leading-none" style={{ color: 'var(--blue)' }}>{pts(row.score)}</div>
-              <div className="font-num text-[10px]" style={{ color: 'var(--green)' }}>${row.budget.toFixed(1)}M</div>
-            </div>
-          </div>
-          {row.squad.length === 0 ? (
-            <div className="text-[11px] italic mt-2" style={{ color: 'var(--ink-3)' }}>No squad yet</div>
-          ) : (
-            /* One tidy row per tier — faces only */
-            <div className="mt-2.5 space-y-1.5">
-              {TIER_ORDER.map(tier => {
-                const players = row.squad
-                  .filter(id => getTier(getPlayer(id).ranking) === tier)
-                  .sort((a, b) => getPlayer(a).ranking - getPlayer(b).ranking);
-                if (players.length === 0) return null;
-                return (
-                  <div key={tier} className="flex items-center gap-2">
-                    <span className="w-4 h-4 rounded shrink-0 flex items-center justify-center text-[9px] font-extrabold text-white" style={{ background: TIER_META[tier as Tier].color }} title={tier}>{tier[0]}</span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {players.map(id => {
-                        const p = getPlayer(id);
-                        const out = isPlayerOut(id, revealed);
-                        return (
-                          <span key={id} role="button" tabIndex={0}
-                            onClick={e => { e.stopPropagation(); openPlayer(id); }} onKeyDown={onActivate(() => openPlayer(id))}
-                            className="cursor-pointer" style={{ opacity: out ? 0.45 : 1, filter: out ? 'grayscale(1)' : 'none' }}
-                            title={out ? `${p.name} — out ${getPlayerExit(id)}` : p.name}>
-                            <PlayerAvatar playerId={id} name={p.name} size="sm" />
-                          </span>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-
-    {/* Desktop: the full standings table */}
-    <div className="rounded-2xl overflow-hidden hidden lg:block" style={{ border: '1px solid rgba(10,27,51,0.08)' }}>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm border-collapse bg-white">
-          <thead>
-            <tr style={{ background: 'var(--raised)', borderBottom: '1px solid rgba(10,27,51,0.1)' }}>
-              <th className="text-center px-2 py-2.5 text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-3)', width: 52 }}>#</th>
-              <th className="text-left px-2 py-2.5 text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-2)' }}>Team</th>
-              <th className="text-left px-2 py-2.5 text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-2)' }}>Squad</th>
-              <th className="text-right px-2 py-2.5 text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--green)' }}>Budget</th>
-              <th className="text-right px-3 py-2.5 text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--blue)' }}>Pts</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, i) => (
-              <tr
-                key={row.id}
-                onClick={() => openTeam(row.id)}
-                role="button" tabIndex={0} onKeyDown={onActivate(() => openTeam(row.id))}
-                className="cursor-pointer transition-colors align-middle"
-                style={{ borderBottom: '1px solid rgba(10,27,51,0.05)', background: row.you ? 'rgba(14,111,196,0.05)' : 'transparent' }}
-                onMouseEnter={e => { if (!row.you) (e.currentTarget as HTMLElement).style.background = 'rgba(10,27,51,0.02)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = row.you ? 'rgba(14,111,196,0.05)' : 'transparent'; }}
-              >
-                <td className="px-2 py-2.5"><div className="flex justify-center"><RankBadge i={i} /></div></td>
-                <td className="px-2 py-2.5">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0" style={{ background: `${row.color}1a`, border: `1px solid ${row.color}55` }}>{row.emblem}</div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-sm truncate" style={{ color: 'var(--ink)' }}>{row.name}</span>
-                        {row.you && <span className="text-[9px] font-bold px-1 py-0.5 rounded shrink-0" style={{ background: 'var(--blue)', color: '#fff' }}>YOU</span>}
-                      </div>
-                      <div className="text-[11px] truncate" style={{ color: 'var(--ink-3)' }}>{row.motto || row.manager}</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-2 py-2.5">
-                  {/* Uniform grid so the 10 players line up evenly (5 × 2), tier-ordered */}
-                  <div className="grid grid-cols-5 gap-1.5" style={{ minWidth: 380 }}>
-                    {[...row.squad].sort((a, b) => getPlayer(a).ranking - getPlayer(b).ranking).map(id => {
-                      const out = isPlayerOut(id, revealed);
-                      return (
-                        <span key={id} role="button" tabIndex={0}
-                          onClick={e => { e.stopPropagation(); openPlayer(id); }} onKeyDown={onActivate(() => openPlayer(id))}
-                          className="flex items-center gap-1.5 w-full min-w-0 pl-0.5 pr-2 py-0.5 rounded-full cursor-pointer transition-transform hover:-translate-y-px"
-                          style={{ background: out ? 'rgba(229,71,43,0.08)' : 'rgba(18,161,80,0.08)', border: `1px solid ${out ? 'rgba(229,71,43,0.22)' : 'rgba(18,161,80,0.22)'}`, opacity: out ? 0.7 : 1 }}
-                          title={out ? `${getPlayer(id).name} — out ${getPlayerExit(id)}` : getPlayer(id).name}>
-                          <PlayerAvatar playerId={id} name={getPlayer(id).name} size="sm" />
-                          <span className="text-[11px] font-semibold truncate" style={{ color: out ? 'var(--ink-3)' : 'var(--ink)', textDecoration: out ? 'line-through' : 'none' }}>{lastName(getPlayer(id).name)}</span>
-                        </span>
-                      );
-                    })}
-                    {row.squad.length === 0 && <span className="text-[11px] italic" style={{ color: 'var(--ink-3)' }}>No squad yet</span>}
-                  </div>
-                </td>
-                <td className="px-2 py-2.5 text-right font-num text-[11px] font-semibold whitespace-nowrap" style={{ color: 'var(--green)' }}>${row.budget.toFixed(1)}M</td>
-                <td className="px-3 py-2.5 text-right font-num text-xl font-extrabold whitespace-nowrap" style={{ color: 'var(--blue)' }}>{pts(row.score)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    </>
-  );
-}
-
 // Private-league standings — a compact STATS table (no player faces). One row per manager,
 // with the columns the league cares about: players eliminated, players purchased, correct
 // captain/vice picks, total points. Your own row is highlighted so you spot it instantly.
@@ -235,8 +46,8 @@ function StatsTable({ rows }: { rows: BoardEntry[] }) {
     const won = (h: { round: string; playerId: string }) => playerRoundPoints(h.playerId, h.round as RoundId) > 0;
     return r.captainHistory.filter(won).length + r.viceCaptainHistory.filter(won).length;
   };
-  const numTh = 'px-2 py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wide';
-  const numTd = 'px-2 py-3 text-center font-num text-sm sm:text-base font-bold';
+  const numTh = 'px-2 py-2 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wide';
+  const numTd = 'px-1.5 py-1.5 text-center font-num text-sm font-bold';
 
   return (
     <>
@@ -246,12 +57,13 @@ function StatsTable({ rows }: { rows: BoardEntry[] }) {
           <table className="w-full text-sm border-collapse bg-white">
             <thead>
               <tr style={{ background: 'var(--raised)', borderBottom: '1px solid rgba(10,27,51,0.1)' }}>
-                <th className="px-2 py-2.5 text-center text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-3)', width: 44 }}>#</th>
-                <th className="px-2 py-2.5 text-left text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-2)' }}>Team</th>
+                <th className="px-2 py-2 text-center text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-3)', width: 40 }}>#</th>
+                <th className="px-2 py-2 text-left text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-2)' }}>Team</th>
                 <th className={numTh} style={{ color: 'var(--ember)' }} title="Players eliminated">Out</th>
                 <th className={numTh} style={{ color: 'var(--ink-2)' }} title="Players purchased">Buys</th>
                 <th className={numTh} style={{ color: 'var(--gold)' }} title="Correct captain + vice-captain picks">C+V ✓</th>
-                <th className="px-2 sm:px-3 py-2.5 text-right text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--blue)' }}>Pts</th>
+                <th className="px-2 py-2 text-right text-[10px] sm:text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--green)' }}>Budget</th>
+                <th className="px-2 sm:px-3 py-2 text-right text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--blue)' }}>Pts</th>
               </tr>
             </thead>
             <tbody>
@@ -269,11 +81,11 @@ function StatsTable({ rows }: { rows: BoardEntry[] }) {
                   onMouseEnter={e => { if (!row.you) (e.currentTarget as HTMLElement).style.background = 'rgba(10,27,51,0.02)'; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = row.you ? 'rgba(14,111,196,0.10)' : 'transparent'; }}
                 >
-                  <td className="px-2 py-3"><div className="flex justify-center"><RankBadge i={i} /></div></td>
-                  <td className="px-2 py-3">
+                  <td className="px-2 py-1.5"><div className="flex justify-center"><RankBadge i={i} /></div></td>
+                  <td className="px-2 py-1.5">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="w-8 h-8 rounded-lg flex items-center justify-center text-base shrink-0" style={{ background: `${row.color}1a`, border: `1px solid ${row.color}55` }}>{row.emblem}</span>
-                      <div className="min-w-0">
+                      <span className="w-7 h-7 rounded-lg flex items-center justify-center text-sm shrink-0" style={{ background: `${row.color}1a`, border: `1px solid ${row.color}55` }}>{row.emblem}</span>
+                      <div className="min-w-0 leading-tight">
                         <div className="flex items-center gap-1.5">
                           <span className="font-bold truncate" style={{ color: 'var(--ink)' }}>{row.name}</span>
                           {row.you && <span className="text-[9px] font-bold px-1 py-0.5 rounded shrink-0" style={{ background: 'var(--blue)', color: '#fff' }}>YOU</span>}
@@ -285,7 +97,8 @@ function StatsTable({ rows }: { rows: BoardEntry[] }) {
                   <td className={numTd} style={{ color: eliminated(row) > 0 ? 'var(--ember)' : 'var(--ink-3)' }}>{eliminated(row)}</td>
                   <td className={numTd} style={{ color: row.transfers.length > 0 ? 'var(--ink)' : 'var(--ink-3)' }}>{row.transfers.length}</td>
                   <td className={numTd} style={{ color: correctLeaders(row) > 0 ? 'var(--gold)' : 'var(--ink-3)' }}>{pending ? '–' : correctLeaders(row)}</td>
-                  <td className="px-2 sm:px-3 py-3 text-right font-num text-xl font-extrabold whitespace-nowrap" style={{ color: 'var(--blue)' }}>{pts(row.score)}</td>
+                  <td className="px-2 py-1.5 text-right font-num text-[13px] font-semibold whitespace-nowrap" style={{ color: 'var(--green)' }}>${row.budget.toFixed(1)}M</td>
+                  <td className="px-2 sm:px-3 py-1.5 text-right font-num text-lg font-extrabold whitespace-nowrap" style={{ color: 'var(--blue)' }}>{pts(row.score)}</td>
                 </tr>
               ))}
             </tbody>
@@ -301,43 +114,38 @@ function StatsTable({ rows }: { rows: BoardEntry[] }) {
 
 // The public global board, isolated in its own component so its 20s poll only runs while
 // the Public tab is actually on screen (not in the background during Private view).
-function PublicBoard({ revealed }: { revealed: RoundId[] }) {
+function PublicBoard() {
   const publicBoard = useLeagueBoard(null);
   return (
     <>
       <h2 className="text-sm font-bold mb-2.5 px-1" style={{ color: 'var(--ink-2)' }}>🌍 Grand Slam Open League · {publicBoard.length} manager{publicBoard.length === 1 ? '' : 's'}</h2>
-      <Standings rows={publicBoard} revealed={revealed} compact />
+      <StatsTable rows={publicBoard} />
     </>
   );
 }
 
 export default function LeaguePage() {
-  const { currentRoundIndex } = useGameStore();
-  const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
   // Land on the Private Leagues view first — the friends board is the emotional core here.
   const [view, setView] = useState<'public' | 'private'>('private');
 
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-3 py-6 fade-in">
-      {/* Public / Private selector */}
-      <div className="grid grid-cols-2 mb-5 rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.1)' }}>
-        {([['public', '🌍', 'Public Leagues', 'Play against everyone'], ['private', '🔒', 'Private Leagues', 'Invite-only friends']] as const).map(([v, icon, label, sub], i) => {
+      {/* Public / Private selector — compact single-line toggle */}
+      <div className="grid grid-cols-2 mb-4 rounded-xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.1)' }}>
+        {([['public', '🌍', 'Public Leagues'], ['private', '🔒', 'Private Leagues']] as const).map(([v, icon, label], i) => {
           const active = view === v;
           return (
-            <button key={v} onClick={() => setView(v)} className="px-4 py-3 text-left transition-all"
+            <button key={v} onClick={() => setView(v)} className="px-3 py-2.5 flex items-center justify-center gap-2 transition-all"
               style={{ background: active ? 'linear-gradient(120deg,var(--ink),var(--navy-2))' : '#FFFFFF', borderLeft: i === 1 ? '1px solid rgba(10,27,51,0.1)' : 'none' }}>
-              <div className="flex items-center gap-2">
-                <span className="text-lg">{icon}</span>
-                <span className="font-extrabold text-sm" style={{ color: active ? '#fff' : 'var(--ink)' }}>{label}</span>
-              </div>
-              <div className="text-[11px] mt-0.5" style={{ color: active ? 'var(--on-navy)' : 'var(--ink-3)' }}>{sub}</div>
+              <span className="text-base">{icon}</span>
+              <span className="font-extrabold text-sm" style={{ color: active ? '#fff' : 'var(--ink)' }}>{label}</span>
             </button>
           );
         })}
       </div>
 
       {view === 'public' ? (
-        <PublicBoard revealed={revealed} />
+        <PublicBoard />
       ) : (
         <PrivateLeagues />
       )}
@@ -482,9 +290,9 @@ function PrivateLeagues() {
                 <h2 className="text-sm font-bold" style={{ color: 'var(--ink-2)' }}>{current.name} · {members.length} member{members.length === 1 ? '' : 's'}</h2>
               </div>
 
-              {/* Invite CTA — a real shareable link (native share sheet on mobile), with the
-                  code shown for manual entry. This is the app's viral loop, so it's prominent. */}
-              {current.code && (
+              {/* Invite CTA — only BEFORE the tournament starts. Once it's underway a private
+                  league can't be joined, so the banner comes out. */}
+              {!started && current.code && (
                 <div className="rounded-2xl p-3 mb-3 flex items-center gap-3" style={{ background: 'linear-gradient(120deg,rgba(14,111,196,0.10),rgba(18,161,80,0.08))', border: '1px solid rgba(14,111,196,0.22)' }}>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-extrabold" style={{ color: 'var(--ink)' }}>Invite your friends 🎾</div>
