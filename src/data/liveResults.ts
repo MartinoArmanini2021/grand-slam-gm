@@ -34,6 +34,11 @@ export type LiveResults = Record<string, string>;
 export interface PlayerMeta { name: string; flag?: string }
 export type PlayerMetaMap = Record<string, PlayerMeta>;
 
+// A match's set-by-set games, per side (p1 = top of the pairing, p2 = bottom), e.g.
+// { p1: ['6','7','6'], p2: ['4','6','3'] } → "6 7 6 / 4 6 3". Empty until the match is played.
+export interface MatchScore { p1: string[]; p2: string[] }
+export type LiveScores = Record<string, MatchScore>;
+
 // Stable identity for a match within a tournament (round + draw slot).
 export const matchKey = (round: RoundId, slot: number): string => `${round}_${slot}`;
 

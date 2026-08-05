@@ -13,7 +13,7 @@ import type { RoundId } from '../types';
 // into the live store. Before the draw is published there is nothing to show — a real,
 // first-class "not started yet" state, not an empty grid.
 export default function BracketTree() {
-  const { draw, results, meta } = useLiveStore();
+  const { draw, results, meta, scores } = useLiveStore();
   const { myTeam } = useGameStore();
   const { teamName, username } = useProfile();
 
@@ -81,11 +81,12 @@ export default function BracketTree() {
                 {matches.map(m => {
                   const winner = results[matchKey(m.round, m.slot)];
                   const live = highlight.has(m.p1Id) || highlight.has(m.p2Id);
+                  const sc = scores[matchKey(m.round, m.slot)];
                   return (
                     <div key={m.slot} className="rounded-lg overflow-hidden shrink-0" style={{ border: `1px solid ${live ? 'rgba(217,154,0,0.5)' : 'rgba(10,27,51,0.1)'}`, margin: '3px 0' }}>
-                      <Side id={m.p1Id} meta={meta} won={winner === m.p1Id} decided={!!winner} mine={highlight.has(m.p1Id)} />
+                      <Side id={m.p1Id} meta={meta} won={winner === m.p1Id} decided={!!winner} mine={highlight.has(m.p1Id)} sets={sc?.p1} />
                       <div style={{ height: 1, background: 'rgba(10,27,51,0.08)' }} />
-                      <Side id={m.p2Id} meta={meta} won={winner === m.p2Id} decided={!!winner} mine={highlight.has(m.p2Id)} />
+                      <Side id={m.p2Id} meta={meta} won={winner === m.p2Id} decided={!!winner} mine={highlight.has(m.p2Id)} sets={sc?.p2} />
                     </div>
                   );
                 })}
@@ -113,7 +114,7 @@ function prettifyId(id: string): string {
     .join(' ');
 }
 
-function Side({ id, meta, won, decided, mine }: { id: string; meta: PlayerMetaMap; won: boolean; decided: boolean; mine: boolean }) {
+function Side({ id, meta, won, decided, mine, sets }: { id: string; meta: PlayerMetaMap; won: boolean; decided: boolean; mine: boolean; sets?: string[] }) {
   const isTbd = id === 'tbd';                // a seed's opponent, still to be decided in the first round
   const p = isTbd ? undefined : findPlayer(id);
   // Off-roster opponent (not in the draftable field): use the real name + flag the feed
@@ -133,8 +134,16 @@ function Side({ id, meta, won, decided, mine }: { id: string; meta: PlayerMetaMa
       }}
     >
       {flag && <span>{flag}</span>}
-      <span className="truncate">{name}</span>
-      {won && <span className="ml-auto text-[10px]" style={{ color: 'var(--green)' }}>✓</span>}
+      <span className="truncate flex-1 min-w-0">{name}</span>
+      {/* Set-by-set games (this side), right-aligned like a real bracket. The winner's line is
+          bold via the row's fontWeight; a decided match with no score falls back to a ✓. */}
+      {sets && sets.length > 0 ? (
+        <span className="shrink-0 flex gap-1 font-num tabular-nums text-[11px]" style={{ color: won ? 'var(--ink)' : 'var(--ink-3)' }}>
+          {sets.map((g, i) => <span key={i}>{g}</span>)}
+        </span>
+      ) : won ? (
+        <span className="shrink-0 text-[10px]" style={{ color: 'var(--green)' }}>✓</span>
+      ) : null}
     </div>
   );
 }

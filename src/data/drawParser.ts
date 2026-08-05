@@ -11,7 +11,7 @@
 // dependencies — that's what lets the Deno Edge Function import it directly without
 // resolving the rest of the src graph. matchKey is inlined below for the same reason.
 import type { RoundId } from '../types';
-import type { LiveMatch, LiveResults } from './liveResults';
+import type { LiveMatch, LiveResults, LiveScores, MatchScore } from './liveResults';
 
 // Stable identity for a match within a tournament (round + draw slot). Kept identical to
 // liveResults.matchKey — same `${round}_${slot}` format — so keys line up across modules.
@@ -96,9 +96,16 @@ export type DrawMetaMap = Record<string, DrawMeta>;
 const flagCode = (raw: string): string | undefined =>
   raw.match(/\{\{\s*flag[a-z]*\s*\|\s*([A-Za-z]{2,3})\b/i)?.[1];
 
+// A single set's games for one player: strip the winner-bold '''ticks''', the tiebreak
+// <sup>N</sup> marker, and any template noise → just the game count ("6", "7", "r" for a
+// retirement). Empty string when the set wasn't played.
+const cleanScore = (raw: string): string =>
+  raw.replace(/<sup>.*?<\/sup>/gi, '').replace(/'''?/g, '').replace(/\{\{[^}]*\}\}/g, '')
+    .replace(/<[^>]+>/g, '').replace(/[[\]|]/g, '').trim();
+
 export function parseBracket(
   wikitext: string, roundIds: RoundId[], resolve: (raw: string) => string, includeIncomplete = false,
-): { draw: LiveMatch[]; results: LiveResults; meta: DrawMetaMap } {
+): { draw: LiveMatch[]; results: LiveResults; meta: DrawMetaMap; scores: LiveScores } {
   const teams: Record<number, Record<number, { id: string; bold: boolean }>> = {};
   const meta: DrawMetaMap = {};
   // Non-greedy capture up to the NEXT "| RD…" key, so a "|" inside {{flagicon|ITA}} or a
@@ -118,8 +125,28 @@ export function parseBracket(
     }
   }
 
+  // Per-set games per team: RD{rd}-score{team}-{set}. Keyed [rd][teamIdx 0-based][set] → games.
+  const scoreCells: Record<number, Record<number, Record<number, string>>> = {};
+  const sre = /\|\s*RD(\d+)-score(\d+)-(\d+)\s*=\s*(.*?)(?=\s*\|\s*RD|$)/gm;
+  let sm: RegExpExecArray | null;
+  while ((sm = sre.exec(wikitext)) !== null) {
+    const rd = Number(sm[1]); const idx = Number(sm[2]) - 1; const set = Number(sm[3]);
+    const val = cleanScore(sm[4]);
+    if (val) ((scoreCells[rd] ??= {})[idx] ??= {})[set] = val;
+  }
+  // The set-by-set games for a pairing (team indices a=top, b=bottom), aligned by set number.
+  // Returns undefined when neither side has any recorded games (match not played).
+  const pairingScore = (rd: number, a: number, b: number) => {
+    const aSets = scoreCells[rd]?.[a] ?? {}; const bSets = scoreCells[rd]?.[b] ?? {};
+    const setNums = [...new Set([...Object.keys(aSets), ...Object.keys(bSets)].map(Number))].sort((x, y) => x - y);
+    const p1: string[] = []; const p2: string[] = [];
+    for (const s of setNums) { const av = aSets[s] ?? ''; const bv = bSets[s] ?? ''; if (!av && !bv) continue; p1.push(av); p2.push(bv); }
+    return p1.length || p2.length ? { p1, p2 } : undefined;
+  };
+
   const draw: LiveMatch[] = [];
   const results: LiveResults = {};
+  const scores: LiveScores = {};
   for (let rd = 1; rd <= roundIds.length; rd++) {
     const round = roundIds[rd - 1];
     const thisRound = teams[rd] ?? {};
@@ -134,6 +161,8 @@ export function parseBracket(
       const p1 = a ?? TBD;
       const p2 = b ?? TBD;
       draw.push({ round, slot, half: slot < pairCount / 2 ? 'top' : 'bottom', p1Id: p1.id, p2Id: p2.id });
+      const sc = pairingScore(rd, slot * 2, slot * 2 + 1);
+      if (sc) scores[matchKey(round, slot)] = sc;
       // Winner: the '''bold''' team; else fall back to advancement (who fills the next slot).
       // Only recorded when it's actually one of this pairing (never a wrong result; 'tbd' can
       // never win — it's not bold and never fills a next-round slot).
@@ -144,7 +173,7 @@ export function parseBracket(
       if (winnerId === p1.id || winnerId === p2.id) results[matchKey(round, slot)] = winnerId;
     }
   }
-  return { draw, results, meta };
+  return { draw, results, meta, scores };
 }
 
 // ── Upsert rows with NEVER-REGRESS semantics (used by the ingest Edge Function) ──
@@ -193,7 +222,7 @@ const FINALS_ROUNDS: RoundId[] = ['QF', 'SF', 'F'];
 // resolved and the app doesn't score the opening round).
 export function parseFullDraw(
   wikitext: string, opts: { scoredRounds: RoundId[]; resolve: (raw: string) => string; includeIncomplete?: boolean },
-): { draw: LiveMatch[]; results: LiveResults; meta: DrawMetaMap } {
+): { draw: LiveMatch[]; results: LiveResults; meta: DrawMetaMap; scores: LiveScores } {
   const { scoredRounds, resolve, includeIncomplete = false } = opts;
   const brackets = splitBrackets(wikitext);
   const sections = brackets.filter(b => /^16TeamBracket/i.test(b.type));
@@ -203,7 +232,7 @@ export function parseFullDraw(
   // page as one bracket over the tournament's own rounds.
   if (sections.length === 0) return parseBracket(wikitext, scoredRounds, resolve, includeIncomplete);
 
-  const perRound: Partial<Record<RoundId, { slot: number; winner: string | undefined; p1Id: string; p2Id: string }[]>> = {};
+  const perRound: Partial<Record<RoundId, { slot: number; winner: string | undefined; p1Id: string; p2Id: string; score: MatchScore | undefined }[]>> = {};
   const meta: DrawMetaMap = {};
   // STABLE global slot. Each 16-team section contributes a FIXED number of pairings to each round,
   // at fixed positions (R64→4 per section, R32→2, R16→1; the finals is one bracket). We number by
@@ -219,11 +248,11 @@ export function parseFullDraw(
     for (const r of roundIds) roundTotal[r] = sectionCount * pairsPerSection(roundIds, r);
   };
   const collect = (text: string, roundIds: RoundId[], sectionIdx: number) => {
-    const { draw, results, meta: sectionMeta } = parseBracket(text, roundIds, resolve, includeIncomplete);
+    const { draw, results, meta: sectionMeta, scores: sectionScores } = parseBracket(text, roundIds, resolve, includeIncomplete);
     Object.assign(meta, sectionMeta);
     for (const m of draw) {
       const slot = sectionIdx * pairsPerSection(roundIds, m.round) + m.slot;
-      (perRound[m.round] ??= []).push({ slot, winner: results[matchKey(m.round, m.slot)], p1Id: m.p1Id, p2Id: m.p2Id });
+      (perRound[m.round] ??= []).push({ slot, winner: results[matchKey(m.round, m.slot)], p1Id: m.p1Id, p2Id: m.p2Id, score: sectionScores[matchKey(m.round, m.slot)] });
     }
   };
   sections.forEach((s, i) => collect(s.text, SECTION_ROUNDS, i));
@@ -232,13 +261,15 @@ export function parseFullDraw(
 
   const draw: LiveMatch[] = [];
   const results: LiveResults = {};
+  const scores: LiveScores = {};
   for (const round of scoredRounds) {
     const list = (perRound[round] ?? []).slice().sort((a, b) => a.slot - b.slot);
     const total = roundTotal[round] ?? list.length; // structural count → a stable top/bottom split
     for (const item of list) {
       draw.push({ round, slot: item.slot, half: item.slot < total / 2 ? 'top' : 'bottom', p1Id: item.p1Id, p2Id: item.p2Id });
       if (item.winner) results[matchKey(round, item.slot)] = item.winner;
+      if (item.score) scores[matchKey(round, item.slot)] = item.score;
     }
   }
-  return { draw, results, meta };
+  return { draw, results, meta, scores };
 }

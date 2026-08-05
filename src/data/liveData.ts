@@ -11,7 +11,7 @@
 
 import type { RoundId } from '../types';
 import { PLAYERS } from './players';
-import type { LiveMatch, LiveResults, PlayerMetaMap } from './liveResults';
+import type { LiveMatch, LiveResults, PlayerMetaMap, LiveScores } from './liveResults';
 import { TOURNAMENT } from './tournamentConfig';
 import { flagEmoji } from './flags';
 import {
@@ -49,18 +49,18 @@ const resolve = buildResolver(PLAYERS);
 export const teamId = (raw: string): string => resolve(raw);
 
 // Parse one bracket template over the given round ids (client-configured resolver).
-export function parseBracket(wikitext: string, roundIds: RoundId[]): { draw: LiveMatch[]; results: LiveResults; meta: PlayerMetaMap } {
-  const { draw, results, meta } = parseBracketCore(wikitext, roundIds, resolve);
-  return { draw, results, meta: toPlayerMeta(meta) };
+export function parseBracket(wikitext: string, roundIds: RoundId[]): { draw: LiveMatch[]; results: LiveResults; meta: PlayerMetaMap; scores: LiveScores } {
+  const { draw, results, meta, scores } = parseBracketCore(wikitext, roundIds, resolve);
+  return { draw, results, meta: toPlayerMeta(meta), scores };
 }
 
 // Parse the whole draw page into the tournament's scored rounds. includeIncomplete=true so the
 // CLIENT bracket shows the draw the moment it publishes — seeds paired with a "TBD" opponent
 // that fills in as the first round is played. (The server ingest uses the default, false, so
 // public.matches only ever holds fully-known pairings for scoring.)
-export function parseFullDraw(wikitext: string): { draw: LiveMatch[]; results: LiveResults; meta: PlayerMetaMap } {
-  const { draw, results, meta } = parseFullDrawCore(wikitext, { scoredRounds: TOURNAMENT.rounds, resolve, includeIncomplete: true });
-  return { draw, results, meta: toPlayerMeta(meta) };
+export function parseFullDraw(wikitext: string): { draw: LiveMatch[]; results: LiveResults; meta: PlayerMetaMap; scores: LiveScores } {
+  const { draw, results, meta, scores } = parseFullDrawCore(wikitext, { scoredRounds: TOURNAMENT.rounds, resolve, includeIncomplete: true });
+  return { draw, results, meta: toPlayerMeta(meta), scores };
 }
 
 // Runs client-side via the MediaWiki API with origin=* — the CORS-enabled path. (The plain
@@ -78,7 +78,7 @@ export async function fetchWikipediaWikitext(page = LIVE.wikipediaPage): Promise
 
 // One end-to-end sync: fetch → parse the full draw → return draw + results for the caller
 // to merge into the live store. Side-effect-free (no store import) so it stays testable.
-export async function fetchLiveUpdate(): Promise<{ draw: LiveMatch[]; results: LiveResults; meta: PlayerMetaMap }> {
+export async function fetchLiveUpdate(): Promise<{ draw: LiveMatch[]; results: LiveResults; meta: PlayerMetaMap; scores: LiveScores }> {
   const wikitext = await fetchWikipediaWikitext();
   return parseFullDraw(wikitext);
 }

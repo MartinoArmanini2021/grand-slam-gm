@@ -11,6 +11,7 @@ import { TOURNAMENT } from './tournamentConfig';
 export function useLiveFeed(autoPoll = false) {
   const setDraw = useLiveStore(s => s.setDraw);
   const setMeta = useLiveStore(s => s.setMeta);
+  const setScores = useLiveStore(s => s.setScores);
   const mergeResults = useLiveStore(s => s.mergeResults);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,16 +23,17 @@ export function useLiveFeed(autoPoll = false) {
     setBusy(true);
     setError(null);
     try {
-      const { draw, results, meta } = await fetchLiveUpdate();
+      const { draw, results, meta, scores } = await fetchLiveUpdate();
       if (draw.length) setDraw(draw);      // refresh pairings as the draw fills out
       if (Object.keys(meta).length) setMeta(meta); // off-roster opponents' real name + flag
+      if (Object.keys(scores).length) setScores(scores); // per-match set scores
       mergeResults(results, Date.now());   // overrides are preserved
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Sync failed');
     } finally {
       setBusy(false);
     }
-  }, [setDraw, setMeta, mergeResults]);
+  }, [setDraw, setMeta, setScores, mergeResults]);
 
   syncRef.current = sync;
 

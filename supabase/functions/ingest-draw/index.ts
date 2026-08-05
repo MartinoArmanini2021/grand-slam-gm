@@ -44,6 +44,8 @@ function assertServiceRole(req: Request): Response | null {
 type RoundId = string;
 interface LiveMatch { round: RoundId; slot: number; half: 'top' | 'bottom'; p1Id: string; p2Id: string }
 type LiveResults = Record<string, string>;
+interface MatchScore { p1: string[]; p2: string[] }
+type LiveScores = Record<string, MatchScore>;
 
 const matchKey = (round: RoundId, slot: number): string => `${round}_${slot}`;
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[-\s]+/g, ' ').trim();
@@ -84,9 +86,13 @@ type DrawMetaMap = Record<string, DrawMeta>;
 const flagCode = (raw: string): string | undefined =>
   raw.match(/\{\{\s*flag[a-z]*\s*\|\s*([A-Za-z]{2,3})\b/i)?.[1];
 
+const cleanScore = (raw: string): string =>
+  raw.replace(/<sup>.*?<\/sup>/gi, '').replace(/'''?/g, '').replace(/\{\{[^}]*\}\}/g, '')
+    .replace(/<[^>]+>/g, '').replace(/[[\]|]/g, '').trim();
+
 function parseBracket(
   wikitext: string, roundIds: RoundId[], resolve: (raw: string) => string, includeIncomplete = false,
-): { draw: LiveMatch[]; results: LiveResults; meta: DrawMetaMap } {
+): { draw: LiveMatch[]; results: LiveResults; meta: DrawMetaMap; scores: LiveScores } {
   const teams: Record<number, Record<number, { id: string; bold: boolean }>> = {};
   const meta: DrawMetaMap = {};
   const re = /\|\s*RD(\d+)-team(\d+)\s*=\s*(.*?)(?=\s*\|\s*RD|$)/gm;
@@ -101,8 +107,26 @@ function parseBracket(
       meta[id] = country ? { name: stripDisambig(teamTarget(raw)), country } : { name: stripDisambig(teamTarget(raw)) };
     }
   }
+
+  const scoreCells: Record<number, Record<number, Record<number, string>>> = {};
+  const sre = /\|\s*RD(\d+)-score(\d+)-(\d+)\s*=\s*(.*?)(?=\s*\|\s*RD|$)/gm;
+  let sm: RegExpExecArray | null;
+  while ((sm = sre.exec(wikitext)) !== null) {
+    const rd = Number(sm[1]); const idx = Number(sm[2]) - 1; const set = Number(sm[3]);
+    const val = cleanScore(sm[4]);
+    if (val) ((scoreCells[rd] ??= {})[idx] ??= {})[set] = val;
+  }
+  const pairingScore = (rd: number, a: number, b: number) => {
+    const aSets = scoreCells[rd]?.[a] ?? {}; const bSets = scoreCells[rd]?.[b] ?? {};
+    const setNums = [...new Set([...Object.keys(aSets), ...Object.keys(bSets)].map(Number))].sort((x, y) => x - y);
+    const p1: string[] = []; const p2: string[] = [];
+    for (const s of setNums) { const av = aSets[s] ?? ''; const bv = bSets[s] ?? ''; if (!av && !bv) continue; p1.push(av); p2.push(bv); }
+    return p1.length || p2.length ? { p1, p2 } : undefined;
+  };
+
   const draw: LiveMatch[] = [];
   const results: LiveResults = {};
+  const scores: LiveScores = {};
   for (let rd = 1; rd <= roundIds.length; rd++) {
     const round = roundIds[rd - 1];
     const thisRound = teams[rd] ?? {};
@@ -117,6 +141,8 @@ function parseBracket(
       const p1 = a ?? TBD;
       const p2 = b ?? TBD;
       draw.push({ round, slot, half: slot < pairCount / 2 ? 'top' : 'bottom', p1Id: p1.id, p2Id: p2.id });
+      const sc = pairingScore(rd, slot * 2, slot * 2 + 1);
+      if (sc) scores[matchKey(round, slot)] = sc;
       let winnerId: string | undefined;
       if (p1.bold && !p2.bold) winnerId = p1.id;
       else if (p2.bold && !p1.bold) winnerId = p2.id;
@@ -124,7 +150,7 @@ function parseBracket(
       if (winnerId === p1.id || winnerId === p2.id) results[matchKey(round, slot)] = winnerId;
     }
   }
-  return { draw, results, meta };
+  return { draw, results, meta, scores };
 }
 
 interface MatchRow {
@@ -149,7 +175,7 @@ const FINALS_ROUNDS: RoundId[] = ['QF', 'SF', 'F'];
 
 function parseFullDraw(
   wikitext: string, opts: { scoredRounds: RoundId[]; resolve: (raw: string) => string; includeIncomplete?: boolean },
-): { draw: LiveMatch[]; results: LiveResults; meta: DrawMetaMap } {
+): { draw: LiveMatch[]; results: LiveResults; meta: DrawMetaMap; scores: LiveScores } {
   const { scoredRounds, resolve, includeIncomplete = false } = opts;
   const brackets = splitBrackets(wikitext);
   const sections = brackets.filter((b) => /^16TeamBracket/i.test(b.type));
@@ -157,7 +183,7 @@ function parseFullDraw(
 
   if (sections.length === 0) return parseBracket(wikitext, scoredRounds, resolve, includeIncomplete);
 
-  const perRound: Partial<Record<RoundId, { slot: number; winner: string | undefined; p1Id: string; p2Id: string }[]>> = {};
+  const perRound: Partial<Record<RoundId, { slot: number; winner: string | undefined; p1Id: string; p2Id: string; score: MatchScore | undefined }[]>> = {};
   const meta: DrawMetaMap = {};
   const pairsPerSection = (roundIds: RoundId[], roundId: RoundId) => 2 ** (roundIds.length - 1 - roundIds.indexOf(roundId));
   const roundTotal: Partial<Record<RoundId, number>> = {};
@@ -165,11 +191,11 @@ function parseFullDraw(
     for (const r of roundIds) roundTotal[r] = sectionCount * pairsPerSection(roundIds, r);
   };
   const collect = (text: string, roundIds: RoundId[], sectionIdx: number) => {
-    const { draw, results, meta: sectionMeta } = parseBracket(text, roundIds, resolve, includeIncomplete);
+    const { draw, results, meta: sectionMeta, scores: sectionScores } = parseBracket(text, roundIds, resolve, includeIncomplete);
     Object.assign(meta, sectionMeta);
     for (const m of draw) {
       const slot = sectionIdx * pairsPerSection(roundIds, m.round) + m.slot;
-      (perRound[m.round] ??= []).push({ slot, winner: results[matchKey(m.round, m.slot)], p1Id: m.p1Id, p2Id: m.p2Id });
+      (perRound[m.round] ??= []).push({ slot, winner: results[matchKey(m.round, m.slot)], p1Id: m.p1Id, p2Id: m.p2Id, score: sectionScores[matchKey(m.round, m.slot)] });
     }
   };
   sections.forEach((s, i) => collect(s.text, SECTION_ROUNDS, i));
@@ -178,15 +204,17 @@ function parseFullDraw(
 
   const draw: LiveMatch[] = [];
   const results: LiveResults = {};
+  const scores: LiveScores = {};
   for (const round of scoredRounds) {
     const list = (perRound[round] ?? []).slice().sort((a, b) => a.slot - b.slot);
     const total = roundTotal[round] ?? list.length;
     for (const item of list) {
       draw.push({ round, slot: item.slot, half: item.slot < total / 2 ? 'top' : 'bottom', p1Id: item.p1Id, p2Id: item.p2Id });
       if (item.winner) results[matchKey(round, item.slot)] = item.winner;
+      if (item.score) scores[matchKey(round, item.slot)] = item.score;
     }
   }
-  return { draw, results, meta };
+  return { draw, results, meta, scores };
 }
 // ════════════ END PARSER INLINED COPY ════════════
 
