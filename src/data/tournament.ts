@@ -150,6 +150,39 @@ export function playedScoredRounds(): RoundId[] {
   return ROUNDS.map(r => r.id).filter(id => getMatchesForRound(id).length > 0);
 }
 
+// ── Live, server-matching score ───────────────────────────────────────────────
+// The squad's total so far, computed PER COMPLETED MATCH (not per completed round) — exactly
+// how the authoritative server scorer (serverEngine.ts / recompute-score) works. So the number
+// the user sees updates the moment each of their players wins, and always equals their row on
+// the leaderboard. Scores off the LOCKED initialSquad (+ transfers applied per round, + the
+// captain/vice of record for each round), so it can't be gamed by editing the live squad after
+// a result — identical integrity to the server. Replaces the old manual "play round" myScore,
+// which only moved once an ENTIRE round finished (leaving winners looking unscored for days).
+export function liveScoreBreakdown(
+  initialSquad: string[],
+  transfers: { out: string; in: string; round: string }[] = [],
+  captainHistory: { round: string; playerId: string }[] = [],
+  viceCaptainHistory: { round: string; playerId: string }[] = [],
+): { round: RoundId; points: number }[] {
+  const at = (r: string) => ROUND_ORDER.indexOf(r as RoundId);
+  return ROUNDS.map(r => r.id).filter(id => roundHasResult(id)).map((round) => {
+    const ri = at(round);
+    let squad = [...initialSquad];
+    for (const t of transfers) if (at(t.round) < ri) squad = squad.map(id => (id === t.out ? t.in : id));
+    const points = squad.reduce((sum, id) => sum + playerRoundPoints(id, round, captainHistory, viceCaptainHistory), 0);
+    return { round, points };
+  });
+}
+
+export function liveScore(
+  initialSquad: string[],
+  transfers: { out: string; in: string; round: string }[] = [],
+  captainHistory: { round: string; playerId: string }[] = [],
+  viceCaptainHistory: { round: string; playerId: string }[] = [],
+): number {
+  return liveScoreBreakdown(initialSquad, transfers, captainHistory, viceCaptainHistory).reduce((a, b) => a + b.points, 0);
+}
+
 // Exit stage of each result, earliest → latest. Champion ('W') never exits.
 // DNS (did not start) → out from the very beginning; W (champion) → never out.
 // The middle stages come from the canonical round ordering, so an exit's rank is

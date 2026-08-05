@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useGameStore, eliminatedSquad, substitutionCandidates } from '../store/gameStore';
-import { ROUNDS, getPlayerExit, isPlayerOut, transfersOpen, roundPlayable } from '../data/tournament';
+import { useLiveStore } from '../store/liveStore';
+import { ROUNDS, getPlayerExit, isPlayerOut, transfersOpen, roundPlayable, liveScoreBreakdown } from '../data/tournament';
 import { getPlayer } from '../data/players';
 import { lastName } from '../data/format';
 import type { RoundId } from '../types';
@@ -12,9 +13,19 @@ import { toast } from '../store/toastStore';
 
 export default function TournamentPage() {
   const {
-    phase, myTeam, captain, viceCaptain, currentRoundIndex, roundScores, myScore,
+    phase, myTeam, captain, viceCaptain, currentRoundIndex,
+    initialSquad, transfers, captainHistory, viceCaptainHistory,
     playNextRound, continueToNextRound, budgetReturns, setActiveTab,
   } = useGameStore();
+
+  // Live, per-match score + per-round breakdown — identical to the server/leaderboard, updating
+  // as each result lands (subscribe to live results). Replaces the old round-gated local tally.
+  const results = useLiveStore(s => s.results);
+  const roundScores = useMemo(
+    () => liveScoreBreakdown(initialSquad, transfers, captainHistory, viceCaptainHistory),
+    [results, initialSquad, transfers, captainHistory, viceCaptainHistory],
+  );
+  const myScore = roundScores.reduce((a, b) => a + b.points, 0);
 
   const currentRound = phase !== 'draft' && phase !== 'finished' ? ROUNDS[currentRoundIndex] : null;
   // In round_complete the index has already advanced, so the card should name the

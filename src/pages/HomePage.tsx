@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef, Fragment } from 'react';
+import { useState, useEffect, useRef, useMemo, Fragment } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
-import { ROUNDS, isPlayerOut, roundPlayable, tournamentStarted } from '../data/tournament';
+import { useLiveStore } from '../store/liveStore';
+import { ROUNDS, isPlayerOut, roundPlayable, tournamentStarted, liveScore } from '../data/tournament';
 import { isSquadValid, SQUAD_SIZE } from '../data/squadRules';
 import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
 import { onActivate } from '../hooks';
@@ -18,10 +19,19 @@ const TEAM_TARGET = SQUAD_SIZE;
 
 export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?: boolean; onWelcomeClose?: () => void } = {}) {
   const {
-    phase, myTeam, budget, myScore, currentRoundIndex,
+    phase, myTeam, budget, currentRoundIndex,
+    initialSquad, transfers, captainHistory, viceCaptainHistory,
     roundScores, setActiveTab, openTeam, playNextRound, continueToNextRound,
   } = useGameStore();
   const { teamName, teamEmblem } = useProfile();
+
+  // Your live score = the SAME per-match total the server scores + the leaderboard shows —
+  // recomputed as each result lands (subscribe to the live results so it stays current).
+  const results = useLiveStore(s => s.results);
+  const myScore = useMemo(
+    () => liveScore(initialSquad, transfers, captainHistory, viceCaptainHistory),
+    [results, initialSquad, transfers, captainHistory, viceCaptainHistory],
+  );
 
   const squadReady = isSquadValid(myTeam);
   const currentRound = currentRoundIndex < ROUNDS.length ? ROUNDS[currentRoundIndex] : null;

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useGameStore } from '../store/gameStore';
-import { ROUNDS, getMatchesForRound, winPoints } from '../data/tournament';
+import { ROUNDS, getMatchesForRound, winPoints, liveScore } from '../data/tournament';
 import { PLAYERS } from '../data/players';
 import { scoreEntry, type ScoreCtx, type EntryState } from '../scoring/serverEngine';
 import { loadSampleTournament, loadSampleThrough, revealThrough, roles } from './fixtures/sampleDraw';
@@ -74,6 +74,36 @@ describe('edge function stays in sync with the canonical scoring curve', () => {
     for (const p of PLAYERS) {
       expect(seed[p.id], `player_stats rank for ${p.id}`).toBe(p.ranking);
     }
+  });
+});
+
+// liveScore is what the UI now shows the user (Home/Team/Tournament) — it must equal the
+// authoritative server score, scored PER MATCH (a winner counts the moment their result lands,
+// not only once the whole round finishes). This guards against the display diverging from the
+// leaderboard, and against a regression back to the old round-gated tally.
+describe('liveScore (the on-screen total) == server engine, per match', () => {
+  beforeEach(() => { loadSampleThrough(null); store().resetGame(); });
+
+  it('matches scoreEntry for a locked squad on a fully-played draw, with a captain', () => {
+    loadSampleTournament(); // full draw + results into the live store
+    const initialSquad = [roles.champion, roles.qfExit, roles.r64Exit];
+    const captainHistory = [{ round: 'R64', playerId: roles.champion }];
+    const state: EntryState = { initialSquad, captainHistory, playedRounds: ROUNDS.map(r => r.id) };
+    const client = liveScore(initialSquad, [], captainHistory, []);
+    expect(client).toBe(scoreEntry(state, buildCtx()));
+    expect(client).toBeGreaterThan(0);
+  });
+
+  it('credits a win WITHOUT waiting for the whole round to finish (the bug this fixes)', () => {
+    loadSampleTournament(); // results are in the live store — but we never "play"/advance a round
+    // The OLD path (myScore via playNextRound) needs a fully-complete, played round → stays 0 here.
+    expect(store().myScore).toBe(0);
+    // liveScore already reflects the champion's wins — the number the user should see — and it
+    // equals what the server would score for that same squad.
+    const state: EntryState = { initialSquad: [roles.champion], playedRounds: ROUNDS.map(r => r.id) };
+    const client = liveScore([roles.champion], [], [], []);
+    expect(client).toBe(scoreEntry(state, buildCtx()));
+    expect(client).toBeGreaterThan(0);
   });
 });
 

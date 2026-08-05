@@ -3,7 +3,7 @@ import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { useLeagueBoard } from '../data/leagueBoard';
 import { getPlayer } from '../data/players';
-import { ROUNDS, playerRoundPoints, playedScoredRounds } from '../data/tournament';
+import { ROUNDS, playerRoundPoints, playedScoredRounds, liveScore } from '../data/tournament';
 import { lastName } from '../data/format';
 import SquadCourt from '../components/SquadCourt';
 import PlayerAvatar from '../components/PlayerAvatar';
@@ -25,10 +25,13 @@ function BackToLeague() {
 }
 
 export default function TeamPage() {
-  const { myTeam, initialSquad, transfers, captain, viceCaptain, captainHistory, viceCaptainHistory, budget, myScore, viewTeam, setActiveTab } = useGameStore();
+  const { myTeam, initialSquad, transfers, captain, viceCaptain, captainHistory, viceCaptainHistory, budget, viewTeam, setActiveTab } = useGameStore();
   const { teamName, teamEmblem, username } = useProfile();
   // Real league members come from the public board (everyone is a member of it).
   const board = useLeagueBoard(null);
+  // Your own total, scored per-match exactly like the server/leaderboard (not the old
+  // round-gated local tally) — so it matches the Points-by-round breakdown just below.
+  const myScore = liveScore(initialSquad, transfers, captainHistory, viceCaptainHistory);
 
   if (viewTeam === 'you') {
     return (
