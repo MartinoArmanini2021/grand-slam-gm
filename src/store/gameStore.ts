@@ -139,6 +139,19 @@ interface GameStore {
   resetGame: () => void;
 }
 
+// Remember the last MAIN tab across refreshes so a reload lands you back where you were, not on
+// Home. Only the four top-level tabs are remembered — the contextual drill-downs (team/player)
+// need view context we don't persist, so a refresh from those returns to their parent tab.
+const TAB_KEY = `gsgm-tab-${ACTIVE_TOURNAMENT_ID}`;
+const MAIN_TABS: GameStore['activeTab'][] = ['home', 'league', 'draft', 'tournament'];
+const isMainTab = (t: string): t is GameStore['activeTab'] => (MAIN_TABS as string[]).includes(t);
+const readActiveTab = (): GameStore['activeTab'] => {
+  try { const t = localStorage.getItem(TAB_KEY); return t && isMainTab(t) ? t : 'home'; } catch { return 'home'; }
+};
+const rememberTab = (tab: GameStore['activeTab']) => {
+  if (isMainTab(tab)) { try { localStorage.setItem(TAB_KEY, tab); } catch { /* ignore */ } }
+};
+
 export const useGameStore = create<GameStore>()(
   persist(
     (set, get) => ({
@@ -155,7 +168,7 @@ export const useGameStore = create<GameStore>()(
       currentRoundIndex: 0,
       myScore: 0,
       roundScores: [],
-      activeTab: 'home',
+      activeTab: readActiveTab(), // restored from the last visited main tab (refresh-persistent)
       viewTeam: 'you',
       viewPlayer: '',
       playerReturnTab: 'home',
@@ -389,7 +402,7 @@ export const useGameStore = create<GameStore>()(
         });
       },
 
-      setActiveTab: (tab) => set({ activeTab: tab }),
+      setActiveTab: (tab) => { rememberTab(tab); set({ activeTab: tab }); },
 
       openTeam: (teamId) => set({ viewTeam: teamId, activeTab: 'team' }),
 
