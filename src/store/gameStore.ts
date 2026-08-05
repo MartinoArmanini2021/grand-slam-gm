@@ -79,6 +79,9 @@ export function sanitizeState(s: Partial<GameStore>): void {
   if (s.captain && !ids.has(s.captain)) s.captain = null;
   if (s.viceCaptain && !ids.has(s.viceCaptain)) s.viceCaptain = null;
   if (s.viewPlayer && !ids.has(s.viewPlayer)) s.viewPlayer = '';
+  // A refresh restores the last MAIN tab; a persisted drill-down (team/player/admin) has no saved
+  // view context, so fall back to Home instead of a blank/stale detail page.
+  if (s.activeTab !== undefined && !isMainTab(s.activeTab)) s.activeTab = 'home';
   if (Array.isArray(s.budgetReturns)) s.budgetReturns = s.budgetReturns.filter(r => ids.has(r.playerId));
   if (Array.isArray(s.captainHistory)) s.captainHistory = s.captainHistory.filter(c => ids.has(c.playerId));
   if (Array.isArray(s.viceCaptainHistory)) s.viceCaptainHistory = s.viceCaptainHistory.filter(c => ids.has(c.playerId));
@@ -139,18 +142,10 @@ interface GameStore {
   resetGame: () => void;
 }
 
-// Remember the last MAIN tab across refreshes so a reload lands you back where you were, not on
-// Home. Only the four top-level tabs are remembered — the contextual drill-downs (team/player)
-// need view context we don't persist, so a refresh from those returns to their parent tab.
-const TAB_KEY = `gsgm-tab-${ACTIVE_TOURNAMENT_ID}`;
+// The four top-level tabs — the only ones remembered across a refresh. Contextual drill-downs
+// (team/player) need view context we don't persist, so on reload they fall back to Home.
 const MAIN_TABS: GameStore['activeTab'][] = ['home', 'league', 'draft', 'tournament'];
-const isMainTab = (t: string): t is GameStore['activeTab'] => (MAIN_TABS as string[]).includes(t);
-const readActiveTab = (): GameStore['activeTab'] => {
-  try { const t = localStorage.getItem(TAB_KEY); return t && isMainTab(t) ? t : 'home'; } catch { return 'home'; }
-};
-const rememberTab = (tab: GameStore['activeTab']) => {
-  if (isMainTab(tab)) { try { localStorage.setItem(TAB_KEY, tab); } catch { /* ignore */ } }
-};
+const isMainTab = (t: unknown): t is GameStore['activeTab'] => typeof t === 'string' && (MAIN_TABS as string[]).includes(t);
 
 export const useGameStore = create<GameStore>()(
   persist(
@@ -168,7 +163,7 @@ export const useGameStore = create<GameStore>()(
       currentRoundIndex: 0,
       myScore: 0,
       roundScores: [],
-      activeTab: readActiveTab(), // restored from the last visited main tab (refresh-persistent)
+      activeTab: 'home', // persisted (see partialize) so a refresh restores the last main tab
       viewTeam: 'you',
       viewPlayer: '',
       playerReturnTab: 'home',
@@ -402,7 +397,7 @@ export const useGameStore = create<GameStore>()(
         });
       },
 
-      setActiveTab: (tab) => { rememberTab(tab); set({ activeTab: tab }); },
+      setActiveTab: (tab) => set({ activeTab: tab }),
 
       openTeam: (teamId) => set({ viewTeam: teamId, activeTab: 'team' }),
 
@@ -438,15 +433,16 @@ export const useGameStore = create<GameStore>()(
       // clean slate rather than rehydrating the previous event's state.
       name: `grand-slam-gm-${ACTIVE_TOURNAMENT_ID}`,
       version: 3,
-      // Persist only game data — never the transient navigation state (activeTab /
-      // viewTeam / viewPlayer / playerReturnTab), so a reload always lands on Home
-      // rather than restoring a deep player/team detail view.
+      // Persist game data + the current MAIN tab, so a refresh keeps you where you were.
+      // The deep-view state (viewTeam / viewPlayer / playerReturnTab) is NOT persisted — it needs
+      // context we can't safely restore — so sanitizeState coerces a persisted team/player tab
+      // back to Home on reload (see below).
       partialize: (s) => ({
         phase: s.phase, myTeam: s.myTeam, initialSquad: s.initialSquad, transfers: s.transfers,
         captain: s.captain, viceCaptain: s.viceCaptain,
         captainHistory: s.captainHistory, viceCaptainHistory: s.viceCaptainHistory, budget: s.budget,
         budgetReturns: s.budgetReturns, currentRoundIndex: s.currentRoundIndex,
-        myScore: s.myScore, roundScores: s.roundScores,
+        myScore: s.myScore, roundScores: s.roundScores, activeTab: s.activeTab,
       }),
       // Drop any persisted player id that no longer exists in the roster (so a
       // rehydrated squad can never dereference an undefined player and crash), and

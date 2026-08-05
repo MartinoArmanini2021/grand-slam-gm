@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useGameStore, eliminatedSquad, substitutionCandidates } from '../store/gameStore';
+import { useGameStore, eliminatedSquad, substitutionCandidates, sanitizeState } from '../store/gameStore';
 import { getPlayer, PLAYERS } from '../data/players';
 import { getTier } from '../data/tiers';
 import { ROUNDS, winPoints, playerRoundPoints } from '../data/tournament';
@@ -394,5 +394,20 @@ describe('economy integrity (regression)', () => {
     store().replacePlayer(roles.r32Exit, roles.r16Exit); // Gold, alive past R32
     expect(store().myTeam).toContain(roles.r16Exit);
     expect(store().myTeam).not.toContain(roles.r32Exit);
+  });
+});
+
+describe('tab persistence — refresh keeps you on your tab', () => {
+  it('a persisted MAIN tab survives rehydrate; a drill-down (team/player) coerces to home', () => {
+    for (const t of ['home', 'league', 'draft', 'tournament'] as const) {
+      const s = { activeTab: t, myTeam: [] } as Parameters<typeof sanitizeState>[0];
+      sanitizeState(s);
+      expect(s.activeTab).toBe(t); // kept
+    }
+    for (const t of ['team', 'player', 'admin'] as const) {
+      const s = { activeTab: t, myTeam: [] } as Parameters<typeof sanitizeState>[0];
+      sanitizeState(s);
+      expect(s.activeTab).toBe('home'); // coerced — no saved view context
+    }
   });
 });
