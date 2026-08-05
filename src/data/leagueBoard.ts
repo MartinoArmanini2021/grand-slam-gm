@@ -20,6 +20,11 @@ export interface BoardEntry {
   you: boolean;
   captain: string | null;
   viceCaptain: string | null;
+  // For the per-round points breakdown on ANY team's page (public once locked).
+  initialSquad: string[];
+  transfers: { out: string; in: string; round: string }[];
+  captainHistory: { round: string; playerId: string }[];
+  viceCaptainHistory: { round: string; playerId: string }[];
 }
 
 // Deterministic accent per real user, so a team keeps the same colour across renders.
@@ -55,7 +60,7 @@ function useCloudBoard(leagueId: string | null): CloudBoardRow[] {
 // Only REAL players: the league's signed-in members from the cloud, plus your own
 // team. No AI bots. Shared by the Home leaderboard and the League page.
 export function useLeagueBoard(leagueId: string | null = null): BoardEntry[] {
-  const { myTeam, myScore, budget, captain, viceCaptain } = useGameStore();
+  const { myTeam, myScore, budget, captain, viceCaptain, initialSquad, transfers, captainHistory, viceCaptainHistory } = useGameStore();
   const { teamName, teamEmblem, username } = useProfile();
   const { user } = useAuth();
   const cloud = useCloudBoard(leagueId);
@@ -74,6 +79,10 @@ export function useLeagueBoard(leagueId: string | null = null): BoardEntry[] {
       budget: r.budget, score: r.score, you: false,
       captain: r.captain && findPlayer(r.captain) ? r.captain : null,
       viceCaptain: r.viceCaptain && findPlayer(r.viceCaptain) ? r.viceCaptain : null,
+      // Defensive `?? []`: a stale edge-cached /api/leaderboard response (pre-deploy) omits
+      // these fields, so guard against undefined until the cache turns over.
+      initialSquad: (r.initialSquad ?? []).filter(id => !!findPlayer(id)),
+      transfers: r.transfers ?? [], captainHistory: r.captainHistory ?? [], viceCaptainHistory: r.viceCaptainHistory ?? [],
     }));
 
   // Your OWN board row. Squad/captain/budget come from local state (fresher — reflects an
@@ -88,6 +97,7 @@ export function useLeagueBoard(leagueId: string | null = null): BoardEntry[] {
       id: 'you', name: teamName, emblem: teamEmblem, manager: username ? `@${username}` : '@you',
       motto: myTeam.length > 0 ? 'Your squad' : 'Draft your squad', color: '#0e6fc4',
       squad: myTeam, budget, score: myCloud?.score ?? myScore, you: true, captain, viceCaptain,
+      initialSquad, transfers, captainHistory, viceCaptainHistory,
     }] : []),
   ];
 

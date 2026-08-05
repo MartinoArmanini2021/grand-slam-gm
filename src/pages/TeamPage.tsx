@@ -54,6 +54,8 @@ export default function TeamPage() {
         emblem={entry.emblem} name={entry.name} manager={entry.manager} color={entry.color}
         score={entry.score} budget={entry.budget} squad={entry.squad}
         captainId={entry.captain ?? ''} viceCaptainId={entry.viceCaptain ?? ''}
+        initialSquad={entry.initialSquad} transfers={entry.transfers as Transfer[]}
+        captainHistory={entry.captainHistory} viceCaptainHistory={entry.viceCaptainHistory}
       />
     );
   }
@@ -154,16 +156,14 @@ function TeamView({ emblem, name, manager, color, score, budget, squad, captainI
           : <>Tap a player to see their profile</>}
       </div>
 
-      {/* Points each player has earned, round by round — your own team only, where the full
-          captain/transfer history is available to make the breakdown exact. */}
-      {editable && (
-        <PointsByRound
-          initialSquad={initialSquad.length ? initialSquad : squad}
-          transfers={transfers}
-          captainHistory={captainHistory}
-          viceCaptainHistory={viceCaptainHistory}
-        />
-      )}
+      {/* Points each player has earned, round by round — shown for EVERY team (a locked squad's
+          captain/transfer history is public), so you can see how any rival's points were made. */}
+      <PointsByRound
+        initialSquad={initialSquad.length ? initialSquad : squad}
+        transfers={transfers}
+        captainHistory={captainHistory}
+        viceCaptainHistory={viceCaptainHistory}
+      />
 
       {/* Squad stats + transfer history — side by side on desktop, stacked on mobile */}
       <div className="grid md:grid-cols-2 gap-3 items-start mt-3">

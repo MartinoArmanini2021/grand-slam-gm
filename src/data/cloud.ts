@@ -191,6 +191,12 @@ export interface CloudBoardRow {
   squad: string[];
   captain: string | null;
   viceCaptain: string | null;
+  // Public-once-locked history, so ANY team's per-round points breakdown can be shown (not
+  // just your own). Empty for a still-drafting entry (the board view redacts it until lock).
+  initialSquad: string[];
+  transfers: { out: string; in: string; round: string }[];
+  captainHistory: { round: string; playerId: string }[];
+  viceCaptainHistory: { round: string; playerId: string }[];
 }
 
 type EntryRow = { user_id: string; score: number | null; budget: number | null; state: unknown };
@@ -200,7 +206,11 @@ type ProfRow = { id: string; team_name: string | null; team_emblem: string | nul
 // A member with no entry yet still appears — score 0, empty squad — so friends who've
 // joined but not drafted are visible (the "who still needs to pick" signal).
 function boardRow(userId: string, entry: EntryRow | undefined, prof: ProfRow | undefined): CloudBoardRow {
-  const st = (entry?.state ?? {}) as { myTeam?: string[]; captain?: string | null; viceCaptain?: string | null };
+  const st = (entry?.state ?? {}) as {
+    myTeam?: string[]; captain?: string | null; viceCaptain?: string | null;
+    initialSquad?: string[]; transfers?: { out: string; in: string; round: string }[];
+    captainHistory?: { round: string; playerId: string }[]; viceCaptainHistory?: { round: string; playerId: string }[];
+  };
   return {
     userId,
     teamName: prof?.team_name || 'Team',
@@ -214,6 +224,10 @@ function boardRow(userId: string, entry: EntryRow | undefined, prof: ProfRow | u
     squad: Array.isArray(st.myTeam) ? st.myTeam : [],
     captain: st.captain ?? null,
     viceCaptain: st.viceCaptain ?? null,
+    initialSquad: Array.isArray(st.initialSquad) ? st.initialSquad : [],
+    transfers: Array.isArray(st.transfers) ? st.transfers : [],
+    captainHistory: Array.isArray(st.captainHistory) ? st.captainHistory : [],
+    viceCaptainHistory: Array.isArray(st.viceCaptainHistory) ? st.viceCaptainHistory : [],
   };
 }
 

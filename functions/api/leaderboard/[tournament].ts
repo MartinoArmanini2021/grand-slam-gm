@@ -14,7 +14,10 @@ interface EntryRow { user_id: string; score: number | null; budget: number | nul
 interface ProfRow { id: string; team_name: string | null; team_emblem: string | null; username: string | null }
 
 function boardRow(e: EntryRow, prof?: ProfRow) {
-  const st = (e.state ?? {}) as { myTeam?: string[]; captain?: string | null; viceCaptain?: string | null };
+  const st = (e.state ?? {}) as {
+    myTeam?: string[]; captain?: string | null; viceCaptain?: string | null;
+    initialSquad?: string[]; transfers?: unknown[]; captainHistory?: unknown[]; viceCaptainHistory?: unknown[];
+  };
   return {
     userId: e.user_id,
     teamName: prof?.team_name || 'Team',
@@ -25,6 +28,12 @@ function boardRow(e: EntryRow, prof?: ProfRow) {
     squad: Array.isArray(st.myTeam) ? st.myTeam : [],
     captain: st.captain ?? null,
     viceCaptain: st.viceCaptain ?? null,
+    // History is public once a team locks (the board view redacts it while drafting), so the
+    // per-round points breakdown can be shown for EVERY team, not just your own.
+    initialSquad: Array.isArray(st.initialSquad) ? st.initialSquad : [],
+    transfers: Array.isArray(st.transfers) ? st.transfers : [],
+    captainHistory: Array.isArray(st.captainHistory) ? st.captainHistory : [],
+    viceCaptainHistory: Array.isArray(st.viceCaptainHistory) ? st.viceCaptainHistory : [],
   };
 }
 
