@@ -115,6 +115,11 @@ declare
   v_phase text := coalesce(p_state->>'phase', 'draft');
   v_locked boolean := (coalesce(p_state->>'phase', 'draft') <> 'draft');
   v_has_transfers boolean := jsonb_array_length(coalesce(p_state->'transfers', '[]'::jsonb)) > 0;
+  -- "touched" = the manager has begun mid-tournament changes (cashed a player in OR bought one).
+  -- Until then a LOCKED squad is still the pristine draft, so it must be exactly 10 · 2/3/5. Once
+  -- touched, cash-in-and-buy is allowed to shrink the squad (<10) and drift off 2/3/5 (any tier).
+  v_touched boolean := jsonb_array_length(coalesce(p_state->'transfers', '[]'::jsonb)) > 0
+                    or jsonb_array_length(coalesce(p_state->'cashedIn', '[]'::jsonb)) > 0;
   v_size int; v_distinct int; v_total int;
   v_plat int; v_gold int; v_silv int;
   v_existing public.entries%rowtype;
@@ -143,21 +148,21 @@ begin
   v_size := coalesce(array_length(v_squad, 1), 0);
   v_distinct := (select count(distinct x) from unnest(v_squad) x);
 
-  -- (a) no duplicates; size ≤ 10 always. NOTE: a locked squad may now hold FEWER than 10 —
-  -- mid-tournament a manager can CASH IN an eliminated player and leave the slot empty (play a
-  -- man down) or buy any-tier replacement later. The exact-10 lock is enforced only at draft
-  -- time by the client's finalizeDraft, so the initial locked squad always arrives as 10.
+  -- (a) no duplicates; size ≤ 10 always; EXACTLY 10 at lock (the pristine draft). Only AFTER the
+  -- manager starts cashing in / buying (v_touched) may a locked squad drop below 10 (cash in and
+  -- leave the slot empty). So the squad always BEGINS at 10 and only gains flexibility in-play.
   if v_distinct <> v_size then raise exception 'Squad has duplicate players'; end if;
   if v_size > 10 then raise exception 'Squad can''t exceed 10 players (got %)', v_size; end if;
+  if v_locked and not v_touched and v_size <> 10 then raise exception 'Your squad must be exactly 10 players to lock (got %)', v_size; end if;
 
   -- (b) every id is a real, known player
   if exists (select 1 from unnest(v_squad) sid where not exists (select 1 from public.player_stats ps where ps.id = sid)) then
     raise exception 'Squad contains an unknown player';
   end if;
 
-  -- (c) tier quota — the 2/3/5 structure is enforced ONLY during the draft (tier from the seeded
-  -- column). Once the squad is locked, mid-tournament Cash-In-and-buy lets a manager buy ANY tier
-  -- with the refunded money, so the composition may drift away from 2/3/5 (budget is the only limit).
+  -- (c) tier quota (tier from the seeded column): during the DRAFT never OVER 2/3/5, and the
+  -- pristine locked squad must be EXACTLY 2/3/5. Only after the manager begins cashing in / buying
+  -- (v_touched) may the composition drift — any tier, budget being the only limit.
   select
     count(*) filter (where ps.tier = 'Platinum'),
     count(*) filter (where ps.tier = 'Gold'),
@@ -166,6 +171,9 @@ begin
     from unnest(v_squad) sid join public.player_stats ps on ps.id = sid;
   if (not v_locked) and (v_plat > 2 or v_gold > 3 or v_silv > 5) then
     raise exception 'Too many in a tier (Platinum %/2, Gold %/3, Silver %/5)', v_plat, v_gold, v_silv;
+  end if;
+  if v_locked and not v_touched and (v_plat <> 2 or v_gold <> 3 or v_silv <> 5) then
+    raise exception 'Your squad must be exactly 2 Platinum, 3 Gold, 5 Silver to lock (got %/%/%)', v_plat, v_gold, v_silv;
   end if;
 
   -- (d) budget: sum of seeded prices ≤ 150, enforced while no transfers exist (post-lock
