@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { getPlayer } from '../data/players';
 import { getTier, TIER_META, TIER_ORDER, type Tier } from '../data/tiers';
 import { track } from '../data/analytics';
 import { useLeagueBoard, useMyLeagues, type BoardEntry } from '../data/leagueBoard';
 import { lastName } from '../data/format';
-import { ROUNDS, isPlayerOut, getPlayerExit, tournamentStarted } from '../data/tournament';
+import { ROUNDS, isPlayerOut, getPlayerExit, tournamentStarted, isEliminated, playerRoundPoints } from '../data/tournament';
 import PlayerAvatar from '../components/PlayerAvatar';
 import ScoringPendingNote from '../components/ScoringPendingNote';
 import { toast } from '../store/toastStore';
@@ -215,6 +215,90 @@ function Standings({ rows, revealed, compact }: { rows: BoardEntry[]; revealed: 
   );
 }
 
+// Private-league standings — a compact STATS table (no player faces). One row per manager,
+// with the columns the league cares about: players eliminated, players purchased, correct
+// captain/vice picks, total points. Your own row is highlighted so you spot it instantly.
+function StatsTable({ rows }: { rows: BoardEntry[] }) {
+  const { openTeam } = useGameStore();
+  if (rows.length === 0) {
+    return <div className="rounded-2xl px-5 py-8 text-center text-sm" style={{ background: '#fff', border: '1px solid rgba(10,27,51,0.08)', color: 'var(--ink-3)' }}>
+      No squads here yet — invite friends with the code above.
+    </div>;
+  }
+  const pending = !tournamentStarted();
+  const pts = (score: number) => (pending ? '–' : score);
+  // How many of a manager's players have been knocked out: eliminated players still on the
+  // roster PLUS the ones they've already cashed in (cashing removes them from the squad).
+  const eliminated = (r: BoardEntry) => r.squad.filter(id => isEliminated(id)).length + (r.cashedIn?.length ?? 0);
+  // Correct leader picks = rounds where the captain-of-record / vice actually WON that round.
+  const correctLeaders = (r: BoardEntry) => {
+    const won = (h: { round: string; playerId: string }) => playerRoundPoints(h.playerId, h.round as RoundId) > 0;
+    return r.captainHistory.filter(won).length + r.viceCaptainHistory.filter(won).length;
+  };
+  const numTh = 'px-2 py-2.5 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wide';
+  const numTd = 'px-2 py-3 text-center font-num text-sm sm:text-base font-bold';
+
+  return (
+    <>
+      {pending && <ScoringPendingNote />}
+      <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(10,27,51,0.08)' }}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border-collapse bg-white">
+            <thead>
+              <tr style={{ background: 'var(--raised)', borderBottom: '1px solid rgba(10,27,51,0.1)' }}>
+                <th className="px-2 py-2.5 text-center text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-3)', width: 44 }}>#</th>
+                <th className="px-2 py-2.5 text-left text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-2)' }}>Team</th>
+                <th className={numTh} style={{ color: 'var(--ember)' }} title="Players eliminated">Out</th>
+                <th className={numTh} style={{ color: 'var(--ink-2)' }} title="Players purchased">Buys</th>
+                <th className={numTh} style={{ color: 'var(--gold)' }} title="Correct captain + vice-captain picks">C+V ✓</th>
+                <th className="px-2 sm:px-3 py-2.5 text-right text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--blue)' }}>Pts</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <tr
+                  key={row.id}
+                  onClick={() => openTeam(row.id)}
+                  role="button" tabIndex={0} onKeyDown={onActivate(() => openTeam(row.id))}
+                  className="cursor-pointer transition-colors"
+                  style={{
+                    borderBottom: '1px solid rgba(10,27,51,0.05)',
+                    background: row.you ? 'rgba(14,111,196,0.10)' : 'transparent',
+                    boxShadow: row.you ? 'inset 3px 0 0 var(--blue)' : 'none',
+                  }}
+                  onMouseEnter={e => { if (!row.you) (e.currentTarget as HTMLElement).style.background = 'rgba(10,27,51,0.02)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = row.you ? 'rgba(14,111,196,0.10)' : 'transparent'; }}
+                >
+                  <td className="px-2 py-3"><div className="flex justify-center"><RankBadge i={i} /></div></td>
+                  <td className="px-2 py-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-8 h-8 rounded-lg flex items-center justify-center text-base shrink-0" style={{ background: `${row.color}1a`, border: `1px solid ${row.color}55` }}>{row.emblem}</span>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold truncate" style={{ color: 'var(--ink)' }}>{row.name}</span>
+                          {row.you && <span className="text-[9px] font-bold px-1 py-0.5 rounded shrink-0" style={{ background: 'var(--blue)', color: '#fff' }}>YOU</span>}
+                        </div>
+                        <div className="text-[11px] truncate" style={{ color: 'var(--ink-3)' }}>{row.manager}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className={numTd} style={{ color: eliminated(row) > 0 ? 'var(--ember)' : 'var(--ink-3)' }}>{eliminated(row)}</td>
+                  <td className={numTd} style={{ color: row.transfers.length > 0 ? 'var(--ink)' : 'var(--ink-3)' }}>{row.transfers.length}</td>
+                  <td className={numTd} style={{ color: correctLeaders(row) > 0 ? 'var(--gold)' : 'var(--ink-3)' }}>{pending ? '–' : correctLeaders(row)}</td>
+                  <td className="px-2 sm:px-3 py-3 text-right font-num text-xl font-extrabold whitespace-nowrap" style={{ color: 'var(--blue)' }}>{pts(row.score)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div className="text-[10px] mt-2 px-1" style={{ color: 'var(--ink-3)' }}>
+        <b>Out</b> = players eliminated · <b>Buys</b> = players purchased · <b>C+V ✓</b> = correct captain &amp; vice picks
+      </div>
+    </>
+  );
+}
+
 // The public global board, isolated in its own component so its 20s poll only runs while
 // the Public tab is actually on screen (not in the background during Private view).
 function PublicBoard({ revealed }: { revealed: RoundId[] }) {
@@ -230,14 +314,8 @@ function PublicBoard({ revealed }: { revealed: RoundId[] }) {
 export default function LeaguePage() {
   const { currentRoundIndex } = useGameStore();
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
-  const [view, setView] = useState<'public' | 'private'>('public');
-  // The private friends board is the emotional core for this audience — open on it
-  // once we know the player belongs to a private league (until they toggle).
-  const myLeagues = useMyLeagues();
-  const defaultedView = useRef(false);
-  useEffect(() => {
-    if (!defaultedView.current && myLeagues.length > 0) { setView('private'); defaultedView.current = true; }
-  }, [myLeagues]);
+  // Land on the Private Leagues view first — the friends board is the emotional core here.
+  const [view, setView] = useState<'public' | 'private'>('private');
 
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-3 py-6 fade-in">
@@ -261,13 +339,13 @@ export default function LeaguePage() {
       {view === 'public' ? (
         <PublicBoard revealed={revealed} />
       ) : (
-        <PrivateLeagues revealed={revealed} />
+        <PrivateLeagues />
       )}
     </div>
   );
 }
 
-function PrivateLeagues({ revealed }: { revealed: RoundId[] }) {
+function PrivateLeagues() {
   const { user, enabled } = useAuth();
 
   const [nonce, setNonce] = useState(0);
@@ -300,6 +378,9 @@ function PrivateLeagues({ revealed }: { revealed: RoundId[] }) {
   const refresh = () => setNonce(n => n + 1);
   const current = leagues.find(l => l.id === selected) ?? null;
   const isOwner = !!current && current.ownerId === user?.id;
+  // Private leagues can only be created/joined BEFORE the competition starts. Once it's underway
+  // the create + join boxes come out — the field is set.
+  const started = tournamentStarted();
 
   const header = (
     <p className="text-xs mb-4 px-1" style={{ color: 'var(--ink-3)' }}>Invite-only — each private league is seen only by its members.</p>
@@ -357,26 +438,32 @@ function PrivateLeagues({ revealed }: { revealed: RoundId[] }) {
     <>
       {header}
 
-      {/* Create + Join */}
-      <div className="grid sm:grid-cols-2 gap-2.5 sm:gap-3 mb-4">
-        <div className="rounded-2xl p-2.5 sm:p-4" style={{ background: '#fff', border: '1px solid rgba(10,27,51,0.09)' }}>
-          <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wide mb-1.5 sm:mb-2" style={{ color: 'var(--ink-2)' }}>Create a league</div>
-          <div className="flex gap-2">
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="League name" className="flex-1 min-w-0 text-sm px-3 py-1.5 sm:py-2 rounded-xl" style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.12)', color: 'var(--ink)' }} />
-            <button onClick={doCreate} disabled={busy} className="px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold text-white shrink-0 disabled:opacity-60" style={{ background: 'var(--blue)' }}>Create</button>
+      {/* Create + Join — only BEFORE the competition starts. Removed once it's underway. */}
+      {!started && (
+        <div className="grid sm:grid-cols-2 gap-2.5 sm:gap-3 mb-4">
+          <div className="rounded-2xl p-2.5 sm:p-4" style={{ background: '#fff', border: '1px solid rgba(10,27,51,0.09)' }}>
+            <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wide mb-1.5 sm:mb-2" style={{ color: 'var(--ink-2)' }}>Create a league</div>
+            <div className="flex gap-2">
+              <input value={name} onChange={e => setName(e.target.value)} placeholder="League name" className="flex-1 min-w-0 text-sm px-3 py-1.5 sm:py-2 rounded-xl" style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.12)', color: 'var(--ink)' }} />
+              <button onClick={doCreate} disabled={busy} className="px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold text-white shrink-0 disabled:opacity-60" style={{ background: 'var(--blue)' }}>Create</button>
+            </div>
+          </div>
+          <div className="rounded-2xl p-2.5 sm:p-4" style={{ background: '#fff', border: '1px solid rgba(10,27,51,0.09)' }}>
+            <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wide mb-1.5 sm:mb-2" style={{ color: 'var(--ink-2)' }}>Join with a code</div>
+            <div className="flex gap-2">
+              <input value={code} onChange={e => setCode(e.target.value.toUpperCase())} placeholder="6-char code" maxLength={6} className="flex-1 min-w-0 text-sm px-3 py-1.5 sm:py-2 rounded-xl font-num tracking-widest uppercase" style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.12)', color: 'var(--ink)' }} />
+              <button onClick={doJoin} disabled={busy || code.length !== 6} className="px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold shrink-0 disabled:opacity-60" style={{ background: 'rgba(14,111,196,0.1)', color: 'var(--blue)' }}>Join</button>
+            </div>
           </div>
         </div>
-        <div className="rounded-2xl p-2.5 sm:p-4" style={{ background: '#fff', border: '1px solid rgba(10,27,51,0.09)' }}>
-          <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wide mb-1.5 sm:mb-2" style={{ color: 'var(--ink-2)' }}>Join with a code</div>
-          <div className="flex gap-2">
-            <input value={code} onChange={e => setCode(e.target.value.toUpperCase())} placeholder="6-char code" maxLength={6} className="flex-1 min-w-0 text-sm px-3 py-1.5 sm:py-2 rounded-xl font-num tracking-widest uppercase" style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.12)', color: 'var(--ink)' }} />
-            <button onClick={doJoin} disabled={busy || code.length !== 6} className="px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold shrink-0 disabled:opacity-60" style={{ background: 'rgba(14,111,196,0.1)', color: 'var(--blue)' }}>Join</button>
-          </div>
-        </div>
-      </div>
+      )}
 
       {leagues.length === 0 ? (
-        <p className="text-center text-sm py-8" style={{ color: 'var(--ink-3)' }}>You're not in any leagues yet. Create one and share the code with a friend.</p>
+        <p className="text-center text-sm py-8" style={{ color: 'var(--ink-3)' }}>
+          {started
+            ? 'Private leagues are closed — the tournament has started. You can still follow the public leaderboard.'
+            : "You're not in any leagues yet. Create one and share the code with a friend."}
+        </p>
       ) : (
         <>
           {/* Switcher */}
@@ -411,7 +498,7 @@ function PrivateLeagues({ revealed }: { revealed: RoundId[] }) {
                 </div>
               )}
 
-              <Standings rows={board} revealed={revealed} />
+              <StatsTable rows={board} />
 
               {/* Manage */}
               <div className="mt-4 rounded-2xl p-4" style={{ background: '#fff', border: '1px solid rgba(10,27,51,0.09)' }}>

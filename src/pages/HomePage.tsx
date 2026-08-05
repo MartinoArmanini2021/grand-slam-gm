@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, Fragment } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { useLiveStore } from '../store/liveStore';
-import { ROUNDS, isPlayerOut, roundPlayable, roundHasResult, tournamentStarted, liveScore, liveBudget } from '../data/tournament';
+import { ROUNDS, isPlayerOut, isEliminated, roundPlayable, roundHasResult, tournamentStarted, transfersOpen, liveScore, liveBudget, playerRefund } from '../data/tournament';
 import { isSquadValid, SQUAD_SIZE } from '../data/squadRules';
 import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
 import { onActivate } from '../hooks';
@@ -12,7 +12,6 @@ import SquadCourt from '../components/SquadCourt';
 import TournamentWelcome from '../components/TournamentWelcome';
 import Countdown from '../components/Countdown';
 import ScoringPendingNote from '../components/ScoringPendingNote';
-import { shareInvite } from '../data/invite';
 import type { GamePhase, RoundId } from '../types';
 
 const TEAM_TARGET = SQUAD_SIZE;
@@ -38,6 +37,15 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
     () => liveBudget(initialSquad, transfers, myTeam, cashedIn),
     [draw, results, initialSquad, transfers, myTeam, cashedIn],
   );
+  // Eliminated players still in your active squad have uncashed refund money waiting in the
+  // Market. Surfacing this the moment a player loses is the nudge to go claim + reinvest it.
+  const windowOpen = transfersOpen(currentRoundIndex);
+  const cashable = useMemo(
+    () => (phase !== 'draft' ? myTeam.filter(id => isEliminated(id)) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [phase, myTeam, draw, results],
+  );
+  const cashableTotal = useMemo(() => cashable.reduce((s, id) => s + playerRefund(id), 0), [cashable]);
 
   const squadReady = isSquadValid(myTeam);
   const currentRound = currentRoundIndex < ROUNDS.length ? ROUNDS[currentRoundIndex] : null;
@@ -141,6 +149,16 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
           body={`Final score ${myScore} pts${winRate !== null ? ` · ${winRate}% round win rate` : ''}`} cta="View Bracket" onClick={() => setActiveTab('tournament')} />
       )}
 
+      {/* Cash-in nudge: the moment any of your players is knocked out, tell EVERY manager there's
+          money to claim in the Market — round-over is exactly when refunds pile up. */}
+      {phase !== 'draft' && windowOpen && cashable.length > 0 && (
+        <div className="mt-3">
+          <ActionBanner color="var(--gold)" title={`💸 $${cashableTotal.toFixed(1)}M to cash in`}
+            body={`${cashable.length} of your player${cashable.length === 1 ? ' is' : 's are'} out. Claim their refund in the Market, then buy any replacement.`}
+            cta="Cash In →" onClick={() => setActiveTab('draft')} />
+        </div>
+      )}
+
       {/* Deadline countdowns: lock your squad before the draft closes, and set your
           captain/vice before each round begins. */}
       {phase === 'draft' && (
@@ -153,26 +171,6 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
           title={`Set your Captain & Vice for the ${currentRound.label}`}
           note="Captain ×2 · Vice ×1.5 — they lock when the round begins." />
       )}
-
-      {/* Virality: once you've got a squad, the fun is beating people you know. Surface the
-          invite right here — share a private league link, or spin one up in one tap. */}
-      {myTeam.length > 0 && (() => {
-        const priv = myLeagues.find(l => !l.isPublic && l.code);
-        return (
-          <button
-            onClick={() => (priv ? shareInvite(priv.name, priv.code!) : setActiveTab('league'))}
-            className="w-full mt-3 flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-transform active:scale-[0.99]"
-            style={{ background: 'linear-gradient(120deg,rgba(14,111,196,0.09),rgba(18,161,80,0.07))', border: '1px solid rgba(14,111,196,0.2)' }}
-          >
-            <span className="text-xl shrink-0">🤝</span>
-            <div className="flex-1 min-w-0">
-              <div className="font-bold text-sm" style={{ color: 'var(--ink)' }}>{priv ? `Invite friends to ${priv.name}` : 'Play with friends'}</div>
-              <div className="text-xs" style={{ color: 'var(--ink-2)' }}>{priv ? 'Share the link — everyone drafts, one leaderboard.' : 'Create a private league and challenge your friends.'}</div>
-            </div>
-            <span className="shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold text-white" style={{ background: 'var(--blue)' }}>{priv ? 'Invite' : 'Create'}</span>
-          </button>
-        );
-      })()}
 
         {/* ── League leaderboard (below the court) ── */}
         <div className="mt-6">

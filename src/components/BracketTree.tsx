@@ -25,6 +25,11 @@ export default function BracketTree() {
   const [teamId, setTeamId] = useState('you');
   const selected = teams.find(t => t.id === teamId) ?? teams[0];
   const highlight = new Set(selected?.squad ?? []);
+  // Trace ONE player's route through the draw: tap any player and every match they play lights
+  // up (blue), showing exactly how far they've gone. Tap them again (or ✕) to clear.
+  const [pathId, setPathId] = useState<string | null>(null);
+  const pickPath = (id: string) => setPathId(prev => (prev === id ? null : id));
+  const tracedName = pathId ? (findPlayer(pathId)?.name ?? meta[pathId]?.name ?? prettifyId(pathId)) : null;
 
   // ── Pre-tournament: the draw hasn't been published yet ──────────────────────
   if (draw.length === 0) {
@@ -56,19 +61,34 @@ export default function BracketTree() {
 
   return (
     <div>
-      {teams.length > 0 && (
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-2)' }}>Highlight team</span>
-          <select
-            value={selected?.id ?? ''}
-            onChange={e => setTeamId(e.target.value)}
-            className="text-sm font-semibold rounded-lg px-2 py-1.5"
-            style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.12)', color: 'var(--ink)' }}
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        {teams.length > 0 && (
+          <>
+            <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-2)' }}>Highlight team</span>
+            <select
+              value={selected?.id ?? ''}
+              onChange={e => setTeamId(e.target.value)}
+              className="text-sm font-semibold rounded-lg px-2 py-1.5"
+              style={{ background: 'var(--raised)', border: '1px solid rgba(10,27,51,0.12)', color: 'var(--ink)' }}
+            >
+              {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          </>
+        )}
+        {/* Player-path tracer: either the live "tracing X" chip, or a hint to tap a player. */}
+        {tracedName ? (
+          <button
+            onClick={() => setPathId(null)}
+            className="inline-flex items-center gap-1.5 text-xs font-bold pl-2.5 pr-2 py-1.5 rounded-lg"
+            style={{ background: 'rgba(14,111,196,0.12)', border: '1px solid rgba(14,111,196,0.35)', color: 'var(--blue)' }}
           >
-            {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-          </select>
-        </div>
-      )}
+            <span>Tracing {tracedName}</span>
+            <span aria-hidden="true" style={{ opacity: 0.8 }}>✕</span>
+          </button>
+        ) : (
+          <span className="text-[11px]" style={{ color: 'var(--ink-3)' }}>Tap any player to trace their path →</span>
+        )}
+      </div>
 
       <div className="overflow-x-auto pb-1">
         {/* Equal-height columns (items-stretch) with matches spread evenly (justify-around) so each
@@ -81,12 +101,16 @@ export default function BracketTree() {
                 {matches.map(m => {
                   const winner = results[matchKey(m.round, m.slot)];
                   const live = highlight.has(m.p1Id) || highlight.has(m.p2Id);
+                  const onPath = !!pathId && (m.p1Id === pathId || m.p2Id === pathId); // traced player plays here
                   const sc = scores[matchKey(m.round, m.slot)];
                   return (
-                    <div key={m.slot} className="rounded-lg overflow-hidden shrink-0" style={{ border: `1px solid ${live ? 'rgba(217,154,0,0.5)' : 'rgba(10,27,51,0.1)'}`, margin: '3px 0' }}>
-                      <Side id={m.p1Id} meta={meta} won={winner === m.p1Id} decided={!!winner} mine={highlight.has(m.p1Id)} sets={sc?.p1} />
+                    <div key={m.slot} className="rounded-lg overflow-hidden shrink-0" style={{
+                      border: `1px solid ${onPath ? 'var(--blue)' : live ? 'rgba(217,154,0,0.5)' : 'rgba(10,27,51,0.1)'}`,
+                      boxShadow: onPath ? '0 0 0 1px var(--blue)' : 'none', margin: '3px 0',
+                    }}>
+                      <Side id={m.p1Id} meta={meta} won={winner === m.p1Id} decided={!!winner} mine={highlight.has(m.p1Id)} isPath={m.p1Id === pathId} onPick={pickPath} sets={sc?.p1} />
                       <div style={{ height: 1, background: 'rgba(10,27,51,0.08)' }} />
-                      <Side id={m.p2Id} meta={meta} won={winner === m.p2Id} decided={!!winner} mine={highlight.has(m.p2Id)} sets={sc?.p2} />
+                      <Side id={m.p2Id} meta={meta} won={winner === m.p2Id} decided={!!winner} mine={highlight.has(m.p2Id)} isPath={m.p2Id === pathId} onPick={pickPath} sets={sc?.p2} />
                     </div>
                   );
                 })}
@@ -114,7 +138,7 @@ function prettifyId(id: string): string {
     .join(' ');
 }
 
-function Side({ id, meta, won, decided, mine, sets }: { id: string; meta: PlayerMetaMap; won: boolean; decided: boolean; mine: boolean; sets?: string[] }) {
+function Side({ id, meta, won, decided, mine, isPath, onPick, sets }: { id: string; meta: PlayerMetaMap; won: boolean; decided: boolean; mine: boolean; isPath?: boolean; onPick?: (id: string) => void; sets?: string[] }) {
   const isTbd = id === 'tbd';                // a seed's opponent, still to be decided in the first round
   const p = isTbd ? undefined : findPlayer(id);
   // Off-roster opponent (not in the draftable field): use the real name + flag the feed
@@ -122,15 +146,19 @@ function Side({ id, meta, won, decided, mine, sets }: { id: string; meta: Player
   const m = p || isTbd ? undefined : meta[id];
   const name = isTbd ? 'TBD' : (p?.name ?? m?.name ?? prettifyId(id));
   const flag = p?.flag ?? m?.flag;
+  const clickable = !isTbd && !!onPick; // tap a real player to trace their path
   return (
     <div
+      onClick={clickable ? () => onPick!(id) : undefined}
+      title={clickable ? `Trace ${name}'s path` : undefined}
       className="flex items-center gap-1.5 px-2 py-1.5 text-xs"
       style={{
-        background: mine ? 'rgba(217,154,0,0.12)' : '#FFFFFF',
-        color: isTbd ? 'var(--ink-3)' : decided && !won ? 'var(--ink-3)' : 'var(--ink)',
-        fontWeight: won ? 700 : 500,
-        opacity: decided && !won ? 0.7 : 1,
+        background: isPath ? 'rgba(14,111,196,0.16)' : mine ? 'rgba(217,154,0,0.12)' : '#FFFFFF',
+        color: isTbd ? 'var(--ink-3)' : isPath ? 'var(--blue)' : decided && !won ? 'var(--ink-3)' : 'var(--ink)',
+        fontWeight: won || isPath ? 700 : 500,
+        opacity: decided && !won && !isPath ? 0.7 : 1,
         fontStyle: isTbd ? 'italic' : 'normal',
+        cursor: clickable ? 'pointer' : 'default',
       }}
     >
       {flag && <span>{flag}</span>}
