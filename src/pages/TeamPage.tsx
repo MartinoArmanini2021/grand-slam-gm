@@ -3,7 +3,7 @@ import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { useLeagueBoard } from '../data/leagueBoard';
 import { getPlayer } from '../data/players';
-import { ROUNDS, playerRoundPoints, playedScoredRounds, liveScore, liveBudget, getPlayerExit, isInLiveDraw, tournamentStarted } from '../data/tournament';
+import { ROUNDS, playerRoundPoints, playedScoredRounds, liveScore, getPlayerExit, isInLiveDraw, tournamentStarted } from '../data/tournament';
 import { lastName } from '../data/format';
 import SquadCourt from '../components/SquadCourt';
 import PlayerAvatar from '../components/PlayerAvatar';
@@ -25,21 +25,19 @@ function BackToLeague() {
 }
 
 export default function TeamPage() {
-  const { myTeam, initialSquad, transfers, cashedIn, captain, viceCaptain, captainHistory, viceCaptainHistory, viewTeam, setActiveTab } = useGameStore();
+  const { myTeam, initialSquad, transfers, captain, viceCaptain, captainHistory, viceCaptainHistory, viewTeam, setActiveTab } = useGameStore();
   const { teamName, teamEmblem, username } = useProfile();
   // Real league members come from the public board (everyone is a member of it).
   const board = useLeagueBoard(null);
-  // Your own total + budget, derived live from results — score per-match like the leaderboard,
-  // and money that already includes refunds for every eliminated player (incl. opening-round).
+  // Your own total, derived live from results — score per-match like the leaderboard.
   const myScore = liveScore(initialSquad, transfers, captainHistory, viceCaptainHistory);
-  const myBudget = liveBudget(initialSquad, transfers, myTeam, cashedIn);
 
   if (viewTeam === 'you') {
     return (
       <TeamView
         key="you"
         emblem={teamEmblem} name={teamName} manager={username ? `@${username}` : '@you'} color="var(--blue)"
-        score={myScore} budget={myBudget} squad={myTeam} captainId={captain ?? myTeam[0] ?? ''} viceCaptainId={viceCaptain ?? ''} editable
+        score={myScore} squad={myTeam} captainId={captain ?? myTeam[0] ?? ''} viceCaptainId={viceCaptain ?? ''} editable
         initialSquad={initialSquad} transfers={transfers}
         captainHistory={captainHistory} viceCaptainHistory={viceCaptainHistory}
       />
@@ -53,7 +51,7 @@ export default function TeamPage() {
       <TeamView
         key={entry.id}
         emblem={entry.emblem} name={entry.name} manager={entry.manager} color={entry.color}
-        score={entry.score} budget={liveBudget(entry.initialSquad, entry.transfers, entry.squad, entry.cashedIn)} squad={entry.squad}
+        score={entry.score} squad={entry.squad}
         captainId={entry.captain ?? ''} viceCaptainId={entry.viceCaptain ?? ''}
         initialSquad={entry.initialSquad} transfers={entry.transfers as Transfer[]}
         captainHistory={entry.captainHistory} viceCaptainHistory={entry.viceCaptainHistory}
@@ -71,9 +69,9 @@ export default function TeamPage() {
   );
 }
 
-function TeamView({ emblem, name, manager, color, score, budget, squad, captainId, viceCaptainId, editable, initialSquad = [], transfers = [], captainHistory = [], viceCaptainHistory = [] }: {
+function TeamView({ emblem, name, manager, color, score, squad, captainId, viceCaptainId, editable, initialSquad = [], transfers = [], captainHistory = [], viceCaptainHistory = [] }: {
   emblem: string; name: string; manager: string; color: string;
-  score: number; budget: number; squad: string[]; captainId: string; viceCaptainId?: string; editable?: boolean;
+  score: number; squad: string[]; captainId: string; viceCaptainId?: string; editable?: boolean;
   initialSquad?: string[]; transfers?: Transfer[];
   captainHistory?: { round: string; playerId: string }[]; viceCaptainHistory?: { round: string; playerId: string }[];
 }) {
@@ -166,9 +164,8 @@ function TeamView({ emblem, name, manager, color, score, budget, squad, captainI
         viceCaptainHistory={viceCaptainHistory}
       />
 
-      {/* Squad stats + transfer history — side by side on desktop, stacked on mobile */}
-      <div className="grid md:grid-cols-2 gap-3 items-start mt-3">
-        <SquadStats squad={squad} captainId={captainId} viceCaptainId={viceCaptainId} budget={budget} />
+      {/* Transfer history — full width below the points table */}
+      <div className="mt-3">
         <TransferHistory initialSquad={initialSquad.length ? initialSquad : squad} transfers={transfers} />
       </div>
     </div>
@@ -194,15 +191,21 @@ function PointsByRound({ initialSquad, transfers, captainHistory, viceCaptainHis
   };
   const squads = new Map(rounds.map(r => [r, squadAt(r)]));
 
-  // Every player who was ever on the squad, with their per-round points + total.
+  // Every player who was ever on the squad, with their per-round points + total + live status.
   const everOnSquad = [...new Set([...initialSquad, ...transfers.map(t => t.in)])];
   const rows = everOnSquad
     .map(id => {
       const cells = rounds.map(r => (squads.get(r)!.has(id) ? playerRoundPoints(id, r, captainHistory, viceCaptainHistory) : null));
       const total = cells.reduce<number>((sum, c) => sum + (c ?? 0), 0);
-      return { id, cells, total };
+      const exit = getPlayerExit(id); // the scored round they lost in (null = not out in R64+)
+      // A drafted player who lost the OPENING round (before R64) never enters the scored draw.
+      const openingOut = !exit && tournamentStarted() && !isInLiveDraw(id);
+      const outLabel = exit ? roundShort(exit) : openingOut ? '1st rd' : null;
+      const stillIn = !outLabel && isInLiveDraw(id);
+      return { id, cells, total, outLabel, stillIn };
     })
-    .sort((a, b) => b.total - a.total);
+    // Total points first, then still-in ahead of eliminated (both descending).
+    .sort((a, b) => b.total - a.total || Number(b.stillIn) - Number(a.stillIn));
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.08)' }}>
@@ -232,22 +235,24 @@ function PointsByRound({ initialSquad, transfers, captainHistory, viceCaptainHis
               </tr>
             </thead>
             <tbody>
-              {rows.map(({ id, cells, total }) => {
+              {rows.map(({ id, cells, total, outLabel, stillIn }) => {
                 const p = getPlayer(id);
-                const exit = getPlayerExit(id); // the scored-round they were knocked out in (null = not eliminated in R64+)
-                // A drafted player who lost the OPENING round (before R64) never enters the draw.
-                const openingOut = !exit && tournamentStarted() && !isInLiveDraw(id);
-                const outLabel = exit ? roundShort(exit) : openingOut ? '1st rd' : null;
-                const stillIn = !outLabel && isInLiveDraw(id);
                 return (
                   <tr key={id} onClick={() => openPlayer(id)} className="cursor-pointer transition-colors hover:bg-black/[0.02]" style={{ borderBottom: '1px solid rgba(10,27,51,0.05)' }}>
+                    {/* Player cell — same format as the Squad list: tier-ringed avatar, flag + nickname, name, price */}
                     <td className="px-3 py-1.5 sticky left-0" style={{ background: '#fff' }}>
                       <div className="flex items-center gap-2 min-w-0">
-                        <PlayerAvatar playerId={id} name={p.name} size="sm" ring={false} />
-                        <span className="text-xs font-semibold truncate" style={{ color: outLabel ? 'var(--ink-3)' : 'var(--ink)' }}>{lastName(p.name)}</span>
-                        {outLabel
-                          ? <span className="shrink-0 text-[8px] font-extrabold uppercase tracking-wide px-1 py-0.5 rounded" style={{ background: 'rgba(229,71,43,0.12)', color: 'var(--ember)' }}>out · {outLabel}</span>
-                          : stillIn ? <span className="shrink-0 w-1.5 h-1.5 rounded-full" style={{ background: 'var(--green)' }} title="Still in" /> : null}
+                        <PlayerAvatar playerId={id} name={p.name} size="sm" />{/* ring = tier colour */}
+                        <div className="min-w-0">
+                          <PlayerTag playerId={id} flag={p.flag} className="text-[8px] font-bold uppercase tracking-wide leading-tight truncate" style={{ color: 'var(--blue)' }} />
+                          <div className="text-xs font-semibold leading-tight truncate flex items-center gap-1.5" style={{ color: outLabel ? 'var(--ink-3)' : 'var(--ink)' }}>
+                            {p.name}
+                            {outLabel
+                              ? <span className="shrink-0 text-[8px] font-extrabold uppercase tracking-wide px-1 py-0.5 rounded" style={{ background: 'rgba(229,71,43,0.12)', color: 'var(--ember)' }}>out · {outLabel}</span>
+                              : stillIn ? <span className="shrink-0 w-1.5 h-1.5 rounded-full" style={{ background: 'var(--green)' }} title="Still in" /> : null}
+                          </div>
+                          <div className="font-num text-[10px] leading-none" style={{ color: 'var(--blue)' }}>${p.price}M</div>
+                        </div>
                       </div>
                     </td>
                     {cells.map((c, i) => (
@@ -263,47 +268,6 @@ function PointsByRound({ initialSquad, transfers, captainHistory, viceCaptainHis
           </table>
         </div>
       )}
-    </div>
-  );
-}
-
-// The squad below the court: a Market-style row per player (nickname · flag · surface
-// win% · price), tier-ordered, with the captain/vice marked.
-function SquadStats({ squad, captainId, viceCaptainId, budget }: { squad: string[]; captainId: string; viceCaptainId?: string; budget: number }) {
-  const openPlayer = useGameStore(s => s.openPlayer);
-  const ordered = [...squad].sort((a, b) => getPlayer(a).ranking - getPlayer(b).ranking);
-  return (
-    <div className="rounded-2xl p-3" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.08)' }}>
-      <div className="flex items-center justify-between mb-2 px-1">
-        <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-2)' }}>Squad</span>
-        <span className="text-[11px]" style={{ color: 'var(--ink-3)' }}>Budget <b className="font-num" style={{ color: 'var(--green)' }}>${budget.toFixed(1)}M</b></span>
-      </div>
-      <div className="space-y-1">
-        {ordered.map(id => {
-          const p = getPlayer(id);
-          const isC = id === captainId, isV = id === viceCaptainId;
-          return (
-            <button key={id} onClick={() => openPlayer(id)} className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-xl transition-colors hover:bg-black/[0.03]"
-              style={{ background: isC ? 'rgba(217,154,0,0.06)' : isV ? 'rgba(14,111,196,0.06)' : 'transparent' }}>
-              <PlayerAvatar playerId={id} name={p.name} size="sm" />
-              <div className="flex-1 min-w-0">
-                <PlayerTag playerId={id} flag={p.flag} className="text-[8px] font-bold uppercase tracking-wide leading-tight truncate" style={{ color: 'var(--blue)' }} />
-                <div className="text-xs font-semibold leading-tight truncate" style={{ color: 'var(--ink)' }}>{p.name}</div>
-                <div className="font-num text-[10px] leading-none flex items-center gap-1.5 mt-0.5 whitespace-nowrap">
-                  <span style={{ color: 'var(--green)' }}>G {p.surface.grass}</span>
-                  <span style={{ color: 'var(--blue)' }}>H {p.surface.hard}</span>
-                  <span style={{ color: 'var(--ember)' }}>C {p.surface.clay}</span>
-                </div>
-              </div>
-              <div className="flex flex-col items-end gap-1 shrink-0">
-                <span className="font-num text-xs font-bold" style={{ color: 'var(--blue)' }}>${p.price}M</span>
-                {isC && <span className="text-[8px] font-extrabold px-1 py-0.5 rounded" style={{ background: 'var(--gold)', color: '#fff' }}>C ×2</span>}
-                {isV && <span className="text-[8px] font-extrabold px-1 py-0.5 rounded" style={{ background: 'var(--blue)', color: '#fff' }}>V ×1.5</span>}
-              </div>
-            </button>
-          );
-        })}
-      </div>
     </div>
   );
 }
@@ -335,7 +299,7 @@ function TransferHistory({ initialSquad, transfers }: { initialSquad: string[]; 
   };
 
   return (
-    <div className="rounded-2xl mt-5 overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.08)' }}>
+    <div className="rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.08)' }}>
       <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid rgba(10,27,51,0.06)' }}>
         <h2 className="text-sm font-bold" style={{ color: 'var(--ink)' }}>Transfer history</h2>
         <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(14,111,196,0.1)', color: 'var(--blue)' }}>{transfers.length} transfer{transfers.length === 1 ? '' : 's'}</span>
