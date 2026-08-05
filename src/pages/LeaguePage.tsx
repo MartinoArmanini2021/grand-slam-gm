@@ -20,7 +20,7 @@ function RankBadge({ i }: { i: number }) {
   const top = i < 3;
   return (
     <div className="shrink-0 flex items-center justify-center font-num font-extrabold"
-      style={{ width: 34, height: 34, borderRadius: 10, background: top ? MEDAL[i] : 'var(--bg)', color: top ? '#fff' : 'var(--ink-3)', fontSize: top ? 15 : 13, boxShadow: top ? `0 2px 8px ${MEDAL[i]}66, inset 0 0 0 2px rgba(255,255,255,0.35)` : 'none' }}>
+      style={{ width: 26, height: 26, borderRadius: 8, background: top ? MEDAL[i] : 'var(--bg)', color: top ? '#fff' : 'var(--ink-3)', fontSize: top ? 13 : 12, boxShadow: top ? `0 2px 8px ${MEDAL[i]}66, inset 0 0 0 2px rgba(255,255,255,0.35)` : 'none' }}>
       {i + 1}
     </div>
   );
@@ -46,8 +46,8 @@ function StatsTable({ rows }: { rows: BoardEntry[] }) {
     const won = (h: { round: string; playerId: string }) => playerRoundPoints(h.playerId, h.round as RoundId) > 0;
     return r.captainHistory.filter(won).length + r.viceCaptainHistory.filter(won).length;
   };
-  const numTh = 'px-2 py-2 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wide';
-  const numTd = 'px-1.5 py-1.5 text-center font-num text-sm font-bold';
+  const numTh = 'px-1 py-2 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-wide';
+  const numTd = 'px-1 py-1.5 text-center font-num text-[13px] sm:text-sm font-bold';
 
   return (
     <>
@@ -57,13 +57,13 @@ function StatsTable({ rows }: { rows: BoardEntry[] }) {
           <table className="w-full text-sm border-collapse bg-white">
             <thead>
               <tr style={{ background: 'var(--raised)', borderBottom: '1px solid rgba(10,27,51,0.1)' }}>
-                <th className="px-2 py-2 text-center text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-3)', width: 40 }}>#</th>
-                <th className="px-2 py-2 text-left text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-2)' }}>Team</th>
+                <th className="px-1 py-2 text-center text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-3)', width: 30 }}>#</th>
+                <th className="px-1 py-2 text-left text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--ink-2)' }}>Team</th>
                 <th className={numTh} style={{ color: 'var(--ember)' }} title="Players eliminated">Out</th>
                 <th className={numTh} style={{ color: 'var(--ink-2)' }} title="Players purchased">Buys</th>
-                <th className={numTh} style={{ color: 'var(--gold)' }} title="Correct captain + vice-captain picks">C+V ✓</th>
-                <th className="px-2 py-2 text-right text-[10px] sm:text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--green)' }}>Budget</th>
-                <th className="px-2 sm:px-3 py-2 text-right text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--blue)' }}>Pts</th>
+                <th className={numTh} style={{ color: 'var(--gold)' }} title="Correct captain + vice-captain picks">C+V</th>
+                <th className="px-1 py-2 text-right text-[10px] sm:text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--green)' }}><span className="sm:hidden">$</span><span className="hidden sm:inline">Budget</span></th>
+                <th className="px-1 sm:px-3 py-2 text-right text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--blue)' }}>Pts</th>
               </tr>
             </thead>
             <tbody>
@@ -81,24 +81,24 @@ function StatsTable({ rows }: { rows: BoardEntry[] }) {
                   onMouseEnter={e => { if (!row.you) (e.currentTarget as HTMLElement).style.background = 'rgba(10,27,51,0.02)'; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = row.you ? 'rgba(14,111,196,0.10)' : 'transparent'; }}
                 >
-                  <td className="px-2 py-1.5"><div className="flex justify-center"><RankBadge i={i} /></div></td>
-                  <td className="px-2 py-1.5">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="w-7 h-7 rounded-lg flex items-center justify-center text-sm shrink-0" style={{ background: `${row.color}1a`, border: `1px solid ${row.color}55` }}>{row.emblem}</span>
+                  <td className="px-1 py-1.5"><div className="flex justify-center"><RankBadge i={i} /></div></td>
+                  <td className="px-1 py-1.5">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="w-6 h-6 rounded-lg flex items-center justify-center text-xs shrink-0" style={{ background: `${row.color}1a`, border: `1px solid ${row.color}55` }}>{row.emblem}</span>
                       <div className="min-w-0 leading-tight">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-bold truncate" style={{ color: 'var(--ink)' }}>{row.name}</span>
-                          {row.you && <span className="text-[9px] font-bold px-1 py-0.5 rounded shrink-0" style={{ background: 'var(--blue)', color: '#fff' }}>YOU</span>}
+                        <div className="flex items-center gap-1">
+                          <span className="font-bold text-[13px] sm:text-sm truncate" style={{ color: 'var(--ink)' }}>{row.name}</span>
+                          {row.you && <span className="text-[8px] font-bold px-1 py-0.5 rounded shrink-0" style={{ background: 'var(--blue)', color: '#fff' }}>YOU</span>}
                         </div>
-                        <div className="text-[11px] truncate" style={{ color: 'var(--ink-3)' }}>{row.manager}</div>
+                        <div className="text-[10px] truncate" style={{ color: 'var(--ink-3)' }}>{row.manager}</div>
                       </div>
                     </div>
                   </td>
                   <td className={numTd} style={{ color: eliminated(row) > 0 ? 'var(--ember)' : 'var(--ink-3)' }}>{eliminated(row)}</td>
                   <td className={numTd} style={{ color: row.transfers.length > 0 ? 'var(--ink)' : 'var(--ink-3)' }}>{row.transfers.length}</td>
                   <td className={numTd} style={{ color: correctLeaders(row) > 0 ? 'var(--gold)' : 'var(--ink-3)' }}>{pending ? '–' : correctLeaders(row)}</td>
-                  <td className="px-2 py-1.5 text-right font-num text-[13px] font-semibold whitespace-nowrap" style={{ color: 'var(--green)' }}>${row.budget.toFixed(1)}M</td>
-                  <td className="px-2 sm:px-3 py-1.5 text-right font-num text-lg font-extrabold whitespace-nowrap" style={{ color: 'var(--blue)' }}>{pts(row.score)}</td>
+                  <td className="px-1 py-1.5 text-right font-num text-[12px] sm:text-[13px] font-semibold whitespace-nowrap" style={{ color: 'var(--green)' }}><span className="sm:hidden">${Math.round(row.budget)}</span><span className="hidden sm:inline">${row.budget.toFixed(1)}M</span></td>
+                  <td className="px-1 sm:px-3 py-1.5 text-right font-num text-base sm:text-lg font-extrabold whitespace-nowrap" style={{ color: 'var(--blue)' }}>{pts(row.score)}</td>
                 </tr>
               ))}
             </tbody>
