@@ -1,13 +1,12 @@
-import { useState, useMemo } from 'react';
-import { useGameStore, eliminatedSquad, substitutionCandidates } from '../store/gameStore';
+import { useMemo } from 'react';
+import { useGameStore } from '../store/gameStore';
 import { useLiveStore } from '../store/liveStore';
-import { ROUNDS, getPlayerExit, isPlayerOut, transfersOpen, roundPlayable, roundHasResult, liveScoreBreakdown, liveBudget } from '../data/tournament';
+import { ROUNDS, isPlayerOut, roundPlayable, roundHasResult, liveScoreBreakdown } from '../data/tournament';
 import { getPlayer } from '../data/players';
 import { lastName } from '../data/format';
 import type { RoundId } from '../types';
 import PlayerAvatar from '../components/PlayerAvatar';
 import BracketTree from '../components/BracketTree';
-import { getTier, TIER_META } from '../data/tiers';
 import { TOURNAMENT } from '../data/tournamentConfig';
 import { toast } from '../store/toastStore';
 
@@ -156,10 +155,8 @@ export default function TournamentPage() {
         </div>
       )}
 
-      {/* ── Transfers ── */}
-      <TransfersPanel />
-
       {/* ── The live tournament draw (empty until pairings publish) ── */}
+      {/* Transfers live on the Market page now, not here. */}
       <BracketTree />
     </div>
   );
@@ -177,103 +174,5 @@ function LeaderChip({ role, id }: { role: 'C' | 'V'; id: string | null }) {
       <span className="text-[12px] font-bold" style={{ color: 'var(--ink)' }}>{lastName(p.name)}</span>
       <span className="text-[9px] font-extrabold px-1 py-0.5 rounded" style={{ background: color, color: '#fff' }}>{isC ? 'C ×2' : 'V ×1.5'}</span>
     </span>
-  );
-}
-
-function TransfersPanel() {
-  const { myTeam, initialSquad, transfers, currentRoundIndex, phase, replacePlayer } = useGameStore();
-  const [openFor, setOpenFor] = useState<string | null>(null);
-  const budget = liveBudget(initialSquad, transfers, myTeam); // live money (incl. eliminated-player refunds)
-
-  if (phase !== 'round_complete' && phase !== 'pre_round') return null;
-  const outs = eliminatedSquad(myTeam);
-  if (outs.length === 0) return null;
-
-  // Transfer window closes after the semi-finals.
-  if (!transfersOpen(currentRoundIndex)) {
-    return (
-      <div className="mb-6 rounded-2xl px-5 py-4 flex items-center gap-3" style={{ background: 'rgba(10,27,51,0.03)', border: '1px solid rgba(10,27,51,0.1)' }}>
-        <div className="text-xl">🔒</div>
-        <div>
-          <div className="text-sm font-bold" style={{ color: 'var(--ink)' }}>Transfer window closed</div>
-          <div className="text-xs" style={{ color: 'var(--ink-2)' }}>No purchases after the semi-finals — your squad is locked for the final.</div>
-        </div>
-      </div>
-    );
-  }
-
-  const candidates = substitutionCandidates(myTeam, budget);
-  const nextRound = ROUNDS[currentRoundIndex]?.label ?? 'the next round';
-
-  return (
-    <div className="mb-6 rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid rgba(217,154,0,0.35)' }}>
-      <div className="px-5 py-3 flex items-center justify-between" style={{ background: 'rgba(217,154,0,0.08)', borderBottom: '1px solid rgba(217,154,0,0.2)' }}>
-        <div>
-          <div className="text-sm font-bold" style={{ color: 'var(--ink)' }}>Transfers <span className="font-normal" style={{ color: 'var(--ink-3)' }}>· window closes after the SF</span></div>
-          <div className="text-xs" style={{ color: 'var(--ink-2)' }}>Replace an eliminated player with anyone still in the draw · scores from {nextRound}</div>
-        </div>
-        <div className="text-right shrink-0">
-          <div className="font-num text-lg font-extrabold" style={{ color: 'var(--gold)' }}>${budget.toFixed(1)}M</div>
-          <div className="text-[10px]" style={{ color: 'var(--ink-3)' }}>available</div>
-        </div>
-      </div>
-
-      <div className="p-3 space-y-2">
-        {outs.map(id => {
-          const p = getPlayer(id);
-          const exit = getPlayerExit(id);
-          const isOpen = openFor === id;
-          return (
-            <div key={id} className="rounded-xl" style={{ background: 'rgba(10,27,51,0.03)', border: '1px solid rgba(10,27,51,0.06)' }}>
-              <div className="flex items-center gap-3 px-3 py-2.5">
-                <PlayerAvatar playerId={id} name={p.name} size="sm" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold truncate" style={{ color: 'var(--ink)' }}>{p.name}</div>
-                  <div className="text-[11px]" style={{ color: 'var(--ember)' }}>OUT {exit} · <span className="font-num" style={{ color: 'var(--ink-2)' }}>${p.price}M spent</span></div>
-                </div>
-                <button
-                  onClick={() => setOpenFor(isOpen ? null : id)}
-                  className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg"
-                  style={{ background: isOpen ? 'rgba(10,27,51,0.06)' : 'var(--blue)', color: isOpen ? 'var(--ink-2)' : '#fff' }}
-                >
-                  {isOpen ? 'Cancel' : 'Replace →'}
-                </button>
-              </div>
-
-              {isOpen && (
-                <div className="px-3 pb-3 fade-in">
-                  {candidates.length === 0 ? (
-                    <div className="text-xs text-center py-3" style={{ color: 'var(--ink-3)' }}>
-                      No affordable replacements left in the draw (budget ${budget.toFixed(1)}M).
-                    </div>
-                  ) : (
-                    <div className="max-h-64 overflow-y-auto space-y-1 pt-1">
-                      {candidates.map(c => {
-                        const tier = TIER_META[getTier(c.ranking)];
-                        return (
-                          <button
-                            key={c.id}
-                            onClick={() => { replacePlayer(id, c.id); setOpenFor(null); toast(`Transferred in ${c.name}`, 'good'); }}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all hover:brightness-[0.98]"
-                            style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.07)' }}
-                          >
-                            <PlayerAvatar playerId={c.id} name={c.name} size="sm" />
-                            <div className="flex-1 min-w-0">
-                              <div className="text-xs font-semibold truncate" style={{ color: 'var(--ink)' }}>{c.name}</div>
-                              <div className="text-[10px]" style={{ color: tier.color }}>{getTier(c.ranking)} · #{c.ranking}</div>
-                            </div>
-                            <div className="font-num text-sm font-bold shrink-0" style={{ color: 'var(--blue)' }}>${c.price}M</div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
   );
 }
