@@ -203,24 +203,42 @@ export function parseFullDraw(
   // page as one bracket over the tournament's own rounds.
   if (sections.length === 0) return parseBracket(wikitext, scoredRounds, resolve, includeIncomplete);
 
-  const perRound: Partial<Record<RoundId, { m: LiveMatch; winner: string | undefined }[]>> = {};
+  const perRound: Partial<Record<RoundId, { slot: number; winner: string | undefined; p1Id: string; p2Id: string }[]>> = {};
   const meta: DrawMetaMap = {};
-  const collect = (text: string, roundIds: RoundId[]) => {
+  // STABLE global slot. Each 16-team section contributes a FIXED number of pairings to each round,
+  // at fixed positions (R64→4 per section, R32→2, R16→1; the finals is one bracket). We number by
+  // structural position — sectionIndex × pairsPerSection + the pairing's slot within its section —
+  // NOT by densely packing only the pairings that happen to be complete. This makes a given physical
+  // match keep the SAME (round, slot) across ingest runs as the draw fills in. Without it, a match's
+  // slot shifts every time an earlier match completes, and the never-regress merge in buildMatchRows
+  // would carry an already-recorded winner onto a DIFFERENT pairing — breaking the winner-in-pairing
+  // invariant (which freezes the ingest) and, worse, silently mis-scoring.
+  const pairsPerSection = (roundIds: RoundId[], roundId: RoundId) => 2 ** (roundIds.length - 1 - roundIds.indexOf(roundId));
+  const roundTotal: Partial<Record<RoundId, number>> = {};
+  const noteTotals = (roundIds: RoundId[], sectionCount: number) => {
+    for (const r of roundIds) roundTotal[r] = sectionCount * pairsPerSection(roundIds, r);
+  };
+  const collect = (text: string, roundIds: RoundId[], sectionIdx: number) => {
     const { draw, results, meta: sectionMeta } = parseBracket(text, roundIds, resolve, includeIncomplete);
     Object.assign(meta, sectionMeta);
-    for (const m of draw) (perRound[m.round] ??= []).push({ m, winner: results[matchKey(m.round, m.slot)] });
+    for (const m of draw) {
+      const slot = sectionIdx * pairsPerSection(roundIds, m.round) + m.slot;
+      (perRound[m.round] ??= []).push({ slot, winner: results[matchKey(m.round, m.slot)], p1Id: m.p1Id, p2Id: m.p2Id });
+    }
   };
-  for (const s of sections) collect(s.text, SECTION_ROUNDS);
-  if (finals) collect(finals.text, FINALS_ROUNDS);
+  sections.forEach((s, i) => collect(s.text, SECTION_ROUNDS, i));
+  noteTotals(SECTION_ROUNDS, sections.length);
+  if (finals) { collect(finals.text, FINALS_ROUNDS, 0); noteTotals(FINALS_ROUNDS, 1); }
 
   const draw: LiveMatch[] = [];
   const results: LiveResults = {};
   for (const round of scoredRounds) {
-    const list = perRound[round] ?? [];
-    list.forEach((item, slot) => {
-      draw.push({ round, slot, half: slot < list.length / 2 ? 'top' : 'bottom', p1Id: item.m.p1Id, p2Id: item.m.p2Id });
-      if (item.winner) results[matchKey(round, slot)] = item.winner;
-    });
+    const list = (perRound[round] ?? []).slice().sort((a, b) => a.slot - b.slot);
+    const total = roundTotal[round] ?? list.length; // structural count → a stable top/bottom split
+    for (const item of list) {
+      draw.push({ round, slot: item.slot, half: item.slot < total / 2 ? 'top' : 'bottom', p1Id: item.p1Id, p2Id: item.p2Id });
+      if (item.winner) results[matchKey(round, item.slot)] = item.winner;
+    }
   }
   return { draw, results, meta };
 }
