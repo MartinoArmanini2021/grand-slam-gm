@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { GamePhase, RoundId, RoundScore, BudgetReturn, Transfer } from '../types';
 import {
   ROUNDS, getMatchesForRound, isPlayerOut, BUDGET_RETURN_RATES, winPoints, transfersOpen, roundPlayable, roundHasResult, liveCurrentRound,
-  tournamentStarted, isEliminated, liveBudget,
+  tournamentStarted, isEliminated, liveBudget, playerRefund,
 } from '../data/tournament';
 import { ACTIVE_TOURNAMENT_ID } from '../data/tournamentConfig';
 import { track } from '../data/analytics';
@@ -76,6 +76,7 @@ export function sanitizeState(s: Partial<GameStore>): void {
   if (Array.isArray(s.myTeam)) s.myTeam = s.myTeam.filter(id => ids.has(id));
   if (Array.isArray(s.initialSquad)) s.initialSquad = s.initialSquad.filter(id => ids.has(id));
   if (Array.isArray(s.transfers)) s.transfers = s.transfers.filter(t => ids.has(t.in) && ids.has(t.out));
+  s.cashedIn = Array.isArray(s.cashedIn) ? s.cashedIn.filter(id => ids.has(id)) : [];
   if (s.captain && !ids.has(s.captain)) s.captain = null;
   if (s.viceCaptain && !ids.has(s.viceCaptain)) s.viceCaptain = null;
   if (s.viewPlayer && !ids.has(s.viewPlayer)) s.viewPlayer = '';
@@ -112,6 +113,7 @@ interface GameStore {
   myTeam: string[];
   initialSquad: string[]; // the squad as drafted (before any transfers) — for history
   transfers: Transfer[];  // mid-tournament replacements you've made, in order
+  cashedIn: string[];     // eliminated players you've CASHED IN — money is manual, credited on cash-in
   captain: string | null;
   viceCaptain: string | null;
   captainHistory: { round: RoundId; playerId: string }[];
@@ -134,6 +136,8 @@ interface GameStore {
   ensureLeaders: () => void;
   finalizeDraft: () => void;
   replacePlayer: (oldId: string, newId: string) => void;
+  cashInPlayer: (id: string) => void; // claim an eliminated player's refund (removes them from the squad)
+  buyPlayer: (id: string) => void;    // buy a replacement into an open (cashed-in) slot — any tier
   playNextRound: () => void;
   continueToNextRound: () => void;
   setActiveTab: (tab: GameStore['activeTab']) => void;
@@ -154,6 +158,7 @@ export const useGameStore = create<GameStore>()(
       myTeam: [],
       initialSquad: [],
       transfers: [],
+      cashedIn: [],
       captain: null,
       viceCaptain: null,
       captainHistory: [],
@@ -274,43 +279,86 @@ export const useGameStore = create<GameStore>()(
         track('squad_locked', { size: myTeam.length, spend: STARTING_BUDGET - get().budget });
       },
 
-      // Mid-tournament substitution: swap an eliminated squad member for a
-      // still-alive player you can now afford (with the returned budget).
+      // Mid-tournament substitution (atomic, used by the court): cash an eliminated player IN and
+      // buy a still-alive replacement in one tap. Any tier — the money is the only limit.
       replacePlayer: (oldId, newId) => {
-        const { myTeam, initialSquad, transfers, captain, viceCaptain, currentRoundIndex, phase } = get();
+        const { myTeam, initialSquad, transfers, cashedIn, captain, viceCaptain, currentRoundIndex, phase } = get();
         if (phase === 'finished' || phase === 'draft') return;
-        if (!transfersOpen(currentRoundIndex)) return; // window shut after the QF
+        if (!transfersOpen(currentRoundIndex)) return; // window shut after the SF
         if (!myTeam.includes(oldId) || myTeam.includes(newId)) return;
-        // LIVE rule: you may only swap OUT a player who is actually eliminated, and only IN a
-        // still-alive one — judged off the live results (isEliminated), NOT the app's round index,
-        // which is stuck at R64 while the round plays out.
+        // LIVE rule: swap OUT only an eliminated player, IN only a still-alive one — off the live
+        // results (isEliminated), not the app's round index (frozen at R64 while the round plays).
         if (!isEliminated(oldId)) return;
         if (isEliminated(newId)) return;
         const player = findPlayer(newId);
         if (!player) return;
-        const available = liveBudget(initialSquad, transfers, myTeam); // starting − spent + refunds
-        if (available < player.price) return; // can't afford
-        // Tier quota on the resulting squad — a swap must never create a 3rd Platinum (etc.).
-        if (isTierFull(getTier(player.ranking), myTeam.filter(id => id !== oldId))) return;
-        // Log against the LIVE current round (deepest round with a result), NOT currentRoundIndex,
-        // which is frozen at 0 during a live event. The newcomer first scores the NEXT round —
-        // never retroactively, since by construction that round has no results yet. This keeps
-        // transfers working across every round (not just R64) and matches the server's P6 check.
+        // Cashing oldId frees its refund; that plus the current budget must cover newId (any tier).
+        const newCashed = cashedIn.includes(oldId) ? cashedIn : [...cashedIn, oldId];
+        const available = liveBudget(initialSquad, transfers, myTeam, newCashed);
+        if (available < player.price) return; // can't afford, even with the refund
+        // Log against the LIVE current round (deepest round with a result), NOT currentRoundIndex.
+        // The newcomer first scores the NEXT round — never retroactively. Refuse when only the
+        // final is left (squad locks for it), matching the server's P6 check.
         const round = liveCurrentRound() ?? ROUNDS[0].id;
         const firstScored = ROUNDS[ROUNDS.findIndex(r => r.id === round) + 1]?.id;
-        // Refuse once the squad is locked for the final: no upcoming round to score, or the only
-        // one left is the final itself (mirrors the post-SF freeze the old index-based rule gave).
         if (!firstScored || firstScored === ROUNDS[ROUNDS.length - 1].id) return;
         const newTeam = myTeam.map(id => (id === oldId ? newId : id));
         const newTransfers = [...transfers, { out: oldId, in: newId, round }];
         set({
           myTeam: newTeam,
-          budget: liveBudget(initialSquad, newTransfers, newTeam), // keep the stored budget in sync with the live figure
+          cashedIn: newCashed,
+          budget: liveBudget(initialSquad, newTransfers, newTeam, newCashed),
           captain: captain === oldId ? null : captain,
           viceCaptain: viceCaptain === oldId ? null : viceCaptain,
           transfers: newTransfers,
         });
         track('transfer_made', { out: oldId, in: newId, round });
+      },
+
+      // CASH IN an eliminated squad player: claim its elimination refund NOW (money is manual, not
+      // auto-credited) and remove it from the active squad, leaving an open slot + money to spend.
+      cashInPlayer: (id) => {
+        const { myTeam, initialSquad, transfers, cashedIn, captain, viceCaptain, currentRoundIndex, phase } = get();
+        if (phase === 'finished' || phase === 'draft') return;
+        if (!transfersOpen(currentRoundIndex)) return;   // window shut after the SF
+        if (!myTeam.includes(id)) return;                // must currently hold them
+        if (!isEliminated(id)) return;                   // only eliminated players are cashable
+        if (cashedIn.includes(id)) return;               // already cashed
+        const newTeam = myTeam.filter(pid => pid !== id); // they leave the active squad
+        const newCashed = [...cashedIn, id];
+        const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
+        set({
+          myTeam: newTeam,
+          cashedIn: newCashed,
+          budget: liveBudget(initialSquad, transfers, newTeam, newCashed),
+          // A cashed leader vacates the armband; re-field two on-court leaders from who's left.
+          ...pickLeaders(newTeam, captain === id ? null : captain, viceCaptain === id ? null : viceCaptain, revealed),
+        });
+        track('cash_in', { player: id, amount: playerRefund(id) });
+      },
+
+      // BUY a still-alive player into an open slot (one freed by a cash-in). Any tier; the budget
+      // is the only limit. Logged as a transfer against the live round so it scores from next round.
+      buyPlayer: (id) => {
+        const { myTeam, initialSquad, transfers, cashedIn, currentRoundIndex, phase } = get();
+        if (phase === 'finished' || phase === 'draft') return;
+        if (!transfersOpen(currentRoundIndex)) return;
+        if (myTeam.includes(id)) return;                 // already own them
+        const player = findPlayer(id);
+        if (!player) return;
+        if (isEliminated(id)) return;                    // can't buy someone already out
+        // Need an open slot = a cashed-in player not yet backfilled by a purchase.
+        const openSlots = cashedIn.filter(c => !transfers.some(t => t.out === c));
+        if (openSlots.length === 0) return;
+        if (liveBudget(initialSquad, transfers, myTeam, cashedIn) < player.price) return; // can't afford
+        const round = liveCurrentRound() ?? ROUNDS[0].id;
+        const firstScored = ROUNDS[ROUNDS.findIndex(r => r.id === round) + 1]?.id;
+        if (!firstScored || firstScored === ROUNDS[ROUNDS.length - 1].id) return; // final locked
+        const out = openSlots[0]; // backfill the oldest open slot (which cashed player is arbitrary)
+        const newTransfers = [...transfers, { out, in: id, round }];
+        const newTeam = [...myTeam, id];
+        set({ myTeam: newTeam, transfers: newTransfers, budget: liveBudget(initialSquad, newTransfers, newTeam, cashedIn) });
+        track('transfer_made', { out, in: id, round });
       },
 
       playNextRound: () => {
@@ -420,6 +468,7 @@ export const useGameStore = create<GameStore>()(
         myTeam: [],
         initialSquad: [],
         transfers: [],
+        cashedIn: [],
         captain: null,
         viceCaptain: null,
         captainHistory: [],
@@ -446,7 +495,7 @@ export const useGameStore = create<GameStore>()(
       // context we can't safely restore — so sanitizeState coerces a persisted team/player tab
       // back to Home on reload (see below).
       partialize: (s) => ({
-        phase: s.phase, myTeam: s.myTeam, initialSquad: s.initialSquad, transfers: s.transfers,
+        phase: s.phase, myTeam: s.myTeam, initialSquad: s.initialSquad, transfers: s.transfers, cashedIn: s.cashedIn,
         captain: s.captain, viceCaptain: s.viceCaptain,
         captainHistory: s.captainHistory, viceCaptainHistory: s.viceCaptainHistory, budget: s.budget,
         budgetReturns: s.budgetReturns, currentRoundIndex: s.currentRoundIndex,

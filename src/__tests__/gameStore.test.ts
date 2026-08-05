@@ -395,7 +395,7 @@ describe('economy integrity (regression)', () => {
     expect(store().myTeam).toEqual([]);
   });
 
-  it('replacePlayer never creates a 3rd Platinum, but allows a same-tier swap', () => {
+  it('replacePlayer allows ANY tier now — the 2·3·5 quota no longer constrains live swaps', () => {
     store().addPlayer(roles.champion); // Platinum
     store().addPlayer(roles.qfExit);   // Platinum
     store().addPlayer(roles.r32Exit);  // Gold, exits R32
@@ -403,14 +403,12 @@ describe('economy integrity (regression)', () => {
     play(roles.champion); // R64
     play(roles.champion); // R32 → r32Exit eliminated
     expect(eliminatedSquad(store().myTeam)).toContain(roles.r32Exit);
-    // sfExit (Platinum) is alive + affordable, but the swap would be a 3rd Platinum
-    store().replacePlayer(roles.r32Exit, roles.sfExit);
-    expect(store().myTeam).toContain(roles.r32Exit);       // rejected → unchanged
-    expect(store().myTeam).not.toContain(roles.sfExit);
-    // a same-tier Gold→Gold swap to an alive Gold is allowed
-    store().replacePlayer(roles.r32Exit, roles.r16Exit); // Gold, alive past R32
-    expect(store().myTeam).toContain(roles.r16Exit);
+    // Swap the eliminated Gold for a still-alive, cheap SILVER — a different tier, allowed now.
+    store().replacePlayer(roles.r32Exit, roles.underdog); // Silver ($10), alive to the SF
+    expect(store().myTeam).toContain(roles.underdog);
     expect(store().myTeam).not.toContain(roles.r32Exit);
+    // The refund funded it: budget stays ≥ 0 and reflects the cash-in.
+    expect(store().budget).toBeGreaterThanOrEqual(0);
   });
 });
 

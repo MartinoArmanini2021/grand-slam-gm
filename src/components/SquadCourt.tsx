@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useGameStore, substitutionCandidates } from '../store/gameStore';
 import { findPlayer } from '../data/players';
-import { getPlayerExit, isPlayerOut, isEliminated, liveBudget, ROUNDS, transfersOpen, roundHasResult } from '../data/tournament';
-import { lastName } from '../data/format';
+import { getPlayerExit, isPlayerOut, isEliminated, liveBudget, playerRefund, ROUNDS, transfersOpen, roundHasResult } from '../data/tournament';
+import { lastName, round1 } from '../data/format';
 import { SURFACE, TOURNAMENT } from '../data/tournamentConfig';
 import { SQUAD_SIZE } from '../data/squadRules';
 import { useEscapeToClose } from '../hooks';
@@ -24,8 +24,10 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
   onTeamClick?: () => void; // makes the team label a link (e.g. to your team page)
   fluid?: boolean;         // fill the container width instead of the 860px cap
 } = {}) {
-  const { myTeam, captain, viceCaptain, captainHistory, viceCaptainHistory, initialSquad, transfers, currentRoundIndex, phase, openPlayer, removePlayer, replacePlayer, setCaptain, setViceCaptain, benchLeader } = useGameStore();
-  const budget = liveBudget(initialSquad, transfers, myTeam); // live money: includes refunds for eliminated players
+  const { myTeam, captain, viceCaptain, captainHistory, viceCaptainHistory, initialSquad, transfers, cashedIn, currentRoundIndex, phase, openPlayer, removePlayer, replacePlayer, setCaptain, setViceCaptain, benchLeader } = useGameStore();
+  const budget = liveBudget(initialSquad, transfers, myTeam, cashedIn); // live money: refunds are credited on cash-in
+  // Replacing an eliminated player cashes them in, so its refund is spendable on the replacement.
+  const budgetFor = (id: string) => round1(budget + playerRefund(id));
   const [pickerOpen, setPickerOpen] = useState(false);
   const [manageId, setManageId] = useState<string | null>(null);
   const [subFor, setSubFor] = useState<string | null>(null); // eliminated player being transferred out
@@ -335,7 +337,7 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
                 ) : (() => {
                   const out = isEliminated(id); // live elimination, not the stuck round index
                   const windowOpen = transfersOpen(currentRoundIndex);
-                  const hasSubs = out && windowOpen && substitutionCandidates(myTeam, budget).length > 0;
+                  const hasSubs = out && windowOpen && substitutionCandidates(myTeam, budgetFor(id)).length > 0;
                   if (hasSubs) return (
                     <button
                       onClick={() => { setManageId(null); setSubFor(id); }}
@@ -371,7 +373,8 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
       {subFor && (() => {
         const outP = findPlayer(subFor);
         if (!outP) return null;
-        const candidates = substitutionCandidates(myTeam, budget);
+        const spend = budgetFor(subFor); // budget once subFor is cashed in
+        const candidates = substitutionCandidates(myTeam, spend);
         return (
           <div
             onClick={() => setSubFor(null)}
@@ -383,7 +386,7 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
                   <div className="min-w-0">
                     <div className="text-white font-extrabold text-base">Replace {lastName(outP.name)}</div>
                     <div className="text-xs" style={{ color: 'var(--on-navy)' }}>
-                      <span className="font-num">${budget.toFixed(1)}M</span> to spend · still-alive players only
+                      <span className="font-num">${spend.toFixed(1)}M</span> to spend · still-alive players only
                     </div>
                   </div>
                   <button onClick={() => setSubFor(null)} className="text-white text-sm font-bold px-3 py-1.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.15)' }}>Cancel</button>

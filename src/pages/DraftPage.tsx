@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useLiveStore } from '../store/liveStore';
 import { PLAYERS, getPlayer } from '../data/players';
-import { ROUNDS, isPlayerOut, getPlayerExit, tournamentStarted, isEliminated, liveBudget, playerRefund, transfersOpen } from '../data/tournament';
+import { ROUNDS, isPlayerOut, getPlayerExit, tournamentStarted, isEliminated, liveBudget, playerRefund, cashedInTotal, transfersOpen } from '../data/tournament';
 import { getTier, TIER_META, type Tier } from '../data/tiers';
 import { tierCounts, squadShortfall, isSquadValid, isTierFull, TIER_MINIMUMS, SQUAD_SIZE, STARTING_BUDGET } from '../data/squadRules';
 import PlayerAvatar from '../components/PlayerAvatar';
@@ -26,15 +26,13 @@ const SURF = TOURNAMENT.surface;
 const SORT_LABEL: Record<SortKey, string> = { ranking: '# Rank', surface: `${SURFACE.label} %`, price: '$ Price' };
 
 export default function DraftPage() {
-  const { myTeam, captain, viceCaptain, budget, phase, currentRoundIndex, initialSquad, transfers, removePlayer, replacePlayer, setCaptain, setViceCaptain, finalizeDraft, openPlayer, setActiveTab } = useGameStore();
+  const { myTeam, captain, viceCaptain, budget, phase, currentRoundIndex, initialSquad, transfers, cashedIn, removePlayer, cashInPlayer, buyPlayer, setCaptain, setViceCaptain, finalizeDraft, openPlayer, setActiveTab } = useGameStore();
   const [sort, setSort] = useState<SortKey>('ranking');
   const [search, setSearch] = useState('');
   const [tierFilter, setTierFilter] = useState<Tier | null>(null);
   const [confirm, setConfirm] = useState<Player | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [showLocked, setShowLocked] = useState(false);
-  // The eliminated squad player currently being transferred OUT (live tournament only).
-  const [transferOut, setTransferOut] = useState<string | null>(null);
   // "Watch the players" hint — shown atop the list until the user dismisses it (persisted),
   // so newcomers who don't know the field learn about the ▶ video links.
   const [videoHint, setVideoHint] = useState(() => { try { return localStorage.getItem('gsgm-video-hint') !== 'off'; } catch { return true; } });
@@ -54,40 +52,33 @@ export default function DraftPage() {
   const valid = isSquadValid(myTeam);
   const shortfall = squadShortfall(myTeam);
 
-  // LIVE money: starting − spent + refunds for every eliminated player held. During the draft
-  // it equals the plain draft budget. This is what the whole page spends against once live.
-  const liveBud = useMemo(() => liveBudget(initialSquad, transfers, myTeam),
-    [initialSquad, transfers, myTeam, draw, results]);
+  // LIVE money: starting − everything ever bought + refunds you've CASHED IN (manual, not auto).
+  const liveBud = useMemo(() => liveBudget(initialSquad, transfers, myTeam, cashedIn),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [initialSquad, transfers, myTeam, cashedIn, draw, results]);
   const displayBudget = live ? liveBud : budget;
-  // Your eliminated players + the money each one handed back (live only).
-  const outs = useMemo(() => (live ? myTeam.filter(id => isEliminated(id)) : []),
+  // Eliminated players STILL in your active squad → ready to Cash In (money not claimed yet).
+  const cashable = useMemo(() => (live ? myTeam.filter(id => isEliminated(id)) : []),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [live, myTeam, draw, results]);
-  const totalBack = useMemo(() => outs.reduce((s, id) => s + playerRefund(id), 0), [outs]);
-  // While replacing an eliminated player, only same-tier players keep the 2·3·5 quota valid.
-  const outTier = transferOut ? getTier(getPlayer(transferOut).ranking) : null;
-
-  const beginTransfer = (id: string) => { setTransferOut(id); setSearch(''); setTierFilter(null); };
-  const cancelTransfer = () => setTransferOut(null);
-  const doTransfer = (inId: string) => {
-    if (!transferOut) return;
-    const inName = getPlayer(inId).name;
-    replacePlayer(transferOut, inId);
-    setTransferOut(null);
-    toast(`Transferred in ${inName}`, 'good');
-  };
+  const cashedTotal = useMemo(() => cashedInTotal(cashedIn),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [cashedIn, draw, results]);
+  // Open slots = players cashed in but not yet backfilled by a purchase → you can buy that many.
+  const openCount = cashedIn.filter(c => !transfers.some(t => t.out === c)).length;
+  const canBuy = live && windowOpen && openCount > 0;
+  const cashPrompt = (id: string) => { const amt = playerRefund(id); cashInPlayer(id); toast(`Cashed in ${getPlayer(id).name} · +$${amt}M`, 'good'); };
+  const buyPrompt = (id: string) => { buyPlayer(id); toast(`Bought ${getPlayer(id).name}`, 'good'); };
 
   const sorted = useMemo(() => [...PLAYERS]
     .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()))
     .filter(p => !tierFilter || getTier(p.ranking) === tierFilter)
-    // When replacing an eliminated player, focus the table on the tier you can actually pick.
-    .filter(p => !outTier || getTier(p.ranking) === outTier)
     .sort((a, b) => {
       if (sort === 'ranking') return a.ranking - b.ranking;
       if (sort === 'surface') return b.surface[SURF] - a.surface[SURF];
       if (sort === 'price') return b.price - a.price || a.ranking - b.ranking; // dearest first; rank breaks ties
       return 0;
-    }), [sort, search, tierFilter, outTier]);
+    }), [sort, search, tierFilter]);
 
   const th = 'text-left px-2 py-2 text-[11px] font-bold uppercase tracking-wide';
 
@@ -108,9 +99,11 @@ export default function DraftPage() {
             ? `Build your squad — $${budget.toFixed(1)}M to spend · ${myTeam.length}/${TEAM_SIZE} picked`
             : !windowOpen
               ? 'Transfer window closed — your squad is locked for the final.'
-              : outs.length > 0
-                ? `Transfer time — $${liveBud.toFixed(1)}M to spend · ${outs.length} of your players eliminated. Swap them for players still in the draw.`
-                : `$${liveBud.toFixed(1)}M available — swap in a replacement the moment one of your players is knocked out.`}
+              : cashable.length > 0
+                ? `${cashable.length} eliminated player${cashable.length === 1 ? '' : 's'} to Cash In — claim the money, then buy any replacement you like.`
+                : openCount > 0
+                  ? `$${liveBud.toFixed(1)}M to spend · ${openCount} open slot${openCount === 1 ? '' : 's'} — buy a replacement of any tier below.`
+                  : `$${liveBud.toFixed(1)}M available — Cash In an eliminated player to free up money.`}
         </p>
         {phase === 'draft' && (
           <div className="max-w-xl">
@@ -124,35 +117,29 @@ export default function DraftPage() {
 
         {/* ── Left: Player table ── */}
         <div className="flex-1 min-w-0">
-          {/* Live transfer status banner (replaces the old "go to the Bracket page" note) */}
-          {live && transferOut && (() => {
-            const op = getPlayer(transferOut);
-            return (
-              <div className="rounded-2xl px-4 py-3 mb-3 flex items-center gap-3 text-sm fade-in" style={{ background: 'rgba(217,154,0,0.08)', border: '1px solid rgba(217,154,0,0.35)' }}>
-                <span className="text-lg">🔁</span>
-                <span className="flex-1 min-w-0" style={{ color: 'var(--ink)' }}>
-                  Replacing <b>{op.name}</b> — pick a <b style={{ color: TIER_META[outTier!].color }}>{outTier}</b> player you can afford (<span className="font-num" style={{ color: 'var(--blue)' }}>${liveBud.toFixed(1)}M</span>).
-                </span>
-                <button onClick={cancelTransfer} className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg" style={{ background: 'rgba(10,27,51,0.06)', color: 'var(--ink-2)' }}>Cancel</button>
-              </div>
-            );
-          })()}
-          {live && !transferOut && !windowOpen && (
+          {/* Live status: Cash In eliminated players → spend the money on any replacement */}
+          {live && !windowOpen && (
             <div className="rounded-2xl px-4 py-2.5 mb-3 flex items-center gap-2 text-sm" style={{ background: 'rgba(10,27,51,0.03)', border: '1px solid rgba(10,27,51,0.1)', color: 'var(--ink-2)' }}>
               <span>🔒</span>
-              <span>Transfer window closed — no swaps after the semi-finals. Your squad is locked for the final.</span>
+              <span>Transfer window closed — no changes after the semi-finals. Your squad is locked for the final.</span>
             </div>
           )}
-          {live && !transferOut && windowOpen && outs.length > 0 && (
+          {live && windowOpen && cashable.length > 0 && (
             <div className="rounded-2xl px-4 py-2.5 mb-3 flex items-center gap-2 text-sm" style={{ background: 'rgba(229,71,43,0.06)', border: '1px solid rgba(229,71,43,0.22)', color: 'var(--ink)' }}>
-              <span>👉</span>
-              <span>You have <b>{outs.length}</b> eliminated {outs.length === 1 ? 'player' : 'players'} and <b className="font-num" style={{ color: 'var(--gold)' }}>${totalBack.toFixed(1)}M</b> back to spend. Tap <b style={{ color: 'var(--ember)' }}>Replace</b> next to one in <b>My Squad</b> to swap it out.</span>
+              <span>💸</span>
+              <span><b>{cashable.length}</b> of your players {cashable.length === 1 ? 'is' : 'are'} out. Tap <b style={{ color: 'var(--ember)' }}>Cash In</b> next to {cashable.length === 1 ? 'it' : 'them'} in <b>My Squad</b> to claim the refund — then buy any replacement below.</span>
             </div>
           )}
-          {live && !transferOut && windowOpen && outs.length === 0 && (
+          {live && windowOpen && cashable.length === 0 && openCount > 0 && (
+            <div className="rounded-2xl px-4 py-2.5 mb-3 flex items-center gap-2 text-sm" style={{ background: 'rgba(217,154,0,0.07)', border: '1px solid rgba(217,154,0,0.3)', color: 'var(--ink)' }}>
+              <span>🛒</span>
+              <span>You have <b>{openCount}</b> open slot{openCount === 1 ? '' : 's'} and <b className="font-num" style={{ color: 'var(--blue)' }}>${liveBud.toFixed(1)}M</b> to spend. Tap <b style={{ color: 'var(--green)' }}>+ Buy</b> on any still-alive player — any tier.</span>
+            </div>
+          )}
+          {live && windowOpen && cashable.length === 0 && openCount === 0 && (
             <div className="rounded-2xl px-4 py-2.5 mb-3 flex items-center gap-2 text-sm" style={{ background: 'rgba(18,161,80,0.06)', border: '1px solid rgba(18,161,80,0.2)', color: 'var(--ink-2)' }}>
               <span>✅</span>
-              <span>All your players are still in the draw — no transfers needed yet.</span>
+              <span>All your players are still in the draw — nothing to cash in yet.</span>
             </div>
           )}
           {/* Controls */}
@@ -262,9 +249,9 @@ export default function DraftPage() {
                   const tier = getTier(player.ranking);
                   const tierFull = !isSelected && isTierFull(tier, myTeam); // quota met for this tier
                   const addable = !locked && !isSelected && !out && !full && canAfford && !tierFull;
-                  // Live transfer: a valid replacement for the selected eliminated player — same tier
-                  // (keeps the 2·3·5 quota) and affordable off the live budget.
-                  const transferable = live && !!transferOut && !isSelected && !out && tier === outTier && liveBud >= player.price;
+                  // Live: buyable into an open (cashed-in) slot — any tier, just has to be
+                  // still-alive, unowned and affordable off the live budget.
+                  const buyable = live && canBuy && !isSelected && !out && liveBud >= player.price;
                   const tierColor = TIER_META[tier].color;
 
                   return (
@@ -343,27 +330,27 @@ export default function DraftPage() {
                             : <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg whitespace-nowrap" style={{ background: 'rgba(18,161,80,0.1)', color: 'var(--green)' }}>In squad</span>
                         ) : !windowOpen ? (
                           <span className="text-[11px]" style={{ color: '#C7CFDA' }}>🔒</span>
-                        ) : transferOut ? (
-                          /* ── LIVE: replacing an eliminated player — same-tier, affordable picks light up ── */
+                        ) : out ? (
+                          <span className="text-[11px] font-semibold whitespace-nowrap" style={{ color: 'var(--ember)' }}>Out {getPlayerExit(player.id) ?? '1st rd'}</span>
+                        ) : canBuy ? (
+                          /* ── LIVE: an open slot exists — buy any still-alive, affordable player ── */
                           <button
-                            onClick={e => { e.stopPropagation(); if (transferable) doTransfer(player.id); }}
-                            disabled={!transferable}
-                            title={out ? 'Eliminated — cannot transfer in' : liveBud < player.price ? `Costs $${player.price}M — over your $${liveBud.toFixed(1)}M` : `Transfer in for ${getPlayer(transferOut).name}`}
+                            onClick={e => { e.stopPropagation(); if (buyable) buyPrompt(player.id); }}
+                            disabled={!buyable}
+                            title={liveBud < player.price ? `Costs $${player.price}M — over your $${liveBud.toFixed(1)}M` : `Buy ${player.name}`}
                             className="text-[11px] font-bold px-3 min-h-[36px] rounded-lg transition-transform active:scale-95 whitespace-nowrap"
                             style={{
-                              background: transferable ? 'var(--green)' : 'rgba(10,27,51,0.04)',
-                              border: `1px solid ${transferable ? 'var(--green)' : 'rgba(10,27,51,0.06)'}`,
-                              color: transferable ? '#fff' : 'var(--ink-3)',
-                              cursor: transferable ? 'pointer' : 'not-allowed',
+                              background: buyable ? 'var(--green)' : 'rgba(10,27,51,0.04)',
+                              border: `1px solid ${buyable ? 'var(--green)' : 'rgba(10,27,51,0.06)'}`,
+                              color: buyable ? '#fff' : 'var(--ink-3)',
+                              cursor: buyable ? 'pointer' : 'not-allowed',
                             }}
                           >
-                            {out ? 'Out' : liveBud < player.price ? 'Over $' : '+ Transfer in'}
+                            {liveBud < player.price ? 'Over $' : '+ Buy'}
                           </button>
                         ) : (
-                          /* ── LIVE: browse mode — start a swap from "My Squad" ── */
-                          out
-                            ? <span className="text-[11px] font-semibold whitespace-nowrap" style={{ color: 'var(--ember)' }}>Out {getPlayerExit(player.id) ?? '1st rd'}</span>
-                            : <span className="text-[11px]" style={{ color: 'var(--ink-3)' }}>Available</span>
+                          /* ── LIVE: no open slot — cash in an eliminated player first ── */
+                          <span className="text-[11px]" style={{ color: 'var(--ink-3)' }}>Available</span>
                         )}
                       </td>
                     </tr>
@@ -390,11 +377,11 @@ export default function DraftPage() {
               <div className="h-1 rounded-full" style={{ background: 'rgba(10,27,51,0.07)' }}>
                 <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(100, (displayBudget / STARTING_BUDGET) * 100)}%`, background: 'var(--blue)' }} />
               </div>
-              {/* Money handed back by eliminated players — the whole point of live transfers. */}
-              {live && totalBack > 0 && (
+              {/* Money you've CASHED IN so far (manual refunds), plus a nudge for money still unclaimed. */}
+              {live && cashedTotal > 0 && (
                 <div className="flex justify-between text-[11px] mt-1.5" style={{ color: 'var(--ink-2)' }}>
-                  <span>💸 Returned from {outs.length} eliminated</span>
-                  <span className="font-num font-semibold" style={{ color: 'var(--gold)' }}>+${totalBack.toFixed(1)}M</span>
+                  <span>💸 Cashed in {cashedIn.length} player{cashedIn.length === 1 ? '' : 's'}</span>
+                  <span className="font-num font-semibold" style={{ color: 'var(--gold)' }}>+${cashedTotal.toFixed(1)}M</span>
                 </div>
               )}
             </div>
@@ -425,11 +412,10 @@ export default function DraftPage() {
                 const p = getPlayer(id);
                 const isCap = captain === id;
                 const isVice = viceCaptain === id;
-                const dead = live && isEliminated(id);     // knocked out (live results)
-                const refund = dead ? playerRefund(id) : 0; // money handed back
-                const isTarget = transferOut === id;        // currently being swapped out
-                const rowBg = isTarget ? 'rgba(217,154,0,0.14)' : dead ? 'rgba(229,71,43,0.06)' : isCap ? 'rgba(217,154,0,0.07)' : isVice ? 'rgba(14,111,196,0.06)' : 'rgba(10,27,51,0.03)';
-                const rowBorder = isTarget ? 'rgba(217,154,0,0.5)' : dead ? 'rgba(229,71,43,0.22)' : isCap ? 'rgba(217,154,0,0.2)' : isVice ? 'rgba(14,111,196,0.2)' : 'rgba(10,27,51,0.06)';
+                const dead = live && isEliminated(id);     // knocked out (live results), not yet cashed
+                const refund = dead ? playerRefund(id) : 0; // money you'd claim by cashing in
+                const rowBg = dead ? 'rgba(229,71,43,0.06)' : isCap ? 'rgba(217,154,0,0.07)' : isVice ? 'rgba(14,111,196,0.06)' : 'rgba(10,27,51,0.03)';
+                const rowBorder = dead ? 'rgba(229,71,43,0.22)' : isCap ? 'rgba(217,154,0,0.2)' : isVice ? 'rgba(14,111,196,0.2)' : 'rgba(10,27,51,0.06)';
                 return (
                   <div key={id} className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: rowBg, border: `1px solid ${rowBorder}` }}>
                     <div style={{ opacity: dead ? 0.55 : 1 }}><PlayerAvatar playerId={id} name={p.name} size="sm" /></div>
@@ -454,20 +440,30 @@ export default function DraftPage() {
                         <button onClick={() => removePlayer(id)} title="Remove" aria-label={`Remove ${p.name}`} className="text-xs w-9 h-9 rounded-lg shrink-0 flex items-center justify-center transition-transform active:scale-90" style={{ background: 'rgba(10,27,51,0.04)', border: '1px solid rgba(10,27,51,0.06)', color: 'var(--ink-2)' }}>✕</button>
                       </>
                     )}
-                    {/* Live: swap out an eliminated player (drives the table into "pick a replacement" mode) */}
+                    {/* Live: CASH IN an eliminated player — claim the refund, freeing money + a slot */}
                     {live && dead && windowOpen && (
                       <button
-                        onClick={() => (isTarget ? cancelTransfer() : beginTransfer(id))}
-                        aria-label={isTarget ? `Cancel replacing ${p.name}` : `Replace ${p.name}`}
+                        onClick={() => cashPrompt(id)}
+                        aria-label={`Cash in ${p.name} for $${refund}M`}
                         className="text-[11px] font-bold px-2.5 h-9 rounded-lg shrink-0 transition-transform active:scale-90 whitespace-nowrap"
-                        style={{ background: isTarget ? 'rgba(10,27,51,0.06)' : 'var(--ember)', color: isTarget ? 'var(--ink-2)' : '#fff', border: `1px solid ${isTarget ? 'rgba(10,27,51,0.1)' : 'var(--ember)'}` }}
-                      >{isTarget ? 'Cancel' : 'Replace'}</button>
+                        style={{ background: 'var(--ember)', color: '#fff', border: '1px solid var(--ember)' }}
+                      >Cash In +${refund}M</button>
                     )}
                     {live && !dead && isCap && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0" style={{ background: 'var(--gold)', color: '#fff' }}>C</span>}
                     {live && !dead && isVice && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0" style={{ background: 'var(--blue)', color: '#fff' }}>V</span>}
                   </div>
                 );
               })}
+              {/* Live: open slots freed by cashing in — buy a replacement from the market */}
+              {live && Array.from({ length: openCount }).map((_, i) => (
+                <div key={`open${i}`} className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ border: '1px dashed rgba(217,154,0,0.55)', background: 'rgba(217,154,0,0.05)' }}>
+                  <span className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-base" style={{ background: 'rgba(217,154,0,0.14)' }}>🛒</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold" style={{ color: 'var(--ink)' }}>Open slot</div>
+                    <div className="text-[10px]" style={{ color: 'var(--ink-3)' }}>Tap <b style={{ color: 'var(--green)' }}>+ Buy</b> on any player →</div>
+                  </div>
+                </div>
+              ))}
               {!locked && Array.from({ length: TEAM_SIZE - myTeam.length }).map((_, i) => (
                 <button key={`e${i}`} onClick={() => setPickerOpen(true)} className="w-full px-3 py-2 rounded-xl text-xs text-center transition-colors hover:bg-black/[0.03] cursor-pointer" style={{ border: '1px dashed rgba(10,27,51,0.14)', color: 'var(--ink-3)' }}>+ Add a player</button>
               ))}
@@ -482,8 +478,10 @@ export default function DraftPage() {
             {live ? (
               !windowOpen ? (
                 <div className="w-full py-2.5 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(18,161,80,0.1)', color: 'var(--green)' }}>Locked for the final ✓</div>
-              ) : outs.length > 0 ? (
-                <div className="w-full py-2.5 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(217,154,0,0.1)', color: 'var(--gold)', border: '1px solid rgba(217,154,0,0.28)' }}>💸 ${totalBack.toFixed(1)}M back to transfer</div>
+              ) : cashable.length > 0 ? (
+                <div className="w-full py-2.5 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(229,71,43,0.08)', color: 'var(--ember)', border: '1px solid rgba(229,71,43,0.28)' }}>💸 Cash in {cashable.length} eliminated player{cashable.length === 1 ? '' : 's'}</div>
+              ) : openCount > 0 ? (
+                <div className="w-full py-2.5 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(217,154,0,0.1)', color: 'var(--gold)', border: '1px solid rgba(217,154,0,0.28)' }}>🛒 {openCount} open slot{openCount === 1 ? '' : 's'} · ${liveBud.toFixed(1)}M to spend</div>
               ) : (
                 <div className="w-full py-2.5 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(18,161,80,0.1)', color: 'var(--green)' }}>Squad locked ✓</div>
               )

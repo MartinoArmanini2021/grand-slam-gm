@@ -280,12 +280,18 @@ export function playerRefund(id: string): number {
 // eliminated player they've held — including opening-round exits. During the draft (no locked
 // squad yet) the base is the squad being built, and refunds are 0, so it equals the draft budget.
 export function liveBudget(
-  initialSquad: string[], transfers: { in: string }[], currentSquad: string[],
+  initialSquad: string[], transfers: { in: string }[], currentSquad: string[], cashedIn: string[] = [],
 ): number {
   const price = (id: string) => findPlayer(id)?.price ?? 0;
   const base = initialSquad.length ? initialSquad : currentSquad; // pre-lock: the draft squad
-  const held = new Set([...base, ...transfers.map(t => t.in)]);
-  const refunds = [...held].reduce((sum, id) => sum + playerRefund(id), 0);
+  // MANUAL refunds: money is credited ONLY for players the manager has explicitly CASHED IN,
+  // not automatically on elimination. `cost` = everything ever bought (draft + purchases).
   const cost = base.reduce((sum, id) => sum + price(id), 0) + transfers.reduce((sum, t) => sum + price(t.in), 0);
+  const refunds = cashedIn.reduce((sum, id) => sum + playerRefund(id), 0);
   return round1(STARTING_BUDGET - cost + refunds);
+}
+
+// Total money a manager has already cashed in (sum of the elimination refunds they claimed).
+export function cashedInTotal(cashedIn: string[]): number {
+  return round1(cashedIn.reduce((sum, id) => sum + playerRefund(id), 0));
 }

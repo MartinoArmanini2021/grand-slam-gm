@@ -25,14 +25,14 @@ function BackToLeague() {
 }
 
 export default function TeamPage() {
-  const { myTeam, initialSquad, transfers, captain, viceCaptain, captainHistory, viceCaptainHistory, viewTeam, setActiveTab } = useGameStore();
+  const { myTeam, initialSquad, transfers, cashedIn, captain, viceCaptain, captainHistory, viceCaptainHistory, viewTeam, setActiveTab } = useGameStore();
   const { teamName, teamEmblem, username } = useProfile();
   // Real league members come from the public board (everyone is a member of it).
   const board = useLeagueBoard(null);
   // Your own total + budget, derived live from results — score per-match like the leaderboard,
   // and money that already includes refunds for every eliminated player (incl. opening-round).
   const myScore = liveScore(initialSquad, transfers, captainHistory, viceCaptainHistory);
-  const myBudget = liveBudget(initialSquad, transfers, myTeam);
+  const myBudget = liveBudget(initialSquad, transfers, myTeam, cashedIn);
 
   if (viewTeam === 'you') {
     return (
@@ -53,7 +53,7 @@ export default function TeamPage() {
       <TeamView
         key={entry.id}
         emblem={entry.emblem} name={entry.name} manager={entry.manager} color={entry.color}
-        score={entry.score} budget={liveBudget(entry.initialSquad, entry.transfers, entry.squad)} squad={entry.squad}
+        score={entry.score} budget={liveBudget(entry.initialSquad, entry.transfers, entry.squad, entry.cashedIn)} squad={entry.squad}
         captainId={entry.captain ?? ''} viceCaptainId={entry.viceCaptain ?? ''}
         initialSquad={entry.initialSquad} transfers={entry.transfers as Transfer[]}
         captainHistory={entry.captainHistory} viceCaptainHistory={entry.viceCaptainHistory}

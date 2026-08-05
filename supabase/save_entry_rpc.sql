@@ -143,28 +143,29 @@ begin
   v_size := coalesce(array_length(v_squad, 1), 0);
   v_distinct := (select count(distinct x) from unnest(v_squad) x);
 
-  -- (a) no duplicates; size ≤ 10 always; EXACTLY 10 once locked (draft auto-saves partial squads).
+  -- (a) no duplicates; size ≤ 10 always. NOTE: a locked squad may now hold FEWER than 10 —
+  -- mid-tournament a manager can CASH IN an eliminated player and leave the slot empty (play a
+  -- man down) or buy any-tier replacement later. The exact-10 lock is enforced only at draft
+  -- time by the client's finalizeDraft, so the initial locked squad always arrives as 10.
   if v_distinct <> v_size then raise exception 'Squad has duplicate players'; end if;
   if v_size > 10 then raise exception 'Squad can''t exceed 10 players (got %)', v_size; end if;
-  if v_locked and v_size <> 10 then raise exception 'A locked squad must be exactly 10 players (got %)', v_size; end if;
 
   -- (b) every id is a real, known player
   if exists (select 1 from unnest(v_squad) sid where not exists (select 1 from public.player_stats ps where ps.id = sid)) then
     raise exception 'Squad contains an unknown player';
   end if;
 
-  -- (c) tier quota — never OVER 2/3/5; EXACTLY 2/3/5 once locked (tier from the seeded column)
+  -- (c) tier quota — the 2/3/5 structure is enforced ONLY during the draft (tier from the seeded
+  -- column). Once the squad is locked, mid-tournament Cash-In-and-buy lets a manager buy ANY tier
+  -- with the refunded money, so the composition may drift away from 2/3/5 (budget is the only limit).
   select
     count(*) filter (where ps.tier = 'Platinum'),
     count(*) filter (where ps.tier = 'Gold'),
     count(*) filter (where ps.tier = 'Silver')
     into v_plat, v_gold, v_silv
     from unnest(v_squad) sid join public.player_stats ps on ps.id = sid;
-  if v_plat > 2 or v_gold > 3 or v_silv > 5 then
+  if (not v_locked) and (v_plat > 2 or v_gold > 3 or v_silv > 5) then
     raise exception 'Too many in a tier (Platinum %/2, Gold %/3, Silver %/5)', v_plat, v_gold, v_silv;
-  end if;
-  if v_locked and (v_plat <> 2 or v_gold <> 3 or v_silv <> 5) then
-    raise exception 'A locked squad must be exactly 2 Platinum, 3 Gold, 5 Silver (got %/%/%)', v_plat, v_gold, v_silv;
   end if;
 
   -- (d) budget: sum of seeded prices ≤ 150, enforced while no transfers exist (post-lock

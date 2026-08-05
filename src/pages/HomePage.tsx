@@ -20,7 +20,7 @@ const TEAM_TARGET = SQUAD_SIZE;
 export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?: boolean; onWelcomeClose?: () => void } = {}) {
   const {
     phase, myTeam, currentRoundIndex,
-    initialSquad, transfers, captainHistory, viceCaptainHistory,
+    initialSquad, transfers, cashedIn, captainHistory, viceCaptainHistory,
     roundScores, setActiveTab, openTeam, playNextRound, continueToNextRound,
   } = useGameStore();
   const { teamName, teamEmblem } = useProfile();
@@ -35,8 +35,8 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
     [draw, results, initialSquad, transfers, captainHistory, viceCaptainHistory],
   );
   const budget = useMemo(
-    () => liveBudget(initialSquad, transfers, myTeam),
-    [draw, results, initialSquad, transfers, myTeam],
+    () => liveBudget(initialSquad, transfers, myTeam, cashedIn),
+    [draw, results, initialSquad, transfers, myTeam, cashedIn],
   );
 
   const squadReady = isSquadValid(myTeam);

@@ -195,6 +195,7 @@ export interface CloudBoardRow {
   // just your own). Empty for a still-drafting entry (the board view redacts it until lock).
   initialSquad: string[];
   transfers: { out: string; in: string; round: string }[];
+  cashedIn: string[];
   captainHistory: { round: string; playerId: string }[];
   viceCaptainHistory: { round: string; playerId: string }[];
 }
@@ -208,7 +209,7 @@ type ProfRow = { id: string; team_name: string | null; team_emblem: string | nul
 function boardRow(userId: string, entry: EntryRow | undefined, prof: ProfRow | undefined): CloudBoardRow {
   const st = (entry?.state ?? {}) as {
     myTeam?: string[]; captain?: string | null; viceCaptain?: string | null;
-    initialSquad?: string[]; transfers?: { out: string; in: string; round: string }[];
+    initialSquad?: string[]; transfers?: { out: string; in: string; round: string }[]; cashedIn?: string[];
     captainHistory?: { round: string; playerId: string }[]; viceCaptainHistory?: { round: string; playerId: string }[];
   };
   return {
@@ -226,6 +227,7 @@ function boardRow(userId: string, entry: EntryRow | undefined, prof: ProfRow | u
     viceCaptain: st.viceCaptain ?? null,
     initialSquad: Array.isArray(st.initialSquad) ? st.initialSquad : [],
     transfers: Array.isArray(st.transfers) ? st.transfers : [],
+    cashedIn: Array.isArray(st.cashedIn) ? st.cashedIn : [],
     captainHistory: Array.isArray(st.captainHistory) ? st.captainHistory : [],
     viceCaptainHistory: Array.isArray(st.viceCaptainHistory) ? st.viceCaptainHistory : [],
   };

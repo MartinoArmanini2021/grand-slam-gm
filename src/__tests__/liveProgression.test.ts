@@ -34,15 +34,57 @@ const stageFrozen = (through: RoundId | null, squad: string[], transfers: { out:
 beforeEach(() => { loadSampleThrough(null); store().resetGame(); });
 
 describe('live model under a frozen round index (production condition)', () => {
-  it('budget equals 150 − cost + live refunds at EVERY round, with the index stuck at 0', () => {
+  it('budget is MANUAL at every round: no auto-refund; cashing in credits exactly the refund', () => {
     for (const through of ['R64', 'R32', 'R16', 'QF', 'SF', 'F'] as RoundId[]) {
       stageFrozen(through, SPREAD);
       const cost = SPREAD.reduce((s, id) => s + price(id), 0);
-      const refund = SPREAD.filter(id => isEliminated(id)).reduce((s, id) => s + playerRefund(id), 0);
-      expect(liveBudget(SPREAD, [], SPREAD)).toBeCloseTo(150 - cost + refund, 5);
-      // The refund pool only ever grows as the tournament deepens (never regresses).
+      // Nothing cashed in yet → the budget is just 150 − cost, even with players eliminated.
+      expect(liveBudget(SPREAD, [], SPREAD, [])).toBeCloseTo(150 - cost, 5);
+      // Cashing in the eliminated players credits EXACTLY their elimination refunds.
+      const dead = SPREAD.filter(id => isEliminated(id));
+      const refund = dead.reduce((s, id) => s + playerRefund(id), 0);
       expect(refund).toBeGreaterThanOrEqual(0);
+      expect(liveBudget(SPREAD, [], SPREAD, dead)).toBeCloseTo(150 - cost + refund, 5);
     }
+  });
+
+  it('CASH IN claims the refund, removes the player, and credits the money', () => {
+    stageFrozen('R16', [roles.champion, roles.r16Exit]); // r16Exit is out
+    expect(isEliminated(roles.r16Exit)).toBe(true);
+    const refund = playerRefund(roles.r16Exit);
+    store().cashInPlayer(roles.r16Exit);
+    expect(store().myTeam).not.toContain(roles.r16Exit); // removed from the active squad
+    expect(store().myTeam).toContain(roles.champion);
+    expect(store().cashedIn).toEqual([roles.r16Exit]);
+    // Manual credit: budget = 150 − cost of everything drafted + the claimed refund.
+    const cost = price(roles.champion) + price(roles.r16Exit);
+    expect(store().budget).toBeCloseTo(150 - cost + refund, 5);
+  });
+
+  it('CASH IN is refused for a still-alive player and is idempotent', () => {
+    stageFrozen('R16', [roles.champion, roles.r16Exit]);
+    store().cashInPlayer(roles.champion);            // alive → refused
+    expect(store().cashedIn).toEqual([]);
+    store().cashInPlayer(roles.r16Exit);
+    store().cashInPlayer(roles.r16Exit);             // already cashed → no-op
+    expect(store().cashedIn).toEqual([roles.r16Exit]);
+  });
+
+  it('BUY needs an open slot, then adds an ANY-tier replacement and logs a transfer', () => {
+    stageFrozen('R16', [roles.champion, roles.r16Exit]);
+    store().buyPlayer(roles.underdog);               // no open slot yet → refused
+    expect(store().myTeam).not.toContain(roles.underdog);
+    store().cashInPlayer(roles.r16Exit);             // frees a slot + money
+    store().buyPlayer(roles.underdog);               // Silver into a Gold's slot — any tier
+    expect(store().myTeam).toContain(roles.underdog);
+    expect(store().transfers.at(-1)).toMatchObject({ out: roles.r16Exit, in: roles.underdog });
+  });
+
+  it('you can CASH IN and leave the slot empty (play a man down)', () => {
+    stageFrozen('R16', [roles.champion, roles.r16Exit]);
+    store().cashInPlayer(roles.r16Exit);
+    expect(store().myTeam).toEqual([roles.champion]); // squad < 10 is allowed
+    expect(store().transfers).toEqual([]);            // no purchase made
   });
 
   it('THE regression: a transfer still works after R32 starts (index frozen at R64)', () => {

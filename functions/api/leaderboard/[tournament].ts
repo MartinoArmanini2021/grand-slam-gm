@@ -16,7 +16,7 @@ interface ProfRow { id: string; team_name: string | null; team_emblem: string | 
 function boardRow(e: EntryRow, prof?: ProfRow) {
   const st = (e.state ?? {}) as {
     myTeam?: string[]; captain?: string | null; viceCaptain?: string | null;
-    initialSquad?: string[]; transfers?: unknown[]; captainHistory?: unknown[]; viceCaptainHistory?: unknown[];
+    initialSquad?: string[]; transfers?: unknown[]; cashedIn?: string[]; captainHistory?: unknown[]; viceCaptainHistory?: unknown[];
   };
   return {
     userId: e.user_id,
@@ -32,6 +32,7 @@ function boardRow(e: EntryRow, prof?: ProfRow) {
     // per-round points breakdown can be shown for EVERY team, not just your own.
     initialSquad: Array.isArray(st.initialSquad) ? st.initialSquad : [],
     transfers: Array.isArray(st.transfers) ? st.transfers : [],
+    cashedIn: Array.isArray(st.cashedIn) ? st.cashedIn : [],
     captainHistory: Array.isArray(st.captainHistory) ? st.captainHistory : [],
     viceCaptainHistory: Array.isArray(st.viceCaptainHistory) ? st.viceCaptainHistory : [],
   };
