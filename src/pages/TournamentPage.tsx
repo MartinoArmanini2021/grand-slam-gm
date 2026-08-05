@@ -19,11 +19,13 @@ export default function TournamentPage() {
   } = useGameStore();
 
   // Live, per-match score + per-round breakdown — identical to the server/leaderboard, updating
-  // as each result lands (subscribe to live results). Replaces the old round-gated local tally.
+  // as each result lands. liveScoreBreakdown reads BOTH the live draw and results, so both are
+  // deps (else the memo goes stale at 0 when the draw fills in after the results rehydrate).
+  const draw = useLiveStore(s => s.draw);
   const results = useLiveStore(s => s.results);
   const roundScores = useMemo(
     () => liveScoreBreakdown(initialSquad, transfers, captainHistory, viceCaptainHistory),
-    [results, initialSquad, transfers, captainHistory, viceCaptainHistory],
+    [draw, results, initialSquad, transfers, captainHistory, viceCaptainHistory],
   );
   const myScore = roundScores.reduce((a, b) => a + b.points, 0);
 

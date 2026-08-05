@@ -25,12 +25,14 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
   } = useGameStore();
   const { teamName, teamEmblem } = useProfile();
 
-  // Your live score = the SAME per-match total the server scores + the leaderboard shows —
-  // recomputed as each result lands (subscribe to the live results so it stays current).
+  // Your live score = the SAME per-match total the server scores + the leaderboard shows.
+  // liveScore reads BOTH the live draw and results, so both must be deps or the memo goes
+  // stale at 0 when the draw fills in after the results rehydrate.
+  const draw = useLiveStore(s => s.draw);
   const results = useLiveStore(s => s.results);
   const myScore = useMemo(
     () => liveScore(initialSquad, transfers, captainHistory, viceCaptainHistory),
-    [results, initialSquad, transfers, captainHistory, viceCaptainHistory],
+    [draw, results, initialSquad, transfers, captainHistory, viceCaptainHistory],
   );
 
   const squadReady = isSquadValid(myTeam);
