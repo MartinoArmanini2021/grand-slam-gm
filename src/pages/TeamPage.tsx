@@ -3,7 +3,7 @@ import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { useLeagueBoard } from '../data/leagueBoard';
 import { getPlayer } from '../data/players';
-import { ROUNDS, playerRoundPoints, playedScoredRounds, liveScore, getPlayerExit, isInLiveDraw, tournamentStarted } from '../data/tournament';
+import { ROUNDS, playerRoundPoints, playedScoredRounds, liveScore, liveBudget, getPlayerExit, isInLiveDraw, tournamentStarted } from '../data/tournament';
 import { lastName } from '../data/format';
 import SquadCourt from '../components/SquadCourt';
 import PlayerAvatar from '../components/PlayerAvatar';
@@ -25,20 +25,21 @@ function BackToLeague() {
 }
 
 export default function TeamPage() {
-  const { myTeam, initialSquad, transfers, captain, viceCaptain, captainHistory, viceCaptainHistory, budget, viewTeam, setActiveTab } = useGameStore();
+  const { myTeam, initialSquad, transfers, captain, viceCaptain, captainHistory, viceCaptainHistory, viewTeam, setActiveTab } = useGameStore();
   const { teamName, teamEmblem, username } = useProfile();
   // Real league members come from the public board (everyone is a member of it).
   const board = useLeagueBoard(null);
-  // Your own total, scored per-match exactly like the server/leaderboard (not the old
-  // round-gated local tally) — so it matches the Points-by-round breakdown just below.
+  // Your own total + budget, derived live from results — score per-match like the leaderboard,
+  // and money that already includes refunds for every eliminated player (incl. opening-round).
   const myScore = liveScore(initialSquad, transfers, captainHistory, viceCaptainHistory);
+  const myBudget = liveBudget(initialSquad, transfers, myTeam);
 
   if (viewTeam === 'you') {
     return (
       <TeamView
         key="you"
         emblem={teamEmblem} name={teamName} manager={username ? `@${username}` : '@you'} color="var(--blue)"
-        score={myScore} budget={budget} squad={myTeam} captainId={captain ?? myTeam[0] ?? ''} viceCaptainId={viceCaptain ?? ''} editable
+        score={myScore} budget={myBudget} squad={myTeam} captainId={captain ?? myTeam[0] ?? ''} viceCaptainId={viceCaptain ?? ''} editable
         initialSquad={initialSquad} transfers={transfers}
         captainHistory={captainHistory} viceCaptainHistory={viceCaptainHistory}
       />
@@ -52,7 +53,7 @@ export default function TeamPage() {
       <TeamView
         key={entry.id}
         emblem={entry.emblem} name={entry.name} manager={entry.manager} color={entry.color}
-        score={entry.score} budget={entry.budget} squad={entry.squad}
+        score={entry.score} budget={liveBudget(entry.initialSquad, entry.transfers, entry.squad)} squad={entry.squad}
         captainId={entry.captain ?? ''} viceCaptainId={entry.viceCaptain ?? ''}
         initialSquad={entry.initialSquad} transfers={entry.transfers as Transfer[]}
         captainHistory={entry.captainHistory} viceCaptainHistory={entry.viceCaptainHistory}

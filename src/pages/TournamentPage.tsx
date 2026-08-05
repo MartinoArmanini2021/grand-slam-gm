@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useGameStore, eliminatedSquad, substitutionCandidates } from '../store/gameStore';
 import { useLiveStore } from '../store/liveStore';
-import { ROUNDS, getPlayerExit, isPlayerOut, transfersOpen, roundPlayable, roundHasResult, liveScoreBreakdown } from '../data/tournament';
+import { ROUNDS, getPlayerExit, isPlayerOut, transfersOpen, roundPlayable, roundHasResult, liveScoreBreakdown, liveBudget } from '../data/tournament';
 import { getPlayer } from '../data/players';
 import { lastName } from '../data/format';
 import type { RoundId } from '../types';
@@ -181,11 +181,12 @@ function LeaderChip({ role, id }: { role: 'C' | 'V'; id: string | null }) {
 }
 
 function TransfersPanel() {
-  const { myTeam, budget, currentRoundIndex, phase, replacePlayer } = useGameStore();
+  const { myTeam, initialSquad, transfers, currentRoundIndex, phase, replacePlayer } = useGameStore();
   const [openFor, setOpenFor] = useState<string | null>(null);
+  const budget = liveBudget(initialSquad, transfers, myTeam); // live money (incl. eliminated-player refunds)
 
   if (phase !== 'round_complete' && phase !== 'pre_round') return null;
-  const outs = eliminatedSquad(myTeam, currentRoundIndex);
+  const outs = eliminatedSquad(myTeam);
   if (outs.length === 0) return null;
 
   // Transfer window closes after the semi-finals.
@@ -201,7 +202,7 @@ function TransfersPanel() {
     );
   }
 
-  const candidates = substitutionCandidates(myTeam, budget, currentRoundIndex);
+  const candidates = substitutionCandidates(myTeam, budget);
   const nextRound = ROUNDS[currentRoundIndex]?.label ?? 'the next round';
 
   return (

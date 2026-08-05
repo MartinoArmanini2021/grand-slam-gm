@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useGameStore, eliminatedSquad, substitutionCandidates, sanitizeState } from '../store/gameStore';
 import { getPlayer, PLAYERS } from '../data/players';
 import { getTier } from '../data/tiers';
-import { ROUNDS, winPoints, playerRoundPoints } from '../data/tournament';
+import type { RoundId } from '../types';
+import { ROUNDS, winPoints, playerRoundPoints, isEliminated, liveBudget } from '../data/tournament';
 import { sampleMatches, loadSampleThrough, revealThrough, loadSampleTournament, roles } from './fixtures/sampleDraw';
 
 const store = () => useGameStore.getState();
@@ -220,7 +221,7 @@ describe('mid-tournament substitutions', () => {
 
   it('an eliminated player can be replaced by an affordable, still-alive player', () => {
     draftAndReachR16();
-    expect(eliminatedSquad(store().myTeam, store().currentRoundIndex)).toEqual([roles.r16Exit]);
+    expect(eliminatedSquad(store().myTeam)).toEqual([roles.r16Exit]);
     // leftover 150 − champion − r16Exit, + r16Exit's R16 refund (price·0.60)
     const refund = Math.round(price(roles.r16Exit) * 0.60 * 10) / 10;
     const budgetBefore = store().budget;
@@ -262,11 +263,24 @@ describe('mid-tournament substitutions', () => {
   });
 
   it('rejects an unaffordable replacement', () => {
-    draftAndReachR16();
-    useGameStore.setState({ budget: 5 });
-    store().replacePlayer(roles.r16Exit, roles.runnerUp); // price > $5
-    expect(store().myTeam).not.toContain(roles.runnerUp);
-    expect(store().myTeam).toContain(roles.r16Exit);
+    // Budget is DERIVED live (starting − spent + refunds), so we stage a nearly-spent purse
+    // instead of poking the stored field. A real squad rarely gets here — dead players refund
+    // and same-tier swaps are cheap — but the affordability guard must still hold. All ids are
+    // resolved from tiers/results so this survives a field change.
+    loadSampleThrough('R32'); // opening rounds decided → some Golds out, some alive
+    const alive = (t: string) => PLAYERS.filter(p => getTier(p.ranking) === t && !isEliminated(p.id));
+    const outId = PLAYERS.filter(p => getTier(p.ranking) === 'Gold' && isEliminated(p.id))
+      .sort((a, b) => b.price - a.price)[0].id;          // an eliminated Gold to swap out
+    const target = alive('Gold').sort((a, b) => b.price - a.price)[0]; // priciest alive Gold (tier-legal)
+    const drains = alive('Platinum').filter(p => p.id !== roles.champion)
+      .sort((a, b) => b.price - a.price).slice(0, 3);     // prior costly buys that drained the purse
+    const base = [roles.champion, outId];
+    const transfers = drains.map((p, i) => ({ out: outId, in: p.id, round: (i === 0 ? 'R64' : 'R32') as RoundId }));
+    useGameStore.setState({ phase: 'pre_round', currentRoundIndex: 2, myTeam: base, initialSquad: base, transfers });
+    expect(liveBudget(base, transfers, base)).toBeLessThan(target.price); // genuinely can't afford
+    store().replacePlayer(outId, target.id);
+    expect(store().myTeam).not.toContain(target.id); // refused on price
+    expect(store().myTeam).toContain(outId);
   });
 
   it('a QF-round refund is still spendable — transfers stay open through the QF', () => {
@@ -286,7 +300,7 @@ describe('mid-tournament substitutions', () => {
     store().finalizeDraft();
     for (let i = 0; i < 5; i++) play(roles.champion); // R64..SF → index 5 (Final up next) — window shut
     expect(store().currentRoundIndex).toBe(5);
-    expect(eliminatedSquad(store().myTeam, store().currentRoundIndex)).toContain(roles.r16Exit);
+    expect(eliminatedSquad(store().myTeam)).toContain(roles.r16Exit);
     store().replacePlayer(roles.r16Exit, roles.runnerUp); // still alive but window shut for the final
     expect(store().myTeam).toContain(roles.r16Exit);
     expect(store().myTeam).not.toContain(roles.runnerUp);
@@ -294,7 +308,7 @@ describe('mid-tournament substitutions', () => {
 
   it('substitutionCandidates are all alive, unowned, and affordable', () => {
     draftAndReachR16();
-    const cands = substitutionCandidates(store().myTeam, store().budget, store().currentRoundIndex);
+    const cands = substitutionCandidates(store().myTeam, store().budget);
     for (const c of cands) {
       expect(store().myTeam).not.toContain(c.id);
       expect(c.price).toBeLessThanOrEqual(store().budget);
@@ -338,18 +352,21 @@ describe('P6: draft + transfer freeze once the tournament starts', () => {
     expect(store().initialSquad).toEqual([]);
   });
 
-  it('a transfer into a round already under way is refused', () => {
+  it('a mid-tournament transfer is logged against the live round — never retroactive', () => {
     store().addPlayer(roles.champion);
     store().addPlayer(roles.r16Exit);
     store().finalizeDraft();
     play(roles.champion); // R64
     play(roles.champion); // R32
-    play(roles.champion); // R16 → r16Exit out; now round_complete, index 3 (QF up next)
+    play(roles.champion); // R16 → r16Exit out
     useGameStore.setState({ phase: 'pre_round' });
-    revealThrough('QF');                   // the QF already has results → too late to sub for it
+    revealThrough('QF');                   // the QF is under way (results are landing)
     store().replacePlayer(roles.r16Exit, roles.runnerUp);
-    expect(store().myTeam).toContain(roles.r16Exit);       // refused
-    expect(store().myTeam).not.toContain(roles.runnerUp);
+    // Allowed — runnerUp is alive and a round remains to score — but logged against the LIVE
+    // round (QF), so he first scores the SF and can NEVER pick up the already-played QF. The
+    // transfer round is derived from results, not the frozen currentRoundIndex.
+    expect(store().myTeam).toContain(roles.runnerUp);
+    expect(store().transfers.at(-1)).toMatchObject({ out: roles.r16Exit, in: roles.runnerUp, round: 'QF' });
   });
 });
 
@@ -385,7 +402,7 @@ describe('economy integrity (regression)', () => {
     store().finalizeDraft();
     play(roles.champion); // R64
     play(roles.champion); // R32 → r32Exit eliminated
-    expect(eliminatedSquad(store().myTeam, store().currentRoundIndex)).toContain(roles.r32Exit);
+    expect(eliminatedSquad(store().myTeam)).toContain(roles.r32Exit);
     // sfExit (Platinum) is alive + affordable, but the swap would be a 3rd Platinum
     store().replacePlayer(roles.r32Exit, roles.sfExit);
     expect(store().myTeam).toContain(roles.r32Exit);       // rejected → unchanged

@@ -2,8 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { GamePhase, RoundId, RoundScore, BudgetReturn, Transfer } from '../types';
 import {
-  ROUNDS, getMatchesForRound, isPlayerOut, BUDGET_RETURN_RATES, winPoints, transfersOpen, roundPlayable, roundHasResult,
-  tournamentStarted,
+  ROUNDS, getMatchesForRound, isPlayerOut, BUDGET_RETURN_RATES, winPoints, transfersOpen, roundPlayable, roundHasResult, liveCurrentRound,
+  tournamentStarted, isEliminated, liveBudget,
 } from '../data/tournament';
 import { ACTIVE_TOURNAMENT_ID } from '../data/tournamentConfig';
 import { track } from '../data/analytics';
@@ -277,30 +277,38 @@ export const useGameStore = create<GameStore>()(
       // Mid-tournament substitution: swap an eliminated squad member for a
       // still-alive player you can now afford (with the returned budget).
       replacePlayer: (oldId, newId) => {
-        const { myTeam, budget, captain, viceCaptain, currentRoundIndex, phase } = get();
+        const { myTeam, initialSquad, transfers, captain, viceCaptain, currentRoundIndex, phase } = get();
         if (phase === 'finished' || phase === 'draft') return;
         if (!transfersOpen(currentRoundIndex)) return; // window shut after the QF
-        // P6: can't transfer into a round that's already under way — the swap first scores the
-        // current round, so once it has a result the move would be retroactive (server rejects it).
-        if (roundHasResult(ROUNDS[currentRoundIndex]?.id)) return;
         if (!myTeam.includes(oldId) || myTeam.includes(newId)) return;
-        const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
-        if (!isPlayerOut(oldId, revealed)) return; // old player isn't eliminated yet
-        if (isPlayerOut(newId, revealed)) return;  // replacement already knocked out
+        // LIVE rule: you may only swap OUT a player who is actually eliminated, and only IN a
+        // still-alive one — judged off the live results (isEliminated), NOT the app's round index,
+        // which is stuck at R64 while the round plays out.
+        if (!isEliminated(oldId)) return;
+        if (isEliminated(newId)) return;
         const player = findPlayer(newId);
-        if (!player || budget < player.price) return;         // unknown id or can't afford
-        // Enforce the tier quota on the resulting squad — a swap must never create a
-        // 3rd Platinum (etc.). Same-tier swaps always pass; a cross-tier swap is
-        // rejected when the incoming tier is already full among the players you keep.
+        if (!player) return;
+        const available = liveBudget(initialSquad, transfers, myTeam); // starting − spent + refunds
+        if (available < player.price) return; // can't afford
+        // Tier quota on the resulting squad — a swap must never create a 3rd Platinum (etc.).
         if (isTierFull(getTier(player.ranking), myTeam.filter(id => id !== oldId))) return;
-        // Log the move against the round just played, for the transfer history.
-        const round = ROUNDS[currentRoundIndex - 1]?.id ?? ROUNDS[0].id;
+        // Log against the LIVE current round (deepest round with a result), NOT currentRoundIndex,
+        // which is frozen at 0 during a live event. The newcomer first scores the NEXT round —
+        // never retroactively, since by construction that round has no results yet. This keeps
+        // transfers working across every round (not just R64) and matches the server's P6 check.
+        const round = liveCurrentRound() ?? ROUNDS[0].id;
+        const firstScored = ROUNDS[ROUNDS.findIndex(r => r.id === round) + 1]?.id;
+        // Refuse once the squad is locked for the final: no upcoming round to score, or the only
+        // one left is the final itself (mirrors the post-SF freeze the old index-based rule gave).
+        if (!firstScored || firstScored === ROUNDS[ROUNDS.length - 1].id) return;
+        const newTeam = myTeam.map(id => (id === oldId ? newId : id));
+        const newTransfers = [...transfers, { out: oldId, in: newId, round }];
         set({
-          myTeam: myTeam.map(id => (id === oldId ? newId : id)),
-          budget: round1(budget - player.price), // round like every other money mutation — budget can be fractional after refunds
+          myTeam: newTeam,
+          budget: liveBudget(initialSquad, newTransfers, newTeam), // keep the stored budget in sync with the live figure
           captain: captain === oldId ? null : captain,
           viceCaptain: viceCaptain === oldId ? null : viceCaptain,
-          transfers: [...get().transfers, { out: oldId, in: newId, round }],
+          transfers: newTransfers,
         });
         track('transfer_made', { out: oldId, in: newId, round });
       },
@@ -462,17 +470,15 @@ export const useGameStore = create<GameStore>()(
 );
 
 // Squad members who have been eliminated (their exit round is revealed).
-export function eliminatedSquad(myTeam: string[], currentRoundIndex: number) {
-  const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
-  return myTeam.filter(id => isPlayerOut(id, revealed));
+export function eliminatedSquad(myTeam: string[]) {
+  return myTeam.filter(id => isEliminated(id)); // LIVE — off the results, not the stuck round index
 }
 
-// Still-alive players you don't own and can afford — valid substitutes.
-export function substitutionCandidates(myTeam: string[], budget: number, currentRoundIndex: number) {
-  const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
-  const alive = (id: string) => !isPlayerOut(id, revealed);
+// Still-alive players you don't own and can afford — valid substitutes. Uses the LIVE
+// elimination status (isEliminated), so it's correct even while the app's round index is stuck.
+export function substitutionCandidates(myTeam: string[], budget: number) {
   return PLAYERS
-    .filter(p => !myTeam.includes(p.id) && alive(p.id) && p.price <= budget)
+    .filter(p => !myTeam.includes(p.id) && !isEliminated(p.id) && p.price <= budget)
     .sort((a, b) => b.price - a.price);
 }
 

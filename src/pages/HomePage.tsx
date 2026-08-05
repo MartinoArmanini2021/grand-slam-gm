@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, Fragment } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { useLiveStore } from '../store/liveStore';
-import { ROUNDS, isPlayerOut, roundPlayable, roundHasResult, tournamentStarted, liveScore } from '../data/tournament';
+import { ROUNDS, isPlayerOut, roundPlayable, roundHasResult, tournamentStarted, liveScore, liveBudget } from '../data/tournament';
 import { isSquadValid, SQUAD_SIZE } from '../data/squadRules';
 import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
 import { onActivate } from '../hooks';
@@ -19,20 +19,24 @@ const TEAM_TARGET = SQUAD_SIZE;
 
 export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?: boolean; onWelcomeClose?: () => void } = {}) {
   const {
-    phase, myTeam, budget, currentRoundIndex,
+    phase, myTeam, currentRoundIndex,
     initialSquad, transfers, captainHistory, viceCaptainHistory,
     roundScores, setActiveTab, openTeam, playNextRound, continueToNextRound,
   } = useGameStore();
   const { teamName, teamEmblem } = useProfile();
 
-  // Your live score = the SAME per-match total the server scores + the leaderboard shows.
-  // liveScore reads BOTH the live draw and results, so both must be deps or the memo goes
-  // stale at 0 when the draw fills in after the results rehydrate.
+  // Your live score + budget = derived from the live results (both read the draw AND results, so
+  // both are deps or the memo goes stale). Money is live like the score: refunds for eliminated
+  // players (incl. opening-round exits) are already in the budget, no "play the round" step.
   const draw = useLiveStore(s => s.draw);
   const results = useLiveStore(s => s.results);
   const myScore = useMemo(
     () => liveScore(initialSquad, transfers, captainHistory, viceCaptainHistory),
     [draw, results, initialSquad, transfers, captainHistory, viceCaptainHistory],
+  );
+  const budget = useMemo(
+    () => liveBudget(initialSquad, transfers, myTeam),
+    [draw, results, initialSquad, transfers, myTeam],
   );
 
   const squadReady = isSquadValid(myTeam);

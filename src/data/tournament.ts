@@ -3,6 +3,8 @@ import { findPlayer } from './players';
 import { TOURNAMENT, ROUND_META, ROUND_ORDER } from './tournamentConfig';
 import { useLiveStore } from '../store/liveStore';
 import { liveMatches, liveExit, roundComplete } from './liveResults';
+import { STARTING_BUDGET } from './squadRules';
+import { round1 } from './format';
 
 // Tournament identity + per-surface theming now live in ./tournamentConfig.
 
@@ -68,6 +70,16 @@ export function roundPlayable(roundIndex: number): boolean {
 // reads as broken. Flips true the moment any round has a recorded winner.
 export function tournamentStarted(): boolean {
   return ROUNDS.some(r => roundHasResult(r.id));
+}
+
+// The LIVE "current round": the deepest scored round that has ANY result. Everything after it
+// hasn't started, so it's the round a transfer is logged against (its newcomer first scores the
+// NEXT round, never retroactively). Derived from results — NOT the app's currentRoundIndex,
+// which is frozen at 0 during a live event (the manual "play the round" step never runs). Null
+// before the tournament begins.
+export function liveCurrentRound(): RoundId | null {
+  for (let i = ROUNDS.length - 1; i >= 0; i--) if (roundHasResult(ROUNDS[i].id)) return ROUNDS[i].id;
+  return null;
 }
 
 // Has this round produced ANY result yet? Mirrors the server's save_entry captain lock,
@@ -209,6 +221,14 @@ export function isInLiveDraw(playerId: string): boolean {
   return draw.some(m => m.p1Id === playerId || m.p2Id === playerId);
 }
 
+// Is the player OUT of the tournament right now — lost a scored round (R64→F) OR was knocked out
+// in the opening round (absent from the draw once it's underway)? Drives the refund + the
+// transfer rule ("you may only swap OUT an eliminated player, and only IN a still-alive one"),
+// off the LIVE results rather than the app's stuck round index.
+export function isEliminated(playerId: string): boolean {
+  return getPlayerExit(playerId) !== null || (tournamentStarted() && !isInLiveDraw(playerId));
+}
+
 // Is this player eliminated, given which scored rounds have been revealed? Their
 // exit stage ≤ the deepest revealed stage → out. Because earlier stages sort below
 // later ones, anyone who fell before a revealed round is already out.
@@ -239,3 +259,33 @@ export const BUDGET_RETURN_RATES: Record<RoundId, number> = {
   SF:   0,
   F:    0,
 };
+
+// A player eliminated in the OPENING round (before R64 — this app doesn't score it) refunds at
+// the earliest rate. Kept equal to the R128 tier so the curve stays "earlier exit → less back".
+const OPENING_ROUND_RETURN = 0.40;
+
+// The refund a squad player is worth right now: their price × the round they were knocked out in
+// (opening-round exits at OPENING_ROUND_RETURN). A still-alive player is worth 0 (nothing to
+// refund yet). This is LIVE — it reflects the results the moment they land, like the score.
+export function playerRefund(id: string): number {
+  const price = findPlayer(id)?.price ?? 0;
+  const exit = getPlayerExit(id); // scored-round exit (R64→F), or null
+  if (exit) return round1(price * (BUDGET_RETURN_RATES[exit as RoundId] ?? 0));
+  if (tournamentStarted() && !isInLiveDraw(id)) return round1(price * OPENING_ROUND_RETURN); // opening-round KO
+  return 0;
+}
+
+// A manager's available money, LIVE and derived (no manual "play the round" step): the starting
+// budget, minus what they spent (drafted squad + any transfer-ins), plus the refund for every
+// eliminated player they've held — including opening-round exits. During the draft (no locked
+// squad yet) the base is the squad being built, and refunds are 0, so it equals the draft budget.
+export function liveBudget(
+  initialSquad: string[], transfers: { in: string }[], currentSquad: string[],
+): number {
+  const price = (id: string) => findPlayer(id)?.price ?? 0;
+  const base = initialSquad.length ? initialSquad : currentSquad; // pre-lock: the draft squad
+  const held = new Set([...base, ...transfers.map(t => t.in)]);
+  const refunds = [...held].reduce((sum, id) => sum + playerRefund(id), 0);
+  const cost = base.reduce((sum, id) => sum + price(id), 0) + transfers.reduce((sum, t) => sum + price(t.in), 0);
+  return round1(STARTING_BUDGET - cost + refunds);
+}

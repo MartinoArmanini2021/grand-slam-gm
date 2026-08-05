@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useGameStore, substitutionCandidates } from '../store/gameStore';
 import { findPlayer } from '../data/players';
-import { getPlayerExit, isPlayerOut, ROUNDS, transfersOpen, roundHasResult } from '../data/tournament';
+import { getPlayerExit, isPlayerOut, isEliminated, liveBudget, ROUNDS, transfersOpen, roundHasResult } from '../data/tournament';
 import { lastName } from '../data/format';
 import { SURFACE, TOURNAMENT } from '../data/tournamentConfig';
 import { SQUAD_SIZE } from '../data/squadRules';
@@ -24,7 +24,8 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
   onTeamClick?: () => void; // makes the team label a link (e.g. to your team page)
   fluid?: boolean;         // fill the container width instead of the 860px cap
 } = {}) {
-  const { myTeam, captain, viceCaptain, captainHistory, viceCaptainHistory, currentRoundIndex, phase, budget, openPlayer, removePlayer, replacePlayer, setCaptain, setViceCaptain, benchLeader } = useGameStore();
+  const { myTeam, captain, viceCaptain, captainHistory, viceCaptainHistory, initialSquad, transfers, currentRoundIndex, phase, openPlayer, removePlayer, replacePlayer, setCaptain, setViceCaptain, benchLeader } = useGameStore();
+  const budget = liveBudget(initialSquad, transfers, myTeam); // live money: includes refunds for eliminated players
   const [pickerOpen, setPickerOpen] = useState(false);
   const [manageId, setManageId] = useState<string | null>(null);
   const [subFor, setSubFor] = useState<string | null>(null); // eliminated player being transferred out
@@ -332,9 +333,9 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
                     style={{ color: 'var(--ember)' }}
                   >✕ Remove from squad</button>
                 ) : (() => {
-                  const out = isPlayerOut(id, revealed);
+                  const out = isEliminated(id); // live elimination, not the stuck round index
                   const windowOpen = transfersOpen(currentRoundIndex);
-                  const hasSubs = out && windowOpen && substitutionCandidates(myTeam, budget, currentRoundIndex).length > 0;
+                  const hasSubs = out && windowOpen && substitutionCandidates(myTeam, budget).length > 0;
                   if (hasSubs) return (
                     <button
                       onClick={() => { setManageId(null); setSubFor(id); }}
@@ -370,7 +371,7 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
       {subFor && (() => {
         const outP = findPlayer(subFor);
         if (!outP) return null;
-        const candidates = substitutionCandidates(myTeam, budget, currentRoundIndex);
+        const candidates = substitutionCandidates(myTeam, budget);
         return (
           <div
             onClick={() => setSubFor(null)}

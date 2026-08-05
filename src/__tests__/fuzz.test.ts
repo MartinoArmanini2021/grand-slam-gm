@@ -56,8 +56,8 @@ describe('FUZZ — many random full games never break an invariant', () => {
         // Transfers + captain are set while THIS round is still open (no results yet) — the
         // only window the strict P1/P6 locks allow. Occasionally sub an eliminated player.
         if (rand() < 0.5) {
-          const outs = eliminatedSquad(store().myTeam, store().currentRoundIndex);
-          const cands = substitutionCandidates(store().myTeam, store().budget, store().currentRoundIndex);
+          const outs = eliminatedSquad(store().myTeam);
+          const cands = substitutionCandidates(store().myTeam, store().budget);
           if (outs.length && cands.length) {
             store().replacePlayer(outs[Math.floor(rand() * outs.length)], cands[Math.floor(rand() * cands.length)].id);
           }
