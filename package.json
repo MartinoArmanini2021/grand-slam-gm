@@ -13,6 +13,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "reconcile:field": "node scripts/reconcile-field.mjs",
+    "verify:app": "node scripts/verify-app.mjs",
     "gen:avatars": "node scripts/generate-avatars.mjs"
   },
   "dependencies": {
