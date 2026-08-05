@@ -201,6 +201,14 @@ export function getPlayerExit(playerId: string): TournamentResult | null {
   return !e || e === 'W' ? null : e;
 }
 
+// Is the player anywhere in the live draw (any scored-round pairing, decided or not)? A drafted
+// player who LOST the opening round (before R64, which this app doesn't score) never appears —
+// so "tournament started + not in the draw" means they were knocked out in the first round.
+export function isInLiveDraw(playerId: string): boolean {
+  const { draw } = useLiveStore.getState();
+  return draw.some(m => m.p1Id === playerId || m.p2Id === playerId);
+}
+
 // Is this player eliminated, given which scored rounds have been revealed? Their
 // exit stage ≤ the deepest revealed stage → out. Because earlier stages sort below
 // later ones, anyone who fell before a revealed round is already out.

@@ -3,7 +3,7 @@ import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { useLeagueBoard } from '../data/leagueBoard';
 import { getPlayer } from '../data/players';
-import { ROUNDS, playerRoundPoints, playedScoredRounds, liveScore } from '../data/tournament';
+import { ROUNDS, playerRoundPoints, playedScoredRounds, liveScore, getPlayerExit, isInLiveDraw, tournamentStarted } from '../data/tournament';
 import { lastName } from '../data/format';
 import SquadCourt from '../components/SquadCourt';
 import PlayerAvatar from '../components/PlayerAvatar';
@@ -205,8 +205,12 @@ function PointsByRound({ initialSquad, transfers, captainHistory, viceCaptainHis
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.08)' }}>
-      <div className="px-4 py-3" style={{ borderBottom: '1px solid rgba(10,27,51,0.06)' }}>
+      <div className="px-4 py-3 flex items-center justify-between gap-2 flex-wrap" style={{ borderBottom: '1px solid rgba(10,27,51,0.06)' }}>
         <h2 className="text-sm font-bold" style={{ color: 'var(--ink)' }}>Points by round</h2>
+        <div className="flex items-center gap-2.5 text-[10px]" style={{ color: 'var(--ink-3)' }}>
+          <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--green)' }} />still in</span>
+          <span className="flex items-center gap-1"><span className="text-[8px] font-extrabold uppercase px-1 rounded" style={{ background: 'rgba(229,71,43,0.12)', color: 'var(--ember)' }}>out</span>eliminated</span>
+        </div>
       </div>
       {rounds.length === 0 ? (
         <div className="px-4 py-6 text-center text-[12px]" style={{ color: 'var(--ink-3)' }}>
@@ -229,12 +233,20 @@ function PointsByRound({ initialSquad, transfers, captainHistory, viceCaptainHis
             <tbody>
               {rows.map(({ id, cells, total }) => {
                 const p = getPlayer(id);
+                const exit = getPlayerExit(id); // the scored-round they were knocked out in (null = not eliminated in R64+)
+                // A drafted player who lost the OPENING round (before R64) never enters the draw.
+                const openingOut = !exit && tournamentStarted() && !isInLiveDraw(id);
+                const outLabel = exit ? roundShort(exit) : openingOut ? '1st rd' : null;
+                const stillIn = !outLabel && isInLiveDraw(id);
                 return (
                   <tr key={id} onClick={() => openPlayer(id)} className="cursor-pointer transition-colors hover:bg-black/[0.02]" style={{ borderBottom: '1px solid rgba(10,27,51,0.05)' }}>
                     <td className="px-3 py-1.5 sticky left-0" style={{ background: '#fff' }}>
                       <div className="flex items-center gap-2 min-w-0">
                         <PlayerAvatar playerId={id} name={p.name} size="sm" ring={false} />
-                        <span className="text-xs font-semibold truncate" style={{ color: 'var(--ink)' }}>{lastName(p.name)}</span>
+                        <span className="text-xs font-semibold truncate" style={{ color: outLabel ? 'var(--ink-3)' : 'var(--ink)' }}>{lastName(p.name)}</span>
+                        {outLabel
+                          ? <span className="shrink-0 text-[8px] font-extrabold uppercase tracking-wide px-1 py-0.5 rounded" style={{ background: 'rgba(229,71,43,0.12)', color: 'var(--ember)' }}>out · {outLabel}</span>
+                          : stillIn ? <span className="shrink-0 w-1.5 h-1.5 rounded-full" style={{ background: 'var(--green)' }} title="Still in" /> : null}
                       </div>
                     </td>
                     {cells.map((c, i) => (
