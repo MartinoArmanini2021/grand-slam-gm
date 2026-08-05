@@ -16,7 +16,7 @@ create or replace function public.apply_entry_scores(p_tournament text, p_scores
 returns void language sql security definer set search_path = public as $$
   update public.entries e
      set score = s.score, updated_at = now()
-    from jsonb_to_recordset(p_scores) as s(user_id uuid, score int)
+    from jsonb_to_recordset(p_scores) as s(user_id uuid, score double precision)
    where e.user_id = s.user_id and e.tournament_id = p_tournament;
 $$;
 revoke all on function public.apply_entry_scores(text, jsonb) from public, authenticated, anon;

@@ -329,8 +329,8 @@ export const useGameStore = create<GameStore>()(
               captainBonus += total - pts; // +pts extra (total 2×)
               roundPoints += total;
             } else if (playerId === roundVice) {
-              const total = Math.round(pts * VICE_MULTIPLIER);
-              viceBonus += total - pts; // +half extra (total 1.5×, rounded)
+              const total = pts * VICE_MULTIPLIER; // ×1.5 unrounded → half-points allowed (1 → 1.5)
+              viceBonus += total - pts; // +half extra (total 1.5×)
               roundPoints += total;
             } else {
               roundPoints += pts;

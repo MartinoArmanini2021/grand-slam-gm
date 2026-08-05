@@ -63,7 +63,7 @@ function scoreEntry(state: EntryState, matches: MatchRow[], rankById: Record<str
       if (!m || m.winner !== id) continue;
       const opp = m.p1 === id ? m.p2 : m.p1;
       const pts = winPoints(base, rank(id), rankById[opp]); // raw opp rank → undefined = no upset
-      total += id === captain ? pts * CAPTAIN_MULTIPLIER : id === vice ? Math.round(pts * VICE_MULTIPLIER) : pts;
+      total += id === captain ? pts * CAPTAIN_MULTIPLIER : id === vice ? pts * VICE_MULTIPLIER : pts; // vice ×1.5 unrounded → 0.5 scores
     }
   }
   return total;

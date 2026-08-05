@@ -47,7 +47,7 @@ create table if not exists public.entries (
   captain_history     jsonb  not null default '[]',           -- [{round, playerId}]
   phase               text   not null default 'draft',
   current_round_index int    not null default 0,
-  score               int    not null default 0,              -- SERVER-written only
+  score               double precision not null default 0,     -- SERVER-written only (float → allows ×1.5 vice half-points)
   budget              numeric not null default 100,           -- derived, for display
   state               jsonb  not null default '{}',           -- full client snapshot, for device restore
   updated_at          timestamptz default now(),

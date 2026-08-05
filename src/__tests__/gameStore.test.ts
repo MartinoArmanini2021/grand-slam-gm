@@ -159,9 +159,9 @@ describe('scoring — captain ×2 and vice-captain ×1.5', () => {
     };
     const ptsC = winPoints('R64', roles.champion, oppOf(roles.champion)); // captain ×2
     const ptsV = winPoints('R64', roles.runnerUp, oppOf(roles.runnerUp)); // vice ×1.5
-    expect(r.points).toBe(ptsC * 2 + Math.round(ptsV * 1.5));
+    expect(r.points).toBe(ptsC * 2 + ptsV * 1.5); // vice ×1.5 UNrounded → half-points allowed
     expect(r.captainBonus).toBe(ptsC);
-    expect(r.viceBonus).toBe(Math.round(ptsV * 1.5) - ptsV);
+    expect(r.viceBonus).toBe(ptsV * 1.5 - ptsV);
   });
 });
 
@@ -359,9 +359,9 @@ describe('playerRoundPoints — per-player per-round breakdown (Team page)', () 
     const base = playerRoundPoints(roles.champion, 'R64');           // champion won R64, no captaincy
     expect(base).toBeGreaterThan(0);
     expect(playerRoundPoints(roles.r64Exit, 'R64')).toBe(0);          // lost R64 → nothing
-    // Captain doubles; vice is 1.5× (rounded) — matches the scoring engine.
+    // Captain doubles; vice is 1.5× UNrounded (half-points allowed) — matches the scoring engine.
     expect(playerRoundPoints(roles.champion, 'R64', [{ round: 'R64', playerId: roles.champion }])).toBe(base * 2);
-    expect(playerRoundPoints(roles.champion, 'R64', [], [{ round: 'R64', playerId: roles.champion }])).toBe(Math.round(base * 1.5));
+    expect(playerRoundPoints(roles.champion, 'R64', [], [{ round: 'R64', playerId: roles.champion }])).toBe(base * 1.5);
   });
 });
 

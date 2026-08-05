@@ -83,7 +83,7 @@ export function scoreEntry(state: EntryState, ctx: ScoreCtx): number {
       const oppId = m.p1 === id ? m.p2 : m.p1;
       const pts = winPoints(base, rank(id), ctx.rankById[oppId]); // raw opp rank → undefined = no upset
       total += id === captain ? pts * CAPTAIN_MULTIPLIER
-        : id === vice ? Math.round(pts * VICE_MULTIPLIER)
+        : id === vice ? pts * VICE_MULTIPLIER // ×1.5 unrounded → half-points allowed (1 → 1.5)
         : pts;
     }
   }

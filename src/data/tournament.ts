@@ -141,7 +141,8 @@ export function playerRoundPoints(
   const oppId = m.p1Id === playerId ? m.p2Id : m.p1Id;
   const pts = winPoints(round, playerId, oppId);
   if (captainHistory.find(c => c.round === round)?.playerId === playerId) return pts * CAPTAIN_MULT;
-  if (viceCaptainHistory.find(c => c.round === round)?.playerId === playerId) return Math.round(pts * VICE_MULT);
+  // Vice ×1.5 is NOT rounded — a vice on a base-odd win earns a half-point (e.g. 1 → 1.5).
+  if (viceCaptainHistory.find(c => c.round === round)?.playerId === playerId) return pts * VICE_MULT;
   return pts;
 }
 
