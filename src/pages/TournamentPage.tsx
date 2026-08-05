@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useGameStore, eliminatedSquad, substitutionCandidates } from '../store/gameStore';
 import { useLiveStore } from '../store/liveStore';
-import { ROUNDS, getPlayerExit, isPlayerOut, transfersOpen, roundPlayable, liveScoreBreakdown } from '../data/tournament';
+import { ROUNDS, getPlayerExit, isPlayerOut, transfersOpen, roundPlayable, roundHasResult, liveScoreBreakdown } from '../data/tournament';
 import { getPlayer } from '../data/players';
 import { lastName } from '../data/format';
 import type { RoundId } from '../types';
@@ -33,6 +33,7 @@ export default function TournamentPage() {
   // In round_complete the index has already advanced, so the card should name the
   // round that just finished, not the upcoming one.
   const headerRound = phase === 'round_complete' ? (ROUNDS[currentRoundIndex - 1] ?? currentRound) : currentRound;
+  const roundStarted = !!currentRound && roundHasResult(currentRound.id); // its first match has a result → underway
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
   const aliveSquad = myTeam.filter(id => !isPlayerOut(id, revealed));
   // A round can be scored only once the real tournament has FINISHED it (every pairing
@@ -78,7 +79,7 @@ export default function TournamentPage() {
             <div className="flex items-start justify-between">
               <div>
                 <div className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: 'var(--ink-2)' }}>
-                  {phase === 'pre_round' ? 'Up Next' : 'Round Complete'}
+                  {phase === 'pre_round' ? (roundStarted ? 'Underway' : 'Up Next') : 'Round Complete'}
                 </div>
                 <div className="text-lg font-bold" style={{ color: 'var(--ink)' }}>{(headerRound ?? currentRound).label}</div>
                 <div className="text-xs mt-0.5" style={{ color: 'var(--ink-2)' }}>

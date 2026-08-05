@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, Fragment } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { useLiveStore } from '../store/liveStore';
-import { ROUNDS, isPlayerOut, roundPlayable, tournamentStarted, liveScore } from '../data/tournament';
+import { ROUNDS, isPlayerOut, roundPlayable, roundHasResult, tournamentStarted, liveScore } from '../data/tournament';
 import { isSquadValid, SQUAD_SIZE } from '../data/squadRules';
 import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
 import { onActivate } from '../hooks';
@@ -89,7 +89,7 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
             <span className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: SURFACE.accent }}>{TOURNAMENT.location.split(',')[0]} · {SURFACE.label}</span>
           </div>
           <div className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.08em] sm:tracking-[0.2em] mt-1.5" style={{ color: 'var(--ember)' }}>
-            {courtStatus(phase, currentRound, ROUNDS[currentRoundIndex - 1]?.short)}
+            {courtStatus(phase, currentRound, ROUNDS[currentRoundIndex - 1]?.short, !!currentRound && roundHasResult(currentRound.id))}
           </div>
         </div>
 
@@ -269,9 +269,15 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
 }
 
 // Contextual status shown at the top of the court, driven by phase + round.
-function courtStatus(phase: GamePhase, currentRound: { short: string } | null, prevShort?: string): string {
+function courtStatus(phase: GamePhase, currentRound: { short: string } | null, prevShort?: string, roundStarted = false): string {
   if (phase === 'draft') return 'Tournament about to begin — choose your players';
-  if (phase === 'pre_round' && currentRound) return `${currentRound.short} incoming — choose your captain`;
+  if (phase === 'pre_round' && currentRound) {
+    // Once the round has its first result, captains are frozen — say so, rather than still
+    // inviting a (now-rejected) captain change.
+    return roundStarted
+      ? `${currentRound.short} underway — captains locked, points are live`
+      : `${currentRound.short} incoming — choose your captain`;
+  }
   if (phase === 'round_complete' && currentRound) return `${prevShort ?? ''} done — set your captain for ${currentRound.short}`;
   if (phase === 'finished') return 'Tournament complete — final standings';
   return '';
