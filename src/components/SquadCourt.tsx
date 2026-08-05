@@ -24,23 +24,29 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
   onTeamClick?: () => void; // makes the team label a link (e.g. to your team page)
   fluid?: boolean;         // fill the container width instead of the 860px cap
 } = {}) {
-  const { myTeam, captain, viceCaptain, currentRoundIndex, phase, budget, openPlayer, removePlayer, replacePlayer, setCaptain, setViceCaptain, benchLeader } = useGameStore();
+  const { myTeam, captain, viceCaptain, captainHistory, viceCaptainHistory, currentRoundIndex, phase, budget, openPlayer, removePlayer, replacePlayer, setCaptain, setViceCaptain, benchLeader } = useGameStore();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [manageId, setManageId] = useState<string | null>(null);
   const [subFor, setSubFor] = useState<string | null>(null); // eliminated player being transferred out
   const [assignRole, setAssignRole] = useState<'C' | 'V' | null>(null); // picking a player for an empty leader slot
   const [signRole, setSignRole] = useState<'C' | 'V' | null>(null);     // signing a NEW player straight into a leader slot (draft)
   const team = squad ?? myTeam;
-  const cap = captainId ?? (squad ? undefined : captain ?? undefined);
-  const vice = viceCaptainId ?? (squad ? undefined : viceCaptain ?? undefined);
-  const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
-  const isOwnTeam = !readOnly && !squad; // your own court (home / your team page)
-  const canEdit = isOwnTeam && phase === 'draft';
   // P1: the captain-of-record for a round is frozen once that round produces a result —
   // mirroring the server's save_entry lock. So the court stops inviting a captain change the
   // moment the current round is underway; otherwise the (optimistic) save would be rejected.
   const currentRoundId = ROUNDS[currentRoundIndex]?.id;
   const roundLive = phase === 'pre_round' && !!currentRoundId && roundHasResult(currentRoundId);
+  // On a LIVE (locked) round, the on-court leader is the COMMITTED leader-of-record for that round
+  // — the one that actually SCORES — not the mutable current field, which could still hold a pick
+  // that never locked in time. This keeps the ×2 / ×1.5 badge honest: it never shows a leader that
+  // won't count.
+  const roundCap = currentRoundId ? captainHistory.find(c => c.round === currentRoundId)?.playerId : undefined;
+  const roundVice = currentRoundId ? viceCaptainHistory.find(c => c.round === currentRoundId)?.playerId : undefined;
+  const cap = captainId ?? (squad ? undefined : (roundLive ? roundCap : captain) ?? undefined);
+  const vice = viceCaptainId ?? (squad ? undefined : (roundLive ? roundVice : viceCaptain) ?? undefined);
+  const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
+  const isOwnTeam = !readOnly && !squad; // your own court (home / your team page)
+  const canEdit = isOwnTeam && phase === 'draft';
   const canCaptain = isOwnTeam && (phase === 'draft' || (phase === 'pre_round' && !roundLive)); // captaincy editable until the round starts
   useEscapeToClose(() => { setManageId(null); setSubFor(null); setAssignRole(null); }, !!(manageId || subFor || assignRole));
   const C = SURFACE.court; // stands / apron (outside court) / surface (inside court)

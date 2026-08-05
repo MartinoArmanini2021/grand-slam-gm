@@ -7,6 +7,7 @@ import {
 } from '../data/tournament';
 import { ACTIVE_TOURNAMENT_ID } from '../data/tournamentConfig';
 import { track } from '../data/analytics';
+import { toast } from './toastStore';
 import { findPlayer, PLAYERS } from '../data/players';
 import { SQUAD_SIZE, STARTING_BUDGET, isTierFull } from '../data/squadRules';
 import { getTier } from '../data/tiers';
@@ -41,6 +42,13 @@ function pickLeaders(team: string[], captain: string | null, vice: string | null
 // round's entry, or drop it when the slot is vacated (playerId null). Recording after the
 // round has a result is a no-op — the server would reject that write, and it would be a
 // retroactive captain pick (the captain twin of the P3 squad hole).
+// User-facing feedback when a captain/vice change is refused because the round already
+// started — otherwise the tap silently does nothing and the pick looks (wrongly) set.
+function warnLeaderLocked(roundIndex: number) {
+  const label = ROUNDS[roundIndex]?.label ?? 'This round';
+  toast(`🔒 ${label} is underway — captain & vice lock at the round's first match.`, 'warn');
+}
+
 function recordLeaders(
   roundId: RoundId | undefined,
   captain: string | null,
@@ -186,7 +194,7 @@ export const useGameStore = create<GameStore>()(
         if (phase !== 'draft' && phase !== 'pre_round') return;
         const round = ROUNDS[currentRoundIndex]?.id;
         // P1: once the round has a result the captain is frozen (the server rejects a change).
-        if (phase === 'pre_round' && round && roundHasResult(round)) return;
+        if (phase === 'pre_round' && round && roundHasResult(round)) { warnLeaderLocked(currentRoundIndex); return; }
         if (!myTeam.includes(id)) return;
         // An eliminated player can't captain (guards callers that don't pre-filter).
         const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
@@ -203,7 +211,7 @@ export const useGameStore = create<GameStore>()(
         const { myTeam, captain, viceCaptain, currentRoundIndex, phase, captainHistory, viceCaptainHistory } = get();
         if (phase !== 'draft' && phase !== 'pre_round') return;
         const round = ROUNDS[currentRoundIndex]?.id;
-        if (phase === 'pre_round' && round && roundHasResult(round)) return;
+        if (phase === 'pre_round' && round && roundHasResult(round)) { warnLeaderLocked(currentRoundIndex); return; }
         if (!myTeam.includes(id)) return;
         const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
         if (isPlayerOut(id, revealed)) return;
@@ -219,7 +227,7 @@ export const useGameStore = create<GameStore>()(
         const { captain, viceCaptain, currentRoundIndex, phase, captainHistory, viceCaptainHistory } = get();
         if (phase !== 'draft' && phase !== 'pre_round') return;
         const round = ROUNDS[currentRoundIndex]?.id;
-        if (phase === 'pre_round' && round && roundHasResult(round)) return;
+        if (phase === 'pre_round' && round && roundHasResult(round)) { warnLeaderLocked(currentRoundIndex); return; }
         let newCap = captain, newVice = viceCaptain;
         if (id === captain) newCap = null;
         else if (id === viceCaptain) newVice = null;
