@@ -1,29 +1,197 @@
 // ── ingest-draw ── Supabase Edge Function (Deno) ─────────────────────────────
-// THE BRIDGE that makes the live leaderboard move for everyone. It fetches the Wikipedia
-// men's-singles draw, parses it, and writes the results into public.matches with the
-// service-role key (clients cannot write matches — see server_scoring.sql). The separate
-// recompute-score function then scores every entry off those rows. So the full live chain
-// is:  cron → ingest-draw (Wikipedia → matches) → recompute-score (matches → entries.score)
-// → cached leaderboard.
+// THE BRIDGE that makes the live leaderboard move for everyone: fetches the Wikipedia
+// men's-singles draw, parses it, and writes results into public.matches with the service
+// role. recompute-score then scores every entry off those rows.
 //
-// Zero parser duplication: it imports the SAME pure parser the client + the 90-plus unit
-// tests validate (src/data/drawParser.ts), and the SAME roster the client drafts from
-// (src/data/montreal2026Field.json). The server therefore scores off exactly the code the
-// tests prove correct — no hand-copied drift.
+//   cron → ingest-draw (Wikipedia → matches) → recompute-score (matches → entries.score) → board
 //
-// Deploy:  supabase functions deploy ingest-draw
-// Invoke:  supabase functions invoke ingest-draw           (or via the cron in setup_ingest_cron.sql)
-// Manual override (a match the feed got wrong or hasn't caught up on):
-//   POST { "overrides": [ { "round": "QF", "slot": 0, "winnerId": "shelton" } ] }
+// ⚠️ SELF-CONTAINED ON PURPOSE. The Supabase/Deno bundler can't follow the extensionless,
+// type-only cross-file imports in src/data/drawParser.ts (`'../types'` is a directory → EISDIR;
+// `'./liveResults'` has no .ts), so the parser + auth guard are INLINED here verbatim.
+//   • Canonical parser: src/data/drawParser.ts (validated by the vitest suite).
+//   • The block between "PARSER — INLINED COPY" markers MUST stay byte-identical to it; a drift
+//     guard test (src/__tests__/ingestParserSync.test.ts) fails if they diverge, and the nightly
+//     verifier (scripts/verify-app.mjs) catches any divergence in the LIVE data too.
+//
+// Deploy:  npx supabase functions deploy ingest-draw --project-ref <ref>
+// Manual override:  POST { "overrides": [ { "round": "QF", "slot": 0, "winnerId": "shelton" } ] }
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { assertServiceRole } from '../_shared/serviceGuard.ts';
-import { parseFullDraw, buildResolver, buildMatchRows } from '../../../src/data/drawParser.ts';
 import field from '../../../src/data/montreal2026Field.json' with { type: 'json' };
 
-// These MUST stay in sync with src/data/tournamentConfig.ts + src/data/liveData.ts. A unit
-// test (liveIngestParity.test.ts) pins them to the app's values, since this standalone Deno
-// file can't import the Vite config.
+// ── auth guard (inlined from supabase/functions/_shared/serviceGuard.ts) ──
+function decodeJwtRole(token: string): string | null {
+  const part = token.split('.')[1];
+  if (!part) return null;
+  try {
+    const b64 = part.replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4)));
+    return typeof payload?.role === 'string' ? payload.role : null;
+  } catch {
+    return null;
+  }
+}
+function assertServiceRole(req: Request): Response | null {
+  const auth = req.headers.get('Authorization') ?? '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+  if (decodeJwtRole(token) === 'service_role') return null;
+  return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), {
+    status: 401, headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+// ════════════ PARSER — INLINED COPY of src/data/drawParser.ts (keep identical) ════════════
+type RoundId = string;
+interface LiveMatch { round: RoundId; slot: number; half: 'top' | 'bottom'; p1Id: string; p2Id: string }
+type LiveResults = Record<string, string>;
+
+const matchKey = (round: RoundId, slot: number): string => `${round}_${slot}`;
+const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[-\s]+/g, ' ').trim();
+const stripDisambig = (s: string) => s.replace(/\s*\((?:tennis|tennis player|[^)]*)\)\s*$/i, '').trim();
+
+function cleanTeam(raw: string): string {
+  let s = raw.replace(/\{\{[^}]*\}\}/g, ' ');
+  s = s.replace(/\[\[([^\]|]*)\|([^\]]*)\]\]/g, '$2');
+  s = s.replace(/\[\[([^\]]*)\]\]/g, '$1');
+  s = s.replace(/'''?/g, '').replace(/<[^>]+>/g, ' ');
+  s = s.replace(/[{}[\]|]/g, ' ');
+  return s.replace(/\s+/g, ' ').trim();
+}
+function teamTarget(raw: string): string {
+  const m = raw.match(/\[\[([^\]|]+)/);
+  return m ? m[1].trim() : cleanTeam(raw);
+}
+function buildResolver(roster: { id: string; name: string }[]): (raw: string) => string {
+  const byName = new Map(roster.map((p) => [norm(p.name), p.id]));
+  const sortWords = (s: string) => s.split(' ').filter(Boolean).sort().join(' ');
+  const bySorted = new Map(roster.map((p) => [sortWords(norm(p.name)), p.id]));
+  return (raw: string) => {
+    const stripped = stripDisambig(teamTarget(raw));
+    return byName.get(norm(teamTarget(raw)))
+      ?? byName.get(norm(stripped))
+      ?? bySorted.get(sortWords(norm(stripped)))
+      ?? `x_${norm(stripped).replace(/\s+/g, '_')}`;
+  };
+}
+function splitBrackets(wikitext: string): { type: string; text: string }[] {
+  const starts = [...wikitext.matchAll(/\{\{(\d+TeamBracket[^\s|}]*)/g)];
+  const idxs = starts.map((m) => m.index ?? 0).concat([wikitext.length]);
+  return starts.map((m, i) => ({ type: m[1].trim(), text: wikitext.slice(idxs[i], idxs[i + 1]) }));
+}
+const TBD = { id: 'tbd', bold: false };
+interface DrawMeta { name: string; country?: string }
+type DrawMetaMap = Record<string, DrawMeta>;
+const flagCode = (raw: string): string | undefined =>
+  raw.match(/\{\{\s*flag[a-z]*\s*\|\s*([A-Za-z]{2,3})\b/i)?.[1];
+
+function parseBracket(
+  wikitext: string, roundIds: RoundId[], resolve: (raw: string) => string, includeIncomplete = false,
+): { draw: LiveMatch[]; results: LiveResults; meta: DrawMetaMap } {
+  const teams: Record<number, Record<number, { id: string; bold: boolean }>> = {};
+  const meta: DrawMetaMap = {};
+  const re = /\|\s*RD(\d+)-team(\d+)\s*=\s*(.*?)(?=\s*\|\s*RD|$)/gm;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(wikitext)) !== null) {
+    const rd = Number(m[1]); const idx = Number(m[2]) - 1; const raw = m[3];
+    if (!cleanTeam(raw)) continue;
+    const id = resolve(raw);
+    (teams[rd] ??= {})[idx] = { id, bold: /'''/.test(raw) };
+    if (id.startsWith('x_') && !meta[id]) {
+      const country = flagCode(raw);
+      meta[id] = country ? { name: stripDisambig(teamTarget(raw)), country } : { name: stripDisambig(teamTarget(raw)) };
+    }
+  }
+  const draw: LiveMatch[] = [];
+  const results: LiveResults = {};
+  for (let rd = 1; rd <= roundIds.length; rd++) {
+    const round = roundIds[rd - 1];
+    const thisRound = teams[rd] ?? {};
+    const nextRound = teams[rd + 1] ?? {};
+    const maxIdx = Math.max(-1, ...Object.keys(thisRound).map(Number));
+    const pairCount = Math.floor(maxIdx / 2) + 1;
+    for (let slot = 0; slot < pairCount; slot++) {
+      const a = thisRound[slot * 2];
+      const b = thisRound[slot * 2 + 1];
+      if (!a && !b) continue;
+      if ((!a || !b) && !includeIncomplete) continue;
+      const p1 = a ?? TBD;
+      const p2 = b ?? TBD;
+      draw.push({ round, slot, half: slot < pairCount / 2 ? 'top' : 'bottom', p1Id: p1.id, p2Id: p2.id });
+      let winnerId: string | undefined;
+      if (p1.bold && !p2.bold) winnerId = p1.id;
+      else if (p2.bold && !p1.bold) winnerId = p2.id;
+      else winnerId = nextRound[slot]?.id;
+      if (winnerId === p1.id || winnerId === p2.id) results[matchKey(round, slot)] = winnerId;
+    }
+  }
+  return { draw, results, meta };
+}
+
+interface MatchRow {
+  tournament_id: string; round: string; slot: number;
+  p1_id: string; p2_id: string; winner_id: string | null;
+}
+function buildMatchRows(
+  tournamentId: string, draw: LiveMatch[], results: LiveResults,
+  existingWinners: Record<string, string | null> = {}, overrides: Record<string, string> = {},
+): MatchRow[] {
+  return draw.map((m) => {
+    const key = matchKey(m.round, m.slot);
+    const ov = overrides[key];
+    const validOverride = ov === m.p1Id || ov === m.p2Id ? ov : undefined;
+    const winner = validOverride ?? results[key] ?? existingWinners[key] ?? null;
+    return { tournament_id: tournamentId, round: m.round, slot: m.slot, p1_id: m.p1Id, p2_id: m.p2Id, winner_id: winner };
+  });
+}
+
+const SECTION_ROUNDS: RoundId[] = ['R128', 'R64', 'R32', 'R16'];
+const FINALS_ROUNDS: RoundId[] = ['QF', 'SF', 'F'];
+
+function parseFullDraw(
+  wikitext: string, opts: { scoredRounds: RoundId[]; resolve: (raw: string) => string; includeIncomplete?: boolean },
+): { draw: LiveMatch[]; results: LiveResults; meta: DrawMetaMap } {
+  const { scoredRounds, resolve, includeIncomplete = false } = opts;
+  const brackets = splitBrackets(wikitext);
+  const sections = brackets.filter((b) => /^16TeamBracket/i.test(b.type));
+  const finals = brackets.find((b) => /^8TeamBracket/i.test(b.type));
+
+  if (sections.length === 0) return parseBracket(wikitext, scoredRounds, resolve, includeIncomplete);
+
+  const perRound: Partial<Record<RoundId, { slot: number; winner: string | undefined; p1Id: string; p2Id: string }[]>> = {};
+  const meta: DrawMetaMap = {};
+  const pairsPerSection = (roundIds: RoundId[], roundId: RoundId) => 2 ** (roundIds.length - 1 - roundIds.indexOf(roundId));
+  const roundTotal: Partial<Record<RoundId, number>> = {};
+  const noteTotals = (roundIds: RoundId[], sectionCount: number) => {
+    for (const r of roundIds) roundTotal[r] = sectionCount * pairsPerSection(roundIds, r);
+  };
+  const collect = (text: string, roundIds: RoundId[], sectionIdx: number) => {
+    const { draw, results, meta: sectionMeta } = parseBracket(text, roundIds, resolve, includeIncomplete);
+    Object.assign(meta, sectionMeta);
+    for (const m of draw) {
+      const slot = sectionIdx * pairsPerSection(roundIds, m.round) + m.slot;
+      (perRound[m.round] ??= []).push({ slot, winner: results[matchKey(m.round, m.slot)], p1Id: m.p1Id, p2Id: m.p2Id });
+    }
+  };
+  sections.forEach((s, i) => collect(s.text, SECTION_ROUNDS, i));
+  noteTotals(SECTION_ROUNDS, sections.length);
+  if (finals) { collect(finals.text, FINALS_ROUNDS, 0); noteTotals(FINALS_ROUNDS, 1); }
+
+  const draw: LiveMatch[] = [];
+  const results: LiveResults = {};
+  for (const round of scoredRounds) {
+    const list = (perRound[round] ?? []).slice().sort((a, b) => a.slot - b.slot);
+    const total = roundTotal[round] ?? list.length;
+    for (const item of list) {
+      draw.push({ round, slot: item.slot, half: item.slot < total / 2 ? 'top' : 'bottom', p1Id: item.p1Id, p2Id: item.p2Id });
+      if (item.winner) results[matchKey(round, item.slot)] = item.winner;
+    }
+  }
+  return { draw, results, meta };
+}
+// ════════════ END PARSER INLINED COPY ════════════
+
+// These MUST stay in sync with src/data/tournamentConfig.ts + src/data/liveData.ts (guarded by
+// liveIngestParity.test.ts). This standalone Deno file can't import the Vite config.
 const TOURNAMENT_ID = 'montreal_2026';
 const WIKI_PAGE = "2026 National Bank Open – Men's singles";
 const SCORED_ROUNDS = ['R64', 'R32', 'R16', 'QF', 'SF', 'F'] as const;
@@ -41,12 +209,9 @@ const roster = field as { id: string; name: string }[];
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
-  // B1 — CRITICAL: only the cron/service-role may invoke this. Without the guard, any visitor
-  // with the public anon key could POST `overrides` and write arbitrary match winners, setting
-  // everyone's score. The cron sends the service-role key; anon/user JWTs are rejected 401.
   const denied = assertServiceRole(req);
   if (denied) return denied;
-  let tournamentId = TOURNAMENT_ID; // hoisted so the catch can record WHICH tournament failed
+  let tournamentId = TOURNAMENT_ID;
   try {
     const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
@@ -55,8 +220,6 @@ Deno.serve(async (req) => {
     const page = body.page ?? WIKI_PAGE;
     tournamentId = body.tournamentId ?? TOURNAMENT_ID;
 
-    // 1) Fetch the draw wikitext (CORS-open MediaWiki API). Retry once on a transient
-    //    failure so a single flaky request never skips an ingest cycle.
     const wikiUrl = `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(page)}`
       + `&prop=wikitext&formatversion=2&format=json&origin=*`;
     const fetchWiki = async (): Promise<string> => {
@@ -71,12 +234,9 @@ Deno.serve(async (req) => {
     try { wikitext = await fetchWiki(); }
     catch { await new Promise((r) => setTimeout(r, 1500)); wikitext = await fetchWiki(); }
 
-    // 2) Parse into the tournament's scored rounds (shared, validated parser).
     const resolve = buildResolver(roster);
     const { draw, results } = parseFullDraw(wikitext, { scoredRounds: [...SCORED_ROUNDS], resolve });
 
-    // 3) Load the winners we ALREADY hold, so a partial/transient parse can never regress a
-    //    recorded result to null (the leaderboard only ever moves forward — see buildMatchRows).
     const existingWinners: Record<string, string | null> = {};
     {
       const { data: prior, error } = await db
@@ -85,11 +245,6 @@ Deno.serve(async (req) => {
       for (const r of prior ?? []) existingWinners[`${r.round}_${r.slot}`] = r.winner_id;
     }
 
-    // 4) DURABLE manual overrides (F4-4): persisted in public.match_overrides so a human
-    //    correction survives EVERY future cron run — not just the request that carried it. A
-    //    body `overrides` entry upserts into the table; `clearOverrides` removes one. We then
-    //    read the whole table and apply it with top precedence (buildMatchRows ignores any
-    //    override that doesn't name one of the pairing's two players).
     for (const o of body.overrides ?? []) {
       const { error } = await db.from('match_overrides').upsert(
         { tournament_id: tournamentId, round: o.round, slot: o.slot, winner_id: o.winnerId },
@@ -101,9 +256,6 @@ Deno.serve(async (req) => {
         .eq('tournament_id', tournamentId).eq('round', c.round).eq('slot', c.slot);
       if (error) throw error;
     }
-    // Resilient READ: a missing/broken overrides table must NEVER freeze the scoring cron —
-    // log and carry on with no overrides. (The body upsert/delete above DO throw, but they
-    // only run on a manual admin invoke, where a loud failure is what you want.)
     const overrides: Record<string, string> = {};
     try {
       const { data: ov, error } = await db.from('match_overrides')
@@ -112,8 +264,6 @@ Deno.serve(async (req) => {
       for (const o of ov ?? []) overrides[`${o.round}_${o.slot}`] = o.winner_id as string;
     } catch (e) { console.error('match_overrides read failed (continuing without overrides):', e); }
 
-    // 5) Build rows (override > parsed > previously stored > null) and upsert. PK
-    //    (tournament_id, round, slot) → idempotent; re-running is safe and cheap.
     const rows = buildMatchRows(tournamentId, draw, results, existingWinners, overrides);
     let written = 0;
     if (rows.length) {
@@ -122,18 +272,11 @@ Deno.serve(async (req) => {
       written = rows.length;
     }
 
-    // 5) Health signal: DRAFTED players (real roster ids) that don't appear anywhere in the
-    //    parsed draw. Before the draw publishes this is all 74 (draw empty). Once it's up,
-    //    a lingering roster id here means either a genuine early loss OR a name mismatch that
-    //    would silently cost that player their points — worth eyeballing.
     const inDraw = new Set<string>();
     for (const m of draw) { inDraw.add(m.p1Id); inDraw.add(m.p2Id); }
     const draftedMissing = draw.length ? roster.map((p) => p.id).filter((id) => !inDraw.has(id)) : [];
 
     const ranAt = new Date().toISOString();
-    // F4-2: write a durable, queryable health row (the cron discards the HTTP response, so
-    // this is the only place a silent freeze becomes visible). Best-effort — never fail the
-    // ingest over a health-write hiccup.
     await db.from('ingest_health').upsert({
       tournament_id: tournamentId, last_run_at: ranAt, ok: true,
       pairings: draw.length, results_known: Object.keys(results).length, matches_written: written,
@@ -141,27 +284,24 @@ Deno.serve(async (req) => {
     }, { onConflict: 'tournament_id' }).then(({ error }) => { if (error) console.error('ingest_health write:', error); });
 
     return json({
-      ok: true,
-      tournamentId,
-      page,
+      ok: true, tournamentId, page,
       pairings: draw.length,
       resultsKnown: Object.keys(results).length,
       overridesApplied: Object.keys(overrides).length,
       matchesWritten: written,
       draftedMissingCount: draftedMissing.length,
-      draftedMissing: draftedMissing.slice(0, 20), // sample, so the response stays small
+      draftedMissing: draftedMissing.slice(0, 20),
       ranAt,
     });
   } catch (err) {
-    console.error('ingest-draw error:', err); // B6: log detail server-side, don't leak it
-    // F4-2: record the failure so a broken ingest is VISIBLE (queryable), not silent.
+    console.error('ingest-draw error:', err);
     try {
       const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
       await db.from('ingest_health').upsert({
         tournament_id: tournamentId, last_run_at: new Date().toISOString(), ok: false,
         error: String(err instanceof Error ? err.message : err).slice(0, 500),
       }, { onConflict: 'tournament_id' });
-    } catch { /* best-effort — never throw from the failure handler */ }
+    } catch { /* best-effort */ }
     return json({ ok: false, error: 'internal error' }, 500);
   }
 });
