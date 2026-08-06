@@ -116,5 +116,8 @@ insert into public.player_stats (id, ranking) values
   ('cilic', 86),
   ('diallo', 92),
   ('kovacevic', 93),
-  ('shang', 270)
+  ('shang', 270),
+  ('merida', 59),
+  ('popyrin', 104),
+  ('droguet', 114)
 on conflict (id) do update set ranking = excluded.ranking;

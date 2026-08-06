@@ -113,7 +113,7 @@ describe('save_entry_rpc.sql seed ↔ PLAYERS parity', () => {
     seeded.set(m[1], { ranking: Number(m[2]), price: Number(m[3]), tier: m[4] });
   }
 
-  it('seeds every one of the 74 roster players, and only those', () => {
+  it('seeds every roster player, and only those', () => {
     expect(seeded.size).toBe(PLAYERS.length);
     for (const p of PLAYERS) expect(seeded.has(p.id)).toBe(true);
   });

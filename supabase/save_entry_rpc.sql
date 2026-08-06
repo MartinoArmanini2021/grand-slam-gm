@@ -99,7 +99,10 @@ insert into public.player_stats (id, ranking, price, tier) values
   ('royer', 75, 4, 'Silver'),
   ('fucsovics', 76, 7, 'Silver'),
   ('duckworth', 82, 6, 'Silver'),
-  ('diallo', 92, 6, 'Silver')
+  ('diallo', 92, 6, 'Silver'),
+  ('merida', 59, 9, 'Silver'),
+  ('popyrin', 104, 4, 'Silver'),
+  ('droguet', 114, 6, 'Silver')
 on conflict (id) do update set ranking = excluded.ranking, price = excluded.price, tier = excluded.tier;
 
 -- 2) The single validated write path. SECURITY DEFINER (runs as the table owner, bypassing

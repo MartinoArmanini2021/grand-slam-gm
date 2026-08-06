@@ -40,7 +40,7 @@ describe('ingest-draw server path (field roster + shared parser)', () => {
   });
   it('the field-JSON roster matches every drafted id used by the client', () => {
     const ids = new Set((fieldJson as { id: string }[]).map(p => p.id));
-    expect(ids.size).toBe(74); // the whole field, unique
+    expect(ids.size).toBe(77); // the whole field, unique
   });
 });
 
