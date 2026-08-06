@@ -1,20 +1,19 @@
 import { useMemo } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useLiveStore } from '../store/liveStore';
-import { ROUNDS, isPlayerOut, roundPlayable, roundHasResult, liveScoreBreakdown } from '../data/tournament';
+import { ROUNDS, isPlayerOut, roundHasResult, liveScoreBreakdown } from '../data/tournament';
 import { getPlayer } from '../data/players';
 import { lastName } from '../data/format';
 import type { RoundId } from '../types';
 import PlayerAvatar from '../components/PlayerAvatar';
 import BracketTree from '../components/BracketTree';
 import { TOURNAMENT } from '../data/tournamentConfig';
-import { toast } from '../store/toastStore';
 
 export default function TournamentPage() {
   const {
     phase, myTeam, captain, viceCaptain, currentRoundIndex,
     initialSquad, transfers, captainHistory, viceCaptainHistory,
-    playNextRound, continueToNextRound, budgetReturns, setActiveTab,
+    setActiveTab,
   } = useGameStore();
 
   // Live, per-match score + per-round breakdown — identical to the server/leaderboard, updating
@@ -29,22 +28,9 @@ export default function TournamentPage() {
   const myScore = roundScores.reduce((a, b) => a + b.points, 0);
 
   const currentRound = phase !== 'draft' && phase !== 'finished' ? ROUNDS[currentRoundIndex] : null;
-  // In round_complete the index has already advanced, so the card should name the
-  // round that just finished, not the upcoming one.
-  const headerRound = phase === 'round_complete' ? (ROUNDS[currentRoundIndex - 1] ?? currentRound) : currentRound;
   const roundStarted = !!currentRound && roundHasResult(currentRound.id); // its first match has a result → underway
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
   const aliveSquad = myTeam.filter(id => !isPlayerOut(id, revealed));
-  // A round can be scored only once the real tournament has FINISHED it (every pairing
-  // has a live result). Before the draw is played, nothing is playable — you're locked
-  // in and waiting for the National Bank Open to begin.
-  const playable = currentRound ? roundPlayable(currentRoundIndex) : false;
-  // Ready to play once the round is live AND a captain is chosen — or all players are
-  // out (nothing left to captain), so the tournament can still be played out.
-  const canPlay = phase === 'pre_round' && playable && (!!captain || aliveSquad.length === 0);
-  const playLabel = !playable ? '⏳ Awaiting live results'
-    : canPlay ? `▶ Play ${currentRound!.label}`
-    : 'Select a captain first';
 
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-3 py-6 fade-in">
@@ -72,17 +58,17 @@ export default function TournamentPage() {
         </div>
       )}
 
-      {(phase === 'pre_round' || phase === 'round_complete') && currentRound && (
+      {phase === 'pre_round' && currentRound && (
         <div className="mb-6 rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.09)' }}>
           <div className="px-5 py-4" style={{ borderBottom: '1px solid rgba(10,27,51,0.07)' }}>
             <div className="flex items-start justify-between">
               <div>
                 <div className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: 'var(--ink-2)' }}>
-                  {phase === 'pre_round' ? (roundStarted ? 'Underway' : 'Up Next') : 'Round Complete'}
+                  {roundStarted ? 'Underway' : 'Up Next'}
                 </div>
-                <div className="text-lg font-bold" style={{ color: 'var(--ink)' }}>{(headerRound ?? currentRound).label}</div>
+                <div className="text-lg font-bold" style={{ color: 'var(--ink)' }}>{currentRound.label}</div>
                 <div className="text-xs mt-0.5" style={{ color: 'var(--ink-2)' }}>
-                  Base +{(headerRound ?? currentRound).points} pts · ×ranking &amp; upset bonus · captain doubles
+                  Base +{currentRound.points} pts · ×ranking &amp; upset bonus · captain doubles
                 </div>
               </div>
               <div className="text-right">
@@ -93,64 +79,21 @@ export default function TournamentPage() {
           </div>
 
           <div className="px-5 py-4">
-            {phase === 'pre_round' && (
-              <>
-                {aliveSquad.length === 0 ? (
-                  <p className="text-xs mb-4" style={{ color: 'var(--ink-2)' }}>All your players are out — play on to finish the tournament.</p>
-                ) : (
-                  <div className="flex items-center gap-2 mb-4 flex-wrap">
-                    <span className="text-xs" style={{ color: 'var(--ink-2)' }}>Your leaders:</span>
-                    <LeaderChip role="C" id={captain} />
-                    <LeaderChip role="V" id={viceCaptain} />
-                    <button onClick={() => setActiveTab('home')} className="text-xs font-semibold" style={{ color: 'var(--blue)' }}>
-                      Change on the pitch →
-                    </button>
-                  </div>
-                )}
-                <button
-                  onClick={() => {
-                    const label = currentRound.label;
-                    playNextRound();
-                    const rs = useGameStore.getState().roundScores;
-                    const last = rs[rs.length - 1];
-                    if (last) toast(last.points > 0 ? `+${last.points} points in the ${label}! 🎾` : `No points in the ${label}`, last.points > 0 ? 'good' : 'info');
-                  }}
-                  disabled={!canPlay}
-                  className="px-6 py-2.5 rounded-xl font-bold text-sm transition-all"
-                  style={{
-                    background: canPlay ? 'var(--blue)' : 'rgba(10,27,51,0.05)',
-                    color: canPlay ? '#fff' : 'var(--ink-3)',
-                    cursor: canPlay ? 'pointer' : 'not-allowed',
-                  }}
-                >
-                  {playLabel}
+            {aliveSquad.length === 0 ? (
+              <p className="text-xs" style={{ color: 'var(--ink-2)' }}>All your players are out — your squad's scores are final.</p>
+            ) : (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs" style={{ color: 'var(--ink-2)' }}>Your leaders:</span>
+                <LeaderChip role="C" id={captain} />
+                <LeaderChip role="V" id={viceCaptain} />
+                <button onClick={() => setActiveTab('home')} className="text-xs font-semibold" style={{ color: 'var(--blue)' }}>
+                  Change on the pitch →
                 </button>
-              </>
-            )}
-
-            {phase === 'round_complete' && (
-              <div>
-                {budgetReturns
-                  .filter(r => r.round === ROUNDS[currentRoundIndex - 1]?.id)
-                  .map(ret => (
-                    <div key={ret.playerId} className="text-sm mb-1.5 flex items-center gap-2">
-                      <span style={{ color: 'var(--ink-2)' }}>💸</span>
-                      <span style={{ color: 'var(--ink)' }}>{getPlayer(ret.playerId).name}</span>
-                      <span style={{ color: 'var(--ink-2)' }}>eliminated →</span>
-                      <span className="font-num font-semibold" style={{ color: 'var(--gold)' }}>+${ret.amount}M returned</span>
-                    </div>
-                  ))}
-                {currentRoundIndex < ROUNDS.length && (
-                  <button
-                    className="mt-3 px-5 py-2 rounded-xl text-sm font-semibold transition-all"
-                    onClick={continueToNextRound}
-                    style={{ background: 'rgba(14,111,196,0.12)', border: '1px solid rgba(14,111,196,0.25)', color: 'var(--blue)' }}
-                  >
-                    Continue to {ROUNDS[currentRoundIndex]?.label} →
-                  </button>
-                )}
               </div>
             )}
+            <p className="text-[11px] mt-3" style={{ color: 'var(--ink-3)' }}>
+              Scores post automatically as results land — nothing to click. Make transfers in the Market before the next round starts.
+            </p>
           </div>
         </div>
       )}

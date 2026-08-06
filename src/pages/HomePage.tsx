@@ -2,17 +2,16 @@ import { useState, useEffect, useRef, useMemo, Fragment } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { useLiveStore } from '../store/liveStore';
-import { ROUNDS, isPlayerOut, isEliminated, roundPlayable, roundHasResult, tournamentStarted, transfersOpen, liveScore, liveBudget, playerRefund } from '../data/tournament';
+import { ROUNDS, isEliminated, roundHasResult, tournamentStarted, transfersOpen, liveScore, liveBudget, playerRefund } from '../data/tournament';
 import { isSquadValid, SQUAD_SIZE } from '../data/squadRules';
 import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
 import { onActivate } from '../hooks';
-import { toast } from '../store/toastStore';
 import { useLeagueBoard, useMyLeagues } from '../data/leagueBoard';
 import SquadCourt from '../components/SquadCourt';
 import TournamentWelcome from '../components/TournamentWelcome';
 import Countdown from '../components/Countdown';
 import ScoringPendingNote from '../components/ScoringPendingNote';
-import type { GamePhase, RoundId } from '../types';
+import type { GamePhase } from '../types';
 
 const TEAM_TARGET = SQUAD_SIZE;
 
@@ -20,7 +19,7 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
   const {
     phase, myTeam, currentRoundIndex,
     initialSquad, transfers, cashedIn, captainHistory, viceCaptainHistory,
-    roundScores, setActiveTab, openTeam, playNextRound, continueToNextRound,
+    roundScores, setActiveTab, openTeam,
   } = useGameStore();
   const { teamName, teamEmblem } = useProfile();
 
@@ -49,11 +48,6 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
 
   const squadReady = isSquadValid(myTeam);
   const currentRound = currentRoundIndex < ROUNDS.length ? ROUNDS[currentRoundIndex] : null;
-  // A round can only be played once its real-world results are in the live feed. Until
-  // then the banner shows "awaiting results" instead of an enabled (no-op) Play button.
-  const playable = currentRound ? roundPlayable(currentRoundIndex) : false;
-  const revealedRounds = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
-  const activePlayers = myTeam.filter(id => !isPlayerOut(id, revealedRounds));
   const winRate = roundScores.length > 0
     ? Math.round(roundScores.reduce((a, b) => a + (b.points > 0 ? 1 : 0), 0) / roundScores.length * 100)
     : null;
@@ -70,17 +64,6 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
   const boardName = boardLeague ? (myLeagues.find(l => l.id === boardLeague)?.name ?? 'League') : 'Public League';
   const medal = (i: number) => (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`);
 
-  // Play the upcoming round right from Home (captains are set on the court above).
-  const playRound = () => {
-    if (!currentRound || !roundPlayable(currentRoundIndex)) return; // not live yet → no-op, no false toast
-    const label = currentRound.label;
-    const before = useGameStore.getState().roundScores.length;
-    playNextRound();
-    const rs = useGameStore.getState().roundScores;
-    if (rs.length <= before) return; // nothing was actually scored → don't toast a stale round
-    const last = rs[rs.length - 1];
-    toast(last.points > 0 ? `+${last.points} in the ${label}! 🎾` : `No points in the ${label}`, last.points > 0 ? 'good' : 'info');
-  };
   // Show only the top slice on Home (scales to 200+ managers); if you're below it,
   // pin your own row underneath so you always see your standing.
   const LEADERBOARD_TOP = 12;
@@ -132,19 +115,11 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
         <ActionBanner color="var(--blue)" title={squadReady ? 'Squad ready — lock it in' : 'Build your squad'}
           body={`$${budget.toFixed(1)}M budget · ${myTeam.length}/${TEAM_TARGET} picked · 2 Platinum · 3 Gold · 5 Silver`} cta="Go to Market" onClick={() => setActiveTab('draft')} />
       )}
-      {phase === 'pre_round' && currentRound && playable && (
-        <ActionBanner color="var(--gold)" title={`Captains set — play the ${currentRound.label}`}
-          body={`Captain ×2 · Vice ×1.5 · tap a player on court to change · ${activePlayers.length} still in`}
-          cta={`▶ Play ${currentRound.short}`} onClick={playRound} />
-      )}
-      {phase === 'pre_round' && currentRound && !playable && (
-        <ActionBanner color="var(--blue)" title={`Squad locked — waiting on the ${currentRound.label}`}
-          body={`Results go live as ${TOURNAMENT.edition} is played. Your captains are set; scores post automatically.`}
-          cta="⏳ See live results →" onClick={() => setActiveTab('tournament')} />
-      )}
-      {phase === 'round_complete' && currentRound && (
-        <ActionBanner color="var(--green)" title={`${ROUNDS[currentRoundIndex - 1]?.label} results are in`}
-          body={`${currentRound.label} is up next — set your captains`} cta={`Continue to ${currentRound.short} →`} onClick={continueToNextRound} />
+      {phase === 'pre_round' && currentRound && (
+        <ActionBanner color="var(--blue)"
+          title={roundHasResult(currentRound.id) ? `${currentRound.label} underway` : `${currentRound.label} up next`}
+          body={`Scores post automatically as ${TOURNAMENT.edition} is played — nothing to click. Set your captains on the court; make transfers in the Market before the next round starts.`}
+          cta="See live results →" onClick={() => setActiveTab('tournament')} />
       )}
       {phase === 'finished' && (
         <ActionBanner color="var(--gold)" title="Tournament complete!"
