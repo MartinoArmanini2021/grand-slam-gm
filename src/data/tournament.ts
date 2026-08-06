@@ -284,13 +284,14 @@ export function liveBudget(
 ): number {
   const price = (id: string) => findPlayer(id)?.price ?? 0;
   const base = initialSquad.length ? initialSquad : currentSquad; // pre-lock: the draft squad
-  // MANUAL refunds: money is credited for every player a manager has DISPOSED OF — the ones they
-  // explicitly CASHED IN, plus the ones they TRANSFERRED OUT (a transfer's `out` is a sold player,
-  // whose refund funded the buy). Cashing-in adds `out` to cashedIn too, so the union just dedups;
-  // it also recovers refunds for OLD transfers made before `cashedIn` existed (those had it empty,
-  // which is why several managers read $0 / negative). `cost` = everything ever bought.
-  const cost = base.reduce((sum, id) => sum + price(id), 0) + transfers.reduce((sum, t) => sum + price(t.in), 0);
-  const refundIds = new Set<string>([...cashedIn, ...transfers.map(t => t.out).filter((id): id is string => !!id)]);
+  const acquired = [...base, ...transfers.map(t => t.in)]; // everyone ever bought (draft + purchases)
+  const cost = acquired.reduce((sum, id) => sum + price(id), 0);
+  // MANUAL refunds, derived from the ROSTER (not the fragile cashedIn list): refund every player
+  // a manager has DISPOSED OF = anyone they acquired who's no longer in the active squad (cashed
+  // in OR transferred out). This is immune to a mis-recorded cashedIn — an early cash-in that saved
+  // myTeam but not cashedIn (before gameSnapshot sent it) still gets its refund here. cashedIn is a
+  // subset, unioned for safety. Held-but-eliminated players are NOT refunded until cashed in.
+  const refundIds = new Set<string>([...cashedIn, ...acquired.filter(id => !currentSquad.includes(id))]);
   const refunds = [...refundIds].reduce((sum, id) => sum + playerRefund(id), 0);
   // Floor at 0: a squad drafted ≤ $150 can read "over budget" if prices were re-tuned afterwards
   // (cost now > 150). A negative number is confusing and un-actionable — they simply can't buy
