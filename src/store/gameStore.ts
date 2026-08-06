@@ -127,7 +127,7 @@ export function sanitizeState(s: Partial<GameStore>): void {
   }
 }
 
-interface GameStore {
+export interface GameStore {
   phase: GamePhase;
   myTeam: string[];
   initialSquad: string[]; // the squad as drafted (before any transfers) — for history

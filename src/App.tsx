@@ -12,6 +12,7 @@ import PlayerPage from './pages/PlayerPage';
 import AdminPage from './pages/AdminPage';
 import Toaster from './components/Toaster';
 import VersionGate from './components/VersionGate';
+import FirstRunTour from './components/FirstRunTour';
 import HowToPlay from './components/HowToPlay';
 import Logo from './components/Logo';
 import { NAV_ICONS } from './components/NavIcons';
@@ -215,6 +216,7 @@ function AppShell({
                 return (
                   <button
                     key={tab.id}
+                    data-tour={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     aria-label={tab.label}
                     aria-current={active ? 'page' : undefined}
@@ -305,6 +307,8 @@ function AppShell({
       <UserProfile open={showProfile} onClose={() => setShowProfile(false)} />
       <Toaster />
       <VersionGate />
+      {/* One-time spotlight tour of the tabs — waits until the rules/welcome overlays are gone. */}
+      <FirstRunTour paused={showRules || welcome} />
     </div>
   );
 }

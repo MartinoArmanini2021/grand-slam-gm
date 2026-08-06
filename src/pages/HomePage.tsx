@@ -2,14 +2,14 @@ import { useState, useEffect, useRef, useMemo, Fragment } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { useLiveStore } from '../store/liveStore';
-import { ROUNDS, isEliminated, roundHasResult, tournamentStarted, transferWindowOpen, liveScore, liveBudget, playerRefund, liveRoundStatus } from '../data/tournament';
+import { ROUNDS, roundHasResult, tournamentStarted, liveScore, liveBudget, liveRoundStatus } from '../data/tournament';
 import { isSquadValid, SQUAD_SIZE } from '../data/squadRules';
 import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
 import { onActivate } from '../hooks';
 import { useLeagueBoard, useMyLeagues } from '../data/leagueBoard';
 import SquadCourt from '../components/SquadCourt';
+import NextMove from '../components/NextMove';
 import TournamentWelcome from '../components/TournamentWelcome';
-import Countdown from '../components/Countdown';
 import ScoringPendingNote from '../components/ScoringPendingNote';
 import type { GamePhase } from '../types';
 
@@ -19,7 +19,7 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
   const {
     phase, myTeam, currentRoundIndex,
     initialSquad, transfers, cashedIn, captainHistory, viceCaptainHistory,
-    roundScores, setActiveTab, openTeam,
+    setActiveTab, openTeam,
   } = useGameStore();
   const { teamName, teamEmblem } = useProfile();
 
@@ -36,26 +36,14 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
     () => liveBudget(initialSquad, transfers, myTeam, cashedIn),
     [draw, results, initialSquad, transfers, myTeam, cashedIn],
   );
-  // Eliminated players still in your active squad have uncashed refund money waiting in the
-  // Market. Surfacing this the moment a player loses is the nudge to go claim + reinvest it.
-  const windowOpen = transferWindowOpen();
-  const cashable = useMemo(
-    () => (phase !== 'draft' ? myTeam.filter(id => isEliminated(id)) : []),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [phase, myTeam, draw, results],
-  );
-  const cashableTotal = useMemo(() => cashable.reduce((s, id) => s + playerRefund(id), 0), [cashable]);
-
   const squadReady = isSquadValid(myTeam);
   // The live round in focus (from RESULTS, not the frozen currentRoundIndex): the round whose
   // captain is currently being played for. null once the whole draw is done.
   const leaderStatus = liveRoundStatus();
   const currentRound = leaderStatus ? ROUNDS.find(r => r.id === leaderStatus.round) ?? null : null;
-  const winRate = roundScores.length > 0
-    ? Math.round(roundScores.reduce((a, b) => a + (b.points > 0 ? 1 : 0), 0) / roundScores.length * 100)
-    : null;
 
   const myLeagues = useMyLeagues();
+  const courtRef = useRef<HTMLDivElement>(null); // "Pick your captain" scrolls the coach card to the court
   // Which board to show on Home: null = the Public League; else a private league id.
   // Default to your first private league once they load, then remember your choice.
   const [boardLeague, setBoardLeague] = useState<string | null>(null);
@@ -105,52 +93,20 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
         </div>
       </div>
 
+      {/* ── Your next move — the always-present, phase-aware coach ── */}
+      <div className="mb-4">
+        <NextMove hasPrivateLeague={myLeagues.length > 0} onPickLeaders={() => courtRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })} />
+      </div>
+
       {/* ── Court (full width, matching the other page elements) ── */}
-      <SquadCourt fluid teamName={teamName} emblem={teamEmblem} onTeamClick={() => openTeam('you')} />
+      <div ref={courtRef}>
+        <SquadCourt fluid teamName={teamName} emblem={teamEmblem} onTeamClick={() => openTeam('you')} />
+      </div>
       <div className="text-[11px] mt-1.5 mb-3 text-center" style={{ color: 'var(--ink-3)' }}>
         {phase === 'draft'
           ? 'Your two captains lead on court · the other 8 sit on the bench · draft in the Market'
           : <>Tap a player to manage · <span style={{ color: 'var(--gold)' }}>C = captain ×2</span> · <span style={{ color: 'var(--blue)' }}>V = vice ×1.5</span></>}
       </div>
-
-      {/* ── Action callout ── */}
-      {phase === 'draft' && (
-        <ActionBanner color="var(--blue)" title={squadReady ? 'Squad ready — lock it in' : 'Build your squad'}
-          body={`$${budget.toFixed(1)}M budget · ${myTeam.length}/${TEAM_TARGET} picked · 2 Platinum · 3 Gold · 5 Silver`} cta="Go to Market" onClick={() => setActiveTab('draft')} />
-      )}
-      {phase === 'pre_round' && currentRound && (
-        <ActionBanner color="var(--blue)"
-          title={roundHasResult(currentRound.id) ? `${currentRound.label} underway` : `${currentRound.label} up next`}
-          body={`Scores post automatically as ${TOURNAMENT.edition} is played — nothing to click. Set your captains on the court; make transfers in the Market before the next round starts.`}
-          cta="See live results →" onClick={() => setActiveTab('tournament')} />
-      )}
-      {phase === 'finished' && (
-        <ActionBanner color="var(--gold)" title="Tournament complete!"
-          body={`Final score ${myScore} pts${winRate !== null ? ` · ${winRate}% round win rate` : ''}`} cta="View Bracket" onClick={() => setActiveTab('tournament')} />
-      )}
-
-      {/* Cash-in nudge: the moment any of your players is knocked out, tell EVERY manager there's
-          money to claim in the Market — round-over is exactly when refunds pile up. */}
-      {phase !== 'draft' && windowOpen && cashable.length > 0 && (
-        <div className="mt-3">
-          <ActionBanner color="var(--gold)" title={`💸 $${cashableTotal.toFixed(1)}M to cash in`}
-            body={`${cashable.length} of your player${cashable.length === 1 ? ' is' : 's are'} out. Claim their refund in the Market, then buy any replacement.`}
-            cta="Cash In →" onClick={() => setActiveTab('draft')} />
-        </div>
-      )}
-
-      {/* Deadline countdowns: lock your squad before the draft closes, and set your
-          captain/vice before each round begins. */}
-      {phase === 'draft' && (
-        <Countdown target={TOURNAMENT.schedule?.[TOURNAMENT.rounds[0]]}
-          title={squadReady ? 'Draft closes soon — lock in your squad' : 'Draft closes soon — pick your 10 & lock in'}
-          note="Once it closes your squad is set for the first round." />
-      )}
-      {phase === 'pre_round' && currentRound && (
-        <Countdown target={TOURNAMENT.schedule?.[currentRound.id]}
-          title={`Set your Captain & Vice for the ${currentRound.label}`}
-          note="Captain ×2 · Vice ×1.5 — they lock when the round begins." />
-      )}
 
         {/* ── League leaderboard (below the court) ── */}
         <div className="mt-6">
@@ -275,20 +231,3 @@ function StatCard({ label, value, unit, color }: { label: string; value: string;
   );
 }
 
-function ActionBanner({ color, title, body, cta, onClick }: {
-  color: string; title: string; body: string; cta: string; onClick: () => void;
-}) {
-  const bg = color === 'var(--blue)' ? 'rgba(14,111,196,0.07)' : color === 'var(--gold)' ? 'rgba(217,154,0,0.07)' : 'rgba(18,161,80,0.07)';
-  const border = color === 'var(--blue)' ? 'rgba(14,111,196,0.2)' : color === 'var(--gold)' ? 'rgba(217,154,0,0.2)' : 'rgba(18,161,80,0.2)';
-  return (
-    <div className="flex items-center gap-4 px-5 py-4 rounded-2xl" style={{ background: bg, border: `1px solid ${border}` }}>
-      <div className="flex-1">
-        <div className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>{title}</div>
-        <div className="text-xs mt-0.5" style={{ color: 'var(--ink-2)' }}>{body}</div>
-      </div>
-      <button onClick={onClick} className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-80" style={{ background: color }}>
-        {cta}
-      </button>
-    </div>
-  );
-}
