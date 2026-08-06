@@ -9,10 +9,12 @@ import PlayerAvatar from '../components/PlayerAvatar';
 import PlayerVideoButton from '../components/PlayerVideoButton';
 import PlayerTag from '../components/PlayerTag';
 import PurchaseConfirmModal from '../components/PurchaseConfirmModal';
+import MarketBuyModal from '../components/MarketBuyModal';
 import PlayerPickerModal from '../components/PlayerPickerModal';
 import SquadLockedModal from '../components/SquadLockedModal';
 import Countdown from '../components/Countdown';
 import { onActivate } from '../hooks';
+import { round1 } from '../data/format';
 import { toast } from '../store/toastStore';
 import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
 import type { RoundId, Player } from '../types';
@@ -31,6 +33,9 @@ export default function DraftPage() {
   const [search, setSearch] = useState('');
   const [tierFilter, setTierFilter] = useState<Tier | null>(null);
   const [confirm, setConfirm] = useState<Player | null>(null);
+  const [buyConfirm, setBuyConfirm] = useState<Player | null>(null); // LIVE market buy → confirm → stage
+  const [stagedCashIns, setStagedCashIns] = useState<string[]>([]);  // pending cash-ins (undoable)
+  const [stagedBuys, setStagedBuys] = useState<string[]>([]);        // pending buys (undoable)
   const [pickerOpen, setPickerOpen] = useState(false);
   const [showLocked, setShowLocked] = useState(false);
   // "Watch the players" hint — shown atop the list until the user dismisses it (persisted),
@@ -52,31 +57,60 @@ export default function DraftPage() {
   const valid = isSquadValid(myTeam);
   const shortfall = squadShortfall(myTeam);
 
-  // LIVE money: starting − everything ever bought + refunds you've CASHED IN (manual, not auto).
+  // LIVE committed money: starting − everything ever bought + refunds already CASHED IN.
   const liveBud = useMemo(() => liveBudget(initialSquad, transfers, myTeam, cashedIn),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [initialSquad, transfers, myTeam, cashedIn, draw, results]);
-  const displayBudget = live ? liveBud : budget;
-  // Eliminated players STILL in your active squad → ready to Cash In (money not claimed yet).
-  const cashable = useMemo(() => (live ? myTeam.filter(id => isEliminated(id)) : []),
+
+  // ── LIVE staging: cash-ins & buys are PENDING until "Lock Squad" commits them — the same
+  // build → confirm → lock flow as the pre-tournament draft, so a manager can never buy a player
+  // and instantly regret it. Everything below is a PREVIEW off committed state + the staged ops;
+  // nothing touches the store/cloud until lockTransfers() runs, and each change undoes cleanly. ──
+  const committedOpen = cashedIn.filter(c => !transfers.some(t => t.out === c)).length;
+  const previewOpen = committedOpen + stagedCashIns.length - stagedBuys.length; // free slots after staging
+  const openCount = previewOpen;                                                // (name kept for the UI below)
+  const stagedRefund = useMemo(() => stagedCashIns.reduce((s, id) => s + playerRefund(id), 0),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [live, myTeam, draw, results]);
+    [stagedCashIns, draw, results]);
+  const stagedSpend = stagedBuys.reduce((s, id) => s + getPlayer(id).price, 0);
+  const previewBudget = round1(liveBud + stagedRefund - stagedSpend);
+  const previewTeam = [...myTeam.filter(id => !stagedCashIns.includes(id)), ...stagedBuys];
+  const hasPending = stagedCashIns.length > 0 || stagedBuys.length > 0;
+  const displayBudget = live ? previewBudget : budget;
+  // Committed eliminated players still in the squad, NOT yet staged for cash-in → offer Cash In.
+  const cashable = useMemo(() => (live ? myTeam.filter(id => isEliminated(id) && !stagedCashIns.includes(id)) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [live, myTeam, stagedCashIns, draw, results]);
   const cashedTotal = useMemo(() => cashedInTotal(cashedIn),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [cashedIn, draw, results]);
-  // Open slots = players cashed in but not yet backfilled by a purchase → you can buy that many.
-  const openCount = cashedIn.filter(c => !transfers.some(t => t.out === c)).length;
-  const canBuy = live && windowOpen && openCount > 0;
+  const canBuy = live && windowOpen && previewOpen > 0;
+
   // A small localized "+$X" that floats up from the tapped Cash In button, for tactile feedback.
   const fxKey = useRef(0);
   const [cashFx, setCashFx] = useState<{ x: number; y: number; amount: number; key: number } | null>(null);
-  const cashPrompt = (id: string, e?: React.MouseEvent) => {
+  // Stage / undo — pure local state, fully reversible until Lock Squad.
+  const stageCashIn = (id: string, e?: React.MouseEvent) => {
     const amt = playerRefund(id);
     if (e) setCashFx({ x: e.clientX, y: e.clientY, amount: amt, key: ++fxKey.current });
-    cashInPlayer(id);
-    toast(`Cashed in ${getPlayer(id).name} · +$${amt}M`, 'good');
+    setStagedCashIns(prev => (prev.includes(id) ? prev : [...prev, id]));
   };
-  const buyPrompt = (id: string) => { buyPlayer(id); toast(`Bought ${getPlayer(id).name}`, 'good'); };
+  const undoCashIn = (id: string) => {
+    // A freed slot can't stay freed while a pending buy still fills it — drop the newest buy too.
+    const openAfter = committedOpen + (stagedCashIns.length - 1) - stagedBuys.length;
+    setStagedCashIns(prev => prev.filter(x => x !== id));
+    if (openAfter < 0) setStagedBuys(prev => prev.slice(0, -1));
+  };
+  const stageBuy = (id: string) => setStagedBuys(prev => (prev.includes(id) ? prev : [...prev, id]));
+  const undoBuy = (id: string) => setStagedBuys(prev => prev.filter(x => x !== id));
+  const discardPending = () => { setStagedCashIns([]); setStagedBuys([]); };
+  const lockTransfers = () => {
+    stagedCashIns.forEach(id => cashInPlayer(id)); // free the slots first…
+    stagedBuys.forEach(id => buyPlayer(id));        // …then backfill them
+    const n = stagedCashIns.length + stagedBuys.length;
+    discardPending();
+    toast(`Transfers locked in ✓ — ${n} change${n === 1 ? '' : 's'} saved`, 'good');
+  };
 
   const sorted = useMemo(() => [...PLAYERS]
     .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()))
@@ -87,6 +121,12 @@ export default function DraftPage() {
       if (sort === 'price') return b.price - a.price || a.ranking - b.ranking; // dearest first; rank breaks ties
       return 0;
     }), [sort, search, tierFilter]);
+
+  // Once live, hide knocked-out players from the market list — it's just the field still in
+  // contention, so it's easy to see who you can actually buy. (They stay in My Squad with Cash In.)
+  const visible = useMemo(() => (live ? sorted.filter(p => !isEliminated(p.id)) : sorted),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sorted, live, draw, results]);
 
   const th = 'text-left px-2 py-2 text-[11px] font-bold uppercase tracking-wide';
 
@@ -107,11 +147,13 @@ export default function DraftPage() {
             ? `Build your squad — $${budget.toFixed(1)}M to spend · ${myTeam.length}/${TEAM_SIZE} picked`
             : !windowOpen
               ? 'Transfer window closed — your squad is locked for the final.'
-              : cashable.length > 0
-                ? `${cashable.length} eliminated player${cashable.length === 1 ? '' : 's'} to Cash In — claim the money, then buy any replacement you like.`
-                : openCount > 0
-                  ? `$${liveBud.toFixed(1)}M to spend · ${openCount} open slot${openCount === 1 ? '' : 's'} — buy a replacement of any tier below.`
-                  : `$${liveBud.toFixed(1)}M available — Cash In an eliminated player to free up money.`}
+              : hasPending
+                ? `${stagedCashIns.length + stagedBuys.length} pending change${stagedCashIns.length + stagedBuys.length === 1 ? '' : 's'} — review My Squad, then tap Lock Squad to confirm.`
+                : cashable.length > 0
+                  ? `${cashable.length} eliminated player${cashable.length === 1 ? '' : 's'} to Cash In — claim the money, then buy any replacement you like.`
+                  : openCount > 0
+                    ? `$${previewBudget.toFixed(1)}M to spend · ${openCount} open slot${openCount === 1 ? '' : 's'} — buy a replacement of any tier below.`
+                    : `$${previewBudget.toFixed(1)}M available — Cash In an eliminated player to free up money.`}
         </p>
         {phase === 'draft' && (
           <div className="max-w-xl">
@@ -141,7 +183,7 @@ export default function DraftPage() {
           {live && windowOpen && cashable.length === 0 && openCount > 0 && (
             <div className="rounded-2xl px-4 py-2.5 mb-3 flex items-center gap-2 text-sm" style={{ background: 'rgba(217,154,0,0.07)', border: '1px solid rgba(217,154,0,0.3)', color: 'var(--ink)' }}>
               <span>🛒</span>
-              <span>You have <b>{openCount}</b> open slot{openCount === 1 ? '' : 's'} and <b className="font-num" style={{ color: 'var(--blue)' }}>${liveBud.toFixed(1)}M</b> to spend. Tap <b style={{ color: 'var(--green)' }}>+ Buy</b> on any still-alive player — any tier.</span>
+              <span>You have <b>{openCount}</b> open slot{openCount === 1 ? '' : 's'} and <b className="font-num" style={{ color: 'var(--blue)' }}>${previewBudget.toFixed(1)}M</b> to spend. Tap <b style={{ color: 'var(--green)' }}>+ Buy</b> on any still-alive player — any tier.</span>
             </div>
           )}
           {live && windowOpen && cashable.length === 0 && openCount === 0 && (
@@ -248,8 +290,9 @@ export default function DraftPage() {
                 </tr>
               </thead>
               <tbody>
-                {sorted.map(player => {
+                {visible.map(player => {
                   const isSelected = myTeam.includes(player.id);
+                  const ownedLive = previewTeam.includes(player.id); // owned in the PREVIEW (committed + staged buy)
                   // Live: eliminated = knocked out per the RESULTS (isEliminated). Draft: per revealed rounds.
                   const out = live ? isEliminated(player.id) : isPlayerOut(player.id, revealed);
                   const full = myTeam.length >= TEAM_SIZE;
@@ -257,9 +300,9 @@ export default function DraftPage() {
                   const tier = getTier(player.ranking);
                   const tierFull = !isSelected && isTierFull(tier, myTeam); // quota met for this tier
                   const addable = !locked && !isSelected && !out && !full && canAfford && !tierFull;
-                  // Live: buyable into an open (cashed-in) slot — any tier, just has to be
-                  // still-alive, unowned and affordable off the live budget.
-                  const buyable = live && canBuy && !isSelected && !out && liveBud >= player.price;
+                  // Live: buyable into an open (cashed-in) slot — any tier, just still-alive, not
+                  // already owned/staged, and affordable off the PREVIEW budget.
+                  const buyable = live && canBuy && !ownedLive && !out && previewBudget >= player.price;
                   const tierColor = TIER_META[tier].color;
 
                   return (
@@ -331,21 +374,19 @@ export default function DraftPage() {
                           >
                             {isSelected ? 'Remove' : out ? 'Out' : full ? 'Full' : tierFull ? `${tier} full` : !canAfford ? 'Over $' : '+ Add'}
                           </button>
-                        ) : isSelected ? (
-                          /* already in your squad */
-                          out
-                            ? <span className="text-[11px] font-bold px-2 py-1 rounded-lg whitespace-nowrap" style={{ background: 'rgba(229,71,43,0.1)', color: 'var(--ember)' }}>Out {getPlayerExit(player.id) ?? '1st rd'}</span>
+                        ) : ownedLive ? (
+                          /* in your squad — committed, or a PENDING buy waiting to be locked */
+                          stagedBuys.includes(player.id)
+                            ? <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg whitespace-nowrap" style={{ background: 'rgba(217,154,0,0.14)', color: 'var(--gold)' }}>Added</span>
                             : <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg whitespace-nowrap" style={{ background: 'rgba(18,161,80,0.1)', color: 'var(--green)' }}>In squad</span>
                         ) : !windowOpen ? (
                           <span className="text-[11px]" style={{ color: '#C7CFDA' }}>🔒</span>
-                        ) : out ? (
-                          <span className="text-[11px] font-semibold whitespace-nowrap" style={{ color: 'var(--ember)' }}>Out {getPlayerExit(player.id) ?? '1st rd'}</span>
                         ) : canBuy ? (
-                          /* ── LIVE: an open slot exists — buy any still-alive, affordable player ── */
+                          /* ── LIVE: an open slot exists — buy any still-alive, affordable player (STAGED) ── */
                           <button
-                            onClick={e => { e.stopPropagation(); if (buyable) buyPrompt(player.id); }}
+                            onClick={e => { e.stopPropagation(); if (buyable) setBuyConfirm(player); }}
                             disabled={!buyable}
-                            title={liveBud < player.price ? `Costs $${player.price}M — over your $${liveBud.toFixed(1)}M` : `Buy ${player.name}`}
+                            title={previewBudget < player.price ? `Costs $${player.price}M — over your $${previewBudget.toFixed(1)}M` : `Buy ${player.name}`}
                             className="text-[11px] font-bold px-3 min-h-[36px] rounded-lg transition-transform active:scale-95 whitespace-nowrap"
                             style={{
                               background: buyable ? 'var(--green)' : 'rgba(10,27,51,0.04)',
@@ -354,7 +395,7 @@ export default function DraftPage() {
                               cursor: buyable ? 'pointer' : 'not-allowed',
                             }}
                           >
-                            {liveBud < player.price ? 'Over $' : '+ Buy'}
+                            {previewBudget < player.price ? 'Over $' : '+ Buy'}
                           </button>
                         ) : (
                           /* ── LIVE: no open slot — cash in an eliminated player first ── */
@@ -374,7 +415,7 @@ export default function DraftPage() {
           <div className="lg:sticky lg:top-20 rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.09)' }}>
             <div className="flex items-center justify-between mb-1">
               <h2 className="font-bold text-sm" style={{ color: 'var(--ink)' }}>My Squad</h2>
-              <span className="font-num text-xs" style={{ color: 'var(--ink-2)' }}>{myTeam.length} / {TEAM_SIZE}</span>
+              <span className="font-num text-xs" style={{ color: 'var(--ink-2)' }}>{live ? previewTeam.length : myTeam.length} / {TEAM_SIZE}</span>
             </div>
 
             <div className="mb-4 pt-3">
@@ -394,7 +435,9 @@ export default function DraftPage() {
               )}
             </div>
 
-            {/* Tier requirement: exactly 2 Platinum, 3 Gold, 5 Silver of your 10. */}
+            {/* Tier requirement: exactly 2 Platinum, 3 Gold, 5 Silver of your 10. Draft-only —
+                once live, transfers may be any tier, so the quota no longer applies. */}
+            {!live && (
             <div className="flex gap-2 mb-4">
               {TIER_MINIMUMS.map(({ tier, min }) => {
                 const have = counts[tier];
@@ -411,26 +454,55 @@ export default function DraftPage() {
                 );
               })}
             </div>
+            )}
 
             <div className="space-y-1.5 mb-4">
-              {myTeam.length === 0 && (
+              {!live && myTeam.length === 0 && (
                 <div className="text-center py-6 text-sm" style={{ color: 'var(--ink-3)' }}>Pick {TEAM_SIZE} players</div>
               )}
-              {[...myTeam].sort((a, b) => getPlayer(a).ranking - getPlayer(b).ranking).map(id => {
+
+              {/* ── DRAFT: build the squad (Captain / Vice / remove) ── */}
+              {!live && [...myTeam].sort((a, b) => getPlayer(a).ranking - getPlayer(b).ranking).map(id => {
                 const p = getPlayer(id);
                 const isCap = captain === id;
                 const isVice = viceCaptain === id;
-                const dead = live && isEliminated(id);     // knocked out (live results), not yet cashed
-                const refund = dead ? playerRefund(id) : 0; // money you'd claim by cashing in
-                const rowBg = dead ? 'rgba(229,71,43,0.06)' : isCap ? 'rgba(217,154,0,0.07)' : isVice ? 'rgba(14,111,196,0.06)' : 'rgba(10,27,51,0.03)';
-                const rowBorder = dead ? 'rgba(229,71,43,0.22)' : isCap ? 'rgba(217,154,0,0.2)' : isVice ? 'rgba(14,111,196,0.2)' : 'rgba(10,27,51,0.06)';
+                return (
+                  <div key={id} className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: isCap ? 'rgba(217,154,0,0.07)' : isVice ? 'rgba(14,111,196,0.06)' : 'rgba(10,27,51,0.03)', border: `1px solid ${isCap ? 'rgba(217,154,0,0.2)' : isVice ? 'rgba(14,111,196,0.2)' : 'rgba(10,27,51,0.06)'}` }}>
+                    <PlayerAvatar playerId={id} name={p.name} size="sm" />
+                    <div className="flex-1 min-w-0">
+                      <PlayerTag playerId={id} flag={p.flag} className="text-[8px] font-bold uppercase tracking-wide leading-tight truncate" style={{ color: 'var(--blue)' }} />
+                      <div className="text-xs font-medium truncate" style={{ color: 'var(--ink)' }}>{p.name}</div>
+                      <div className="font-num text-[10px]" style={{ color: 'var(--ink-2)' }}>${p.price}M · 🎾{p.surface[SURF]}% {SURFACE.label}</div>
+                    </div>
+                    <button onClick={() => setCaptain(id)} title="Captain (×2)" aria-label={`Make ${p.name} captain`} className="text-xs font-extrabold w-9 h-9 rounded-lg shrink-0 flex items-center justify-center transition-transform active:scale-90" style={{ background: isCap ? 'var(--gold)' : 'rgba(10,27,51,0.05)', color: isCap ? '#fff' : 'var(--ink-3)', border: `1px solid ${isCap ? 'var(--gold)' : 'rgba(10,27,51,0.08)'}` }}>C</button>
+                    <button onClick={() => setViceCaptain(id)} title="Vice-captain (×1.5)" aria-label={`Make ${p.name} vice-captain`} className="text-xs font-extrabold w-9 h-9 rounded-lg shrink-0 flex items-center justify-center transition-transform active:scale-90" style={{ background: isVice ? 'var(--blue)' : 'rgba(10,27,51,0.05)', color: isVice ? '#fff' : 'var(--ink-3)', border: `1px solid ${isVice ? 'var(--blue)' : 'rgba(10,27,51,0.08)'}` }}>V</button>
+                    <button onClick={() => removePlayer(id)} title="Remove" aria-label={`Remove ${p.name}`} className="text-xs w-9 h-9 rounded-lg shrink-0 flex items-center justify-center transition-transform active:scale-90" style={{ background: 'rgba(10,27,51,0.04)', border: '1px solid rgba(10,27,51,0.06)', color: 'var(--ink-2)' }}>✕</button>
+                  </div>
+                );
+              })}
+              {!locked && Array.from({ length: TEAM_SIZE - myTeam.length }).map((_, i) => (
+                <button key={`e${i}`} onClick={() => setPickerOpen(true)} className="w-full px-3 py-2 rounded-xl text-xs text-center transition-colors hover:bg-black/[0.03] cursor-pointer" style={{ border: '1px dashed rgba(10,27,51,0.14)', color: 'var(--ink-3)' }}>+ Add a player</button>
+              ))}
+
+              {/* ── LIVE: preview squad — committed players + PENDING buys (gold), each undoable ── */}
+              {live && [...previewTeam].sort((a, b) => getPlayer(a).ranking - getPlayer(b).ranking).map(id => {
+                const p = getPlayer(id);
+                const isCap = captain === id;
+                const isVice = viceCaptain === id;
+                const isNew = stagedBuys.includes(id);        // pending buy, not yet committed
+                const dead = !isNew && isEliminated(id);      // committed, still owned, out, not yet cashed
+                const refund = dead ? playerRefund(id) : 0;
+                const rowBg = isNew ? 'rgba(217,154,0,0.09)' : dead ? 'rgba(229,71,43,0.06)' : isCap ? 'rgba(217,154,0,0.07)' : isVice ? 'rgba(14,111,196,0.06)' : 'rgba(10,27,51,0.03)';
+                const rowBorder = isNew ? 'rgba(217,154,0,0.55)' : dead ? 'rgba(229,71,43,0.22)' : isCap ? 'rgba(217,154,0,0.2)' : isVice ? 'rgba(14,111,196,0.2)' : 'rgba(10,27,51,0.06)';
                 return (
                   <div key={id} className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: rowBg, border: `1px solid ${rowBorder}` }}>
                     <div style={{ opacity: dead ? 0.55 : 1 }}><PlayerAvatar playerId={id} name={p.name} size="sm" /></div>
                     <div className="flex-1 min-w-0">
                       <PlayerTag playerId={id} flag={p.flag} className="text-[8px] font-bold uppercase tracking-wide leading-tight truncate" style={{ color: 'var(--blue)' }} />
                       <div className="text-xs font-medium truncate" style={{ color: 'var(--ink)' }}>{p.name}</div>
-                      {dead ? (
+                      {isNew ? (
+                        <div className="font-num text-[10px]" style={{ color: 'var(--gold)', fontWeight: 700 }}>NEW · −${p.price}M</div>
+                      ) : dead ? (
                         <div className="font-num text-[10px] flex items-center gap-1.5 leading-tight">
                           <span style={{ color: 'var(--ember)', fontWeight: 700 }}>OUT {getPlayerExit(id) ?? '1st rd'}</span>
                           <span style={{ color: 'var(--ink-3)' }}>·</span>
@@ -440,30 +512,38 @@ export default function DraftPage() {
                         <div className="font-num text-[10px]" style={{ color: 'var(--ink-2)' }}>${p.price}M · 🎾{p.surface[SURF]}% {SURFACE.label}</div>
                       )}
                     </div>
-                    {/* Draft: Captain / Vice-captain toggles + remove */}
-                    {!live && (
+                    {isNew ? (
+                      <button onClick={() => undoBuy(id)} aria-label={`Undo buying ${p.name}`} className="text-[11px] font-bold px-2.5 h-9 rounded-lg shrink-0 transition-transform active:scale-90" style={{ background: 'rgba(10,27,51,0.05)', color: 'var(--ink-2)', border: '1px solid rgba(10,27,51,0.12)' }}>Undo</button>
+                    ) : dead && windowOpen ? (
+                      <button onClick={e => stageCashIn(id, e)} aria-label={`Cash in ${p.name} for $${refund}M`} className="text-[11px] font-bold px-2.5 h-9 rounded-lg shrink-0 transition-transform active:scale-90 whitespace-nowrap" style={{ background: 'var(--ember)', color: '#fff', border: '1px solid var(--ember)' }}>Cash In +${refund}M</button>
+                    ) : (
                       <>
-                        <button onClick={() => setCaptain(id)} title="Captain (×2)" aria-label={`Make ${p.name} captain`} className="text-xs font-extrabold w-9 h-9 rounded-lg shrink-0 flex items-center justify-center transition-transform active:scale-90" style={{ background: isCap ? 'var(--gold)' : 'rgba(10,27,51,0.05)', color: isCap ? '#fff' : 'var(--ink-3)', border: `1px solid ${isCap ? 'var(--gold)' : 'rgba(10,27,51,0.08)'}` }}>C</button>
-                        <button onClick={() => setViceCaptain(id)} title="Vice-captain (×1.5)" aria-label={`Make ${p.name} vice-captain`} className="text-xs font-extrabold w-9 h-9 rounded-lg shrink-0 flex items-center justify-center transition-transform active:scale-90" style={{ background: isVice ? 'var(--blue)' : 'rgba(10,27,51,0.05)', color: isVice ? '#fff' : 'var(--ink-3)', border: `1px solid ${isVice ? 'var(--blue)' : 'rgba(10,27,51,0.08)'}` }}>V</button>
-                        <button onClick={() => removePlayer(id)} title="Remove" aria-label={`Remove ${p.name}`} className="text-xs w-9 h-9 rounded-lg shrink-0 flex items-center justify-center transition-transform active:scale-90" style={{ background: 'rgba(10,27,51,0.04)', border: '1px solid rgba(10,27,51,0.06)', color: 'var(--ink-2)' }}>✕</button>
+                        {!dead && isCap && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0" style={{ background: 'var(--gold)', color: '#fff' }}>C</span>}
+                        {!dead && isVice && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0" style={{ background: 'var(--blue)', color: '#fff' }}>V</span>}
                       </>
                     )}
-                    {/* Live: CASH IN an eliminated player — claim the refund, freeing money + a slot */}
-                    {live && dead && windowOpen && (
-                      <button
-                        onClick={e => cashPrompt(id, e)}
-                        aria-label={`Cash in ${p.name} for $${refund}M`}
-                        className="text-[11px] font-bold px-2.5 h-9 rounded-lg shrink-0 transition-transform active:scale-90 whitespace-nowrap"
-                        style={{ background: 'var(--ember)', color: '#fff', border: '1px solid var(--ember)' }}
-                      >Cash In +${refund}M</button>
-                    )}
-                    {live && !dead && isCap && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0" style={{ background: 'var(--gold)', color: '#fff' }}>C</span>}
-                    {live && !dead && isVice && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0" style={{ background: 'var(--blue)', color: '#fff' }}>V</span>}
                   </div>
                 );
               })}
-              {/* Live: open slots freed by cashing in — buy a replacement from the market */}
-              {live && Array.from({ length: openCount }).map((_, i) => (
+
+              {/* LIVE: pending cash-ins — leaving the squad once you lock, undoable until then */}
+              {live && stagedCashIns.map(id => {
+                const p = getPlayer(id);
+                const refund = playerRefund(id);
+                return (
+                  <div key={`cash${id}`} className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'rgba(229,71,43,0.05)', border: '1px dashed rgba(229,71,43,0.4)' }}>
+                    <span className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-base" style={{ background: 'rgba(229,71,43,0.12)' }}>💸</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-medium truncate" style={{ color: 'var(--ink)' }}>{p.name}</div>
+                      <div className="font-num text-[10px]" style={{ color: 'var(--gold)', fontWeight: 700 }}>Cashing in · +${refund}M</div>
+                    </div>
+                    <button onClick={() => undoCashIn(id)} aria-label={`Undo cashing in ${p.name}`} className="text-[11px] font-bold px-2.5 h-9 rounded-lg shrink-0 transition-transform active:scale-90" style={{ background: 'rgba(10,27,51,0.05)', color: 'var(--ink-2)', border: '1px solid rgba(10,27,51,0.12)' }}>Undo</button>
+                  </div>
+                );
+              })}
+
+              {/* LIVE: open slots freed by cashing in — buy a replacement from the market */}
+              {live && Array.from({ length: previewOpen }).map((_, i) => (
                 <div key={`open${i}`} className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ border: '1px dashed rgba(217,154,0,0.55)', background: 'rgba(217,154,0,0.05)' }}>
                   <span className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-base" style={{ background: 'rgba(217,154,0,0.14)' }}>🛒</span>
                   <div className="flex-1 min-w-0">
@@ -471,9 +551,6 @@ export default function DraftPage() {
                     <div className="text-[10px]" style={{ color: 'var(--ink-3)' }}>Tap <b style={{ color: 'var(--green)' }}>+ Buy</b> on any player →</div>
                   </div>
                 </div>
-              ))}
-              {!locked && Array.from({ length: TEAM_SIZE - myTeam.length }).map((_, i) => (
-                <button key={`e${i}`} onClick={() => setPickerOpen(true)} className="w-full px-3 py-2 rounded-xl text-xs text-center transition-colors hover:bg-black/[0.03] cursor-pointer" style={{ border: '1px dashed rgba(10,27,51,0.14)', color: 'var(--ink-3)' }}>+ Add a player</button>
               ))}
             </div>
 
@@ -486,10 +563,25 @@ export default function DraftPage() {
             {live ? (
               !windowOpen ? (
                 <div className="w-full py-2.5 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(18,161,80,0.1)', color: 'var(--green)' }}>Locked for the final ✓</div>
+              ) : hasPending ? (
+                /* Pending changes staged — commit them all together, like the pre-tournament lock. */
+                <>
+                  <button
+                    onClick={lockTransfers}
+                    className="w-full py-3 rounded-xl font-bold text-sm text-white transition-transform active:scale-[0.99]"
+                    style={{ background: 'var(--blue)' }}
+                  >
+                    Lock Squad → <span style={{ opacity: 0.85 }}>({stagedCashIns.length + stagedBuys.length} change{stagedCashIns.length + stagedBuys.length === 1 ? '' : 's'})</span>
+                  </button>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-[11px]" style={{ color: 'var(--ink-3)' }}>Nothing is saved until you lock.</span>
+                    <button onClick={discardPending} className="text-[11px] font-semibold" style={{ color: 'var(--ember)' }}>Discard changes</button>
+                  </div>
+                </>
               ) : cashable.length > 0 ? (
                 <div className="w-full py-2.5 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(229,71,43,0.08)', color: 'var(--ember)', border: '1px solid rgba(229,71,43,0.28)' }}>💸 Cash in {cashable.length} eliminated player{cashable.length === 1 ? '' : 's'}</div>
               ) : openCount > 0 ? (
-                <div className="w-full py-2.5 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(217,154,0,0.1)', color: 'var(--gold)', border: '1px solid rgba(217,154,0,0.28)' }}>🛒 {openCount} open slot{openCount === 1 ? '' : 's'} · ${liveBud.toFixed(1)}M to spend</div>
+                <div className="w-full py-2.5 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(217,154,0,0.1)', color: 'var(--gold)', border: '1px solid rgba(217,154,0,0.28)' }}>🛒 {openCount} open slot{openCount === 1 ? '' : 's'} · ${previewBudget.toFixed(1)}M to spend</div>
               ) : (
                 <div className="w-full py-2.5 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(18,161,80,0.1)', color: 'var(--green)' }}>Squad locked ✓</div>
               )
@@ -530,8 +622,14 @@ export default function DraftPage() {
         </div>
       )}
 
-      {/* Purchase confirmation */}
+      {/* Purchase confirmation — draft add (commits) and live market buy (stages until Lock Squad) */}
       <PurchaseConfirmModal player={confirm} onClose={() => setConfirm(null)} />
+      <MarketBuyModal
+        player={buyConfirm}
+        budgetAfter={buyConfirm ? previewBudget - buyConfirm.price : 0}
+        onConfirm={() => buyConfirm && stageBuy(buyConfirm.id)}
+        onClose={() => setBuyConfirm(null)}
+      />
       <PlayerPickerModal open={pickerOpen} onClose={() => setPickerOpen(false)} />
       <SquadLockedModal open={showLocked} onClose={() => setShowLocked(false)} onInvite={() => { setShowLocked(false); setActiveTab('league'); }} />
     </div>
