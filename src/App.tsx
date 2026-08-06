@@ -11,6 +11,7 @@ import LeaguePage from './pages/LeaguePage';
 import PlayerPage from './pages/PlayerPage';
 import AdminPage from './pages/AdminPage';
 import Toaster from './components/Toaster';
+import VersionGate from './components/VersionGate';
 import HowToPlay from './components/HowToPlay';
 import Logo from './components/Logo';
 import { NAV_ICONS } from './components/NavIcons';
@@ -303,6 +304,7 @@ function AppShell({
       <HowToPlay open={showRules} onClose={closeRules} />
       <UserProfile open={showProfile} onClose={() => setShowProfile(false)} />
       <Toaster />
+      <VersionGate />
     </div>
   );
 }

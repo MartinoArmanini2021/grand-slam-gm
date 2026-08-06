@@ -11,6 +11,7 @@ import PlayerVideoButton from '../components/PlayerVideoButton';
 import PlayerTag from '../components/PlayerTag';
 import PurchaseConfirmModal from '../components/PurchaseConfirmModal';
 import MarketBuyModal from '../components/MarketBuyModal';
+import TransferHelpModal from '../components/TransferHelpModal';
 import PlayerPickerModal from '../components/PlayerPickerModal';
 import SquadLockedModal from '../components/SquadLockedModal';
 import Countdown from '../components/Countdown';
@@ -35,6 +36,7 @@ export default function DraftPage() {
   const [tierFilter, setTierFilter] = useState<Tier | null>(null);
   const [confirm, setConfirm] = useState<Player | null>(null);
   const [buyConfirm, setBuyConfirm] = useState<Player | null>(null); // LIVE market buy → confirm → stage
+  const [showTransferHelp, setShowTransferHelp] = useState(false);   // "How transfers work" help card
   // Pending (staged) cash-ins/buys live in a standalone store so they survive an in-session tab
   // switch / player-drilldown (which unmounts this page) instead of being silently discarded.
   const { cashIns: stagedCashIns, buys: stagedBuys, setCashIns: setStagedCashIns, setBuys: setStagedBuys, clear: clearStaged } = useMarketDraft();
@@ -193,6 +195,11 @@ export default function DraftPage() {
                     ? `$${previewBudget.toFixed(1)}M to spend · ${openCount} open slot${openCount === 1 ? '' : 's'} — buy a replacement of any tier below.`
                     : `$${previewBudget.toFixed(1)}M available — Cash In an eliminated player to free up money.`}
         </p>
+        {live && (
+          <button onClick={() => setShowTransferHelp(true)} className="text-xs font-bold mt-1 underline underline-offset-2" style={{ color: 'var(--ember)' }}>
+            How transfers work
+          </button>
+        )}
         {phase === 'draft' && (
           <div className="max-w-xl">
             <Countdown target={TOURNAMENT.schedule?.[TOURNAMENT.rounds[0]]}
@@ -668,6 +675,7 @@ export default function DraftPage() {
         onConfirm={() => buyConfirm && stageBuy(buyConfirm.id)}
         onClose={() => setBuyConfirm(null)}
       />
+      <TransferHelpModal open={showTransferHelp} onClose={() => setShowTransferHelp(false)} />
       <PlayerPickerModal open={pickerOpen} onClose={() => setPickerOpen(false)} />
       <SquadLockedModal open={showLocked} onClose={() => setShowLocked(false)} onInvite={() => { setShowLocked(false); setActiveTab('league'); }} />
     </div>
