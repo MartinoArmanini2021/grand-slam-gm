@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useLiveStore } from '../store/liveStore';
-import { liveScoreBreakdown } from '../data/tournament';
+import { ROUNDS, liveCurrentRound, liveScoreBreakdown } from '../data/tournament';
 import BracketTree from '../components/BracketTree';
 import { TOURNAMENT } from '../data/tournamentConfig';
 
@@ -21,14 +21,57 @@ export default function TournamentPage() {
   );
   const myScore = roundScores.reduce((a, b) => a + b.points, 0);
 
+  // The round in focus for the status box: the deepest round with a result is Underway; before
+  // any play the first round is Up Next. (draw/results are subscribed above, so this re-derives live.)
+  const liveRound = liveCurrentRound();
+  const focusRound = ROUNDS.find(r => r.id === liveRound) ?? ROUNDS[0];
+  const underway = liveRound !== null;
+  const showStatus = phase !== 'draft' && phase !== 'finished' && !!focusRound;
+
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-3 py-6 fade-in">
       <div className="mb-4">
-        <h1 className="text-lg font-extrabold" style={{ color: 'var(--ink)' }}>{TOURNAMENT.edition} — the draw</h1>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight" style={{ color: 'var(--ink)' }}>{TOURNAMENT.edition} — the draw</h1>
         <p className="text-xs mt-0.5" style={{ color: 'var(--ink-2)' }}>
           The live men's singles bracket. Once the draw is out you can highlight any team's players and trace their route to the final.
         </p>
       </div>
+
+      {/* ── Round status + how scoring works ── */}
+      {showStatus && (
+        <div className="mb-6 rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.09)' }}>
+          <div className="px-5 py-4" style={{ borderBottom: '1px solid rgba(10,27,51,0.07)' }}>
+            <div className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: underway ? 'var(--green)' : 'var(--ink-2)' }}>
+              {underway ? 'Underway' : 'Up Next'}
+            </div>
+            <div className="text-lg font-bold" style={{ color: 'var(--ink)' }}>{focusRound.label}</div>
+          </div>
+
+          <div className="px-5 py-4">
+            <div className="text-[11px] font-bold uppercase tracking-wide mb-3" style={{ color: 'var(--ink-2)' }}>How points are scored</div>
+            <p className="text-xs mb-3" style={{ color: 'var(--ink-2)' }}>
+              Every one of your players banks points each time they <b style={{ color: 'var(--ink)' }}>win a match</b>. A win is worth:
+            </p>
+            <div className="flex flex-col gap-2.5">
+              <ScoreRule label="Round">
+                <span>Deeper rounds pay more — </span>
+                <span className="font-num inline-flex flex-wrap gap-x-2">
+                  {ROUNDS.map(r => <span key={r.id}>{r.short} <b style={{ color: 'var(--ink)' }}>{r.points}</b></span>)}
+                </span>
+              </ScoreRule>
+              <ScoreRule label="Ranking">
+                Scaled by the winner's rank — a top seed <b style={{ color: 'var(--ink)' }}>×0.8</b>, an underdog up to <b style={{ color: 'var(--ink)' }}>×1.3</b>
+              </ScoreRule>
+              <ScoreRule label="Upset">
+                Beating a higher-ranked player adds a bonus — the bigger the ranking gap, the bigger the bonus
+              </ScoreRule>
+              <ScoreRule label="Leaders">
+                <b style={{ color: 'var(--gold)' }}>Captain ×2</b> and <b style={{ color: '#3f6ea5' }}>Vice ×1.5</b> on that player's round points
+              </ScoreRule>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Game controls ── */}
       {phase === 'finished' && (
@@ -50,6 +93,16 @@ export default function TournamentPage() {
       {/* ── The live tournament draw (empty until pairings publish) ── */}
       {/* Transfers live on the Market page now, not here. */}
       <BracketTree />
+    </div>
+  );
+}
+
+// One scoring rule: a fixed-width accent label + a plain-language description.
+function ScoreRule({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-baseline gap-2.5">
+      <span className="shrink-0 text-[10px] font-extrabold uppercase tracking-wide rounded px-1.5 py-0.5" style={{ background: 'rgba(14,111,196,0.1)', color: 'var(--blue)', minWidth: 62, textAlign: 'center' }}>{label}</span>
+      <span className="text-xs" style={{ color: 'var(--ink-2)' }}>{children}</span>
     </div>
   );
 }

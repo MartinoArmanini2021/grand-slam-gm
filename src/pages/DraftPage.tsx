@@ -97,7 +97,7 @@ export default function DraftPage() {
       {/* Status header */}
       <div className="mb-4">
         <div className="flex items-baseline gap-x-3 gap-y-1 flex-wrap">
-          <h1 className="text-lg font-extrabold" style={{ color: 'var(--ink)' }}>Transfer Market</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight" style={{ color: 'var(--ink)' }}>Transfer Market</h1>
           <span className="text-xs font-bold uppercase tracking-[0.15em]" style={{ color: phase === 'draft' ? 'var(--green)' : 'var(--ember)' }}>
             {phase === 'draft' ? 'Draft open' : roundLabel}
           </span>
