@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useLiveStore } from '../store/liveStore';
-import { ROUNDS, liveCurrentRound, liveScoreBreakdown } from '../data/tournament';
+import { ROUNDS, liveRoundStatus, liveScoreBreakdown } from '../data/tournament';
 import BracketTree from '../components/BracketTree';
 import { TOURNAMENT } from '../data/tournamentConfig';
 
@@ -21,11 +21,12 @@ export default function TournamentPage() {
   );
   const myScore = roundScores.reduce((a, b) => a + b.points, 0);
 
-  // The round in focus for the status box: the deepest round with a result is Underway; before
-  // any play the first round is Up Next. (draw/results are subscribed above, so this re-derives live.)
-  const liveRound = liveCurrentRound();
-  const focusRound = ROUNDS.find(r => r.id === liveRound) ?? ROUNDS[0];
-  const underway = liveRound !== null;
+  // The round in focus for the status box: the earliest UNFINISHED round — Underway if it already
+  // has results, Up Next if its predecessor is done and it hasn't started. (draw/results are
+  // subscribed above, so this re-derives live.) Null once the whole draw is played out.
+  const status = liveRoundStatus();
+  const focusRound = status ? ROUNDS.find(r => r.id === status.round) : null;
+  const underway = status?.underway ?? false;
   const showStatus = phase !== 'draft' && phase !== 'finished' && !!focusRound;
 
   return (
@@ -38,7 +39,7 @@ export default function TournamentPage() {
       </div>
 
       {/* ── Round status + how scoring works ── */}
-      {showStatus && (
+      {showStatus && focusRound && (
         <div className="mb-6 rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.09)' }}>
           <div className="px-5 py-4" style={{ borderBottom: '1px solid rgba(10,27,51,0.07)' }}>
             <div className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: underway ? 'var(--green)' : 'var(--ink-2)' }}>

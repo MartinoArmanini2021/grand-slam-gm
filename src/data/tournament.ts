@@ -82,6 +82,19 @@ export function liveCurrentRound(): RoundId | null {
   return null;
 }
 
+// The round in focus for the live status box — correctly telling a round that's UNDERWAY (has
+// results but isn't finished) apart from the NEXT round that's UP NEXT (its predecessor is fully
+// played). It's the earliest round that isn't fully played; "fully played" reuses roundPlayable(),
+// which knows a round is done only when every pairing is decided AND the next round has been drawn.
+// So a complete-but-not-yet-superseded round (e.g. R64 done, R32 drawn, nothing played) correctly
+// resolves to "R32, up next", not "R64, underway". Null once the whole draw is played out.
+export function liveRoundStatus(): { round: RoundId; underway: boolean } | null {
+  for (let i = 0; i < ROUNDS.length; i++) {
+    if (!roundPlayable(i)) return { round: ROUNDS[i].id, underway: roundHasResult(ROUNDS[i].id) };
+  }
+  return null; // every round fully played
+}
+
 // Has this round produced ANY result yet? Mirrors the server's save_entry captain lock,
 // which freezes a round's captain/vice the moment public.matches holds a winner for it.
 // The store + the court use this so the UI never invites a captain change the server will
