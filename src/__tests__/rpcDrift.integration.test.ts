@@ -21,7 +21,7 @@ const RUN = Boolean(URL && ANON && JWT);
 
 const ROSTER = new Map<string, RosterPricing>(PLAYERS.map(p => [p.id, { id: p.id, price: p.price, ranking: p.ranking }]));
 const tsVerdict = (f: ReturnType<typeof buildLegalityFixtures>[number]): 'accept' | 'reject' =>
-  validateSquadLegality({ squad: f.state.myTeam, phase: f.state.phase, hasTransfers: f.state.transfers.length > 0 }, ROSTER) === null ? 'accept' : 'reject';
+  validateSquadLegality({ squad: f.state.myTeam, phase: f.state.phase, hasTransfers: f.state.transfers.length > 0, hasCashedIn: false }, ROSTER) === null ? 'accept' : 'reject';
 
 describe.skipIf(!RUN)('save_entry RPC ↔ entryValidation.ts drift (live DB)', () => {
   const H = { apikey: ANON!, Authorization: `Bearer ${JWT}`, 'Content-Type': 'application/json' };

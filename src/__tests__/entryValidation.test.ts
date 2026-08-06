@@ -17,8 +17,11 @@ function priciestSquad(): string[] {
   const byTier = (t: Tier) => PLAYERS.filter(p => getTier(p.ranking) === t).sort((a, b) => b.price - a.price);
   return [...byTier('Platinum').slice(0, 2), ...byTier('Gold').slice(0, 3), ...byTier('Silver').slice(0, 5)].map(p => p.id);
 }
-const draft = (squad: string[]) => ({ squad, phase: 'draft', hasTransfers: false });
-const locked = (squad: string[]) => ({ squad, phase: 'pre_round', hasTransfers: false });
+const draft = (squad: string[]) => ({ squad, phase: 'draft', hasTransfers: false, hasCashedIn: false });
+const locked = (squad: string[]) => ({ squad, phase: 'pre_round', hasTransfers: false, hasCashedIn: false });
+// A locked squad that has been TOUCHED mid-tournament (a player was cashed in) — the exact
+// 10 · 2/3/5 requirement is lifted for these.
+const touched = (squad: string[]) => ({ squad, phase: 'pre_round', hasTransfers: false, hasCashedIn: true });
 
 describe('validateSquadLegality — legal cases pass', () => {
   it('a complete legal squad passes both draft and locked', () => {
@@ -28,6 +31,15 @@ describe('validateSquadLegality — legal cases pass', () => {
   it('a PARTIAL squad is allowed while drafting (auto-save builds it up)', () => {
     expect(validateSquadLegality(draft(legalSquad().slice(0, 4)), ROSTER)).toBeNull();
     expect(validateSquadLegality(draft([]), ROSTER)).toBeNull();
+  });
+  it('a TOUCHED locked squad may be < 10 (cashed in, slot left empty)', () => {
+    expect(validateSquadLegality(touched(legalSquad().slice(0, 8)), ROSTER)).toBeNull();
+  });
+  it('a TOUCHED locked squad may drift off 2·3·5 (bought any tier)', () => {
+    // 3 Platinum + a couple others — illegal at the pristine lock, fine once touched.
+    const plats = PLAYERS.filter(p => getTier(p.ranking) === 'Platinum').slice(0, 3).map(p => p.id);
+    const golds = PLAYERS.filter(p => getTier(p.ranking) === 'Gold').slice(0, 2).map(p => p.id);
+    expect(validateSquadLegality(touched([...plats, ...golds]), ROSTER)).toBeNull();
   });
 });
 
@@ -67,7 +79,7 @@ describe('validateSquadLegality — illegal squads rejected (F1 core)', () => {
 // so if the SQL and the TS ever diverge, that test fails. This is the TS half.
 describe('shared legality fixtures — TS verdict (RPC drift mirror)', () => {
   const tsVerdict = (f: ReturnType<typeof buildLegalityFixtures>[number]): 'accept' | 'reject' =>
-    validateSquadLegality({ squad: f.state.myTeam, phase: f.state.phase, hasTransfers: f.state.transfers.length > 0 }, ROSTER) === null ? 'accept' : 'reject';
+    validateSquadLegality({ squad: f.state.myTeam, phase: f.state.phase, hasTransfers: f.state.transfers.length > 0, hasCashedIn: false }, ROSTER) === null ? 'accept' : 'reject';
   it.each(buildLegalityFixtures().map(f => [f.name, f] as const))('%s → %o', (_name, f) => {
     expect(tsVerdict(f)).toBe(f.expect);
   });

@@ -23,19 +23,25 @@ export interface EntryLegalityInput {
   squad: string[];       // the squad being saved (state.myTeam)
   phase: string;         // 'draft' = still building (partial allowed); anything else = locked
   hasTransfers: boolean; // once transfers exist, raw-sum budget no longer applies (refunds)
+  hasCashedIn: boolean;  // once a player is cashed in, the squad may shrink / drift off 2·3·5
 }
 
 // Returns null when legal, else a human-readable reason.
 export function validateSquadLegality(
-  { squad, phase, hasTransfers }: EntryLegalityInput,
+  { squad, phase, hasTransfers, hasCashedIn }: EntryLegalityInput,
   roster: Map<string, RosterPricing>,
 ): string | null {
   if (!Array.isArray(squad)) return 'Invalid squad';
   const locked = phase !== 'draft';
+  // "touched" = the manager has begun mid-tournament changes (cashed a player in OR bought one).
+  // Until then a LOCKED squad is the pristine draft, so it must be exactly 10 · 2/3/5. Once
+  // touched it may drop below 10 and drift off the tier quotas (budget is the only limit) —
+  // matching the server's save_entry `v_touched`. This is what makes the market flexible in-play.
+  const touched = hasTransfers || hasCashedIn;
 
   if (new Set(squad).size !== squad.length) return 'Squad has duplicate players';
   if (squad.length > SQUAD_SIZE) return `Squad can't exceed ${SQUAD_SIZE} players`;
-  if (locked && squad.length !== SQUAD_SIZE) return `A locked squad must be exactly ${SQUAD_SIZE} players`;
+  if (locked && !touched && squad.length !== SQUAD_SIZE) return `A locked squad must be exactly ${SQUAD_SIZE} players`;
 
   const counts: Record<Tier, number> = { Platinum: 0, Gold: 0, Silver: 0 };
   let total = 0;
@@ -46,8 +52,8 @@ export function validateSquadLegality(
     counts[getTier(p.ranking)] += 1;
   }
   for (const { tier, min } of TIER_MINIMUMS) {
-    if (counts[tier] > min) return `Too many ${tier} (max ${min})`;
-    if (locked && counts[tier] !== min) return `A locked squad needs exactly ${min} ${tier} (has ${counts[tier]})`;
+    if (!locked && counts[tier] > min) return `Too many ${tier} (max ${min})`;         // draft cap
+    if (locked && !touched && counts[tier] !== min) return `A locked squad needs exactly ${min} ${tier} (has ${counts[tier]})`;
   }
   if (!hasTransfers && total > STARTING_BUDGET) return `Squad costs $${total}M — over the $${STARTING_BUDGET}M budget`;
   return null;

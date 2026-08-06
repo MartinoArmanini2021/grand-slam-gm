@@ -111,8 +111,10 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
           <StatCard
             label="Squad"
             value={`${myTeam.length}/${TEAM_TARGET}`}
-            unit={squadReady ? 'Ready ✓' : myTeam.length < TEAM_TARGET ? `${TEAM_TARGET - myTeam.length} to pick` : 'Check tiers'}
-            color={squadReady ? 'var(--green)' : 'var(--gold)'}
+            unit={phase === 'draft'
+              ? (squadReady ? 'Ready ✓' : myTeam.length < TEAM_TARGET ? `${TEAM_TARGET - myTeam.length} to pick` : 'Check tiers')
+              : 'in play'}
+            color={phase === 'draft' ? (squadReady ? 'var(--green)' : 'var(--gold)') : 'var(--ink)'}
           />
         </div>
       </div>

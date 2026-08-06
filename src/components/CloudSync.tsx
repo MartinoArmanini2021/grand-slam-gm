@@ -55,7 +55,7 @@ const toCloud = (s: ReturnType<typeof useProfile.getState>): CloudProfile => ({
 function gameSnapshot(): EntryWrite {
   const s = useGameStore.getState();
   const state = {
-    phase: s.phase, myTeam: s.myTeam, initialSquad: s.initialSquad, transfers: s.transfers,
+    phase: s.phase, myTeam: s.myTeam, initialSquad: s.initialSquad, transfers: s.transfers, cashedIn: s.cashedIn,
     captain: s.captain, viceCaptain: s.viceCaptain,
     captainHistory: s.captainHistory, viceCaptainHistory: s.viceCaptainHistory, budget: s.budget,
     budgetReturns: s.budgetReturns, currentRoundIndex: s.currentRoundIndex,
@@ -193,7 +193,7 @@ export default function CloudSync() {
     // Pre-validate with the SAME rules the server enforces — fail fast, no round-trip.
     const st = useGameStore.getState();
     const illegal = validateSquadLegality(
-      { squad: st.myTeam, phase: st.phase, hasTransfers: (st.transfers?.length ?? 0) > 0 }, ROSTER,
+      { squad: st.myTeam, phase: st.phase, hasTransfers: (st.transfers?.length ?? 0) > 0, hasCashedIn: (st.cashedIn?.length ?? 0) > 0 }, ROSTER,
     );
     if (illegal) { toast(illegal, 'warn'); useSync.getState().setStatus('error'); return; }
     try {
