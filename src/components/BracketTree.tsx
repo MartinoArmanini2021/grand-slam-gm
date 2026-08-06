@@ -14,17 +14,21 @@ import type { RoundId } from '../types';
 // first-class "not started yet" state, not an empty grid.
 export default function BracketTree() {
   const { draw, results, meta, scores } = useLiveStore();
-  const { myTeam } = useGameStore();
+  const { myTeam, captain, viceCaptain } = useGameStore();
   const { teamName, username } = useProfile();
 
-  // Teams you can highlight in the draw: the real managers in your league (no bots).
+  // Teams you can highlight in the draw: the real managers in your league (no bots). Each carries its
+  // captain + vice so we can badge them right on the bracket for whichever team is highlighted.
   const board = useLeagueBoard(null);
   const teams = board.length > 0
-    ? board.map(e => ({ id: e.id, name: e.name, squad: e.squad }))
-    : (myTeam.length > 0 ? [{ id: 'you', name: teamName || (username ? `@${username}` : 'You'), squad: myTeam }] : []);
+    ? board.map(e => ({ id: e.id, name: e.name, squad: e.squad, captain: e.captain, viceCaptain: e.viceCaptain }))
+    : (myTeam.length > 0 ? [{ id: 'you', name: teamName || (username ? `@${username}` : 'You'), squad: myTeam, captain, viceCaptain }] : []);
   const [teamId, setTeamId] = useState('you');
   const selected = teams.find(t => t.id === teamId) ?? teams[0];
   const highlight = new Set(selected?.squad ?? []);
+  const capId = selected?.captain ?? null;   // highlighted team's captain (C ×2)
+  const viceId = selected?.viceCaptain ?? null; // …and vice (V ×1.5)
+  const leaderRole = (id: string): 'C' | 'V' | undefined => (id === capId ? 'C' : id === viceId ? 'V' : undefined);
   // Trace ONE player's route through the draw: tap any player and every match they play lights
   // up (blue), showing exactly how far they've gone. Tap them again (or ✕) to clear.
   const [pathId, setPathId] = useState<string | null>(null);
@@ -108,9 +112,9 @@ export default function BracketTree() {
                       border: `1px solid ${onPath ? 'var(--blue)' : live ? 'rgba(217,154,0,0.5)' : 'rgba(10,27,51,0.1)'}`,
                       boxShadow: onPath ? '0 0 0 1px var(--blue)' : 'none', margin: '3px 0',
                     }}>
-                      <Side id={m.p1Id} meta={meta} won={winner === m.p1Id} decided={!!winner} mine={highlight.has(m.p1Id)} isPath={m.p1Id === pathId} onPick={pickPath} sets={sc?.p1} />
+                      <Side id={m.p1Id} meta={meta} won={winner === m.p1Id} decided={!!winner} mine={highlight.has(m.p1Id)} isPath={m.p1Id === pathId} onPick={pickPath} sets={sc?.p1} role={leaderRole(m.p1Id)} />
                       <div style={{ height: 1, background: 'rgba(10,27,51,0.08)' }} />
-                      <Side id={m.p2Id} meta={meta} won={winner === m.p2Id} decided={!!winner} mine={highlight.has(m.p2Id)} isPath={m.p2Id === pathId} onPick={pickPath} sets={sc?.p2} />
+                      <Side id={m.p2Id} meta={meta} won={winner === m.p2Id} decided={!!winner} mine={highlight.has(m.p2Id)} isPath={m.p2Id === pathId} onPick={pickPath} sets={sc?.p2} role={leaderRole(m.p2Id)} />
                     </div>
                   );
                 })}
@@ -138,7 +142,7 @@ function prettifyId(id: string): string {
     .join(' ');
 }
 
-function Side({ id, meta, won, decided, mine, isPath, onPick, sets }: { id: string; meta: PlayerMetaMap; won: boolean; decided: boolean; mine: boolean; isPath?: boolean; onPick?: (id: string) => void; sets?: string[] }) {
+function Side({ id, meta, won, decided, mine, isPath, onPick, sets, role }: { id: string; meta: PlayerMetaMap; won: boolean; decided: boolean; mine: boolean; isPath?: boolean; onPick?: (id: string) => void; sets?: string[]; role?: 'C' | 'V' }) {
   const isTbd = id === 'tbd';                // a seed's opponent, still to be decided in the first round
   const p = isTbd ? undefined : findPlayer(id);
   // Off-roster opponent (not in the draftable field): use the real name + flag the feed
@@ -162,7 +166,14 @@ function Side({ id, meta, won, decided, mine, isPath, onPick, sets }: { id: stri
       }}
     >
       {flag && <span>{flag}</span>}
-      <span className="truncate flex-1 min-w-0">{name}</span>
+      <span className="flex items-center gap-1 flex-1 min-w-0">
+        <span className="truncate min-w-0">{name}</span>
+        {/* Captain / vice badge for the highlighted team — spot your leaders right in the draw. */}
+        {role && (
+          <span className="shrink-0 text-[8px] font-extrabold leading-none px-1 py-0.5 rounded" style={{ background: role === 'C' ? 'var(--gold)' : '#3f6ea5', color: '#fff' }}>{role}</span>
+        )}
+      </span>
+
       {/* Set-by-set games (this side), right-aligned like a real bracket. The winner's line is
           bold via the row's fontWeight; a decided match with no score falls back to a ✓. */}
       {sets && sets.length > 0 ? (

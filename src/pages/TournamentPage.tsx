@@ -2,18 +2,14 @@ import { useMemo } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useLiveStore } from '../store/liveStore';
 import { ROUNDS, isPlayerOut, roundHasResult, liveScoreBreakdown } from '../data/tournament';
-import { getPlayer } from '../data/players';
-import { lastName } from '../data/format';
 import type { RoundId } from '../types';
-import PlayerAvatar from '../components/PlayerAvatar';
 import BracketTree from '../components/BracketTree';
 import { TOURNAMENT } from '../data/tournamentConfig';
 
 export default function TournamentPage() {
   const {
-    phase, myTeam, captain, viceCaptain, currentRoundIndex,
+    phase, myTeam, currentRoundIndex,
     initialSquad, transfers, captainHistory, viceCaptainHistory,
-    setActiveTab,
   } = useGameStore();
 
   // Live, per-match score + per-round breakdown — identical to the server/leaderboard, updating
@@ -82,18 +78,11 @@ export default function TournamentPage() {
             {aliveSquad.length === 0 ? (
               <p className="text-xs" style={{ color: 'var(--ink-2)' }}>All your players are out — your squad's scores are final.</p>
             ) : (
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs" style={{ color: 'var(--ink-2)' }}>Your leaders:</span>
-                <LeaderChip role="C" id={captain} />
-                <LeaderChip role="V" id={viceCaptain} />
-                <button onClick={() => setActiveTab('home')} className="text-xs font-semibold" style={{ color: 'var(--blue)' }}>
-                  Change on the pitch →
-                </button>
-              </div>
+              <p className="text-[11px]" style={{ color: 'var(--ink-3)' }}>
+                Scores post automatically as results land — nothing to click. Make transfers in the Market before the next round starts. Your captain{' '}
+                <b style={{ color: 'var(--gold)' }}>C</b> and vice <b style={{ color: '#3f6ea5' }}>V</b> are marked in the draw below.
+              </p>
             )}
-            <p className="text-[11px] mt-3" style={{ color: 'var(--ink-3)' }}>
-              Scores post automatically as results land — nothing to click. Make transfers in the Market before the next round starts.
-            </p>
           </div>
         </div>
       )}
@@ -102,20 +91,5 @@ export default function TournamentPage() {
       {/* Transfers live on the Market page now, not here. */}
       <BracketTree />
     </div>
-  );
-}
-
-// A read-only chip for the round's captain / vice — the picks are made on the pitch (Home).
-function LeaderChip({ role, id }: { role: 'C' | 'V'; id: string | null }) {
-  if (!id) return null;
-  const p = getPlayer(id);
-  const isC = role === 'C';
-  const color = isC ? 'var(--gold)' : '#3f6ea5';
-  return (
-    <span className="inline-flex items-center gap-1.5 pl-0.5 pr-1.5 py-0.5 rounded-full" style={{ background: isC ? 'rgba(217,154,0,0.1)' : 'rgba(14,111,196,0.08)', border: `1px solid ${isC ? 'rgba(217,154,0,0.3)' : 'rgba(14,111,196,0.25)'}` }}>
-      <PlayerAvatar playerId={id} name={p.name} size="sm" />
-      <span className="text-[12px] font-bold" style={{ color: 'var(--ink)' }}>{lastName(p.name)}</span>
-      <span className="text-[9px] font-extrabold px-1 py-0.5 rounded" style={{ background: color, color: '#fff' }}>{isC ? 'C ×2' : 'V ×1.5'}</span>
-    </span>
   );
 }
