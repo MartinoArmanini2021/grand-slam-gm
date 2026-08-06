@@ -280,14 +280,18 @@ export function playerRefund(id: string): number {
 // eliminated player they've held — including opening-round exits. During the draft (no locked
 // squad yet) the base is the squad being built, and refunds are 0, so it equals the draft budget.
 export function liveBudget(
-  initialSquad: string[], transfers: { in: string }[], currentSquad: string[], cashedIn: string[] = [],
+  initialSquad: string[], transfers: { in: string; out?: string }[], currentSquad: string[], cashedIn: string[] = [],
 ): number {
   const price = (id: string) => findPlayer(id)?.price ?? 0;
   const base = initialSquad.length ? initialSquad : currentSquad; // pre-lock: the draft squad
-  // MANUAL refunds: money is credited ONLY for players the manager has explicitly CASHED IN,
-  // not automatically on elimination. `cost` = everything ever bought (draft + purchases).
+  // MANUAL refunds: money is credited for every player a manager has DISPOSED OF — the ones they
+  // explicitly CASHED IN, plus the ones they TRANSFERRED OUT (a transfer's `out` is a sold player,
+  // whose refund funded the buy). Cashing-in adds `out` to cashedIn too, so the union just dedups;
+  // it also recovers refunds for OLD transfers made before `cashedIn` existed (those had it empty,
+  // which is why several managers read $0 / negative). `cost` = everything ever bought.
   const cost = base.reduce((sum, id) => sum + price(id), 0) + transfers.reduce((sum, t) => sum + price(t.in), 0);
-  const refunds = cashedIn.reduce((sum, id) => sum + playerRefund(id), 0);
+  const refundIds = new Set<string>([...cashedIn, ...transfers.map(t => t.out).filter((id): id is string => !!id)]);
+  const refunds = [...refundIds].reduce((sum, id) => sum + playerRefund(id), 0);
   // Floor at 0: a squad drafted ≤ $150 can read "over budget" if prices were re-tuned afterwards
   // (cost now > 150). A negative number is confusing and un-actionable — they simply can't buy
   // until eliminations refund enough to lift it back above 0. Never show a negative budget.
