@@ -213,8 +213,10 @@ function PrivateLeagues() {
   }
 
   const doCreate = async () => {
+    const trimmed = name.trim();
+    if (!trimmed) { toast('Give your league a name first', 'warn'); return; } // no blank/whitespace leagues
     setBusy(true);
-    try { const { code: c } = await createLeague(name); setName(''); track('league_created'); toast(`Created — invite code ${c}`, 'good'); refresh(); }
+    try { const { code: c } = await createLeague(trimmed); setName(''); track('league_created'); toast(`Created — invite code ${c}`, 'good'); refresh(); }
     catch (e) { toast(e instanceof Error ? e.message : 'Could not create the league', 'warn'); }
     finally { setBusy(false); }
   };

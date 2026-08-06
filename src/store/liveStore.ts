@@ -47,7 +47,23 @@ export const useLiveStore = create<LiveStore>()(
       overrides: {},
       lastSync: null,
 
-      setDraw: (draw) => set({ draw }),
+      // NEVER-REGRESS merge (mirrors the server's draw builder + mergeResults): the feed publishes
+      // the draw incrementally and a transient/partial Wikipedia parse can omit pairings. A full
+      // replace would drop those, corrupting elimination/exit/refund/round-state (all derived by
+      // iterating `draw`). So keep every known pairing, add/update incoming ones, and never let a
+      // known pairing regress back to TBD. An empty parse is ignored outright.
+      setDraw: (incoming) => set((s) => {
+        if (incoming.length === 0) return {};
+        const byKey = new Map(s.draw.map(m => [matchKey(m.round, m.slot), m]));
+        for (const m of incoming) {
+          const key = matchKey(m.round, m.slot);
+          const existing = byKey.get(key);
+          const incomingKnown = m.p1Id !== 'tbd' && m.p2Id !== 'tbd';
+          const existingKnown = !!existing && existing.p1Id !== 'tbd' && existing.p2Id !== 'tbd';
+          if (!existing || incomingKnown || !existingKnown) byKey.set(key, m);
+        }
+        return { draw: [...byKey.values()] };
+      }),
 
       setMeta: (meta) => set((s) => ({ meta: { ...s.meta, ...meta } })),
 

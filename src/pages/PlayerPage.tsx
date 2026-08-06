@@ -26,7 +26,14 @@ function resultStyle(r: TournamentResult): [string, string] {
 export default function PlayerPage() {
   const { viewPlayer, playerReturnTab, setActiveTab, currentRoundIndex } = useGameStore();
   const p = viewPlayer ? findPlayer(viewPlayer) ?? null : null;
-  if (!p) return null;
+  // Unknown / stale player id: don't strand the user on a blank page with no way back.
+  if (!p) return (
+    <div className="max-w-3xl mx-auto px-3 py-10 text-center fade-in">
+      <div className="text-4xl mb-3">🎾</div>
+      <p className="text-sm mb-4" style={{ color: 'var(--ink-2)' }}>That player isn't in this tournament's field.</p>
+      <button onClick={() => setActiveTab(playerReturnTab)} className="text-sm font-semibold" style={{ color: 'var(--blue)' }}>‹ Back</button>
+    </div>
+  );
 
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
   const isOut = isPlayerOut(p.id, revealed);

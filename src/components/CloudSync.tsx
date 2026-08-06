@@ -80,6 +80,11 @@ export default function CloudSync() {
   // The optimistic-concurrency rev we last read/wrote for this entry (F2). Every save guards
   // on it; a conflict means another tab/device advanced it, and we re-fetch to converge.
   const entryRev = useRef(0);
+  // Serialize saves: a second doSave() while one is in flight would share the same entryRev and,
+  // if the first advances the server rev, the second 409s → revertToCloud() clobbers the newer
+  // local edit (last-write-lost). Instead coalesce: mark a re-save and let the running one flush it.
+  const saveInFlight = useRef(false);
+  const resaveQueued = useRef(false);
 
   // Hydrate + merge on login.
   useEffect(() => {
@@ -189,6 +194,11 @@ export default function CloudSync() {
   // both the debounce below and the manual Save button (via useSync.saveNow).
   const doSave = useCallback(async () => {
     if (!user || gameHydratedFor.current !== user.id) return;
+    // Never overlap: if a save is already running, queue exactly one re-save of the LATEST state
+    // and let the in-flight save flush it when it finishes (prevents the last-write-lost 409 race).
+    if (saveInFlight.current) { resaveQueued.current = true; return; }
+    saveInFlight.current = true;
+    try {
     useSync.getState().setStatus('saving');
     // Pre-validate with the SAME rules the server enforces — fail fast, no round-trip.
     const st = useGameStore.getState();
@@ -230,6 +240,11 @@ export default function CloudSync() {
         useSync.getState().setStatus('error');
       }
     } catch { useSync.getState().setStatus('error'); }
+    } finally {
+      saveInFlight.current = false;
+      // A save was requested while this one ran → flush the latest state now.
+      if (resaveQueued.current) { resaveQueued.current = false; void doSave(); }
+    }
   }, [user]);
 
   // Expose an immediate save for the Save button.
