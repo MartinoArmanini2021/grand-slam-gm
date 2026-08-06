@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, Fragment } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { useLiveStore } from '../store/liveStore';
-import { ROUNDS, isEliminated, roundHasResult, tournamentStarted, transfersOpen, liveScore, liveBudget, playerRefund, liveRoundStatus } from '../data/tournament';
+import { ROUNDS, isEliminated, roundHasResult, tournamentStarted, transferWindowOpen, liveScore, liveBudget, playerRefund, liveRoundStatus } from '../data/tournament';
 import { isSquadValid, SQUAD_SIZE } from '../data/squadRules';
 import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
 import { onActivate } from '../hooks';
@@ -38,7 +38,7 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
   );
   // Eliminated players still in your active squad have uncashed refund money waiting in the
   // Market. Surfacing this the moment a player loses is the nudge to go claim + reinvest it.
-  const windowOpen = transfersOpen(currentRoundIndex);
+  const windowOpen = transferWindowOpen();
   const cashable = useMemo(
     () => (phase !== 'draft' ? myTeam.filter(id => isEliminated(id)) : []),
     // eslint-disable-next-line react-hooks/exhaustive-deps

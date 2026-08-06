@@ -45,6 +45,17 @@ export const getMatchesForRound = (round: RoundId) =>
 export const TRANSFER_LOCK_INDEX = ROUNDS.length - 1;
 export const transfersOpen = (currentRoundIndex: number) => currentRoundIndex < TRANSFER_LOCK_INDEX;
 
+// The transfer / cash-in window, derived from RESULTS (not the frozen currentRoundIndex, which in
+// live production is pinned at 0 so `transfersOpen(0)` was permanently true — the "locked for the
+// final" state never showed and cash-ins were never gated). Open while a change made now could
+// still score: the round after the deepest scored round must exist AND not be the Final. Mirrors
+// exactly the buyPlayer/cashInPlayer commit guard, so UI availability == what the store will accept.
+export function transferWindowOpen(): boolean {
+  const round = liveCurrentRound() ?? ROUNDS[0].id;
+  const firstScored = ROUNDS[ROUNDS.findIndex(r => r.id === round) + 1]?.id;
+  return !!firstScored && firstScored !== ROUNDS[ROUNDS.length - 1].id;
+}
+
 // Can the round at this index be played (scored) yet? A round is playable only once
 // the real world has finished it. Two guards, because the live draw is published
 // INCREMENTALLY by the feed:

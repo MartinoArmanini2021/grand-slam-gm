@@ -2,9 +2,10 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { GamePhase, RoundId, RoundScore, BudgetReturn, Transfer } from '../types';
 import {
-  ROUNDS, getMatchesForRound, isPlayerOut, BUDGET_RETURN_RATES, winPoints, transfersOpen, roundPlayable, roundHasResult, liveCurrentRound,
+  ROUNDS, getMatchesForRound, isPlayerOut, BUDGET_RETURN_RATES, winPoints, transferWindowOpen, roundPlayable, roundHasResult, liveCurrentRound,
   tournamentStarted, isEliminated, liveBudget, playerRefund,
 } from '../data/tournament';
+import { useMarketDraft } from './marketDraft';
 import { ACTIVE_TOURNAMENT_ID } from '../data/tournamentConfig';
 import { track } from '../data/analytics';
 import { toast } from './toastStore';
@@ -86,6 +87,25 @@ export function sanitizeState(s: Partial<GameStore>): void {
   if (Array.isArray(s.budgetReturns)) s.budgetReturns = s.budgetReturns.filter(r => ids.has(r.playerId));
   if (Array.isArray(s.captainHistory)) s.captainHistory = s.captainHistory.filter(c => ids.has(c.playerId));
   if (Array.isArray(s.viceCaptainHistory)) s.viceCaptainHistory = s.viceCaptainHistory.filter(c => ids.has(c.playerId));
+  // Self-heal a corrupt LIVE squad. The model's invariant is exact: your current squad =
+  // everyone acquired (drafted + bought via a transfer) MINUS everyone cashed in. A legacy
+  // model or a past bug could drop players from myTeam without recording a cash-in (observed:
+  // an entry truncated from 10 to 4, losing still-alive players), and could lose the cashedIn
+  // record for a transferred-out player. Rebuild both from the transfer log so the manager gets
+  // their full squad back and can cash in / buy again. Budget is unaffected — liveBudget derives
+  // refunds from the roster diff, not the cashedIn list. Draft phase is exempt (no transfers yet).
+  if (s.phase && s.phase !== 'draft' && Array.isArray(s.initialSquad) && s.initialSquad.length > 0 && Array.isArray(s.myTeam)) {
+    const transfers = Array.isArray(s.transfers) ? s.transfers : [];
+    // Every transferred-out player was cashed in to fund its replacement — ensure that's recorded.
+    const cashed = new Set([...(s.cashedIn ?? []), ...transfers.map(t => t.out)].filter(id => ids.has(id)));
+    s.cashedIn = [...cashed];
+    // The squad you should currently field, and any acquired player wrongly missing from myTeam.
+    const acquired = [...s.initialSquad, ...transfers.map(t => t.in)].filter(id => ids.has(id));
+    const shouldHold = acquired.filter(id => !cashed.has(id));
+    const missing = shouldHold.filter(id => !s.myTeam!.includes(id));
+    // Keep held players (drop any lingering cashed-in id), then re-add the wrongly-dropped ones.
+    s.myTeam = [...s.myTeam.filter(id => !cashed.has(id)), ...missing];
+  }
   // Round index in range, and phase consistent with it (a save from a longer draw, or
   // a corrupt index, can't leave the app stuck in pre_round with no round to play).
   if (typeof s.currentRoundIndex === 'number') {
@@ -282,9 +302,9 @@ export const useGameStore = create<GameStore>()(
       // Mid-tournament substitution (atomic, used by the court): cash an eliminated player IN and
       // buy a still-alive replacement in one tap. Any tier — the money is the only limit.
       replacePlayer: (oldId, newId) => {
-        const { myTeam, initialSquad, transfers, cashedIn, captain, viceCaptain, currentRoundIndex, phase } = get();
+        const { myTeam, initialSquad, transfers, cashedIn, captain, viceCaptain, phase } = get();
         if (phase === 'finished' || phase === 'draft') return;
-        if (!transfersOpen(currentRoundIndex)) return; // window shut after the SF
+        if (!transferWindowOpen()) return; // window shut after the SF
         if (!myTeam.includes(oldId) || myTeam.includes(newId)) return;
         // LIVE rule: swap OUT only an eliminated player, IN only a still-alive one — off the live
         // results (isEliminated), not the app's round index (frozen at R64 while the round plays).
@@ -320,7 +340,7 @@ export const useGameStore = create<GameStore>()(
       cashInPlayer: (id) => {
         const { myTeam, initialSquad, transfers, cashedIn, captain, viceCaptain, currentRoundIndex, phase } = get();
         if (phase === 'finished' || phase === 'draft') return;
-        if (!transfersOpen(currentRoundIndex)) return;   // window shut after the SF
+        if (!transferWindowOpen()) return;   // window shut after the SF
         if (!myTeam.includes(id)) return;                // must currently hold them
         if (!isEliminated(id)) return;                   // only eliminated players are cashable
         if (cashedIn.includes(id)) return;               // already cashed
@@ -340,9 +360,9 @@ export const useGameStore = create<GameStore>()(
       // BUY a still-alive player into an open slot (one freed by a cash-in). Any tier; the budget
       // is the only limit. Logged as a transfer against the live round so it scores from next round.
       buyPlayer: (id) => {
-        const { myTeam, initialSquad, transfers, cashedIn, currentRoundIndex, phase } = get();
+        const { myTeam, initialSquad, transfers, cashedIn, phase } = get();
         if (phase === 'finished' || phase === 'draft') return;
-        if (!transfersOpen(currentRoundIndex)) return;
+        if (!transferWindowOpen()) return;
         if (myTeam.includes(id)) return;                 // already own them
         const player = findPlayer(id);
         if (!player) return;
@@ -463,7 +483,7 @@ export const useGameStore = create<GameStore>()(
         activeTab: 'player',
       })); },
 
-      resetGame: () => set({
+      resetGame: () => { useMarketDraft.getState().clear(); set({
         phase: 'draft',
         myTeam: [],
         initialSquad: [],
@@ -482,7 +502,7 @@ export const useGameStore = create<GameStore>()(
         viewTeam: 'you',
         viewPlayer: '',
         playerReturnTab: 'home',
-      }),
+      }); },
     }),
     {
       // Scope the save PER TOURNAMENT (like the live store) so a squad/score from one

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useGameStore, substitutionCandidates } from '../store/gameStore';
 import { findPlayer } from '../data/players';
-import { getPlayerExit, isPlayerOut, isEliminated, liveBudget, playerRefund, ROUNDS, transfersOpen, roundHasResult } from '../data/tournament';
+import { getPlayerExit, isPlayerOut, isEliminated, liveBudget, playerRefund, ROUNDS, transferWindowOpen, roundHasResult } from '../data/tournament';
 import { lastName, round1 } from '../data/format';
 import { SURFACE, TOURNAMENT } from '../data/tournamentConfig';
 import { SQUAD_SIZE } from '../data/squadRules';
@@ -336,7 +336,7 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
                   >✕ Remove from squad</button>
                 ) : (() => {
                   const out = isEliminated(id); // live elimination, not the stuck round index
-                  const windowOpen = transfersOpen(currentRoundIndex);
+                  const windowOpen = transferWindowOpen();
                   const hasSubs = out && windowOpen && substitutionCandidates(myTeam, budgetFor(id)).length > 0;
                   if (hasSubs) return (
                     <button

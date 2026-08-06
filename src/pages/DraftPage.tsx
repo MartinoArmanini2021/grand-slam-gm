@@ -1,8 +1,9 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useLiveStore } from '../store/liveStore';
+import { useMarketDraft } from '../store/marketDraft';
 import { PLAYERS, getPlayer } from '../data/players';
-import { ROUNDS, isPlayerOut, getPlayerExit, tournamentStarted, isEliminated, liveBudget, playerRefund, cashedInTotal, transfersOpen } from '../data/tournament';
+import { ROUNDS, isPlayerOut, getPlayerExit, tournamentStarted, isEliminated, liveBudget, playerRefund, cashedInTotal, transferWindowOpen } from '../data/tournament';
 import { getTier, TIER_META, type Tier } from '../data/tiers';
 import { tierCounts, squadShortfall, isSquadValid, isTierFull, TIER_MINIMUMS, SQUAD_SIZE, STARTING_BUDGET } from '../data/squadRules';
 import PlayerAvatar from '../components/PlayerAvatar';
@@ -34,8 +35,9 @@ export default function DraftPage() {
   const [tierFilter, setTierFilter] = useState<Tier | null>(null);
   const [confirm, setConfirm] = useState<Player | null>(null);
   const [buyConfirm, setBuyConfirm] = useState<Player | null>(null); // LIVE market buy → confirm → stage
-  const [stagedCashIns, setStagedCashIns] = useState<string[]>([]);  // pending cash-ins (undoable)
-  const [stagedBuys, setStagedBuys] = useState<string[]>([]);        // pending buys (undoable)
+  // Pending (staged) cash-ins/buys live in a standalone store so they survive an in-session tab
+  // switch / player-drilldown (which unmounts this page) instead of being silently discarded.
+  const { cashIns: stagedCashIns, buys: stagedBuys, setCashIns: setStagedCashIns, setBuys: setStagedBuys, clear: clearStaged } = useMarketDraft();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [showLocked, setShowLocked] = useState(false);
   // "Watch the players" hint — shown atop the list until the user dismisses it (persisted),
@@ -50,7 +52,7 @@ export default function DraftPage() {
 
   const locked = phase !== 'draft';       // squad is locked after the draft…
   const live = locked;                     // …and once locked, the Market IS the transfer desk
-  const windowOpen = transfersOpen(currentRoundIndex); // transfers close after the SF
+  const windowOpen = transferWindowOpen(); // results-derived: actually closes for the Final
   const draftClosed = tournamentStarted(); // P6: no locking once the tournament has a result
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
   const counts = tierCounts(myTeam);
@@ -89,28 +91,64 @@ export default function DraftPage() {
   // A small localized "+$X" that floats up from the tapped Cash In button, for tactile feedback.
   const fxKey = useRef(0);
   const [cashFx, setCashFx] = useState<{ x: number; y: number; amount: number; key: number } | null>(null);
-  // Stage / undo — pure local state, fully reversible until Lock Squad.
+
+  // Keep the staged buys AFFORDABLE + within the open slots for a given cash-in set, dropping the
+  // dearest buys first (and any now-eliminated/owned target). Used when undoing a cash-in that was
+  // funding a buy, so the preview can never go negative or over-fill — and at Lock so we never try
+  // to commit an unaffordable buy.
+  const reconcileBuys = (cashIns: string[], buys: string[]): string[] => {
+    const refundSum = cashIns.reduce((s, id) => s + playerRefund(id), 0);
+    const slots = committedOpen + cashIns.length;
+    let result = buys.filter(id => !isEliminated(id) && !myTeam.includes(id));
+    const fits = () => result.length <= slots
+      && round1(liveBud + refundSum - result.reduce((s, id) => s + getPlayer(id).price, 0)) >= 0;
+    while (result.length && !fits()) {
+      let maxi = 0; // drop the most expensive staged buy
+      for (let i = 1; i < result.length; i++) if (getPlayer(result[i]).price > getPlayer(result[maxi]).price) maxi = i;
+      result = result.filter((_, i) => i !== maxi);
+    }
+    return result;
+  };
+
+  // Stage / undo — reversible until Lock Squad.
   const stageCashIn = (id: string, e?: React.MouseEvent) => {
     const amt = playerRefund(id);
     if (e) setCashFx({ x: e.clientX, y: e.clientY, amount: amt, key: ++fxKey.current });
-    setStagedCashIns(prev => (prev.includes(id) ? prev : [...prev, id]));
+    if (!stagedCashIns.includes(id)) setStagedCashIns([...stagedCashIns, id]);
   };
   const undoCashIn = (id: string) => {
-    // A freed slot can't stay freed while a pending buy still fills it — drop the newest buy too.
-    const openAfter = committedOpen + (stagedCashIns.length - 1) - stagedBuys.length;
-    setStagedCashIns(prev => prev.filter(x => x !== id));
-    if (openAfter < 0) setStagedBuys(prev => prev.slice(0, -1));
+    const nextCashIns = stagedCashIns.filter(x => x !== id);
+    setStagedCashIns(nextCashIns);
+    // Removing a cash-in reduces slots + refund money — drop the buy(s) it was funding, not the
+    // newest arbitrarily, so an expensive buy funded by this cash-in goes rather than a cheap one.
+    setStagedBuys(reconcileBuys(nextCashIns, stagedBuys));
   };
-  const stageBuy = (id: string) => setStagedBuys(prev => (prev.includes(id) ? prev : [...prev, id]));
-  const undoBuy = (id: string) => setStagedBuys(prev => prev.filter(x => x !== id));
-  const discardPending = () => { setStagedCashIns([]); setStagedBuys([]); };
+  const stageBuy = (id: string) => { if (!stagedBuys.includes(id)) setStagedBuys([...stagedBuys, id]); };
+  const undoBuy = (id: string) => setStagedBuys(stagedBuys.filter(x => x !== id));
+  const discardPending = () => clearStaged();
   const lockTransfers = () => {
+    const before = useGameStore.getState();
     stagedCashIns.forEach(id => cashInPlayer(id)); // free the slots first…
     stagedBuys.forEach(id => buyPlayer(id));        // …then backfill them
-    const n = stagedCashIns.length + stagedBuys.length;
-    discardPending();
-    toast(`Transfers locked in ✓ — ${n} change${n === 1 ? '' : 's'} saved`, 'good');
+    const after = useGameStore.getState();
+    // Report what ACTUALLY committed — a staged op can no-op if the world moved (a target got
+    // eliminated, the window closed) between staging and Lock. Never claim a silent drop as saved.
+    const applied = (after.cashedIn.length - before.cashedIn.length) + (after.transfers.length - before.transfers.length);
+    const staged = stagedCashIns.length + stagedBuys.length;
+    clearStaged();
+    if (applied === staged) toast(`Transfers locked in ✓ — ${applied} change${applied === 1 ? '' : 's'} saved`, 'good');
+    else if (applied > 0) toast(`Locked ${applied} of ${staged} — the rest couldn't apply (a player was eliminated or the window closed)`, 'warn');
+    else toast(`Nothing saved — those changes are no longer valid (a player was eliminated or the window closed)`, 'warn');
   };
+
+  // Live results can land WHILE the manager is staging: prune any staged buy whose target just got
+  // eliminated (and re-fit the rest) so the preview + Lock stay valid without a manual undo.
+  useEffect(() => {
+    if (!live) return;
+    const fixed = reconcileBuys(stagedCashIns, stagedBuys);
+    if (fixed.length !== stagedBuys.length) setStagedBuys(fixed);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draw, results]);
 
   const sorted = useMemo(() => [...PLAYERS]
     .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()))
