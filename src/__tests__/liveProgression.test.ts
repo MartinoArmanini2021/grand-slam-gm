@@ -38,13 +38,14 @@ describe('live model under a frozen round index (production condition)', () => {
     for (const through of ['R64', 'R32', 'R16', 'QF', 'SF', 'F'] as RoundId[]) {
       stageFrozen(through, SPREAD);
       const cost = SPREAD.reduce((s, id) => s + price(id), 0);
-      // Nothing cashed in yet → the budget is just 150 − cost, even with players eliminated.
-      expect(liveBudget(SPREAD, [], SPREAD, [])).toBeCloseTo(150 - cost, 5);
+      // Nothing cashed in yet → 150 − cost, even with players eliminated (floored at 0 so an
+      // over-priced role-spread never reads negative — same clamp real over-budget squads get).
+      expect(liveBudget(SPREAD, [], SPREAD, [])).toBeCloseTo(Math.max(0, 150 - cost), 5);
       // Cashing in the eliminated players credits EXACTLY their elimination refunds.
       const dead = SPREAD.filter(id => isEliminated(id));
       const refund = dead.reduce((s, id) => s + playerRefund(id), 0);
       expect(refund).toBeGreaterThanOrEqual(0);
-      expect(liveBudget(SPREAD, [], SPREAD, dead)).toBeCloseTo(150 - cost + refund, 5);
+      expect(liveBudget(SPREAD, [], SPREAD, dead)).toBeCloseTo(Math.max(0, 150 - cost + refund), 5);
     }
   });
 

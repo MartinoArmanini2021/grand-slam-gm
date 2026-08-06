@@ -288,7 +288,10 @@ export function liveBudget(
   // not automatically on elimination. `cost` = everything ever bought (draft + purchases).
   const cost = base.reduce((sum, id) => sum + price(id), 0) + transfers.reduce((sum, t) => sum + price(t.in), 0);
   const refunds = cashedIn.reduce((sum, id) => sum + playerRefund(id), 0);
-  return round1(STARTING_BUDGET - cost + refunds);
+  // Floor at 0: a squad drafted ≤ $150 can read "over budget" if prices were re-tuned afterwards
+  // (cost now > 150). A negative number is confusing and un-actionable — they simply can't buy
+  // until eliminations refund enough to lift it back above 0. Never show a negative budget.
+  return round1(Math.max(0, STARTING_BUDGET - cost + refunds));
 }
 
 // Total money a manager has already cashed in (sum of the elimination refunds they claimed).
