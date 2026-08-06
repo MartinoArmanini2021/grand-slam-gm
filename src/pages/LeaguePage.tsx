@@ -38,9 +38,13 @@ function StatsTable({ rows }: { rows: BoardEntry[] }) {
   }
   const pending = !tournamentStarted();
   const pts = (score: number) => (pending ? '–' : score);
-  // How many of a manager's players have been knocked out: eliminated players still on the
-  // roster PLUS the ones they've already cashed in (cashing removes them from the squad).
-  const eliminated = (r: BoardEntry) => r.squad.filter(id => isEliminated(id)).length + (r.cashedIn?.length ?? 0);
+  // How many of a manager's players have been knocked out at ANY stage — every player they've ever
+  // owned (drafted OR bought) who is out, counted once. This survives roster churn: a knocked-out
+  // player still counts whether they're on the bench, already cashed in, or transferred away.
+  const eliminated = (r: BoardEntry) => {
+    const owned = new Set<string>([...(r.initialSquad?.length ? r.initialSquad : r.squad), ...r.transfers.map(t => t.in)]);
+    return [...owned].filter(id => isEliminated(id)).length;
+  };
   // Correct leader picks = rounds where the captain-of-record / vice actually WON that round.
   const correctLeaders = (r: BoardEntry) => {
     const won = (h: { round: string; playerId: string }) => playerRoundPoints(h.playerId, h.round as RoundId) > 0;
