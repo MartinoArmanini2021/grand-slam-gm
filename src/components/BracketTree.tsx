@@ -92,6 +92,13 @@ export default function BracketTree() {
         ) : (
           <span className="text-[11px]" style={{ color: 'var(--ink-3)' }}>Tap any player to trace their path →</span>
         )}
+        {/* Legend for the captain / vice badges shown on this team's players in the draw. */}
+        {(capId || viceId) && (
+          <span className="inline-flex items-center gap-1.5 text-[10px] ml-auto" style={{ color: 'var(--ink-3)' }}>
+            <span className="text-[8px] font-extrabold leading-none px-1 py-0.5 rounded" style={{ background: 'var(--gold)', color: '#fff' }}>C</span>captain
+            <span className="text-[8px] font-extrabold leading-none px-1 py-0.5 rounded" style={{ background: '#3f6ea5', color: '#fff' }}>V</span>vice
+          </span>
+        )}
       </div>
 
       <div className="overflow-x-auto pb-1">
