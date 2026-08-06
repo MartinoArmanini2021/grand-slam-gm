@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { GamePhase, RoundId, RoundScore, BudgetReturn, Transfer } from '../types';
 import {
-  ROUNDS, getMatchesForRound, isPlayerOut, BUDGET_RETURN_RATES, winPoints, transferWindowOpen, roundPlayable, roundHasResult, liveCurrentRound,
+  ROUNDS, getMatchesForRound, isPlayerOut, BUDGET_RETURN_RATES, winPoints, transferWindowOpen, roundPlayable, roundHasResult, liveCurrentRound, liveLeaderRound,
   tournamentStarted, isEliminated, liveBudget, playerRefund,
 } from '../data/tournament';
 import { useMarketDraft } from './marketDraft';
@@ -221,52 +221,50 @@ export const useGameStore = create<GameStore>()(
         });
       },
 
+      // LIVE captain-of-record is per-round: recorded against the live LEADER round (the earliest
+      // round with no result yet) and frozen at that round's first result. Carry-forward scoring
+      // then keeps it in force each later round until the manager changes it — so a captain is
+      // doubled every round, not only R64. Derived from RESULTS, never the frozen round index.
       setCaptain: (id) => {
-        const { myTeam, captain, viceCaptain, currentRoundIndex, phase, captainHistory, viceCaptainHistory } = get();
-        // Captaining only makes sense while choosing a squad or a round's captain.
+        const { myTeam, captain, viceCaptain, phase, captainHistory, viceCaptainHistory } = get();
         if (phase !== 'draft' && phase !== 'pre_round') return;
-        const round = ROUNDS[currentRoundIndex]?.id;
-        // P1: once the round has a result the captain is frozen (the server rejects a change).
-        if (phase === 'pre_round' && round && roundHasResult(round)) { warnLeaderLocked(currentRoundIndex); return; }
         if (!myTeam.includes(id)) return;
-        // An eliminated player can't captain (guards callers that don't pre-filter).
-        const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
-        if (isPlayerOut(id, revealed)) return;
         if (id === captain) return;
-        // Promoting your vice swaps the two roles; a bench player drops the old captain
-        // to the bench. Either way there are still exactly two on-court leaders.
+        // Promoting your vice swaps the two roles; a bench player drops the old captain to the bench.
         const newVice = id === viceCaptain ? captain : viceCaptain;
-        const hist = phase === 'pre_round' ? recordLeaders(round, id, newVice, captainHistory, viceCaptainHistory) : {};
-        set({ captain: id, viceCaptain: newVice, ...hist });
+        if (phase === 'draft') { set({ captain: id, viceCaptain: newVice }); return; } // recorded for R64 at lock
+        if (isEliminated(id)) { toast('That player is out — captain someone still in the draw.', 'warn'); return; }
+        const round = liveLeaderRound();
+        if (!round) { warnLeaderLocked(ROUNDS.length - 1); return; } // every round has started — nothing to set
+        set({ captain: id, viceCaptain: newVice, ...recordLeaders(round, id, newVice, captainHistory, viceCaptainHistory) });
       },
 
       setViceCaptain: (id) => {
-        const { myTeam, captain, viceCaptain, currentRoundIndex, phase, captainHistory, viceCaptainHistory } = get();
+        const { myTeam, captain, viceCaptain, phase, captainHistory, viceCaptainHistory } = get();
         if (phase !== 'draft' && phase !== 'pre_round') return;
-        const round = ROUNDS[currentRoundIndex]?.id;
-        if (phase === 'pre_round' && round && roundHasResult(round)) { warnLeaderLocked(currentRoundIndex); return; }
         if (!myTeam.includes(id)) return;
-        const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
-        if (isPlayerOut(id, revealed)) return;
         if (id === viceCaptain) return;
         const newCap = id === captain ? viceCaptain : captain;
-        const hist = phase === 'pre_round' ? recordLeaders(round, newCap, id, captainHistory, viceCaptainHistory) : {};
-        set({ viceCaptain: id, captain: newCap, ...hist });
+        if (phase === 'draft') { set({ viceCaptain: id, captain: newCap }); return; }
+        if (isEliminated(id)) { toast('That player is out — pick a vice still in the draw.', 'warn'); return; }
+        const round = liveLeaderRound();
+        if (!round) { warnLeaderLocked(ROUNDS.length - 1); return; }
+        set({ viceCaptain: id, captain: newCap, ...recordLeaders(round, newCap, id, captainHistory, viceCaptainHistory) });
       },
 
       // Send a captain/vice back to the bench, leaving the slot BLANK (no auto-fill)
       // so the manager can deliberately choose who fills it.
       benchLeader: (id) => {
-        const { captain, viceCaptain, currentRoundIndex, phase, captainHistory, viceCaptainHistory } = get();
+        const { captain, viceCaptain, phase, captainHistory, viceCaptainHistory } = get();
         if (phase !== 'draft' && phase !== 'pre_round') return;
-        const round = ROUNDS[currentRoundIndex]?.id;
-        if (phase === 'pre_round' && round && roundHasResult(round)) { warnLeaderLocked(currentRoundIndex); return; }
         let newCap = captain, newVice = viceCaptain;
         if (id === captain) newCap = null;
         else if (id === viceCaptain) newVice = null;
         else return;
-        const hist = phase === 'pre_round' ? recordLeaders(round, newCap, newVice, captainHistory, viceCaptainHistory) : {};
-        set({ captain: newCap, viceCaptain: newVice, ...hist });
+        if (phase === 'draft') { set({ captain: newCap, viceCaptain: newVice }); return; }
+        const round = liveLeaderRound();
+        if (!round) { warnLeaderLocked(ROUNDS.length - 1); return; }
+        set({ captain: newCap, viceCaptain: newVice, ...recordLeaders(round, newCap, newVice, captainHistory, viceCaptainHistory) });
       },
 
       // Re-field two on-court leaders after a state restore (cloud / localStorage),

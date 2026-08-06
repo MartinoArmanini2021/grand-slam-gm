@@ -29,6 +29,20 @@ export interface ScoreCtx {
 const CAPTAIN_MULTIPLIER = 2;
 const VICE_MULTIPLIER = 1.5;
 
+// Captain/vice OF RECORD for a round: the pick set for that round, else carried forward from the
+// most recent earlier round (a captain stays in force until changed → a captained run is doubled
+// every round, not only R64). Gaps filled from the past only. Identical in tournament.ts +
+// recompute-score/index.ts (parity-critical — the leaderboard number depends on it).
+function leaderOfRecord(history: { round: string; playerId: string }[] | undefined, round: string, order: string[]): string | undefined {
+  const ri = order.indexOf(round);
+  let best: { round: string; playerId: string } | undefined;
+  for (const h of history ?? []) {
+    const hi = order.indexOf(h.round);
+    if (hi >= 0 && hi <= ri && (best === undefined || order.indexOf(best.round) < hi)) best = h;
+  }
+  return best?.playerId;
+}
+
 // Favourites are worth a little less per win, underdogs a little more (rank 1 → ×0.8,
 // rank 40+ → ×1.3). Identical to tournament.ts.
 function rankingMultiplier(rank: number): number {
@@ -72,8 +86,8 @@ export function scoreEntry(state: EntryState, ctx: ScoreCtx): number {
     for (const t of state.transfers ?? []) {
       if (idx(t.round) < ri) squad = squad.map(id => (id === t.out ? t.in : id));
     }
-    const captain = state.captainHistory?.find(c => c.round === round)?.playerId;
-    const vice = state.viceCaptainHistory?.find(c => c.round === round)?.playerId;
+    const captain = leaderOfRecord(state.captainHistory, round, ctx.roundsInOrder);
+    const vice = leaderOfRecord(state.viceCaptainHistory, round, ctx.roundsInOrder);
     const base = ctx.roundPoints[round] ?? 0;
     const roundMatches = ctx.matches.filter(m => m.round === round);
 

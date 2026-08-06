@@ -106,6 +106,14 @@ export function liveRoundStatus(): { round: RoundId; underway: boolean } | null 
   return null; // every round fully played
 }
 
+// The round currently OPEN for captain/vice selection: the earliest round with NO result yet
+// (a round's captain freezes at its first result). This is what setCaptain records against —
+// results-derived, NOT the frozen currentRoundIndex (which pinned every pick to R64). null once
+// every round has started (nothing left to captain for).
+export function liveLeaderRound(): RoundId | null {
+  return ROUNDS.find(r => !roundHasResult(r.id))?.id ?? null;
+}
+
 // Has this round produced ANY result yet? Mirrors the server's save_entry captain lock,
 // which freezes a round's captain/vice the moment public.matches holds a winner for it.
 // The store + the court use this so the UI never invites a captain change the server will
@@ -166,6 +174,21 @@ const VICE_MULT = 1.5;
 // lost it), with the captain ×2 / vice ×1.5 multiplier applied per that round's recorded
 // leaders. Reads live results, so it reflects exactly what the board scored. Pass the
 // entry's captain/vice history for the multiplier (empty → base points only).
+// Captain/vice OF RECORD for a round: the pick explicitly set for THAT round, or — if none — the
+// pick carried forward from the most recent EARLIER round. A manager's captain stays in force every
+// round until they change it, so a captained deep run is doubled all the way (R64→F), not only in
+// R64. Gaps are filled from the past only; a later explicit pick never rewrites an earlier (already
+// locked) round. IDENTICAL logic in serverEngine.ts + recompute-score/index.ts (parity-critical).
+export function leaderOfRecord(history: { round: string; playerId: string }[], round: RoundId): string | undefined {
+  const ri = ROUND_ORDER.indexOf(round);
+  let best: { round: string; playerId: string } | undefined;
+  for (const h of history) {
+    const hi = ROUND_ORDER.indexOf(h.round as RoundId);
+    if (hi >= 0 && hi <= ri && (best === undefined || ROUND_ORDER.indexOf(best.round as RoundId) < hi)) best = h;
+  }
+  return best?.playerId;
+}
+
 export function playerRoundPoints(
   playerId: string,
   round: RoundId,
@@ -176,9 +199,9 @@ export function playerRoundPoints(
   if (!m || m.winnerId !== playerId) return 0; // no match this round, or didn't win
   const oppId = m.p1Id === playerId ? m.p2Id : m.p1Id;
   const pts = winPoints(round, playerId, oppId);
-  if (captainHistory.find(c => c.round === round)?.playerId === playerId) return pts * CAPTAIN_MULT;
+  if (leaderOfRecord(captainHistory, round) === playerId) return pts * CAPTAIN_MULT;
   // Vice ×1.5 is NOT rounded — a vice on a base-odd win earns a half-point (e.g. 1 → 1.5).
-  if (viceCaptainHistory.find(c => c.round === round)?.playerId === playerId) return pts * VICE_MULT;
+  if (leaderOfRecord(viceCaptainHistory, round) === playerId) return pts * VICE_MULT;
   return pts;
 }
 

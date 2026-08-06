@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useGameStore, substitutionCandidates } from '../store/gameStore';
 import { findPlayer } from '../data/players';
-import { getPlayerExit, isPlayerOut, isEliminated, liveBudget, playerRefund, ROUNDS, transferWindowOpen, roundHasResult } from '../data/tournament';
+import { getPlayerExit, isEliminated, liveBudget, playerRefund, transferWindowOpen, liveLeaderRound } from '../data/tournament';
 import { lastName, round1 } from '../data/format';
 import { SURFACE, TOURNAMENT } from '../data/tournamentConfig';
 import { SQUAD_SIZE } from '../data/squadRules';
@@ -24,7 +24,7 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
   onTeamClick?: () => void; // makes the team label a link (e.g. to your team page)
   fluid?: boolean;         // fill the container width instead of the 860px cap
 } = {}) {
-  const { myTeam, captain, viceCaptain, captainHistory, viceCaptainHistory, initialSquad, transfers, cashedIn, currentRoundIndex, phase, openPlayer, removePlayer, replacePlayer, setCaptain, setViceCaptain, benchLeader } = useGameStore();
+  const { myTeam, captain, viceCaptain, initialSquad, transfers, cashedIn, phase, openPlayer, removePlayer, replacePlayer, setCaptain, setViceCaptain, benchLeader } = useGameStore();
   const budget = liveBudget(initialSquad, transfers, myTeam, cashedIn); // live money: refunds are credited on cash-in
   // Replacing an eliminated player cashes them in, so its refund is spendable on the replacement.
   const budgetFor = (id: string) => round1(budget + playerRefund(id));
@@ -37,20 +37,17 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
   // P1: the captain-of-record for a round is frozen once that round produces a result —
   // mirroring the server's save_entry lock. So the court stops inviting a captain change the
   // moment the current round is underway; otherwise the (optimistic) save would be rejected.
-  const currentRoundId = ROUNDS[currentRoundIndex]?.id;
-  const roundLive = phase === 'pre_round' && !!currentRoundId && roundHasResult(currentRoundId);
-  // On a LIVE (locked) round, the on-court leader is the COMMITTED leader-of-record for that round
-  // — the one that actually SCORES — not the mutable current field, which could still hold a pick
-  // that never locked in time. This keeps the ×2 / ×1.5 badge honest: it never shows a leader that
-  // won't count.
-  const roundCap = currentRoundId ? captainHistory.find(c => c.round === currentRoundId)?.playerId : undefined;
-  const roundVice = currentRoundId ? viceCaptainHistory.find(c => c.round === currentRoundId)?.playerId : undefined;
-  const cap = captainId ?? (squad ? undefined : (roundLive ? roundCap : captain) ?? undefined);
-  const vice = viceCaptainId ?? (squad ? undefined : (roundLive ? roundVice : viceCaptain) ?? undefined);
-  const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
+  // The round still open to captain for (earliest unplayed round); null once every round has
+  // started. Captaincy is editable while it exists — carry-forward means your CURRENT pick scores
+  // every round until you change it, so the on-court leader is simply your current captain/vice
+  // (a rival court shows their committed leaders, passed in as props).
+  const leaderRound = liveLeaderRound();
+  const leadersLocked = phase === 'pre_round' && !leaderRound; // every round underway → nothing left to set
+  const cap = captainId ?? (squad ? undefined : captain ?? undefined);
+  const vice = viceCaptainId ?? (squad ? undefined : viceCaptain ?? undefined);
   const isOwnTeam = !readOnly && !squad; // your own court (home / your team page)
   const canEdit = isOwnTeam && phase === 'draft';
-  const canCaptain = isOwnTeam && (phase === 'draft' || (phase === 'pre_round' && !roundLive)); // captaincy editable until the round starts
+  const canCaptain = isOwnTeam && (phase === 'draft' || (phase === 'pre_round' && !!leaderRound));
   useEscapeToClose(() => { setManageId(null); setSubFor(null); setAssignRole(null); }, !!(manageId || subFor || assignRole));
   const C = SURFACE.court; // stands / apron (outside court) / surface (inside court)
   const VENUE = TOURNAMENT.location.split(',')[0].trim().toUpperCase(); // host city painted on court ("MONTRÉAL")
@@ -197,7 +194,7 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
           }
           const p = findPlayer(id);
           if (!p) return null;
-          const out = isPlayerOut(id, revealed);
+          const out = isEliminated(id);
           const exit = getPlayerExit(id);
           return (
             <button
@@ -231,10 +228,10 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
 
         {/* Captain lock: once this round has a result the captain is frozen (matches the
             server), so we say so rather than leave the picker silently inert. */}
-        {roundLive && (
+        {leadersLocked && (
           <div className="absolute inset-x-0 top-3 flex items-center justify-center pointer-events-none">
             <div className="px-3 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(10,31,68,0.78)', color: '#fff' }}>
-              🔒 Captains locked — round underway
+              🔒 Captains locked — every round underway
             </div>
           </div>
         )}
@@ -251,7 +248,7 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
             {bench.map(id => {
               const p = findPlayer(id);
               if (!p) return null;
-              const out = isPlayerOut(id, revealed);
+              const out = isEliminated(id);
               const exit = getPlayerExit(id);
               return (
                 <button
@@ -302,7 +299,7 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
                 </div>
               </div>
               <div className="p-2">
-                {canCaptain && !isPlayerOut(id, revealed) && (
+                {canCaptain && !isEliminated(id) && (
                   <>
                     {captain !== id && (
                       <button
@@ -420,7 +417,7 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
       {assignRole && (() => {
         const isC = assignRole === 'C';
         const other = isC ? viceCaptain : captain;
-        const options = byRank(team.filter(id => id !== other && !isPlayerOut(id, revealed)));
+        const options = byRank(team.filter(id => id !== other && !isEliminated(id)));
         return (
           <div onClick={() => setAssignRole(null)} style={{ position: 'fixed', inset: 0, zIndex: 220, background: 'rgba(10,27,51,0.55)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
             <div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Choose a player" className="fade-in w-full" style={{ maxWidth: 520, background: '#FFFFFF', borderRadius: '18px 18px 0 0', maxHeight: '82vh', display: 'flex', flexDirection: 'column' }}>

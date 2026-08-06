@@ -42,6 +42,19 @@ interface EntryState {
   viceCaptainHistory?: { round: string; playerId: string }[];
 }
 
+// Captain/vice OF RECORD for a round: the pick set for that round, else carried forward from the
+// most recent earlier round (a captain stays in force until changed → doubled every round, not only
+// R64). Gaps filled from the past only. IDENTICAL to tournament.ts + serverEngine.ts (parity).
+function leaderOfRecord(history: { round: string; playerId: string }[] | undefined, round: string): string | undefined {
+  const ri = ROUND_ORDER.indexOf(round);
+  let best: { round: string; playerId: string } | undefined;
+  for (const h of history ?? []) {
+    const hi = ROUND_ORDER.indexOf(h.round);
+    if (hi >= 0 && hi <= ri && (best === undefined || ROUND_ORDER.indexOf(best.round) < hi)) best = h;
+  }
+  return best?.playerId;
+}
+
 function scoreEntry(state: EntryState, matches: MatchRow[], rankById: Record<string, number>, playedRounds: string[]): number {
   const idx = (r: string) => ROUND_ORDER.indexOf(r);
   const rank = (id: string) => rankById[id] ?? 40;
@@ -54,8 +67,8 @@ function scoreEntry(state: EntryState, matches: MatchRow[], rankById: Record<str
     const ri = idx(round);
     let squad = [...initial];
     for (const t of state.transfers ?? []) if (idx(t.round) < ri) squad = squad.map(id => (id === t.out ? t.in : id));
-    const captain = state.captainHistory?.find(c => c.round === round)?.playerId;
-    const vice = state.viceCaptainHistory?.find(c => c.round === round)?.playerId;
+    const captain = leaderOfRecord(state.captainHistory, round);
+    const vice = leaderOfRecord(state.viceCaptainHistory, round);
     const base = ROUND_POINTS[round] ?? 0;
     const rm = matches.filter(m => m.round === round);
     for (const id of squad) {
