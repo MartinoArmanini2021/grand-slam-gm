@@ -1,9 +1,8 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useLiveStore } from '../store/liveStore';
-import { useMarketDraft } from '../store/marketDraft';
 import { PLAYERS, getPlayer } from '../data/players';
-import { ROUNDS, isPlayerOut, getPlayerExit, tournamentStarted, isEliminated, liveBudget, playerRefund, cashedInTotal, transferWindowOpen } from '../data/tournament';
+import { ROUNDS, isPlayerOut, getPlayerExit, tournamentStarted, isEliminated, liveBudget, playerRefund, cashedInTotal, transferWindowOpen, roundHasResult } from '../data/tournament';
 import { getTier, TIER_META, type Tier } from '../data/tiers';
 import { tierCounts, squadShortfall, isSquadValid, isTierFull, TIER_MINIMUMS, SQUAD_SIZE, STARTING_BUDGET } from '../data/squadRules';
 import PlayerAvatar from '../components/PlayerAvatar';
@@ -16,7 +15,6 @@ import PlayerPickerModal from '../components/PlayerPickerModal';
 import SquadLockedModal from '../components/SquadLockedModal';
 import Countdown from '../components/Countdown';
 import { onActivate } from '../hooks';
-import { round1 } from '../data/format';
 import { toast } from '../store/toastStore';
 import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
 import type { RoundId, Player } from '../types';
@@ -30,16 +28,16 @@ const SURF = TOURNAMENT.surface;
 const SORT_LABEL: Record<SortKey, string> = { ranking: '# Rank', surface: `${SURFACE.label} %`, price: '$ Price' };
 
 export default function DraftPage() {
-  const { myTeam, captain, viceCaptain, budget, phase, currentRoundIndex, initialSquad, transfers, cashedIn, removePlayer, cashInPlayer, buyPlayer, setCaptain, setViceCaptain, finalizeDraft, openPlayer, setActiveTab } = useGameStore();
+  const { myTeam, captain, viceCaptain, budget, phase, currentRoundIndex, initialSquad, transfers, cashedIn, removePlayer, cashInPlayer, buyPlayer, undoBuy, setCaptain, setViceCaptain, finalizeDraft, openPlayer, setActiveTab } = useGameStore();
   const [sort, setSort] = useState<SortKey>('ranking');
   const [search, setSearch] = useState('');
   const [tierFilter, setTierFilter] = useState<Tier | null>(null);
   const [confirm, setConfirm] = useState<Player | null>(null);
-  const [buyConfirm, setBuyConfirm] = useState<Player | null>(null); // LIVE market buy → confirm → stage
+  const [buyConfirm, setBuyConfirm] = useState<Player | null>(null); // LIVE market buy → confirm → buy
   const [showTransferHelp, setShowTransferHelp] = useState(false);   // "How transfers work" help card
-  // Pending (staged) cash-ins/buys live in a standalone store so they survive an in-session tab
-  // switch / player-drilldown (which unmounts this page) instead of being silently discarded.
-  const { cashIns: stagedCashIns, buys: stagedBuys, setCashIns: setStagedCashIns, setBuys: setStagedBuys, clear: clearStaged } = useMarketDraft();
+  // Optional EARLY finalize (session only). Buys already commit on purchase and auto-lock when their
+  // round starts; this just hides the Undo controls for a manager who's sure. Not persisted.
+  const [finalized, setFinalized] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [showLocked, setShowLocked] = useState(false);
   // "Watch the players" hint — shown atop the list until the user dismisses it (persisted),
@@ -61,96 +59,48 @@ export default function DraftPage() {
   const valid = isSquadValid(myTeam);
   const shortfall = squadShortfall(myTeam);
 
-  // LIVE committed money: starting − everything ever bought + refunds already CASHED IN.
+  // LIVE money is committed + immediate: cashing in claims the refund and buying spends it the
+  // moment you tap — no pending/preview layer, the squad you see IS your saved squad. Fewer than 10
+  // players and any tier mix are fine; nothing here flags a squad as "wrong".
   const liveBud = useMemo(() => liveBudget(initialSquad, transfers, myTeam, cashedIn),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [initialSquad, transfers, myTeam, cashedIn, draw, results]);
-
-  // ── LIVE staging: cash-ins & buys are PENDING until "Lock Squad" commits them — the same
-  // build → confirm → lock flow as the pre-tournament draft, so a manager can never buy a player
-  // and instantly regret it. Everything below is a PREVIEW off committed state + the staged ops;
-  // nothing touches the store/cloud until lockTransfers() runs, and each change undoes cleanly. ──
-  const committedOpen = cashedIn.filter(c => !transfers.some(t => t.out === c)).length;
-  const previewOpen = committedOpen + stagedCashIns.length - stagedBuys.length; // free slots after staging
-  const openCount = previewOpen;                                                // (name kept for the UI below)
-  const stagedRefund = useMemo(() => stagedCashIns.reduce((s, id) => s + playerRefund(id), 0),
+  const displayBudget = live ? liveBud : budget;
+  // Open slots = players cashed in but not yet backfilled by a buy → you can buy that many.
+  const openCount = cashedIn.filter(c => !transfers.some(t => t.out === c)).length;
+  const canBuy = live && windowOpen && openCount > 0;
+  // Eliminated players still in your active squad → ready to Cash In.
+  const cashable = useMemo(() => (live ? myTeam.filter(id => isEliminated(id)) : []),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [stagedCashIns, draw, results]);
-  const stagedSpend = stagedBuys.reduce((s, id) => s + getPlayer(id).price, 0);
-  const previewBudget = round1(liveBud + stagedRefund - stagedSpend);
-  const previewTeam = [...myTeam.filter(id => !stagedCashIns.includes(id)), ...stagedBuys];
-  const hasPending = stagedCashIns.length > 0 || stagedBuys.length > 0;
-  const displayBudget = live ? previewBudget : budget;
-  // Committed eliminated players still in the squad, NOT yet staged for cash-in → offer Cash In.
-  const cashable = useMemo(() => (live ? myTeam.filter(id => isEliminated(id) && !stagedCashIns.includes(id)) : []),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [live, myTeam, stagedCashIns, draw, results]);
+    [live, myTeam, draw, results]);
   const cashedTotal = useMemo(() => cashedInTotal(cashedIn),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [cashedIn, draw, results]);
-  const canBuy = live && windowOpen && previewOpen > 0;
+
+  // A buy is UNLOCKED (undoable) while the round it first scores in hasn't started; once that round
+  // has a result it's locked in. `finalized` (Lock Squad) hides Undo early, by the manager's choice.
+  const isUndoableBuy = (id: string): boolean => {
+    if (finalized) return false;
+    const t = transfers.find(x => x.in === id);
+    if (!t) return false;
+    const scoresFrom = ROUNDS[ROUNDS.findIndex(r => r.id === t.round) + 1]?.id;
+    return !!scoresFrom && !roundHasResult(scoresFrom) && !isEliminated(id);
+  };
+  const unlockedBuys = useMemo(() => (live ? transfers.filter(t => isUndoableBuy(t.in)).map(t => t.in) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [live, transfers, finalized, draw, results]);
 
   // A small localized "+$X" that floats up from the tapped Cash In button, for tactile feedback.
   const fxKey = useRef(0);
   const [cashFx, setCashFx] = useState<{ x: number; y: number; amount: number; key: number } | null>(null);
-
-  // Keep the staged buys AFFORDABLE + within the open slots for a given cash-in set, dropping the
-  // dearest buys first (and any now-eliminated/owned target). Used when undoing a cash-in that was
-  // funding a buy, so the preview can never go negative or over-fill — and at Lock so we never try
-  // to commit an unaffordable buy.
-  const reconcileBuys = (cashIns: string[], buys: string[]): string[] => {
-    const refundSum = cashIns.reduce((s, id) => s + playerRefund(id), 0);
-    const slots = committedOpen + cashIns.length;
-    let result = buys.filter(id => !isEliminated(id) && !myTeam.includes(id));
-    const fits = () => result.length <= slots
-      && round1(liveBud + refundSum - result.reduce((s, id) => s + getPlayer(id).price, 0)) >= 0;
-    while (result.length && !fits()) {
-      let maxi = 0; // drop the most expensive staged buy
-      for (let i = 1; i < result.length; i++) if (getPlayer(result[i]).price > getPlayer(result[maxi]).price) maxi = i;
-      result = result.filter((_, i) => i !== maxi);
-    }
-    return result;
-  };
-
-  // Stage / undo — reversible until Lock Squad.
-  const stageCashIn = (id: string, e?: React.MouseEvent) => {
+  // Immediate actions: cash in claims the refund now; buy commits now (undoable until its round).
+  const doCashIn = (id: string, e?: React.MouseEvent) => {
     const amt = playerRefund(id);
     if (e) setCashFx({ x: e.clientX, y: e.clientY, amount: amt, key: ++fxKey.current });
-    if (!stagedCashIns.includes(id)) setStagedCashIns([...stagedCashIns, id]);
+    cashInPlayer(id);
+    toast(`Cashed in ${getPlayer(id).name} · +$${amt}M`, 'good');
   };
-  const undoCashIn = (id: string) => {
-    const nextCashIns = stagedCashIns.filter(x => x !== id);
-    setStagedCashIns(nextCashIns);
-    // Removing a cash-in reduces slots + refund money — drop the buy(s) it was funding, not the
-    // newest arbitrarily, so an expensive buy funded by this cash-in goes rather than a cheap one.
-    setStagedBuys(reconcileBuys(nextCashIns, stagedBuys));
-  };
-  const stageBuy = (id: string) => { if (!stagedBuys.includes(id)) setStagedBuys([...stagedBuys, id]); };
-  const undoBuy = (id: string) => setStagedBuys(stagedBuys.filter(x => x !== id));
-  const discardPending = () => clearStaged();
-  const lockTransfers = () => {
-    const before = useGameStore.getState();
-    stagedCashIns.forEach(id => cashInPlayer(id)); // free the slots first…
-    stagedBuys.forEach(id => buyPlayer(id));        // …then backfill them
-    const after = useGameStore.getState();
-    // Report what ACTUALLY committed — a staged op can no-op if the world moved (a target got
-    // eliminated, the window closed) between staging and Lock. Never claim a silent drop as saved.
-    const applied = (after.cashedIn.length - before.cashedIn.length) + (after.transfers.length - before.transfers.length);
-    const staged = stagedCashIns.length + stagedBuys.length;
-    clearStaged();
-    if (applied === staged) toast(`Transfers locked in ✓ — ${applied} change${applied === 1 ? '' : 's'} saved`, 'good');
-    else if (applied > 0) toast(`Locked ${applied} of ${staged} — the rest couldn't apply (a player was eliminated or the window closed)`, 'warn');
-    else toast(`Nothing saved — those changes are no longer valid (a player was eliminated or the window closed)`, 'warn');
-  };
-
-  // Live results can land WHILE the manager is staging: prune any staged buy whose target just got
-  // eliminated (and re-fit the rest) so the preview + Lock stay valid without a manual undo.
-  useEffect(() => {
-    if (!live) return;
-    const fixed = reconcileBuys(stagedCashIns, stagedBuys);
-    if (fixed.length !== stagedBuys.length) setStagedBuys(fixed);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draw, results]);
+  const doBuy = (id: string) => { buyPlayer(id); setFinalized(false); toast(`Signed ${getPlayer(id).name} — you can undo until the round starts`, 'good'); };
 
   const sorted = useMemo(() => [...PLAYERS]
     .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()))
@@ -187,13 +137,13 @@ export default function DraftPage() {
             ? `Build your squad — $${budget.toFixed(1)}M to spend · ${myTeam.length}/${TEAM_SIZE} picked`
             : !windowOpen
               ? 'Transfer window closed — your squad is locked for the final.'
-              : hasPending
-                ? `${stagedCashIns.length + stagedBuys.length} pending change${stagedCashIns.length + stagedBuys.length === 1 ? '' : 's'} — review My Squad, then tap Lock Squad to confirm.`
-                : cashable.length > 0
-                  ? `${cashable.length} eliminated player${cashable.length === 1 ? '' : 's'} to Cash In — claim the money, then buy any replacement you like.`
-                  : openCount > 0
-                    ? `$${previewBudget.toFixed(1)}M to spend · ${openCount} open slot${openCount === 1 ? '' : 's'} — buy a replacement of any tier below.`
-                    : `$${previewBudget.toFixed(1)}M available — Cash In an eliminated player to free up money.`}
+              : cashable.length > 0
+                ? `${cashable.length} eliminated player${cashable.length === 1 ? '' : 's'} to Cash In — claim the money, then buy any replacement you like.`
+                : openCount > 0
+                  ? `$${liveBud.toFixed(1)}M to spend · ${openCount} open slot${openCount === 1 ? '' : 's'} — buy a replacement of any tier below.`
+                  : unlockedBuys.length > 0
+                    ? `${unlockedBuys.length} new signing${unlockedBuys.length === 1 ? '' : 's'} — you can still undo until the round starts, or Lock Squad to confirm now.`
+                    : `$${liveBud.toFixed(1)}M available — Cash In an eliminated player to free up money.`}
         </p>
         {live && (
           <button onClick={() => setShowTransferHelp(true)} className="text-xs font-bold mt-1 underline underline-offset-2" style={{ color: 'var(--ember)' }}>
@@ -228,7 +178,7 @@ export default function DraftPage() {
           {live && windowOpen && cashable.length === 0 && openCount > 0 && (
             <div className="rounded-2xl px-4 py-2.5 mb-3 flex items-center gap-2 text-sm" style={{ background: 'rgba(217,154,0,0.07)', border: '1px solid rgba(217,154,0,0.3)', color: 'var(--ink)' }}>
               <span>🛒</span>
-              <span>You have <b>{openCount}</b> open slot{openCount === 1 ? '' : 's'} and <b className="font-num" style={{ color: 'var(--blue)' }}>${previewBudget.toFixed(1)}M</b> to spend. Tap <b style={{ color: 'var(--green)' }}>+ Buy</b> on any still-alive player — any tier.</span>
+              <span>You have <b>{openCount}</b> open slot{openCount === 1 ? '' : 's'} and <b className="font-num" style={{ color: 'var(--blue)' }}>${liveBud.toFixed(1)}M</b> to spend. Tap <b style={{ color: 'var(--green)' }}>+ Buy</b> on any still-alive player — any tier.</span>
             </div>
           )}
           {live && windowOpen && cashable.length === 0 && openCount === 0 && (
@@ -337,7 +287,7 @@ export default function DraftPage() {
               <tbody>
                 {visible.map(player => {
                   const isSelected = myTeam.includes(player.id);
-                  const ownedLive = previewTeam.includes(player.id); // owned in the PREVIEW (committed + staged buy)
+                  const ownedLive = myTeam.includes(player.id); // owned in the PREVIEW (committed + staged buy)
                   // Live: eliminated = knocked out per the RESULTS (isEliminated). Draft: per revealed rounds.
                   const out = live ? isEliminated(player.id) : isPlayerOut(player.id, revealed);
                   const full = myTeam.length >= TEAM_SIZE;
@@ -347,7 +297,7 @@ export default function DraftPage() {
                   const addable = !locked && !isSelected && !out && !full && canAfford && !tierFull;
                   // Live: buyable into an open (cashed-in) slot — any tier, just still-alive, not
                   // already owned/staged, and affordable off the PREVIEW budget.
-                  const buyable = live && canBuy && !ownedLive && !out && previewBudget >= player.price;
+                  const buyable = live && canBuy && !ownedLive && !out && liveBud >= player.price;
                   const tierColor = TIER_META[tier].color;
 
                   return (
@@ -420,9 +370,9 @@ export default function DraftPage() {
                             {isSelected ? 'Remove' : out ? 'Out' : full ? 'Full' : tierFull ? `${tier} full` : !canAfford ? 'Over $' : '+ Add'}
                           </button>
                         ) : ownedLive ? (
-                          /* in your squad — committed, or a PENDING buy waiting to be locked */
-                          stagedBuys.includes(player.id)
-                            ? <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg whitespace-nowrap" style={{ background: 'rgba(217,154,0,0.14)', color: 'var(--gold)' }}>Added</span>
+                          /* in your squad — a fresh (still-undoable) signing shows NEW, else In squad */
+                          isUndoableBuy(player.id)
+                            ? <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg whitespace-nowrap" style={{ background: 'rgba(217,154,0,0.14)', color: 'var(--gold)' }}>New</span>
                             : <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg whitespace-nowrap" style={{ background: 'rgba(18,161,80,0.1)', color: 'var(--green)' }}>In squad</span>
                         ) : !windowOpen ? (
                           <span className="text-[11px]" style={{ color: '#C7CFDA' }}>🔒</span>
@@ -431,7 +381,7 @@ export default function DraftPage() {
                           <button
                             onClick={e => { e.stopPropagation(); if (buyable) setBuyConfirm(player); }}
                             disabled={!buyable}
-                            title={previewBudget < player.price ? `Costs $${player.price}M — over your $${previewBudget.toFixed(1)}M` : `Buy ${player.name}`}
+                            title={liveBud < player.price ? `Costs $${player.price}M — over your $${liveBud.toFixed(1)}M` : `Buy ${player.name}`}
                             className="text-[11px] font-bold px-3 min-h-[36px] rounded-lg transition-transform active:scale-95 whitespace-nowrap"
                             style={{
                               background: buyable ? 'var(--green)' : 'rgba(10,27,51,0.04)',
@@ -440,7 +390,7 @@ export default function DraftPage() {
                               cursor: buyable ? 'pointer' : 'not-allowed',
                             }}
                           >
-                            {previewBudget < player.price ? 'Over $' : '+ Buy'}
+                            {liveBud < player.price ? 'Over $' : '+ Buy'}
                           </button>
                         ) : (
                           /* ── LIVE: no open slot — cash in an eliminated player first ── */
@@ -460,7 +410,7 @@ export default function DraftPage() {
           <div className="lg:sticky lg:top-20 rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.09)' }}>
             <div className="flex items-center justify-between mb-1">
               <h2 className="font-bold text-sm" style={{ color: 'var(--ink)' }}>My Squad</h2>
-              <span className="font-num text-xs" style={{ color: 'var(--ink-2)' }}>{live ? previewTeam.length : myTeam.length} / {TEAM_SIZE}</span>
+              <span className="font-num text-xs" style={{ color: 'var(--ink-2)' }}>{live ? myTeam.length : myTeam.length} / {TEAM_SIZE}</span>
             </div>
 
             <div className="mb-4 pt-3">
@@ -530,12 +480,12 @@ export default function DraftPage() {
               ))}
 
               {/* ── LIVE: preview squad — committed players + PENDING buys (gold), each undoable ── */}
-              {live && [...previewTeam].sort((a, b) => getPlayer(a).ranking - getPlayer(b).ranking).map(id => {
+              {live && [...myTeam].sort((a, b) => getPlayer(a).ranking - getPlayer(b).ranking).map(id => {
                 const p = getPlayer(id);
                 const isCap = captain === id;
                 const isVice = viceCaptain === id;
-                const isNew = stagedBuys.includes(id);        // pending buy, not yet committed
-                const dead = !isNew && isEliminated(id);      // committed, still owned, out, not yet cashed
+                const isNew = isUndoableBuy(id);              // freshly signed — committed but still undoable
+                const dead = !isNew && isEliminated(id);      // owned, out, not yet cashed in
                 const refund = dead ? playerRefund(id) : 0;
                 const rowBg = isNew ? 'rgba(217,154,0,0.09)' : dead ? 'rgba(229,71,43,0.06)' : isCap ? 'rgba(217,154,0,0.07)' : isVice ? 'rgba(14,111,196,0.06)' : 'rgba(10,27,51,0.03)';
                 const rowBorder = isNew ? 'rgba(217,154,0,0.55)' : dead ? 'rgba(229,71,43,0.22)' : isCap ? 'rgba(217,154,0,0.2)' : isVice ? 'rgba(14,111,196,0.2)' : 'rgba(10,27,51,0.06)';
@@ -546,7 +496,7 @@ export default function DraftPage() {
                       <PlayerTag playerId={id} flag={p.flag} className="text-[8px] font-bold uppercase tracking-wide leading-tight truncate" style={{ color: 'var(--blue)' }} />
                       <div className="text-xs font-medium truncate" style={{ color: 'var(--ink)' }}>{p.name}</div>
                       {isNew ? (
-                        <div className="font-num text-[10px]" style={{ color: 'var(--gold)', fontWeight: 700 }}>NEW · −${p.price}M</div>
+                        <div className="font-num text-[10px]" style={{ color: 'var(--gold)', fontWeight: 700 }}>NEW signing · ${p.price}M</div>
                       ) : dead ? (
                         <div className="font-num text-[10px] flex items-center gap-1.5 leading-tight">
                           <span style={{ color: 'var(--ember)', fontWeight: 700 }}>OUT {getPlayerExit(id) ?? '1st rd'}</span>
@@ -558,9 +508,9 @@ export default function DraftPage() {
                       )}
                     </div>
                     {isNew ? (
-                      <button onClick={() => undoBuy(id)} aria-label={`Undo buying ${p.name}`} className="text-[11px] font-bold px-2.5 h-9 rounded-lg shrink-0 transition-transform active:scale-90" style={{ background: 'rgba(10,27,51,0.05)', color: 'var(--ink-2)', border: '1px solid rgba(10,27,51,0.12)' }}>Undo</button>
+                      <button onClick={() => undoBuy(id)} aria-label={`Undo signing ${p.name}`} className="text-[11px] font-bold px-2.5 h-9 rounded-lg shrink-0 transition-transform active:scale-90" style={{ background: 'rgba(10,27,51,0.05)', color: 'var(--ink-2)', border: '1px solid rgba(10,27,51,0.12)' }}>Undo</button>
                     ) : dead && windowOpen ? (
-                      <button onClick={e => stageCashIn(id, e)} aria-label={`Cash in ${p.name} for $${refund}M`} className="text-[11px] font-bold px-2.5 h-9 rounded-lg shrink-0 transition-transform active:scale-90 whitespace-nowrap" style={{ background: 'var(--ember)', color: '#fff', border: '1px solid var(--ember)' }}>Cash In +${refund}M</button>
+                      <button onClick={e => doCashIn(id, e)} aria-label={`Cash in ${p.name} for $${refund}M`} className="text-[11px] font-bold px-2.5 h-9 rounded-lg shrink-0 transition-transform active:scale-90 whitespace-nowrap" style={{ background: 'var(--ember)', color: '#fff', border: '1px solid var(--ember)' }}>Cash In +${refund}M</button>
                     ) : (
                       <>
                         {!dead && isCap && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0" style={{ background: 'var(--gold)', color: '#fff' }}>C</span>}
@@ -571,24 +521,8 @@ export default function DraftPage() {
                 );
               })}
 
-              {/* LIVE: pending cash-ins — leaving the squad once you lock, undoable until then */}
-              {live && stagedCashIns.map(id => {
-                const p = getPlayer(id);
-                const refund = playerRefund(id);
-                return (
-                  <div key={`cash${id}`} className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'rgba(229,71,43,0.05)', border: '1px dashed rgba(229,71,43,0.4)' }}>
-                    <span className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-base" style={{ background: 'rgba(229,71,43,0.12)' }}>💸</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium truncate" style={{ color: 'var(--ink)' }}>{p.name}</div>
-                      <div className="font-num text-[10px]" style={{ color: 'var(--gold)', fontWeight: 700 }}>Cashing in · +${refund}M</div>
-                    </div>
-                    <button onClick={() => undoCashIn(id)} aria-label={`Undo cashing in ${p.name}`} className="text-[11px] font-bold px-2.5 h-9 rounded-lg shrink-0 transition-transform active:scale-90" style={{ background: 'rgba(10,27,51,0.05)', color: 'var(--ink-2)', border: '1px solid rgba(10,27,51,0.12)' }}>Undo</button>
-                  </div>
-                );
-              })}
-
               {/* LIVE: open slots freed by cashing in — buy a replacement from the market */}
-              {live && Array.from({ length: previewOpen }).map((_, i) => (
+              {live && Array.from({ length: openCount }).map((_, i) => (
                 <div key={`open${i}`} className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ border: '1px dashed rgba(217,154,0,0.55)', background: 'rgba(217,154,0,0.05)' }}>
                   <span className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-base" style={{ background: 'rgba(217,154,0,0.14)' }}>🛒</span>
                   <div className="flex-1 min-w-0">
@@ -608,25 +542,25 @@ export default function DraftPage() {
             {live ? (
               !windowOpen ? (
                 <div className="w-full py-2.5 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(18,161,80,0.1)', color: 'var(--green)' }}>Locked for the final ✓</div>
-              ) : hasPending ? (
-                /* Pending changes staged — commit them all together, like the pre-tournament lock. */
+              ) : unlockedBuys.length > 0 ? (
+                /* Signings are already saved but still UNLOCKED — they auto-lock when the round
+                   starts. This lets a manager lock them in NOW (hide the Undo controls) if they're set. */
                 <>
                   <button
-                    onClick={lockTransfers}
+                    onClick={() => setFinalized(true)}
                     className="w-full py-3 rounded-xl font-bold text-sm text-white transition-transform active:scale-[0.99]"
                     style={{ background: 'var(--blue)' }}
                   >
-                    Lock Squad → <span style={{ opacity: 0.85 }}>({stagedCashIns.length + stagedBuys.length} change{stagedCashIns.length + stagedBuys.length === 1 ? '' : 's'})</span>
+                    Lock Squad → <span style={{ opacity: 0.85 }}>({unlockedBuys.length} signing{unlockedBuys.length === 1 ? '' : 's'})</span>
                   </button>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-[11px]" style={{ color: 'var(--ink-3)' }}>Nothing is saved until you lock.</span>
-                    <button onClick={discardPending} className="text-[11px] font-semibold" style={{ color: 'var(--ember)' }}>Discard changes</button>
-                  </div>
+                  <p className="text-[11px] text-center mt-2" style={{ color: 'var(--ink-3)' }}>
+                    Your signings are saved. They lock automatically when the round starts — or lock them now.
+                  </p>
                 </>
               ) : cashable.length > 0 ? (
                 <div className="w-full py-2.5 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(229,71,43,0.08)', color: 'var(--ember)', border: '1px solid rgba(229,71,43,0.28)' }}>💸 Cash in {cashable.length} eliminated player{cashable.length === 1 ? '' : 's'}</div>
               ) : openCount > 0 ? (
-                <div className="w-full py-2.5 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(217,154,0,0.1)', color: 'var(--gold)', border: '1px solid rgba(217,154,0,0.28)' }}>🛒 {openCount} open slot{openCount === 1 ? '' : 's'} · ${previewBudget.toFixed(1)}M to spend</div>
+                <div className="w-full py-2.5 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(217,154,0,0.1)', color: 'var(--gold)', border: '1px solid rgba(217,154,0,0.28)' }}>🛒 {openCount} open slot{openCount === 1 ? '' : 's'} · ${liveBud.toFixed(1)}M to spend</div>
               ) : (
                 <div className="w-full py-2.5 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(18,161,80,0.1)', color: 'var(--green)' }}>Squad locked ✓</div>
               )
@@ -667,12 +601,12 @@ export default function DraftPage() {
         </div>
       )}
 
-      {/* Purchase confirmation — draft add (commits) and live market buy (stages until Lock Squad) */}
+      {/* Purchase confirmation — draft add, and live market buy (commits immediately, undoable). */}
       <PurchaseConfirmModal player={confirm} onClose={() => setConfirm(null)} />
       <MarketBuyModal
         player={buyConfirm}
-        budgetAfter={buyConfirm ? previewBudget - buyConfirm.price : 0}
-        onConfirm={() => buyConfirm && stageBuy(buyConfirm.id)}
+        budgetAfter={buyConfirm ? liveBud - buyConfirm.price : 0}
+        onConfirm={() => buyConfirm && doBuy(buyConfirm.id)}
         onClose={() => setBuyConfirm(null)}
       />
       <TransferHelpModal open={showTransferHelp} onClose={() => setShowTransferHelp(false)} />

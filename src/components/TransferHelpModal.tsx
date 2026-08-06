@@ -7,9 +7,10 @@ export default function TransferHelpModal({ open, onClose }: { open: boolean; on
   if (!open) return null;
   const stages: { n: string; title: string; body: React.ReactNode }[] = [
     { n: '1', title: 'A player is knocked out', body: <>They show <b style={{ color: 'var(--ember)' }}>OUT</b> in My Squad with the refund waiting, and drop out of the market list — you only see players still in the draw.</> },
-    { n: '2', title: 'Cash In to open a slot', body: <>Tap <b style={{ color: 'var(--ember)' }}>Cash In +$X</b> on an eliminated player. Their refund is added to your budget and an <b>open slot</b> appears. Nothing's saved yet — you can Undo.</> },
-    { n: '3', title: 'Buy a replacement', body: <>Tap <b style={{ color: 'var(--green)' }}>+ Buy</b> on any still-alive player — <b>any tier</b>. Confirm the popup and it's added to your squad as a pending <b style={{ color: 'var(--gold)' }}>NEW</b> pick.</> },
-    { n: '4', title: 'Lock Squad', body: <>Review your pending changes (Undo or Discard anytime), then tap <b style={{ color: 'var(--blue)' }}>Lock Squad</b> to save them all. Done!</> },
+    { n: '2', title: 'Cash In — happens right away', body: <>Tap <b style={{ color: 'var(--ember)' }}>Cash In +$X</b> on an eliminated player. The refund lands in your budget immediately and an <b>open slot</b> opens up. That's it — no saving needed.</> },
+    { n: '3', title: 'Buy a replacement', body: <>Tap <b style={{ color: 'var(--green)' }}>+ Buy</b> on any still-alive player — <b>any tier</b>. They join your squad straight away, marked <b style={{ color: 'var(--gold)' }}>NEW</b>.</> },
+    { n: '4', title: 'Change your mind? Undo', body: <>A new signing stays <b>unlocked</b> — tap <b>Undo</b> to swap them for someone else any time before the round starts.</> },
+    { n: '5', title: 'It locks itself', body: <>When the round begins, your signings <b>lock in</b> automatically. In a hurry to be sure? Tap <b style={{ color: 'var(--blue)' }}>Lock Squad</b> to finalise early.</> },
   ];
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 220, background: 'rgba(10,27,51,0.6)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
@@ -38,8 +39,7 @@ export default function TransferHelpModal({ open, onClose }: { open: boolean; on
           <div className="rounded-xl px-3.5 py-3 text-[12px] leading-relaxed" style={{ background: 'var(--raised)', color: 'var(--ink-2)' }}>
             <b style={{ color: 'var(--ink)' }}>Good to know</b>
             <ul className="mt-1.5 flex flex-col gap-1" style={{ listStyle: 'disc', paddingLeft: 18 }}>
-              <li>Nothing is committed until you <b>Lock Squad</b> — build and undo freely.</li>
-              <li>You can cash in and <i>not</i> buy — keep the money and run a smaller squad.</li>
+              <li>You can cash in and <i>not</i> buy — keep the money and run a smaller squad. Any tier mix is fine.</li>
               <li>A new player scores from the <b>next</b> round, never a round already played.</li>
               <li>Transfers <b>lock for the Final</b> — no changes after the semi-finals.</li>
               <li>The refund depends on how far the player got — a quarter-finalist returns more than an early exit.</li>

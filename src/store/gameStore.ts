@@ -5,7 +5,6 @@ import {
   ROUNDS, getMatchesForRound, isPlayerOut, BUDGET_RETURN_RATES, winPoints, transferWindowOpen, roundPlayable, roundHasResult, liveCurrentRound, liveLeaderRound,
   tournamentStarted, isEliminated, liveBudget, playerRefund,
 } from '../data/tournament';
-import { useMarketDraft } from './marketDraft';
 import { ACTIVE_TOURNAMENT_ID } from '../data/tournamentConfig';
 import { track } from '../data/analytics';
 import { toast } from './toastStore';
@@ -158,6 +157,7 @@ interface GameStore {
   replacePlayer: (oldId: string, newId: string) => void;
   cashInPlayer: (id: string) => void; // claim an eliminated player's refund (removes them from the squad)
   buyPlayer: (id: string) => void;    // buy a replacement into an open (cashed-in) slot — any tier
+  undoBuy: (id: string) => void;      // reverse a just-bought player while its round hasn't started (unlocked)
   playNextRound: () => void;
   continueToNextRound: () => void;
   setActiveTab: (tab: GameStore['activeTab']) => void;
@@ -379,6 +379,29 @@ export const useGameStore = create<GameStore>()(
         track('transfer_made', { out, in: id, round });
       },
 
+      // Reverse a just-bought player while the buy is still UNLOCKED — i.e. the round it would first
+      // score in hasn't started. Removes the transfer, drops the player, and reopens the slot (its
+      // cashed-in seat is simply un-backfilled again). Once that round has a result the buy is locked
+      // in and this no-ops (the server would reject undoing a transfer that already scored).
+      undoBuy: (id) => {
+        const { myTeam, initialSquad, transfers, cashedIn, captain, viceCaptain, phase } = get();
+        if (phase === 'finished' || phase === 'draft') return;
+        const t = transfers.find(x => x.in === id);
+        if (!t) return;                                  // not a bought-in player
+        const scoresFrom = ROUNDS[ROUNDS.findIndex(r => r.id === t.round) + 1]?.id;
+        if (scoresFrom && roundHasResult(scoresFrom)) return; // its round started → locked, can't undo
+        const newTransfers = transfers.filter(x => x.in !== id);
+        const newTeam = myTeam.filter(pid => pid !== id);
+        set({
+          myTeam: newTeam,
+          transfers: newTransfers,
+          budget: liveBudget(initialSquad, newTransfers, newTeam, cashedIn),
+          captain: captain === id ? null : captain,
+          viceCaptain: viceCaptain === id ? null : viceCaptain,
+        });
+        track('transfer_undone', { in: id, round: t.round });
+      },
+
       playNextRound: () => {
         const { currentRoundIndex, myTeam, captainHistory, viceCaptainHistory, budgetReturns, myScore, roundScores, phase } = get();
         if (currentRoundIndex >= ROUNDS.length) return;
@@ -481,7 +504,7 @@ export const useGameStore = create<GameStore>()(
         activeTab: 'player',
       })); },
 
-      resetGame: () => { useMarketDraft.getState().clear(); set({
+      resetGame: () => set({
         phase: 'draft',
         myTeam: [],
         initialSquad: [],
@@ -500,7 +523,7 @@ export const useGameStore = create<GameStore>()(
         viewTeam: 'you',
         viewPlayer: '',
         playerReturnTab: 'home',
-      }); },
+      }),
     }),
     {
       // Scope the save PER TOURNAMENT (like the live store) so a squad/score from one
