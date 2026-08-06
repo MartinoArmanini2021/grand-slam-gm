@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useGameStore } from './store/gameStore';
+import { useLiveStore } from './store/liveStore';
 import { track } from './data/analytics';
-import { ROUNDS } from './data/tournament';
+import { ROUNDS, liveScore, liveRoundStatus } from './data/tournament';
 import HomePage from './pages/HomePage';
 import DraftPage from './pages/DraftPage';
 import TournamentPage from './pages/TournamentPage';
@@ -39,8 +40,18 @@ const TABS = [
 ] as const;
 
 export default function App() {
-  const { activeTab, setActiveTab, phase, myScore, currentRoundIndex } = useGameStore();
-  const currentRound = currentRoundIndex < ROUNDS.length ? ROUNDS[currentRoundIndex] : null;
+  const { activeTab, setActiveTab, phase, initialSquad, transfers, captainHistory, viceCaptainHistory } = useGameStore();
+  // Score + current round are LIVE-derived (from results), never the frozen currentRoundIndex /
+  // the store's myScore (which only the never-run manual "play round" flow updates).
+  const draw = useLiveStore(s => s.draw);
+  const results = useLiveStore(s => s.results);
+  const liveTotal = useMemo(
+    () => liveScore(initialSquad, transfers, captainHistory, viceCaptainHistory),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [draw, results, initialSquad, transfers, captainHistory, viceCaptainHistory],
+  );
+  const leaderStatus = liveRoundStatus();
+  const currentRound = leaderStatus ? ROUNDS.find(r => r.id === leaderStatus.round) ?? null : null;
   const [showRules, setShowRules] = useState(() => !seenRules());
   const [showProfile, setShowProfile] = useState(false);
   const [welcome, setWelcome] = useState(false); // show the celebratory Home overlay right after joining
@@ -157,7 +168,7 @@ export default function App() {
       ) : (
         <AppShell
           tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab}
-          phase={phase} myScore={myScore} currentRound={currentRound}
+          phase={phase} myScore={liveTotal} currentRound={currentRound}
           showRules={showRules} setShowRules={setShowRules}
           showProfile={showProfile} setShowProfile={setShowProfile}
           closeRules={closeRules}

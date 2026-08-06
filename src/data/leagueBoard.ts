@@ -4,7 +4,7 @@ import { useProfile } from '../store/profileStore';
 import { useAuth } from '../auth/AuthProvider';
 import { useVisiblePoll } from '../hooks';
 import { findPlayer } from './players';
-import { liveBudget } from './tournament';
+import { liveBudget, liveScore } from './tournament';
 import { TOURNAMENT } from './tournamentConfig';
 import { publicLeagueId, fetchLeaderboard, fetchMyLeagues, type CloudBoardRow, type MyLeague } from './cloud';
 
@@ -62,7 +62,7 @@ function useCloudBoard(leagueId: string | null): CloudBoardRow[] {
 // Only REAL players: the league's signed-in members from the cloud, plus your own
 // team. No AI bots. Shared by the Home leaderboard and the League page.
 export function useLeagueBoard(leagueId: string | null = null): BoardEntry[] {
-  const { myTeam, myScore, captain, viceCaptain, initialSquad, transfers, cashedIn, captainHistory, viceCaptainHistory } = useGameStore();
+  const { myTeam, captain, viceCaptain, initialSquad, transfers, cashedIn, captainHistory, viceCaptainHistory } = useGameStore();
   const { teamName, teamEmblem, username } = useProfile();
   const { user } = useAuth();
   const cloud = useCloudBoard(leagueId);
@@ -85,7 +85,11 @@ export function useLeagueBoard(leagueId: string | null = null): BoardEntry[] {
       // Defensive `?? []`: a stale edge-cached /api/leaderboard response (pre-deploy) omits
       // these fields, so guard against undefined until the cache turns over.
       initialSquad: (r.initialSquad ?? []).filter(id => !!findPlayer(id)),
-      transfers: r.transfers ?? [], cashedIn: (r.cashedIn ?? []).filter(id => !!findPlayer(id)),
+      // Sanitize transfers like every other foreign id list: a stale in/out (a player removed from
+      // the field since the rival saved) would white-screen their Team page via the throwing
+      // getPlayer() in PointsByRound / TransferHistory. Drop any transfer referencing an unknown id.
+      transfers: (r.transfers ?? []).filter(t => findPlayer(t.in) && findPlayer(t.out)),
+      cashedIn: (r.cashedIn ?? []).filter(id => !!findPlayer(id)),
       captainHistory: r.captainHistory ?? [], viceCaptainHistory: r.viceCaptainHistory ?? [],
     }));
 
@@ -100,7 +104,7 @@ export function useLeagueBoard(leagueId: string | null = null): BoardEntry[] {
     ...(user ? [{
       id: 'you', name: teamName, emblem: teamEmblem, manager: username ? `@${username}` : '@you',
       motto: myTeam.length > 0 ? 'Your squad' : 'Draft your squad', color: '#0e6fc4',
-      squad: myTeam, budget: liveBudget(initialSquad, transfers, myTeam, cashedIn), score: myCloud?.score ?? myScore, you: true, captain, viceCaptain,
+      squad: myTeam, budget: liveBudget(initialSquad, transfers, myTeam, cashedIn), score: myCloud?.score ?? liveScore(initialSquad, transfers, captainHistory, viceCaptainHistory), you: true, captain, viceCaptain,
       initialSquad, transfers, cashedIn, captainHistory, viceCaptainHistory,
     }] : []),
   ];

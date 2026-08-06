@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, Fragment } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { useLiveStore } from '../store/liveStore';
-import { ROUNDS, isEliminated, roundHasResult, tournamentStarted, transfersOpen, liveScore, liveBudget, playerRefund } from '../data/tournament';
+import { ROUNDS, isEliminated, roundHasResult, tournamentStarted, transfersOpen, liveScore, liveBudget, playerRefund, liveRoundStatus } from '../data/tournament';
 import { isSquadValid, SQUAD_SIZE } from '../data/squadRules';
 import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
 import { onActivate } from '../hooks';
@@ -47,7 +47,10 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
   const cashableTotal = useMemo(() => cashable.reduce((s, id) => s + playerRefund(id), 0), [cashable]);
 
   const squadReady = isSquadValid(myTeam);
-  const currentRound = currentRoundIndex < ROUNDS.length ? ROUNDS[currentRoundIndex] : null;
+  // The live round in focus (from RESULTS, not the frozen currentRoundIndex): the round whose
+  // captain is currently being played for. null once the whole draw is done.
+  const leaderStatus = liveRoundStatus();
+  const currentRound = leaderStatus ? ROUNDS.find(r => r.id === leaderStatus.round) ?? null : null;
   const winRate = roundScores.length > 0
     ? Math.round(roundScores.reduce((a, b) => a + (b.points > 0 ? 1 : 0), 0) / roundScores.length * 100)
     : null;
