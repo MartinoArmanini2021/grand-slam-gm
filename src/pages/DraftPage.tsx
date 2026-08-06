@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useLiveStore } from '../store/liveStore';
 import { PLAYERS, getPlayer } from '../data/players';
@@ -67,7 +67,15 @@ export default function DraftPage() {
   // Open slots = players cashed in but not yet backfilled by a purchase → you can buy that many.
   const openCount = cashedIn.filter(c => !transfers.some(t => t.out === c)).length;
   const canBuy = live && windowOpen && openCount > 0;
-  const cashPrompt = (id: string) => { const amt = playerRefund(id); cashInPlayer(id); toast(`Cashed in ${getPlayer(id).name} · +$${amt}M`, 'good'); };
+  // A small localized "+$X" that floats up from the tapped Cash In button, for tactile feedback.
+  const fxKey = useRef(0);
+  const [cashFx, setCashFx] = useState<{ x: number; y: number; amount: number; key: number } | null>(null);
+  const cashPrompt = (id: string, e?: React.MouseEvent) => {
+    const amt = playerRefund(id);
+    if (e) setCashFx({ x: e.clientX, y: e.clientY, amount: amt, key: ++fxKey.current });
+    cashInPlayer(id);
+    toast(`Cashed in ${getPlayer(id).name} · +$${amt}M`, 'good');
+  };
   const buyPrompt = (id: string) => { buyPlayer(id); toast(`Bought ${getPlayer(id).name}`, 'good'); };
 
   const sorted = useMemo(() => [...PLAYERS]
@@ -443,7 +451,7 @@ export default function DraftPage() {
                     {/* Live: CASH IN an eliminated player — claim the refund, freeing money + a slot */}
                     {live && dead && windowOpen && (
                       <button
-                        onClick={() => cashPrompt(id)}
+                        onClick={e => cashPrompt(id, e)}
                         aria-label={`Cash in ${p.name} for $${refund}M`}
                         className="text-[11px] font-bold px-2.5 h-9 rounded-lg shrink-0 transition-transform active:scale-90 whitespace-nowrap"
                         style={{ background: 'var(--ember)', color: '#fff', border: '1px solid var(--ember)' }}
@@ -509,6 +517,18 @@ export default function DraftPage() {
           </div>
         </div>
       </div>
+
+      {/* Cash-in feedback: a "+$X" that floats up from where you tapped, then clears itself. */}
+      {cashFx && (
+        <div
+          key={cashFx.key}
+          className="pointer-events-none fixed z-[300] font-num font-extrabold cash-fx"
+          style={{ left: cashFx.x, top: cashFx.y, color: 'var(--gold)', fontSize: 18, textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}
+          onAnimationEnd={() => setCashFx(null)}
+        >
+          +${cashFx.amount}M 💸
+        </div>
+      )}
 
       {/* Purchase confirmation */}
       <PurchaseConfirmModal player={confirm} onClose={() => setConfirm(null)} />
