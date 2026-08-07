@@ -173,6 +173,8 @@ function Side({ id, meta, won, decided, mine, isPath, onPick, sets, role }: { id
       }}
     >
       {flag && <span>{flag}</span>}
+      {/* ATP rank right after the flag (roster players only; off-roster/TBD have none). */}
+      {p && <span className="shrink-0 font-num text-[10px] tabular-nums" style={{ color: isPath ? 'var(--blue)' : 'var(--ink-3)' }}>#{p.ranking}</span>}
       <span className="flex items-center gap-1 flex-1 min-w-0">
         <span className="truncate min-w-0">{name}</span>
         {/* Captain / vice badge for the highlighted team — spot your leaders right in the draw. */}
