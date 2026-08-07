@@ -42,6 +42,17 @@ export default function VersionGate() {
     return () => { stopped = true; window.clearInterval(iv); document.removeEventListener('visibilitychange', onVis); };
   }, []);
 
+  // A hidden/forgotten background tab can't act on a banner — and that's exactly the kind of tab
+  // that gets stuck in a runaway background loop. Once a newer build is out, reload such tabs
+  // automatically so they land on the current (fixed) code; a VISIBLE tab keeps the prompt below.
+  useEffect(() => {
+    if (!stale) return;
+    if (document.visibilityState === 'hidden') { window.location.reload(); return; }
+    const onHide = () => { if (document.visibilityState === 'hidden') window.location.reload(); };
+    document.addEventListener('visibilitychange', onHide);
+    return () => document.removeEventListener('visibilitychange', onHide);
+  }, [stale]);
+
   if (!stale) return null;
   return (
     <div style={{ position: 'fixed', left: 12, right: 12, bottom: 12, zIndex: 500, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>

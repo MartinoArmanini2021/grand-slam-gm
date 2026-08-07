@@ -85,6 +85,15 @@ export default function CloudSync() {
   // local edit (last-write-lost). Instead coalesce: mark a re-save and let the running one flush it.
   const saveInFlight = useRef(false);
   const resaveQueued = useRef(false);
+  // Runaway-save guards. A save/conflict loop must NEVER hammer the DB (an unbounded retry once
+  // generated ~1000 save_entry conflicts/sec). Two backstops: a hard rate cap on how often a save
+  // may START, and a circuit breaker that stops auto-retrying after too many consecutive conflicts
+  // with no successful save (re-armed by a genuine user edit or a success).
+  const lastSaveAt = useRef(0);          // ms of the last save START
+  const conflictStreak = useRef(0);      // consecutive rev-conflicts with no success/edit
+  const throttleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const MIN_SAVE_MS = 1500;
+  const MAX_CONFLICTS = 4;
 
   // Hydrate + merge on login.
   useEffect(() => {
@@ -196,10 +205,23 @@ export default function CloudSync() {
   // both the debounce below and the manual Save button (via useSync.saveNow).
   const doSave = useCallback(async () => {
     if (!user || gameHydratedFor.current !== user.id) return;
+    // Circuit breaker: after MAX_CONFLICTS conflicts in a row with no success, STOP auto-retrying —
+    // this is what kills a runaway save loop dead. A real user edit or a success re-arms it.
+    if (conflictStreak.current >= MAX_CONFLICTS) { useSync.getState().setStatus('error'); return; }
     // Never overlap: if a save is already running, queue exactly one re-save of the LATEST state
     // and let the in-flight save flush it when it finishes (prevents the last-write-lost 409 race).
     if (saveInFlight.current) { resaveQueued.current = true; return; }
+    // Hard rate cap: a save may not START more than once per MIN_SAVE_MS, however it was triggered.
+    // Defer (once) instead — so nothing can ever hammer save_entry, whatever the trigger.
+    const wait = MIN_SAVE_MS - (Date.now() - lastSaveAt.current);
+    if (wait > 0) {
+      resaveQueued.current = true;
+      clearTimeout(throttleTimer.current);
+      throttleTimer.current = setTimeout(() => { resaveQueued.current = false; void doSave(); }, wait);
+      return;
+    }
     saveInFlight.current = true;
+    lastSaveAt.current = Date.now();
     try {
     useSync.getState().setStatus('saving');
     // Pre-validate with the SAME rules the server enforces — fail fast, no round-trip.
@@ -225,27 +247,36 @@ export default function CloudSync() {
       };
       const res = await saveEntry(user.id, lid, TOURNAMENT.id, gameSnapshot(), entryRev.current);
       if (res.ok) {
-        entryRev.current = res.rev; markSaved(); useSync.getState().setStatus('saved');
+        entryRev.current = res.rev; conflictStreak.current = 0; markSaved(); useSync.getState().setStatus('saved');
       } else if (res.invalid) {
         // The server rejected this edit (e.g. a captain change after its round locked). Undo
         // the optimistic local change instead of leaving it on screen to silently revert on
         // reload (P1/P4). After a successful revert local == server, so we're back in sync.
+        conflictStreak.current = 0; // not a rev-race — don't trip the breaker
         const reverted = await revertToCloud();
         toast(res.invalid, 'warn');
         useSync.getState().setStatus(reverted ? 'saved' : 'error');
       } else if (res.conflict) {
-        // Another tab/device saved first. Converge on the cloud copy (both devices agree)
-        // rather than blindly overwriting it — the honest resolution for two live editors.
-        if (await revertToCloud()) { useSync.getState().setStatus('saved'); toast('Squad updated from another device', 'info'); }
-        else { useSync.getState().setStatus('error'); }
+        // Another tab/device saved first. Converge on the cloud copy (both devices agree) rather
+        // than blindly overwriting it. Count the streak so a perpetual fight can't loop forever.
+        conflictStreak.current += 1;
+        if (await revertToCloud()) {
+          useSync.getState().setStatus('saved');
+          if (conflictStreak.current < MAX_CONFLICTS) toast('Squad updated from another device', 'info');
+        } else { useSync.getState().setStatus('error'); }
       } else {
         useSync.getState().setStatus('error');
       }
     } catch { useSync.getState().setStatus('error'); }
     } finally {
       saveInFlight.current = false;
-      // A save was requested while this one ran → flush the latest state now.
-      if (resaveQueued.current) { resaveQueued.current = false; void doSave(); }
+      // A save was requested while this one ran → flush the latest state, but DELAYED (never an
+      // immediate re-fire — that's what let a conflict loop run away).
+      if (resaveQueued.current) {
+        resaveQueued.current = false;
+        clearTimeout(throttleTimer.current);
+        throttleTimer.current = setTimeout(() => { void doSave(); }, MIN_SAVE_MS);
+      }
     }
   }, [user]);
 
@@ -267,6 +298,7 @@ export default function CloudSync() {
       if (cur === prev) return;
       prev = cur;
       if (applyingCloud.current || !user || gameHydratedFor.current !== user.id) return;
+      conflictStreak.current = 0;      // a genuine user edit re-arms the saver (clears the breaker)
       markLocalDirty();               // persist "unsaved local edits" across reloads (see DIRTY_KEY)
       useSync.getState().markDirty();
       clearTimeout(timer);
