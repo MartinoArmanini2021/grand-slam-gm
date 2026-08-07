@@ -144,9 +144,15 @@ export const TOURNAMENTS: Record<string, Tournament> = {
     schedule: {
       R64: '2026-08-01T15:00:00Z', // first day of main-draw play — DRAFT CLOSES
       R32: '2026-08-04T15:00:00Z',
-      R16: '2026-08-06T15:00:00Z',
-      QF:  '2026-08-08T17:00:00Z',
-      SF:  '2026-08-11T17:00:00Z',
+      // Mid-round times are ESTIMATES (the feed carries no order-of-play), kept a step
+      // ahead of the current round so the market countdown always has a future deadline.
+      // The countdown itself targets the round the transfer window is actually open for
+      // (liveLeaderRound), which is RESULTS-driven — so once a round really starts it
+      // advances to the next estimate on its own, even if a date here is slightly off.
+      // Replace any of these with the official start time the moment it's known.
+      R16: '2026-08-08T15:00:00Z',
+      QF:  '2026-08-10T17:00:00Z',
+      SF:  '2026-08-12T17:00:00Z',
       F:   '2026-08-13T18:00:00Z', // expanded-format final (midweek)
     },
     court: {

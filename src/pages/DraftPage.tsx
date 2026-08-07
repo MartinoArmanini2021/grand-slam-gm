@@ -2,7 +2,7 @@ import { useState, useMemo, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useLiveStore } from '../store/liveStore';
 import { PLAYERS, getPlayer } from '../data/players';
-import { ROUNDS, isPlayerOut, getPlayerExit, tournamentStarted, isEliminated, liveBudget, playerRefund, cashedInTotal, transferWindowOpen, roundHasResult } from '../data/tournament';
+import { ROUNDS, isPlayerOut, getPlayerExit, tournamentStarted, isEliminated, liveBudget, playerRefund, cashedInTotal, transferWindowOpen, roundHasResult, liveLeaderRound } from '../data/tournament';
 import { getTier, TIER_META, type Tier } from '../data/tiers';
 import { tierCounts, squadShortfall, isSquadValid, isTierFull, TIER_MINIMUMS, SQUAD_SIZE, STARTING_BUDGET } from '../data/squadRules';
 import PlayerAvatar from '../components/PlayerAvatar';
@@ -13,7 +13,7 @@ import MarketBuyModal from '../components/MarketBuyModal';
 import TransferHelpModal from '../components/TransferHelpModal';
 import PlayerPickerModal from '../components/PlayerPickerModal';
 import SquadLockedModal from '../components/SquadLockedModal';
-import Countdown from '../components/Countdown';
+import Countdown, { useCountdown } from '../components/Countdown';
 import { onActivate } from '../hooks';
 import { toast } from '../store/toastStore';
 import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
@@ -54,6 +54,13 @@ export default function DraftPage() {
   const live = locked;                     // …and once locked, the Market IS the transfer desk
   const windowOpen = transferWindowOpen(); // results-derived: actually closes for the Final
   const draftClosed = tournamentStarted(); // P6: no locking once the tournament has a result
+  // Market deadline: the transfer/cash-in/captain window is open for the round captains are
+  // being set for (liveLeaderRound — the earliest round with no result yet). Its scheduled
+  // start is when everything locks. useCountdown runs every render (target may be undefined).
+  const deadlineRound = liveLeaderRound();
+  const deadlineRoundObj = deadlineRound ? ROUNDS.find(r => r.id === deadlineRound) : undefined;
+  const deadlineIso = deadlineRound ? TOURNAMENT.schedule?.[deadlineRound] : undefined;
+  const deadlineCd = useCountdown(deadlineIso);
   const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id) as RoundId[];
   const counts = tierCounts(myTeam);
   const valid = isSquadValid(myTeam);
@@ -154,6 +161,28 @@ export default function DraftPage() {
           <div className="max-w-xl">
             <Countdown target={TOURNAMENT.schedule?.[TOURNAMENT.rounds[0]]}
               title="Draft closes when the first round starts" note="Lock your squad before then." />
+          </div>
+        )}
+        {/* Live market deadline: how long you have to cash in, buy & set your captain before
+            the next round starts and everything locks. Targets the round the window is open
+            for; if that scheduled start has already slipped past, the round is imminent — so
+            show a "closing now" nudge instead of nothing. */}
+        {live && windowOpen && deadlineRoundObj && (
+          <div className="max-w-xl">
+            {deadlineCd ? (
+              <Countdown target={deadlineIso}
+                title={`Market locks when the ${deadlineRoundObj.short} starts`}
+                note="Cash in, buy & set your captain before then — new signings auto-lock at the first ball." />
+            ) : (
+              <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl mt-3" style={{ background: 'rgba(229,71,43,0.08)', border: '1px solid rgba(229,71,43,0.28)' }}>
+                <span className="text-lg shrink-0">⏳</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-bold" style={{ color: 'var(--ink)' }}>The {deadlineRoundObj.label} is about to start</div>
+                  <div className="text-[11px]" style={{ color: 'var(--ink-2)' }}>The market locks any moment — make your final cash-ins, buys &amp; captain pick now.</div>
+                </div>
+                <span className="text-[11px] font-extrabold uppercase tracking-wide shrink-0" style={{ color: 'var(--ember)' }}>Closing</span>
+              </div>
+            )}
           </div>
         )}
       </div>

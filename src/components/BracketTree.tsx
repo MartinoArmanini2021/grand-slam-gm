@@ -107,7 +107,10 @@ export default function BracketTree() {
         <div className="flex gap-3 items-stretch" style={{ minWidth: 'min-content' }}>
           {bracket.map(({ id, label, matches }) => (
             <div key={id} className="shrink-0 flex flex-col" style={{ width: 168 }}>
-              <div className="text-[10px] font-bold uppercase tracking-wider mb-2 text-center" style={{ color: 'var(--ink-2)' }}>{label}</div>
+              <div className="mb-2 text-center">
+                <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-2)' }}>{label}</div>
+                {roundWhen(id) && <div className="text-[9px] mt-0.5 font-num tabular-nums" style={{ color: 'var(--ink-3)' }}>{roundWhen(id)}</div>}
+              </div>
               <div className="flex-1 flex flex-col justify-around">
                 {matches.map(m => {
                   const winner = results[matchKey(m.round, m.slot)];
@@ -130,6 +133,7 @@ export default function BracketTree() {
           ))}
         </div>
       </div>
+      <p className="text-[10px] mt-2" style={{ color: 'var(--ink-3)' }}>Round times are scheduled estimates, shown in your local time.</p>
     </div>
   );
 }
@@ -140,6 +144,18 @@ const NAME_PARTICLES = new Set(['de', 'del', 'della', 'di', 'da', 'dos', 'van', 
 // Opponents who aren't in the draftable roster (qualifiers, low-ranked entrants) resolve to a
 // synthetic id like "x_daniel_merida". Turn that into a readable name ("Daniel Merida") instead of
 // showing the raw id. Roster players keep their real name; this only runs for the "x_" fallback.
+// The round's scheduled start, in the VIEWER's own timezone (e.g. "8 Aug, 15:00"). These are
+// estimates the config maintains (the feed carries no order-of-play); '' when a round has no
+// scheduled time yet, so the label shows alone.
+function roundWhen(id: RoundId): string {
+  const iso = TOURNAMENT.schedule?.[id];
+  const t = iso ? Date.parse(iso) : NaN;
+  if (!Number.isFinite(t)) return '';
+  try {
+    return new Date(t).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  } catch { return ''; }
+}
+
 function prettifyId(id: string): string {
   if (!id.startsWith('x_')) return id;
   const words = id.slice(2).split('_').filter(Boolean);
