@@ -100,6 +100,17 @@ export const useLiveStore = create<LiveStore>()(
 
       resetLive: () => set({ draw: [], results: {}, meta: {}, scores: {}, overrides: {}, lastSync: null }),
     }),
-    { name: `gsgm-live-${ACTIVE_TOURNAMENT_ID}` }
+    {
+      name: `gsgm-live-${ACTIVE_TOURNAMENT_ID}`,
+      // v1: earlier builds cached set scores that could contain a stray "}}" (a nested-template
+      // parse leftover). Drop the cached scores on upgrade so they re-parse cleanly from the feed
+      // (which happens on mount anyway) — otherwise a merge could keep the stale "}}".
+      version: 1,
+      migrate: (persisted) => {
+        const s = (persisted ?? {}) as Record<string, unknown>;
+        s.scores = {};
+        return s;
+      },
+    }
   )
 );

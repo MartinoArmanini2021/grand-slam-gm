@@ -99,9 +99,11 @@ const flagCode = (raw: string): string | undefined =>
 // A single set's games for one player: strip the winner-bold '''ticks''', the tiebreak
 // <sup>N</sup> marker, and any template noise → just the game count ("6", "7", "r" for a
 // retirement). Empty string when the set wasn't played.
-const cleanScore = (raw: string): string =>
+export const cleanScore = (raw: string): string =>
   raw.replace(/<sup>.*?<\/sup>/gi, '').replace(/'''?/g, '').replace(/\{\{[^}]*\}\}/g, '')
-    .replace(/<[^>]+>/g, '').replace(/[[\]|]/g, '').trim();
+    // Strip residual markup chars — INCLUDING stray braces { } left by a nested template the
+    // {{..}} pass couldn't fully match (that leftover "}}" was leaking into the bracket as a score).
+    .replace(/<[^>]+>/g, '').replace(/[{}[\]|]/g, '').trim();
 
 export function parseBracket(
   wikitext: string, roundIds: RoundId[], resolve: (raw: string) => string, includeIncomplete = false,

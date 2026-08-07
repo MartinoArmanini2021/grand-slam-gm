@@ -88,7 +88,7 @@ const flagCode = (raw: string): string | undefined =>
 
 const cleanScore = (raw: string): string =>
   raw.replace(/<sup>.*?<\/sup>/gi, '').replace(/'''?/g, '').replace(/\{\{[^}]*\}\}/g, '')
-    .replace(/<[^>]+>/g, '').replace(/[[\]|]/g, '').trim();
+    .replace(/<[^>]+>/g, '').replace(/[{}[\]|]/g, '').trim();
 
 function parseBracket(
   wikitext: string, roundIds: RoundId[], resolve: (raw: string) => string, includeIncomplete = false,
