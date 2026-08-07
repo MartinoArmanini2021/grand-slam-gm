@@ -19,7 +19,10 @@ const STEPS = [
   { id: 'league',     title: 'The League is the point',  body: 'Everyone starts with the same $150M. This is where you climb the table and settle it with your friends.' },
 ];
 
-const localSeen = () => { try { return !!localStorage.getItem('gsgm-tour-done'); } catch { return true; } };
+// Same-device fallback only (the account flag is the real source of truth). A fresh key so the
+// brief pre-account localStorage rollout can't suppress the proper per-account tour for anyone.
+const TOUR_KEY = 'gsgm-tour-seen-2';
+const localSeen = () => { try { return !!localStorage.getItem(TOUR_KEY); } catch { return true; } };
 
 export default function FirstRunTour({ paused }: { paused: boolean }) {
   const setTab = useGameStore(s => s.setActiveTab);
@@ -47,7 +50,7 @@ export default function FirstRunTour({ paused }: { paused: boolean }) {
   if (!active || !rect) return null;
 
   const close = () => {
-    try { localStorage.setItem('gsgm-tour-done', '1'); } catch { /* ignore */ } // same-device fallback
+    try { localStorage.setItem(TOUR_KEY, '1'); } catch { /* ignore */ } // same-device fallback
     useProfile.getState().set({ tourSeen: true });   // don't re-show this session
     if (user) void markTourSeen(user.id);             // persist per-account, cross-device
     setDismissed(true);
