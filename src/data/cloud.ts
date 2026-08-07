@@ -14,18 +14,31 @@ export interface CloudProfile {
   country: string | null;
   team_name: string | null;
   team_emblem: string | null;
+  // When the manager finished/skipped the first-run tour (null = never). READ on login; written
+  // only by markTourSeen(), never by saveProfile, so a normal profile save can't clobber it.
+  tour_seen_at?: string | null;
 }
 
 // Fetch the signed-in user's profile row (null if none / guest / error).
 export async function fetchProfile(userId: string): Promise<CloudProfile | null> {
   if (!supabase) return null;
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('username, first_name, last_name, country, team_name, team_emblem')
-    .eq('id', userId)
-    .maybeSingle();
-  if (error) { console.warn('[cloud] fetchProfile:', error.message); return null; }
-  return (data as CloudProfile | null) ?? null;
+  const BASE = 'username, first_name, last_name, country, team_name, team_emblem';
+  let res = await supabase.from('profiles').select(`${BASE}, tour_seen_at`).eq('id', userId).maybeSingle();
+  // Resilience: if tour_seen_at hasn't been added to the schema yet, the select 400s on that one
+  // column — fall back to the base columns so profile hydration (and its save-back) never breaks.
+  if (res.error && /tour_seen_at/.test(res.error.message)) {
+    res = await supabase.from('profiles').select(BASE).eq('id', userId).maybeSingle();
+  }
+  if (res.error) { console.warn('[cloud] fetchProfile:', res.error.message); return null; }
+  return (res.data as CloudProfile | null) ?? null;
+}
+
+// Record that this user has seen the first-run tour — per-account and cross-device, so it never
+// re-shows on a new browser/device/cache-clear. Idempotent; only its own row (RLS).
+export async function markTourSeen(userId: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('profiles').update({ tour_seen_at: new Date().toISOString() }).eq('id', userId);
+  if (error) console.warn('[cloud] markTourSeen:', error.message);
 }
 
 // Upsert the signed-in user's profile row. RLS allows writing only your own id.

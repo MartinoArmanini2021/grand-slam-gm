@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
+import { useProfile } from '../store/profileStore';
+import { useAuth } from '../auth/AuthProvider';
+import { markTourSeen } from '../data/cloud';
 
 // ── First-run tour ───────────────────────────────────────────────────────────
 // A one-time, skippable spotlight that walks a new manager through the four tabs, so the game
 // loop is legible before they touch anything. Highlights each nav tab in turn (a real cutout via
-// a huge spread shadow), with a tooltip below the header. Shows once per device, ends on Home so
-// the "Your next move" coach picks up from there. Self-gates on localStorage; no-ops if seen.
+// a huge spread shadow), with a tooltip below the header. Ends on Home so the "Your next move"
+// coach picks up from there. "Seen" is a PER-ACCOUNT flag (profiles.tour_seen_at, hydrated into
+// the profile store), so it never re-shows on a new device / after a cache clear — with a
+// localStorage fallback so a failed cloud write can't re-nag the same browser.
 
 const STEPS = [
   { id: 'home',       title: 'This is your squad HQ',    body: 'Your team, your live score, and a coach telling you exactly what to do next all live here on Home.' },
@@ -14,16 +19,21 @@ const STEPS = [
   { id: 'league',     title: 'The League is the point',  body: 'Everyone starts with the same $150M. This is where you climb the table and settle it with your friends.' },
 ];
 
-const seen = () => { try { return !!localStorage.getItem('gsgm-tour-done'); } catch { return true; } };
+const localSeen = () => { try { return !!localStorage.getItem('gsgm-tour-done'); } catch { return true; } };
 
 export default function FirstRunTour({ paused }: { paused: boolean }) {
   const setTab = useGameStore(s => s.setActiveTab);
-  const [done, setDone] = useState(seen);
+  const { user } = useAuth();
+  const hydrated = useProfile(s => s.hydrated); // wait for the cloud profile so we KNOW if it's seen
+  const tourSeen = useProfile(s => s.tourSeen);  // per-account flag (profiles.tour_seen_at)
+  const [dismissed, setDismissed] = useState(false);
   const [i, setI] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
 
+  const active = hydrated && !tourSeen && !localSeen() && !paused && !dismissed;
+
   useEffect(() => {
-    if (done || paused) return;
+    if (!active) return;
     const measure = () => {
       const el = document.querySelector(`[data-tour="${STEPS[i].id}"]`);
       setRect(el ? el.getBoundingClientRect() : null);
@@ -32,11 +42,16 @@ export default function FirstRunTour({ paused }: { paused: boolean }) {
     const t = setTimeout(measure, 80); // let the header settle before locking on
     window.addEventListener('resize', measure);
     return () => { clearTimeout(t); window.removeEventListener('resize', measure); };
-  }, [i, done, paused]);
+  }, [i, active]);
 
-  if (done || paused || !rect) return null;
+  if (!active || !rect) return null;
 
-  const close = () => { try { localStorage.setItem('gsgm-tour-done', '1'); } catch { /* ignore */ } setDone(true); };
+  const close = () => {
+    try { localStorage.setItem('gsgm-tour-done', '1'); } catch { /* ignore */ } // same-device fallback
+    useProfile.getState().set({ tourSeen: true });   // don't re-show this session
+    if (user) void markTourSeen(user.id);             // persist per-account, cross-device
+    setDismissed(true);
+  };
   const next = () => { if (i < STEPS.length - 1) setI(i + 1); else { setTab('home'); close(); } };
   const step = STEPS[i];
   const last = i === STEPS.length - 1;

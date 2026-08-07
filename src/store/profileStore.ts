@@ -17,6 +17,7 @@ interface ProfileState {
   // cloud already holds an entry for it (so a returning player on a new device skips it).
   joinedTournaments: string[];
   hydrated: boolean; // true once CloudSync has loaded (or confirmed no) cloud profile — session-only, never persisted
+  tourSeen: boolean; // has this ACCOUNT finished/skipped the first-run tour (from profiles.tour_seen_at) — session-only, per-user
   entryHydrated: boolean; // true once CloudSync has resolved the cloud game-entry (or there's no user) — session-only
   // True when CloudSync could NOT determine the cloud entry (network/query error). The
   // onboarding gate is then suppressed so its fresh-start reset can't overwrite a squad
@@ -36,10 +37,11 @@ export const useProfile = create<ProfileState>()(
     (set) => ({
       ...DEFAULTS,
       hydrated: false,
+      tourSeen: false,
       entryHydrated: false,
       entryLoadFailed: false,
       set: (patch) => set(patch),
-      reset: () => set({ ...DEFAULTS, hydrated: false, entryHydrated: false, entryLoadFailed: false }),
+      reset: () => set({ ...DEFAULTS, hydrated: false, tourSeen: false, entryHydrated: false, entryLoadFailed: false }),
     }),
     {
       name: 'gsgm-profile',

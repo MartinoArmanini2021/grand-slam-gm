@@ -106,7 +106,9 @@ export default function CloudSync() {
         teamName: cloud?.team_name && cloud.team_name !== 'My Team' ? cloud.team_name : local.teamName,
         teamEmblem: cloud?.team_emblem && cloud.team_emblem !== '🎾' ? cloud.team_emblem : local.teamEmblem,
       };
-      local.set({ ...merged, hydrated: true }); // signal to App that the profile is loaded (see the set-your-name prompt)
+      // tourSeen comes from the account (profiles.tour_seen_at), so the first-run tour is per-user
+      // and never re-shows on a new device / after a cache clear.
+      local.set({ ...merged, tourSeen: !!cloud?.tour_seen_at, hydrated: true });
       hydratedFor.current = user.id;
       // Push the merged result up so guest-entered data lands in the cloud.
       await saveProfile(user.id, toCloud(useProfile.getState()));
