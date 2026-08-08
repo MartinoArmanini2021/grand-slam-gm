@@ -141,19 +141,21 @@ export const TOURNAMENTS: Record<string, Tournament> = {
     // expanded-Masters final on Thu 13 Aug 2026 (UTC times below). R64 doubles as the
     // draft deadline — the squad must be locked before the first ball is struck. The
     // mid-round times are best estimates until the official order of play publishes.
+    // Round START times = the FIRST match of each round (the app locks a round's captain /
+    // transfers at its first result). Sourced from the tournament's official session schedule
+    // (nationalbankopen.com) — Montréal, IGA Stadium, EDT (UTC−4) — and cross-checked against the
+    // live results feed (which anchors R32 = Aug 6–7, R16 = Aug 8–9). NB: the DATA feed (Wikipedia
+    // draw wikitext) carries NO times, so these live only here. Per-match times can't be "perfect" —
+    // the tournament sets the order of play the evening before and it shifts for weather/overruns —
+    // so these are the stable round-start anchors, not live per-match clocks. The Final's time is not
+    // firmly published (finals-day OoP lands late); it's an estimate until confirmed.
     schedule: {
-      R64: '2026-08-01T15:00:00Z', // first day of main-draw play — DRAFT CLOSES
-      R32: '2026-08-04T15:00:00Z',
-      // Mid-round times are ESTIMATES (the feed carries no order-of-play), kept a step
-      // ahead of the current round so the market countdown always has a future deadline.
-      // The countdown itself targets the round the transfer window is actually open for
-      // (liveLeaderRound), which is RESULTS-driven — so once a round really starts it
-      // advances to the next estimate on its own, even if a date here is slightly off.
-      // Replace any of these with the official start time the moment it's known.
-      R16: '2026-08-08T15:00:00Z',
-      QF:  '2026-08-10T17:00:00Z',
-      SF:  '2026-08-12T17:00:00Z',
-      F:   '2026-08-13T18:00:00Z', // expanded-format final (midweek)
+      R64: '2026-08-04T15:00:00Z', // Round of 64, day 1 — 11:00 EDT (drafted players enter here)
+      R32: '2026-08-06T16:30:00Z', // Round of 32, day 1 — 12:30 EDT
+      R16: '2026-08-08T16:30:00Z', // Round of 16, day 1 — 12:30 EDT
+      QF:  '2026-08-10T20:00:00Z', // Quarter-finals, day 1 — 16:00 EDT
+      SF:  '2026-08-12T20:00:00Z', // Semi-finals — 16:00 EDT
+      F:   '2026-08-13T17:00:00Z', // Final — ESTIMATE (~13:00 EDT), pending the official finals-day OoP
     },
     court: {
       standTop: '#0c2433', standBottom: '#071726',  // dark stadium seating

@@ -364,7 +364,12 @@ export default function DraftPage() {
                       style={{
                         borderBottom: '1px solid rgba(10,27,51,0.05)',
                         background: isSelected ? 'rgba(18,161,80,0.05)' : 'transparent',
-                        opacity: out || tierFull ? 0.45 : 1, // shade players whose tier quota is met
+                        // Shade a row only for a REAL reason. Draft: eliminated or the tier quota is
+                        // met (2/3/5 caps apply while building). LIVE: tier quotas no longer apply —
+                        // you can buy any tier into an open slot — so never shade by tier; only shade a
+                        // player you genuinely can't take right now, i.e. one you can't afford for an
+                        // open slot. (Eliminated players are already filtered out of the live list.)
+                        opacity: out || (!live && tierFull) || (live && canBuy && liveBud < player.price) ? 0.45 : 1,
                       }}
                       onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'rgba(10,27,51,0.02)'; }}
                       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = isSelected ? 'rgba(18,161,80,0.05)' : 'transparent'; }}
