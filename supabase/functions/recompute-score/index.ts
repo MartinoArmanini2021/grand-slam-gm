@@ -26,12 +26,14 @@ const ROUND_ORDER = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'];
 const CAPTAIN_MULTIPLIER = 2;
 const VICE_MULTIPLIER = 1.5;
 
-// ── pure scoring (keep identical to src/scoring/serverEngine.ts) ──────────────
-const rankingMultiplier = (rank: number) => 0.8 + 0.5 * ((Math.max(1, Math.min(40, rank)) - 1) / 39);
-const upsetBonus = (w: number, l: number) => (w <= l ? 0 : Math.min(15, Math.round((w - l) * 0.4)));
+// ── pure scoring (keep identical to src/scoring/serverEngine.ts + tournament.ts) ──────────────
+// Win = base × upset multiplier: favourites/equal keep the FULL base (×1.0); a lower-ranked player
+// beating a higher-ranked one lifts the factor toward ×2.0, bigger gap → bigger lift (saturating).
 // l may be undefined (off-roster opponent, no rank) → no upset, matching the client.
-const winPoints = (base: number, w: number, l: number | undefined) =>
-  Math.round(base * rankingMultiplier(w)) + (l == null ? 0 : Math.min(upsetBonus(w, l), Math.round(base * 1.5)));
+const UPSET_HALF = 30;
+const upsetMultiplier = (w: number, l: number | undefined) =>
+  (l == null || w <= l) ? 1 : 1 + (w - l) / ((w - l) + UPSET_HALF);
+const winPoints = (base: number, w: number, l: number | undefined) => Math.round(base * upsetMultiplier(w, l));
 
 interface MatchRow { round: string; p1: string; p2: string; winner: string | null }
 interface EntryState {

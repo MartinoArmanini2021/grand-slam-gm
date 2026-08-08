@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ROUNDS, TRANSFER_LOCK_INDEX, getMatchesForRound, getPlayerExit, isPlayerOut, getOpponentId, upsetBonus } from '../data/tournament';
+import { ROUNDS, TRANSFER_LOCK_INDEX, getMatchesForRound, getPlayerExit, isPlayerOut, getOpponentId, upsetMultiplier } from '../data/tournament';
 import { getPlayer, PLAYERS } from '../data/players';
 import { TOURNAMENT, ROUND_META, ROUND_ORDER } from '../data/tournamentConfig';
 import { sampleMatches, loadSampleTournament, roles } from './fixtures/sampleDraw';
@@ -129,37 +129,38 @@ describe('getOpponentId', () => {
   });
 });
 
-describe('upsetBonus', () => {
+describe('upsetMultiplier', () => {
   const rank = (id: string) => getPlayer(id).ranking;
 
-  it('is zero when the winner is equal or higher ranked', () => {
-    expect(upsetBonus(roles.champion, roles.r64Exit)).toBe(0); // #4 beats #27 → expected
+  it('is exactly 1 (full base) when the winner is equal or higher ranked — favourites keep full score', () => {
+    expect(upsetMultiplier(roles.champion, roles.r64Exit)).toBe(1); // #4 beats #27 → no upset
     expect(rank(roles.champion)).toBeLessThan(rank(roles.r64Exit));
   });
 
-  it('rewards a lower-ranked player beating a higher-ranked one', () => {
+  it('lifts above 1 when a lower-ranked player beats a higher-ranked one, by the exact gap curve', () => {
     const a = roles.r64Exit, b = roles.r16Exit; // #27 over #11
-    const expected = Math.min(15, Math.round((rank(a) - rank(b)) * 0.4));
-    expect(expected).toBeGreaterThan(0);
-    expect(expected).toBeLessThan(15);
-    expect(upsetBonus(a, b)).toBe(expected);
+    const gap = rank(a) - rank(b);
+    expect(gap).toBeGreaterThan(0);
+    expect(upsetMultiplier(a, b)).toBeCloseTo(1 + gap / (gap + 30), 10);
+    expect(upsetMultiplier(a, b)).toBeGreaterThan(1);
   });
 
-  it('is capped at 15', () => {
-    const a = roles.underdog, b = roles.qfExit; // #45 over #2
-    expect(Math.round((rank(a) - rank(b)) * 0.4)).toBeGreaterThan(15); // raw exceeds cap
-    expect(upsetBonus(a, b)).toBe(15);
+  it('rises with the gap (bigger upset → bigger multiplier) and never reaches 2', () => {
+    const small = upsetMultiplier(roles.r64Exit, roles.r16Exit); // #27 over #11 (gap 16)
+    const huge = upsetMultiplier(roles.underdog, roles.qfExit);   // #45 over #2 (gap 43)
+    expect(huge).toBeGreaterThan(small);
+    expect(huge).toBeLessThan(2);
   });
 
-  it('never exceeds 15 for any pair in the draw', () => {
+  it('stays within [1, 2) for every pair in the draw', () => {
     const ids = [...new Set(sampleMatches.flatMap(m => [m.p1Id, m.p2Id]))];
     let min = Infinity, max = -Infinity;
     for (const a of ids) for (const b of ids) {
-      const bonus = upsetBonus(a, b);
-      if (bonus < min) min = bonus;
-      if (bonus > max) max = bonus;
+      const f = upsetMultiplier(a, b);
+      if (f < min) min = f;
+      if (f > max) max = f;
     }
-    expect(min).toBeGreaterThanOrEqual(0);
-    expect(max).toBeLessThanOrEqual(15);
+    expect(min).toBeGreaterThanOrEqual(1);
+    expect(max).toBeLessThan(2);
   });
 });

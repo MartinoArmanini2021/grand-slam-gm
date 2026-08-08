@@ -61,11 +61,8 @@ export default function TournamentPage() {
                   {ROUNDS.map(r => <span key={r.id}>{r.short} <b style={{ color: 'var(--ink)' }}>{r.points}</b></span>)}
                 </span>
               </ScoreRule>
-              <ScoreRule label="Ranking">
-                Scaled by the winner's rank — a top seed <b style={{ color: 'var(--ink)' }}>×0.8</b>, an underdog up to <b style={{ color: 'var(--ink)' }}>×1.3</b>
-              </ScoreRule>
               <ScoreRule label="Upset">
-                Beating a higher-ranked player adds a bonus — the bigger the ranking gap, the bigger the bonus
+                Beating a higher-ranked player <b style={{ color: 'var(--ink)' }}>multiplies</b> the win — the bigger the ranking gap, the bigger the multiplier (up to <b style={{ color: 'var(--ink)' }}>×2</b>). Favourites win at the <b style={{ color: 'var(--ink)' }}>full</b> base.
               </ScoreRule>
               <ScoreRule label="Leaders">
                 <b style={{ color: 'var(--gold)' }}>Captain ×2</b> and <b style={{ color: '#3f6ea5' }}>Vice ×1.5</b> on that player's round points

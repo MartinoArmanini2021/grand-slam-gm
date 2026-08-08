@@ -155,40 +155,27 @@ export function getOpponentId(playerId: string, round: RoundId): string | null {
   return m.p1Id === playerId ? m.p2Id : m.p1Id;
 }
 
-// Upset bonus: reward a lower-ranked player for beating a higher-ranked one.
-// The bigger the ranking gap, the bigger the bonus (capped at +15).
-export function upsetBonus(winnerId: string, loserId: string): number {
-  // Symmetric with the server engine (serverEngine.ts / recompute-score): an unknown
-  // WINNER — which never happens in practice, since squad winners are always rostered —
-  // defaults to a neutral rank 40; an unknown LOSER (an off-roster early-round opponent)
-  // yields NO upset, because we can't know it was one. findPlayer (not getPlayer) so a
-  // missing id never throws.
+// Upset multiplier: a win earns its round's base points, multiplied UP when a lower-ranked player
+// beats a higher-ranked one — and the bigger the ranking gap, the bigger the multiplier. It's ONE
+// graduated factor (no separate ranking multiplier, no additive bonus): a smooth, saturating curve
+// that rises from ×1.0 (a favourite or equal-ranked player winning keeps the FULL base — never a
+// discount) toward ×2.0 for a giant-killing, always increasing with the gap. Symmetric with
+// serverEngine.ts + recompute-score/index.ts (parity-critical — the three MUST match exactly).
+// An unknown WINNER (never happens for rostered players) defaults to rank 40; an unknown LOSER (an
+// off-roster early-round opponent) yields NO upset — we can't know it was one. findPlayer never throws.
+const UPSET_HALF = 30; // the ranking gap at which the multiplier reaches HALF its max lift (→ ×1.5)
+export function upsetMultiplier(winnerId: string, loserId: string): number {
   const w = findPlayer(winnerId)?.ranking ?? 40;
   const l = findPlayer(loserId)?.ranking;
-  if (l == null || w <= l) return 0; // unknown loser, or winner equal/higher-ranked → no upset
-  return Math.min(15, Math.round((w - l) * 0.4));
+  if (l == null || w <= l) return 1;      // favourite / equal / unknown loser → full base, no upset
+  const gap = w - l;                      // how many ranks below the beaten player the winner sits
+  return 1 + gap / (gap + UPSET_HALF);    // ×1 (tiny gap) → ~×2 (huge gap), monotonically rising
 }
 
-// A win by a lower-ranked player is worth a little more; a top seed winning is
-// "expected" and worth a little less. Rank 1 → ×0.8, rank ~40 → ×1.3. The spread
-// is deliberately mild: expected points must still rise with a player's strength,
-// so a favourite is worth drafting and the budget is a real trade-off. (A wider
-// spread made cheap underdogs strictly the best value in expectation — see the
-// Monte-Carlo pricing study.)
-export function rankingMultiplier(rank: number): number {
-  const r = Math.max(1, Math.min(40, rank));
-  return 0.8 + 0.5 * ((r - 1) / 39);
-}
-
-// Total points a player earns for winning a match: round stakes scaled by the
-// winner's ranking, plus an upset bonus — but the upset is capped by the round's
-// importance (≤ 1.5× its base), so a first-round shock can never out-earn a deep
-// run. Early upsets are small; a giant-killing in the QF/SF is worth real points.
+// Total points a player earns for winning a match: the round's base × the upset multiplier, rounded.
 export function winPoints(roundId: RoundId, winnerId: string, loserId: string): number {
   const base = ROUNDS.find(r => r.id === roundId)?.points ?? 0;
-  const wRank = findPlayer(winnerId)?.ranking ?? 40;
-  const upset = Math.min(upsetBonus(winnerId, loserId), Math.round(base * 1.5));
-  return Math.round(base * rankingMultiplier(wRank)) + upset;
+  return Math.round(base * upsetMultiplier(winnerId, loserId));
 }
 
 // Captain doubles their round points; vice earns 1.5× (kept identical to gameStore /
@@ -335,19 +322,24 @@ export function isPlayerOut(playerId: string, revealed: RoundId[]): boolean {
 // replacement rather than a token refund. Deep exits (QF ≈ two-thirds back) reward
 // players who nearly went the distance. SF/Final return nothing: the window is
 // shut, so there'd be nothing to spend it on.
+// DIMINISHING refund: the earlier a player is knocked out, the MORE of their price comes back — a
+// deep run has already banked points for you, so their residual value has fallen. So an early exit
+// refunds most, and a Quarter-finalist (who already delivered) refunds least. SF/Final exits refund
+// nothing — the transfer window is shut by then, so there's nothing to spend it on. Diminishes per
+// round so it works for Grand Slams (R128 first) as well as Masters (R64 first).
 export const BUDGET_RETURN_RATES: Record<RoundId, number> = {
-  R128: 0.40,
-  R64:  0.45,
-  R32:  0.50,
-  R16:  0.60,
-  QF:   0.70,
+  R128: 0.75,
+  R64:  0.70,
+  R32:  0.55,
+  R16:  0.40,
+  QF:   0.25,
   SF:   0,
   F:    0,
 };
 
 // A player eliminated in the OPENING round (before R64 — this app doesn't score it) refunds at
 // the earliest rate. Kept equal to the R128 tier so the curve stays "earlier exit → less back".
-const OPENING_ROUND_RETURN = 0.40;
+const OPENING_ROUND_RETURN = 0.75; // earliest possible exit → highest refund (barely played, most value unrealized)
 
 // The refund a squad player is worth right now: their price × the round they were knocked out in
 // (opening-round exits at OPENING_ROUND_RETURN). A still-alive player is worth 0 (nothing to

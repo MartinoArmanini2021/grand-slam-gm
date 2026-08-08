@@ -3,7 +3,7 @@ import { useGameStore, eliminatedSquad, substitutionCandidates, sanitizeState } 
 import { getPlayer, PLAYERS } from '../data/players';
 import { getTier } from '../data/tiers';
 import type { RoundId } from '../types';
-import { ROUNDS, winPoints, playerRoundPoints, isEliminated, liveBudget } from '../data/tournament';
+import { ROUNDS, winPoints, playerRoundPoints, isEliminated, liveBudget, BUDGET_RETURN_RATES } from '../data/tournament';
 import { sampleMatches, loadSampleThrough, revealThrough, loadSampleTournament, roles } from './fixtures/sampleDraw';
 
 const store = () => useGameStore.getState();
@@ -133,9 +133,10 @@ describe('scoring — underdog captain earns multiplier + upset bonuses', () => 
     store().finalizeDraft();
     playAll(roles.underdog); // R64..QF wins, out in the SF
     expect(store().myScore).toBe(captainScore(roles.underdog));
-    // A deep underdog run is a strong return on a cheap pick, but no longer out-scores
-    // the champion's full title run (the rebalance made "going further" worth more).
-    expect(store().myScore).toBeGreaterThan(60);
+    // A deep underdog run is a strong return on a cheap pick — the upset multiplier lifts each
+    // giant-killing well above a plain captained run (a no-upset SF run would be only 36) — yet it
+    // never out-scores the champion's full title run.
+    expect(store().myScore).toBeGreaterThan(45);
     expect(store().myScore).toBeLessThan(captainScore(roles.champion));
     expect(store().budgetReturns).toHaveLength(0); // out in the SF → no refund (window shut)
   });
@@ -171,7 +172,7 @@ describe('budget returns', () => {
     store().addPlayer(roles.qfExit); // reaches the QF, then out
     store().finalizeDraft();
     for (let i = 0; i < 4; i++) play(roles.qfExit); // R64,R32,R16 won; QF lost → out
-    const amount = Math.round(price(roles.qfExit) * 0.70 * 10) / 10;
+    const amount = Math.round(price(roles.qfExit) * BUDGET_RETURN_RATES.QF * 10) / 10;
     const ret = store().budgetReturns.find(r => r.playerId === roles.qfExit);
     expect(ret).toMatchObject({ playerId: roles.qfExit, round: 'QF', amount });
     expect(store().budget).toBeCloseTo(150 - price(roles.qfExit) + amount, 5);
@@ -182,7 +183,7 @@ describe('budget returns', () => {
     store().addPlayer(roles.r64Exit); // lost in R64 (the opening scored round)
     store().finalizeDraft();
     play(roles.champion); // R64 → r64Exit loses, refunded at the R64 rate
-    const amount = Math.round(price(roles.r64Exit) * 0.45 * 10) / 10;
+    const amount = Math.round(price(roles.r64Exit) * BUDGET_RETURN_RATES.R64 * 10) / 10;
     const ret = store().budgetReturns.find(r => r.playerId === roles.r64Exit);
     expect(ret).toMatchObject({ round: 'R64', amount });
     expect(store().budget).toBeCloseTo(150 - price(roles.champion) - price(roles.r64Exit) + amount, 5);
@@ -222,8 +223,8 @@ describe('mid-tournament substitutions', () => {
   it('an eliminated player can be replaced by an affordable, still-alive player', () => {
     draftAndReachR16();
     expect(eliminatedSquad(store().myTeam)).toEqual([roles.r16Exit]);
-    // leftover 150 − champion − r16Exit, + r16Exit's R16 refund (price·0.60)
-    const refund = Math.round(price(roles.r16Exit) * 0.60 * 10) / 10;
+    // leftover 150 − champion − r16Exit, + r16Exit's R16 refund
+    const refund = Math.round(price(roles.r16Exit) * BUDGET_RETURN_RATES.R16 * 10) / 10;
     const budgetBefore = store().budget;
     expect(budgetBefore).toBeCloseTo(150 - price(roles.champion) - price(roles.r16Exit) + refund, 5);
 

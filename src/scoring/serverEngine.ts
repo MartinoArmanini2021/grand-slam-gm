@@ -43,25 +43,20 @@ function leaderOfRecord(history: { round: string; playerId: string }[] | undefin
   return best?.playerId;
 }
 
-// Favourites are worth a little less per win, underdogs a little more (rank 1 → ×0.8,
-// rank 40+ → ×1.3). Identical to tournament.ts.
-function rankingMultiplier(rank: number): number {
-  const r = Math.max(1, Math.min(40, rank));
-  return 0.8 + 0.5 * ((r - 1) / 39);
+// Upset multiplier: a win = base × factor. Favourites (or equal) winning keep the FULL base (×1.0);
+// a lower-ranked player beating a higher-ranked one lifts the factor toward ×2.0, and the bigger the
+// ranking gap the bigger the lift (smooth, saturating, monotonic). ONE factor — no separate ranking
+// multiplier, no additive bonus. Identical to tournament.ts + recompute-score (parity-critical).
+// loserRank undefined (off-roster opponent, no rank) → no upset. Winner rank always known (rostered).
+const UPSET_HALF = 30; // gap at which the multiplier reaches half its max lift (→ ×1.5)
+function upsetMultiplier(winnerRank: number, loserRank: number | undefined): number {
+  if (loserRank == null || winnerRank <= loserRank) return 1;
+  const gap = winnerRank - loserRank;
+  return 1 + gap / (gap + UPSET_HALF);
 }
 
-// A win over a higher-ranked player earns a bonus, capped at +15 and at 1.5× the base.
-function upsetBonus(winnerRank: number, loserRank: number): number {
-  if (winnerRank <= loserRank) return 0;
-  return Math.min(15, Math.round((winnerRank - loserRank) * 0.4));
-}
-
-// loserRank may be undefined when the beaten opponent is off-roster (an early-round
-// player with no rank on record). Like the client, we award NO upset then — we can't
-// know it was one, and assuming a rank would over-credit beating an unknown qualifier.
 export function winPoints(base: number, winnerRank: number, loserRank: number | undefined): number {
-  const upset = loserRank == null ? 0 : Math.min(upsetBonus(winnerRank, loserRank), Math.round(base * 1.5));
-  return Math.round(base * rankingMultiplier(winnerRank)) + upset;
+  return Math.round(base * upsetMultiplier(winnerRank, loserRank));
 }
 
 // The authoritative total for one entry across every round it has played.
