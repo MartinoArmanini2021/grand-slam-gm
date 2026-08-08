@@ -276,17 +276,15 @@ export function isEliminated(playerId: string): boolean {
   return getPlayerExit(playerId) !== null || (tournamentStarted() && !isInLiveDraw(playerId));
 }
 
-// Is this eliminated player READY to cash in? Only once the round they were knocked out in is
-// FULLY over — every match of that round decided (roundPlayable), not the instant they lost while
-// the round is still being played. So a mid-round KO can't be cashed until the round's last match
-// finishes; an earlier-round exit (its round already complete) stays cashable. An opening-round KO
-// (out before R64) is ready as soon as the tournament is underway — that round finished before R64.
-export function cashInReady(id: string): boolean {
-  if (!isEliminated(id)) return false;
-  const exit = getPlayerExit(id); // scored-round exit (R64→F), or null for an opening-round KO
-  if (!exit) return tournamentStarted();
-  const idx = ROUNDS.findIndex(r => r.id === exit);
-  return idx < 0 ? true : roundPlayable(idx);
+// Cash-in TIMING (one gate for everyone): the money can only be claimed at a round BREAK — once
+// the current round's last match is over and before the next one starts. While a round is underway,
+// cash-in is shut for the whole squad (you settle up and rebuild at the break), even for players who
+// fell in an EARLIER, already-complete round. Refund VALUES are still shown across all rounds — only
+// the ACTION waits. Respects transferWindowOpen too (nothing left to spend on after the SF).
+export function cashInOpen(): boolean {
+  if (!transferWindowOpen()) return false;
+  const st = liveRoundStatus();
+  return !st || !st.underway; // no round in progress → we're at a round break → open
 }
 
 // Is this player eliminated, given which scored rounds have been revealed? Their

@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { GamePhase, RoundId, RoundScore, BudgetReturn, Transfer } from '../types';
 import {
   ROUNDS, getMatchesForRound, isPlayerOut, BUDGET_RETURN_RATES, winPoints, transferWindowOpen, roundPlayable, roundHasResult, liveCurrentRound, liveLeaderRound,
-  tournamentStarted, isEliminated, cashInReady, liveBudget, playerRefund,
+  tournamentStarted, isEliminated, cashInOpen, liveBudget, playerRefund,
 } from '../data/tournament';
 import { ACTIVE_TOURNAMENT_ID } from '../data/tournamentConfig';
 import { track } from '../data/analytics';
@@ -340,7 +340,8 @@ export const useGameStore = create<GameStore>()(
         if (phase === 'finished' || phase === 'draft') return;
         if (!transferWindowOpen()) return;   // window shut after the SF
         if (!myTeam.includes(id)) return;                // must currently hold them
-        if (!cashInReady(id)) return;                    // out AND their round's last match is over
+        if (!isEliminated(id)) return;                   // only eliminated players are cashable
+        if (!cashInOpen()) return;                       // …and only at a round break (current round over)
         if (cashedIn.includes(id)) return;               // already cashed
         const newTeam = myTeam.filter(pid => pid !== id); // they leave the active squad
         const newCashed = [...cashedIn, id];
