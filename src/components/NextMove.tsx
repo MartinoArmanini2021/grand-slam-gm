@@ -1,11 +1,11 @@
 import { useGameStore } from '../store/gameStore';
 import { useLiveStore } from '../store/liveStore';
 import { findPlayer, getPlayer } from '../data/players';
-import { lastName, round1 } from '../data/format';
+import { lastName, fmtScore } from '../data/format';
 import { isSquadValid } from '../data/squadRules';
 import {
   ROUNDS, isEliminated, tournamentStarted, liveRoundStatus, liveLeaderRound,
-  leaderOfRecord, liveScore, roundHasResult,
+  leaderOfRecord, liveScore, roundStarted,
 } from '../data/tournament';
 import { TOURNAMENT } from '../data/tournamentConfig';
 import { useCountdown } from './Countdown';
@@ -155,7 +155,7 @@ export function buildView(s: GameStore, hasPrivateLeague: boolean, onPickLeaders
     const score = liveScore(initialSquad, transfers, captainHistory, viceCaptainHistory);
     return {
       accent: 'gold', eyebrow: 'Tournament over',
-      title: `You finished on ${round1(score)} points`,
+      title: `You finished on ${fmtScore(score)} points`,
       body: 'That’s a wrap. See where you landed in the league and how each of your picks scored across the draw.',
       actions: [
         { label: 'See your final standing', sub: 'the full league table', go: () => setTab('league'), primary: true },
@@ -172,7 +172,7 @@ export function buildView(s: GameStore, hasPrivateLeague: boolean, onPickLeaders
     return {
       accent: 'green', eyebrow: `${roundObj.short} is live`,
       title: `The ${roundObj.label} is underway`,
-      body: `You’re on ${round1(score)} pts — points update automatically as your players win. Captains are locked for this round; nothing to change.`,
+      body: `You’re on ${fmtScore(score)} pts — points update automatically as your players win. Captains are locked for this round; nothing to change.`,
       actions: [
         { label: 'Check the results live', sub: 'your players are highlighted', go: () => setTab('tournament'), primary: true },
         { label: 'See your score', sub: 'where you sit in the league', go: () => setTab('league') },
@@ -192,7 +192,7 @@ export function buildView(s: GameStore, hasPrivateLeague: boolean, onPickLeaders
   // A fresh signing is "unlocked" until the round it first scores in starts — confirm or it auto-locks.
   const hasUnlocked = transfers.some(t => {
     const scoresFrom = ROUNDS[ROUNDS.findIndex(r => r.id === t.round) + 1]?.id;
-    return scoresFrom && !roundHasResult(scoresFrom) && !isEliminated(t.in);
+    return scoresFrom && !roundStarted(scoresFrom) && !isEliminated(t.in);
   });
   const capName = nameOf(effCap);
   const capSub = capDone

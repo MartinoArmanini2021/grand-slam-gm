@@ -45,13 +45,36 @@ export const getMatchesForRound = (round: RoundId) =>
 export const TRANSFER_LOCK_INDEX = ROUNDS.length - 1;
 export const transfersOpen = (currentRoundIndex: number) => currentRoundIndex < TRANSFER_LOCK_INDEX;
 
-// The transfer / cash-in window, derived from RESULTS (not the frozen currentRoundIndex, which in
-// live production is pinned at 0 so `transfersOpen(0)` was permanently true — the "locked for the
-// final" state never showed and cash-ins were never gated). Open while a change made now could
-// still score: the round after the deepest scored round must exist AND not be the Final. Mirrors
-// exactly the buyPlayer/cashInPlayer commit guard, so UI availability == what the store will accept.
+// Has a round STARTED (gone live)? A round is under way the moment its first match begins — but the
+// results feed can't tell us that: Wikipedia only records a match's winner once it FINISHES, so there
+// is a live window (matches on court, none finished) with zero recorded results. Relying on results
+// alone left the market open and captains editable while a round was already being played. So a round
+// counts as started if it has ANY result OR its scheduled start time (the accurate config schedule)
+// has passed. This is the single signal that locks the market + captains the instant play begins.
+export function roundStarted(round: RoundId): boolean {
+  if (roundHasResult(round)) return true;
+  const iso = TOURNAMENT.schedule?.[round];
+  const t = iso ? Date.parse(iso) : NaN;
+  return Number.isFinite(t) && Date.now() >= t;
+}
+
+// The deepest round that has STARTED (live signal), vs liveCurrentRound which is the deepest with a
+// RESULT. A transfer/buy scores from the round after this — so once R16 is live, a signing scores QF,
+// never R16. Null before any round starts.
+export function liveStartedRound(): RoundId | null {
+  for (let i = ROUNDS.length - 1; i >= 0; i--) if (roundStarted(ROUNDS[i].id)) return ROUNDS[i].id;
+  return null;
+}
+
+// The transfer / cash-in window. The market is a BETWEEN-ROUNDS desk: it's shut while any round is
+// live (started — by schedule or a result — but not yet complete), and reopens at the break. Derived
+// from RESULTS + the schedule, never the frozen currentRoundIndex. When open, a change must still be
+// able to score: the round after the deepest STARTED round must exist and not be the Final. Mirrors
+// the buyPlayer/cashInPlayer commit guard, so UI availability == what the store will accept.
 export function transferWindowOpen(): boolean {
-  const round = liveCurrentRound() ?? ROUNDS[0].id;
+  const st = liveRoundStatus();
+  if (st && st.underway) return false;                 // a round is live → market shut until the break
+  const round = liveStartedRound() ?? ROUNDS[0].id;
   const firstScored = ROUNDS[ROUNDS.findIndex(r => r.id === round) + 1]?.id;
   return !!firstScored && firstScored !== ROUNDS[ROUNDS.length - 1].id;
 }
@@ -98,20 +121,23 @@ export function liveCurrentRound(): RoundId | null {
 // played). It's the earliest round that isn't fully played; "fully played" reuses roundPlayable(),
 // which knows a round is done only when every pairing is decided AND the next round has been drawn.
 // So a complete-but-not-yet-superseded round (e.g. R64 done, R32 drawn, nothing played) correctly
-// resolves to "R32, up next", not "R64, underway". Null once the whole draw is played out.
+// resolves to "R32, up next", not "R64, underway". "underway" now uses roundStarted() — a round that
+// has gone live by its scheduled time counts as underway even before its first result lands (the feed
+// only reports finished matches), so the status box flips to LIVE the moment play begins. Null once
+// the whole draw is played out.
 export function liveRoundStatus(): { round: RoundId; underway: boolean } | null {
   for (let i = 0; i < ROUNDS.length; i++) {
-    if (!roundPlayable(i)) return { round: ROUNDS[i].id, underway: roundHasResult(ROUNDS[i].id) };
+    if (!roundPlayable(i)) return { round: ROUNDS[i].id, underway: roundStarted(ROUNDS[i].id) };
   }
   return null; // every round fully played
 }
 
-// The round currently OPEN for captain/vice selection: the earliest round with NO result yet
-// (a round's captain freezes at its first result). This is what setCaptain records against —
-// results-derived, NOT the frozen currentRoundIndex (which pinned every pick to R64). null once
-// every round has started (nothing left to captain for).
+// The round currently OPEN for captain/vice selection: the earliest round that has NOT STARTED yet
+// (a round's captain freezes the moment it goes live — by schedule or a result). This is what
+// setCaptain records against, so once R16 is live you're setting your QF captain, never R16's.
+// Schedule-aware, NOT the frozen currentRoundIndex. null once every round has started.
 export function liveLeaderRound(): RoundId | null {
-  return ROUNDS.find(r => !roundHasResult(r.id))?.id ?? null;
+  return ROUNDS.find(r => !roundStarted(r.id))?.id ?? null;
 }
 
 // Has this round produced ANY result yet? Mirrors the server's save_entry captain lock,
@@ -282,9 +308,10 @@ export function isEliminated(playerId: string): boolean {
 // fell in an EARLIER, already-complete round. Refund VALUES are still shown across all rounds — only
 // the ACTION waits. Respects transferWindowOpen too (nothing left to spend on after the SF).
 export function cashInOpen(): boolean {
-  if (!transferWindowOpen()) return false;
-  const st = liveRoundStatus();
-  return !st || !st.underway; // no round in progress → we're at a round break → open
+  // The whole market is now a between-rounds desk (transferWindowOpen already shuts while a round is
+  // live), so cash-in shares that exact gate: open only at a round break, closed the instant play
+  // begins — including the schedule-driven "started, no result yet" window that was the bug.
+  return transferWindowOpen();
 }
 
 // Is this player eliminated, given which scored rounds have been revealed? Their

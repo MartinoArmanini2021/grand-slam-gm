@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { GamePhase, RoundId, RoundScore, BudgetReturn, Transfer } from '../types';
 import {
-  ROUNDS, getMatchesForRound, isPlayerOut, BUDGET_RETURN_RATES, winPoints, transferWindowOpen, roundPlayable, roundHasResult, liveCurrentRound, liveLeaderRound,
+  ROUNDS, getMatchesForRound, isPlayerOut, BUDGET_RETURN_RATES, winPoints, transferWindowOpen, roundPlayable, roundStarted, liveStartedRound, liveLeaderRound,
   tournamentStarted, isEliminated, cashInOpen, liveBudget, playerRefund,
 } from '../data/tournament';
 import { ACTIVE_TOURNAMENT_ID } from '../data/tournamentConfig';
@@ -56,7 +56,7 @@ function recordLeaders(
   captainHistory: { round: RoundId; playerId: string }[],
   viceCaptainHistory: { round: RoundId; playerId: string }[],
 ) {
-  if (!roundId || roundHasResult(roundId)) return { captainHistory, viceCaptainHistory };
+  if (!roundId || roundStarted(roundId)) return { captainHistory, viceCaptainHistory };
   const upsert = (hist: { round: RoundId; playerId: string }[], playerId: string | null) => {
     const rest = hist.filter(c => c.round !== roundId);
     return playerId ? [...rest, { round: roundId, playerId }] : rest;
@@ -314,10 +314,10 @@ export const useGameStore = create<GameStore>()(
         const newCashed = cashedIn.includes(oldId) ? cashedIn : [...cashedIn, oldId];
         const available = liveBudget(initialSquad, transfers, myTeam, newCashed);
         if (available < player.price) return; // can't afford, even with the refund
-        // Log against the LIVE current round (deepest round with a result), NOT currentRoundIndex.
-        // The newcomer first scores the NEXT round — never retroactively. Refuse when only the
-        // final is left (squad locks for it), matching the server's P6 check.
-        const round = liveCurrentRound() ?? ROUNDS[0].id;
+        // Log against the deepest STARTED round (live by schedule or result), NOT currentRoundIndex.
+        // The newcomer first scores the NEXT round — never retroactively, and never a round already
+        // under way. Refuse when only the final is left (squad locks for it), matching the server's P6 check.
+        const round = liveStartedRound() ?? ROUNDS[0].id;
         const firstScored = ROUNDS[ROUNDS.findIndex(r => r.id === round) + 1]?.id;
         if (!firstScored || firstScored === ROUNDS[ROUNDS.length - 1].id) return;
         const newTeam = myTeam.map(id => (id === oldId ? newId : id));
@@ -370,7 +370,7 @@ export const useGameStore = create<GameStore>()(
         const openSlots = cashedIn.filter(c => !transfers.some(t => t.out === c));
         if (openSlots.length === 0) return;
         if (liveBudget(initialSquad, transfers, myTeam, cashedIn) < player.price) return; // can't afford
-        const round = liveCurrentRound() ?? ROUNDS[0].id;
+        const round = liveStartedRound() ?? ROUNDS[0].id;
         const firstScored = ROUNDS[ROUNDS.findIndex(r => r.id === round) + 1]?.id;
         if (!firstScored || firstScored === ROUNDS[ROUNDS.length - 1].id) return; // final locked
         const out = openSlots[0]; // backfill the oldest open slot (which cashed player is arbitrary)
@@ -390,7 +390,7 @@ export const useGameStore = create<GameStore>()(
         const t = transfers.find(x => x.in === id);
         if (!t) return;                                  // not a bought-in player
         const scoresFrom = ROUNDS[ROUNDS.findIndex(r => r.id === t.round) + 1]?.id;
-        if (scoresFrom && roundHasResult(scoresFrom)) return; // its round started → locked, can't undo
+        if (scoresFrom && roundStarted(scoresFrom)) return; // its round started → locked, can't undo
         const newTransfers = transfers.filter(x => x.in !== id);
         const newTeam = myTeam.filter(pid => pid !== id);
         set({

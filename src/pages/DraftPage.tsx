@@ -2,7 +2,7 @@ import { useState, useMemo, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useLiveStore } from '../store/liveStore';
 import { PLAYERS, getPlayer } from '../data/players';
-import { ROUNDS, isPlayerOut, getPlayerExit, tournamentStarted, isEliminated, cashInOpen, liveBudget, playerRefund, cashedInTotal, transferWindowOpen, roundHasResult, liveLeaderRound, liveRoundStatus } from '../data/tournament';
+import { ROUNDS, isPlayerOut, getPlayerExit, tournamentStarted, isEliminated, cashInOpen, liveBudget, playerRefund, cashedInTotal, transferWindowOpen, roundStarted, liveLeaderRound, liveRoundStatus } from '../data/tournament';
 import { round1 } from '../data/format';
 import { getTier, TIER_META, type Tier } from '../data/tiers';
 import { tierCounts, squadShortfall, isSquadValid, isTierFull, TIER_MINIMUMS, SQUAD_SIZE, STARTING_BUDGET } from '../data/squadRules';
@@ -106,7 +106,7 @@ export default function DraftPage() {
     const t = transfers.find(x => x.in === id);
     if (!t) return false;
     const scoresFrom = ROUNDS[ROUNDS.findIndex(r => r.id === t.round) + 1]?.id;
-    return !!scoresFrom && !roundHasResult(scoresFrom) && !isEliminated(id);
+    return !!scoresFrom && !roundStarted(scoresFrom) && !isEliminated(id);
   };
   const unlockedBuys = useMemo(() => (live ? transfers.filter(t => isUndoableBuy(t.in)).map(t => t.in) : []),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -158,7 +158,9 @@ export default function DraftPage() {
           {phase === 'draft'
             ? `Build your squad — $${budget.toFixed(1)}M to spend · ${myTeam.length}/${TEAM_SIZE} picked`
             : !windowOpen
-              ? 'Transfer window closed — your squad is locked for the final.'
+              ? (underwayRoundObj
+                  ? `The ${underwayRoundObj.label} is under way — the market is closed while a round is live. It reopens at the break, once the ${underwayRoundObj.short} finishes.`
+                  : 'Transfer window closed — your squad is locked for the final.')
               : cashable.length > 0
                 ? `${cashable.length} eliminated player${cashable.length === 1 ? '' : 's'} to Cash In for $${outTotal.toFixed(1)}M — claim the money, then buy any replacement you like.`
                 : pendingCash.length > 0
@@ -212,7 +214,9 @@ export default function DraftPage() {
           {live && !windowOpen && (
             <div className="rounded-2xl px-4 py-2.5 mb-3 flex items-center gap-2 text-sm" style={{ background: 'rgba(10,27,51,0.03)', border: '1px solid rgba(10,27,51,0.1)', color: 'var(--ink-2)' }}>
               <span>🔒</span>
-              <span>Transfer window closed — no changes after the semi-finals. Your squad is locked for the final.</span>
+              {underwayRoundObj
+                ? <span>The <b>{underwayRoundObj.label}</b> is under way — the market is <b>closed while a round is live</b>. It reopens at the break once the {underwayRoundObj.short} finishes, so you can cash in eliminated players and buy for the next round then.</span>
+                : <span>Transfer window closed — no changes after the semi-finals. Your squad is locked for the final.</span>}
             </div>
           )}
           {live && windowOpen && cashable.length > 0 && (

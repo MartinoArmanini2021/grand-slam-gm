@@ -3,6 +3,7 @@ import { useGameStore } from './store/gameStore';
 import { useLiveStore } from './store/liveStore';
 import { track } from './data/analytics';
 import { ROUNDS, liveScore, liveRoundStatus } from './data/tournament';
+import { fmtScore } from './data/format';
 import HomePage from './pages/HomePage';
 import DraftPage from './pages/DraftPage';
 import TournamentPage from './pages/TournamentPage';
@@ -243,7 +244,7 @@ function AppShell({
             <div className="hidden md:flex items-center gap-2 shrink-0">
               {phase !== 'draft' && (
                 <div className="font-num px-3 py-1 rounded-full text-sm font-bold" style={{ background: 'rgba(55,214,122,0.16)', color: 'var(--green-bright)' }}>
-                  {myScore} pts
+                  {fmtScore(myScore)} pts
                 </div>
               )}
               {phase === 'pre_round' && currentRound && (

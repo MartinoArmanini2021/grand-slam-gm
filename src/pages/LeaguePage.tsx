@@ -3,6 +3,7 @@ import { useGameStore } from '../store/gameStore';
 import { track } from '../data/analytics';
 import { useLeagueBoard, useMyLeagues, type BoardEntry } from '../data/leagueBoard';
 import { tournamentStarted, isEliminated, playerRoundPoints } from '../data/tournament';
+import { fmtScore } from '../data/format';
 import ScoringPendingNote from '../components/ScoringPendingNote';
 import { toast } from '../store/toastStore';
 import { onActivate, useVisiblePoll } from '../hooks';
@@ -37,7 +38,7 @@ function StatsTable({ rows }: { rows: BoardEntry[] }) {
     </div>;
   }
   const pending = !tournamentStarted();
-  const pts = (score: number) => (pending ? '–' : score);
+  const pts = (score: number) => (pending ? '–' : fmtScore(score));
   // How many of a manager's players have been knocked out at ANY stage — every player they've ever
   // owned (drafted OR bought) who is out, counted once. This survives roster churn: a knocked-out
   // player still counts whether they're on the bench, already cashed in, or transferred away.

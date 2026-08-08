@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useLiveStore } from '../store/liveStore';
 import { ROUNDS, liveRoundStatus, liveScoreBreakdown } from '../data/tournament';
+import { fmtScore } from '../data/format';
 import BracketTree from '../components/BracketTree';
 import { TOURNAMENT } from '../data/tournamentConfig';
 
@@ -79,12 +80,12 @@ export default function TournamentPage() {
         <div className="mb-6 px-6 py-5 rounded-2xl text-center" style={{ background: 'rgba(217,154,0,0.06)', border: '1px solid rgba(217,154,0,0.2)' }}>
           <div className="text-3xl mb-2">🏆</div>
           <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--gold)' }}>Tournament Complete</h2>
-          <div className="font-num text-2xl font-bold mb-3" style={{ color: 'var(--ink)' }}>{myScore} pts</div>
+          <div className="font-num text-2xl font-bold mb-3" style={{ color: 'var(--ink)' }}>{fmtScore(myScore)} pts</div>
           <div className="flex justify-center gap-4 flex-wrap">
             {roundScores.map(rs => (
               <div key={rs.round} className="text-center">
                 <div className="text-xs mb-1" style={{ color: 'var(--ink-2)' }}>{rs.round}</div>
-                <div className="font-num text-sm font-bold" style={{ color: rs.points > 0 ? 'var(--green)' : 'var(--ink-3)' }}>+{rs.points}</div>
+                <div className="font-num text-sm font-bold" style={{ color: rs.points > 0 ? 'var(--green)' : 'var(--ink-3)' }}>+{fmtScore(rs.points)}</div>
               </div>
             ))}
           </div>

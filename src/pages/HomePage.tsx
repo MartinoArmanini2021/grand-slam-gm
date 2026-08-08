@@ -4,6 +4,7 @@ import { useProfile } from '../store/profileStore';
 import { useLiveStore } from '../store/liveStore';
 import { ROUNDS, roundHasResult, tournamentStarted, liveScore, liveBudget, liveRoundStatus } from '../data/tournament';
 import { isSquadValid, SQUAD_SIZE } from '../data/squadRules';
+import { fmtScore } from '../data/format';
 import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
 import { onActivate } from '../hooks';
 import { useLeagueBoard, useMyLeagues } from '../data/leagueBoard';
@@ -80,7 +81,7 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
         </div>
 
         <div className="grid grid-cols-3 gap-2 shrink-0">
-          <StatCard label="Score" value={`${myScore}`} unit="points" color="var(--blue)" />
+          <StatCard label="Score" value={fmtScore(myScore)} unit="points" color="var(--blue)" />
           <StatCard label="Budget" value={`$${budget.toFixed(1)}M`} unit="to spend" color="var(--ink)" />
           <StatCard
             label="Squad"
@@ -172,14 +173,14 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
                         {/* Rivalry hook: how far you are from the manager just above you. */}
                         {row.you && rank > 0 && board[rank - 1] && board[rank - 1].score > row.score && (
                           <div className="text-[10px] font-semibold mt-0.5 pl-9 truncate" style={{ color: 'var(--blue)' }}>
-                            +{board[rank - 1].score - row.score} to catch {board[rank - 1].name}
+                            +{fmtScore(board[rank - 1].score - row.score)} to catch {board[rank - 1].name}
                           </div>
                         )}
                         {row.you && rank === 0 && row.score > 0 && (
                           <div className="text-[10px] font-semibold mt-0.5 pl-9" style={{ color: 'var(--gold)' }}>🥇 Top of the league</div>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-right font-num text-base font-extrabold" style={{ color: 'var(--blue)' }}>{tournamentStarted() ? row.score : '–'}</td>
+                      <td className="px-3 py-2 text-right font-num text-base font-extrabold" style={{ color: 'var(--blue)' }}>{tournamentStarted() ? fmtScore(row.score) : '–'}</td>
                     </tr>
                   </Fragment>
                 ))}

@@ -4,7 +4,7 @@ import { useProfile } from '../store/profileStore';
 import { useLeagueBoard } from '../data/leagueBoard';
 import { getPlayer } from '../data/players';
 import { ROUNDS, playerRoundPoints, playedScoredRounds, liveScore, getPlayerExit, isInLiveDraw, tournamentStarted } from '../data/tournament';
-import { lastName } from '../data/format';
+import { lastName, fmtScore } from '../data/format';
 import SquadCourt from '../components/SquadCourt';
 import PlayerAvatar from '../components/PlayerAvatar';
 import PlayerTag from '../components/PlayerTag';
@@ -105,7 +105,7 @@ function TeamView({ emblem, name, manager, color, score, squad, captainId, viceC
             <button onClick={openEditor} className="text-[11px] font-bold px-2.5 py-1 rounded-lg shrink-0" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}>✎ Edit</button>
           )}
           <div className="text-right shrink-0">
-            <div className="font-num text-3xl font-extrabold leading-none" style={{ color: 'var(--gold-bright)' }}>{score}</div>
+            <div className="font-num text-3xl font-extrabold leading-none" style={{ color: 'var(--gold-bright)' }}>{fmtScore(score)}</div>
             <div className="text-[9px] uppercase tracking-widest mt-0.5" style={{ color: 'var(--on-navy-2)' }}>Points</div>
           </div>
         </div>
@@ -257,10 +257,10 @@ function PointsByRound({ initialSquad, transfers, captainHistory, viceCaptainHis
                     </td>
                     {cells.map((c, i) => (
                       <td key={i} className="text-center px-2 py-1.5 font-num text-xs" style={{ color: c ? 'var(--ink)' : 'var(--ink-3)', fontWeight: c ? 700 : 400 }}>
-                        {c == null ? '·' : c === 0 ? '–' : c}
+                        {c == null ? '·' : c === 0 ? '–' : fmtScore(c)}
                       </td>
                     ))}
-                    <td className="text-right px-3 py-1.5 font-num text-sm font-extrabold" style={{ color: 'var(--blue)' }}>{total}</td>
+                    <td className="text-right px-3 py-1.5 font-num text-sm font-extrabold" style={{ color: 'var(--blue)' }}>{fmtScore(total)}</td>
                   </tr>
                 );
               })}
