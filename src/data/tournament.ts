@@ -276,6 +276,19 @@ export function isEliminated(playerId: string): boolean {
   return getPlayerExit(playerId) !== null || (tournamentStarted() && !isInLiveDraw(playerId));
 }
 
+// Is this eliminated player READY to cash in? Only once the round they were knocked out in is
+// FULLY over — every match of that round decided (roundPlayable), not the instant they lost while
+// the round is still being played. So a mid-round KO can't be cashed until the round's last match
+// finishes; an earlier-round exit (its round already complete) stays cashable. An opening-round KO
+// (out before R64) is ready as soon as the tournament is underway — that round finished before R64.
+export function cashInReady(id: string): boolean {
+  if (!isEliminated(id)) return false;
+  const exit = getPlayerExit(id); // scored-round exit (R64→F), or null for an opening-round KO
+  if (!exit) return tournamentStarted();
+  const idx = ROUNDS.findIndex(r => r.id === exit);
+  return idx < 0 ? true : roundPlayable(idx);
+}
+
 // Is this player eliminated, given which scored rounds have been revealed? Their
 // exit stage ≤ the deepest revealed stage → out. Because earlier stages sort below
 // later ones, anyone who fell before a revealed round is already out.

@@ -2,7 +2,8 @@ import { useState, useMemo, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useLiveStore } from '../store/liveStore';
 import { PLAYERS, getPlayer } from '../data/players';
-import { ROUNDS, isPlayerOut, getPlayerExit, tournamentStarted, isEliminated, liveBudget, playerRefund, cashedInTotal, transferWindowOpen, roundHasResult, liveLeaderRound } from '../data/tournament';
+import { ROUNDS, isPlayerOut, getPlayerExit, tournamentStarted, isEliminated, cashInReady, liveBudget, playerRefund, cashedInTotal, transferWindowOpen, roundHasResult, liveLeaderRound } from '../data/tournament';
+import { round1 } from '../data/format';
 import { getTier, TIER_META, type Tier } from '../data/tiers';
 import { tierCounts, squadShortfall, isSquadValid, isTierFull, TIER_MINIMUMS, SQUAD_SIZE, STARTING_BUDGET } from '../data/squadRules';
 import PlayerAvatar from '../components/PlayerAvatar';
@@ -76,10 +77,20 @@ export default function DraftPage() {
   // Open slots = players cashed in but not yet backfilled by a buy → you can buy that many.
   const openCount = cashedIn.filter(c => !transfers.some(t => t.out === c)).length;
   const canBuy = live && windowOpen && openCount > 0;
-  // Eliminated players still in your active squad → ready to Cash In.
-  const cashable = useMemo(() => (live ? myTeam.filter(id => isEliminated(id)) : []),
+  // Eliminated players still in your active squad, split by whether their round is fully over:
+  //  • cashable — their round's last match is done, so Cash In is live now.
+  //  • pendingCash — they're out but the round is still being played; Cash In waits (no early exit
+  //    on partial info). Both still SHOW the refund so you can see what's coming.
+  const cashable = useMemo(() => (live ? myTeam.filter(id => cashInReady(id)) : []),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [live, myTeam, draw, results]);
+  const pendingCash = useMemo(() => (live ? myTeam.filter(id => isEliminated(id) && !cashInReady(id)) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [live, myTeam, draw, results]);
+  // What every ready-to-cash player is worth together — the total shown at the bottom of My Squad.
+  const cashableTotal = useMemo(() => round1(cashable.reduce((sum, id) => sum + playerRefund(id), 0)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [cashable, draw, results]);
   const cashedTotal = useMemo(() => cashedInTotal(cashedIn),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [cashedIn, draw, results]);
@@ -145,12 +156,14 @@ export default function DraftPage() {
             : !windowOpen
               ? 'Transfer window closed — your squad is locked for the final.'
               : cashable.length > 0
-                ? `${cashable.length} eliminated player${cashable.length === 1 ? '' : 's'} to Cash In — claim the money, then buy any replacement you like.`
-                : openCount > 0
-                  ? `$${liveBud.toFixed(1)}M to spend · ${openCount} open slot${openCount === 1 ? '' : 's'} — buy a replacement of any tier below.`
-                  : unlockedBuys.length > 0
-                    ? `${unlockedBuys.length} new signing${unlockedBuys.length === 1 ? '' : 's'} — you can still undo until the round starts, or Lock Squad to confirm now.`
-                    : `$${liveBud.toFixed(1)}M available — Cash In an eliminated player to free up money.`}
+                ? `${cashable.length} eliminated player${cashable.length === 1 ? '' : 's'} to Cash In for $${cashableTotal.toFixed(1)}M — claim the money, then buy any replacement you like.`
+                : pendingCash.length > 0
+                  ? `${pendingCash.length} of your players ${pendingCash.length === 1 ? 'is' : 'are'} out — Cash In opens once the round's last match is over.`
+                  : openCount > 0
+                    ? `$${liveBud.toFixed(1)}M to spend · ${openCount} open slot${openCount === 1 ? '' : 's'} — buy a replacement of any tier below.`
+                    : unlockedBuys.length > 0
+                      ? `${unlockedBuys.length} new signing${unlockedBuys.length === 1 ? '' : 's'} — you can still undo until the round starts, or Lock Squad to confirm now.`
+                      : `$${liveBud.toFixed(1)}M available — Cash In an eliminated player to free up money.`}
         </p>
         {live && (
           <button onClick={() => setShowTransferHelp(true)} className="text-xs font-bold mt-1 underline underline-offset-2" style={{ color: 'var(--ember)' }}>
@@ -201,7 +214,14 @@ export default function DraftPage() {
           {live && windowOpen && cashable.length > 0 && (
             <div className="rounded-2xl px-4 py-2.5 mb-3 flex items-center gap-2 text-sm" style={{ background: 'rgba(229,71,43,0.06)', border: '1px solid rgba(229,71,43,0.22)', color: 'var(--ink)' }}>
               <span>💸</span>
-              <span><b>{cashable.length}</b> of your players {cashable.length === 1 ? 'is' : 'are'} out. Tap <b style={{ color: 'var(--ember)' }}>Cash In</b> next to {cashable.length === 1 ? 'it' : 'them'} in <b>My Squad</b> to claim the refund — then buy any replacement below.</span>
+              <span><b>{cashable.length}</b> of your players {cashable.length === 1 ? 'is' : 'are'} out, worth <b className="font-num" style={{ color: 'var(--ember)' }}>+${cashableTotal.toFixed(1)}M</b>. Tap <b style={{ color: 'var(--ember)' }}>Cash In</b> next to {cashable.length === 1 ? 'it' : 'them'} in <b>My Squad</b> to claim the refund — then buy any replacement below.</span>
+            </div>
+          )}
+          {/* Out mid-round: knocked out but their round is still being played — cash-in waits for the last match. */}
+          {live && windowOpen && cashable.length === 0 && pendingCash.length > 0 && (
+            <div className="rounded-2xl px-4 py-2.5 mb-3 flex items-center gap-2 text-sm" style={{ background: 'rgba(10,27,51,0.03)', border: '1px solid rgba(10,27,51,0.1)', color: 'var(--ink-2)' }}>
+              <span>⏳</span>
+              <span><b>{pendingCash.length}</b> of your players {pendingCash.length === 1 ? 'is' : 'are'} out. <b>Cash In opens</b> once the round's last match is over — the refund is shown in <b>My Squad</b>.</span>
             </div>
           )}
           {live && windowOpen && cashable.length === 0 && openCount > 0 && (
@@ -210,7 +230,7 @@ export default function DraftPage() {
               <span>You have <b>{openCount}</b> open slot{openCount === 1 ? '' : 's'} and <b className="font-num" style={{ color: 'var(--blue)' }}>${liveBud.toFixed(1)}M</b> to spend. Tap <b style={{ color: 'var(--green)' }}>+ Buy</b> on any still-alive player — any tier.</span>
             </div>
           )}
-          {live && windowOpen && cashable.length === 0 && openCount === 0 && (
+          {live && windowOpen && cashable.length === 0 && pendingCash.length === 0 && openCount === 0 && (
             <div className="rounded-2xl px-4 py-2.5 mb-3 flex items-center gap-2 text-sm" style={{ background: 'rgba(18,161,80,0.06)', border: '1px solid rgba(18,161,80,0.2)', color: 'var(--ink-2)' }}>
               <span>✅</span>
               <span>All your players are still in the draw — nothing to cash in yet.</span>
@@ -515,6 +535,7 @@ export default function DraftPage() {
                 const isVice = viceCaptain === id;
                 const isNew = isUndoableBuy(id);              // freshly signed — committed but still undoable
                 const dead = !isNew && isEliminated(id);      // owned, out, not yet cashed in
+                const ready = dead && cashInReady(id);        // …and their round's last match is over → Cash In is live
                 const refund = dead ? playerRefund(id) : 0;
                 const rowBg = isNew ? 'rgba(217,154,0,0.09)' : dead ? 'rgba(229,71,43,0.06)' : isCap ? 'rgba(217,154,0,0.07)' : isVice ? 'rgba(14,111,196,0.06)' : 'rgba(10,27,51,0.03)';
                 const rowBorder = isNew ? 'rgba(217,154,0,0.55)' : dead ? 'rgba(229,71,43,0.22)' : isCap ? 'rgba(217,154,0,0.2)' : isVice ? 'rgba(14,111,196,0.2)' : 'rgba(10,27,51,0.06)';
@@ -527,10 +548,12 @@ export default function DraftPage() {
                       {isNew ? (
                         <div className="font-num text-[10px]" style={{ color: 'var(--gold)', fontWeight: 700 }}>NEW signing · ${p.price}M</div>
                       ) : dead ? (
-                        <div className="font-num text-[10px] flex items-center gap-1.5 leading-tight">
+                        <div className="font-num text-[10px] leading-tight">
                           <span style={{ color: 'var(--ember)', fontWeight: 700 }}>OUT {getPlayerExit(id) ?? '1st rd'}</span>
-                          <span style={{ color: 'var(--ink-3)' }}>·</span>
-                          <span style={{ color: 'var(--gold)', fontWeight: 700 }}>+${refund}M back</span>
+                          <span style={{ color: 'var(--ink-3)' }}> · </span>
+                          <span style={{ color: 'var(--gold)', fontWeight: 700 }}>+${refund}M{ready ? ' back' : ''}</span>
+                          {/* Out mid-round: show the refund but say cash-in waits for the round's last match. */}
+                          {!ready && <span style={{ color: 'var(--ink-3)' }}> — cash in when the round ends</span>}
                         </div>
                       ) : (
                         <div className="font-num text-[10px]" style={{ color: 'var(--ink-2)' }}>${p.price}M · 🎾{p.surface[SURF]}% {SURFACE.label}</div>
@@ -538,8 +561,10 @@ export default function DraftPage() {
                     </div>
                     {isNew ? (
                       <button onClick={() => undoBuy(id)} aria-label={`Undo signing ${p.name}`} className="text-[11px] font-bold px-2.5 h-9 rounded-lg shrink-0 transition-transform active:scale-90" style={{ background: 'rgba(10,27,51,0.05)', color: 'var(--ink-2)', border: '1px solid rgba(10,27,51,0.12)' }}>Undo</button>
-                    ) : dead && windowOpen ? (
+                    ) : ready && windowOpen ? (
                       <button onClick={e => doCashIn(id, e)} aria-label={`Cash in ${p.name} for $${refund}M`} className="text-[11px] font-bold px-2.5 h-9 rounded-lg shrink-0 transition-transform active:scale-90 whitespace-nowrap" style={{ background: 'var(--ember)', color: '#fff', border: '1px solid var(--ember)' }}>Cash In +${refund}M</button>
+                    ) : dead && !ready ? (
+                      <span aria-label="Cash in opens when the round ends" className="text-[10px] font-bold px-2 h-9 rounded-lg shrink-0 flex items-center whitespace-nowrap" style={{ background: 'rgba(10,27,51,0.05)', color: 'var(--ink-3)', border: '1px solid rgba(10,27,51,0.1)' }}>⏳ round on</span>
                     ) : (
                       <>
                         {!dead && isCap && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0" style={{ background: 'var(--gold)', color: '#fff' }}>C</span>}
@@ -587,7 +612,14 @@ export default function DraftPage() {
                   </p>
                 </>
               ) : cashable.length > 0 ? (
-                <div className="w-full py-2.5 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(229,71,43,0.08)', color: 'var(--ember)', border: '1px solid rgba(229,71,43,0.28)' }}>💸 Cash in {cashable.length} eliminated player{cashable.length === 1 ? '' : 's'}</div>
+                <div className="w-full py-2.5 px-3 rounded-xl text-sm text-center" style={{ background: 'rgba(229,71,43,0.08)', color: 'var(--ember)', border: '1px solid rgba(229,71,43,0.28)' }}>
+                  <div className="font-bold">💸 Cash in {cashable.length} player{cashable.length === 1 ? '' : 's'} · <span className="font-num">+${cashableTotal.toFixed(1)}M</span> total</div>
+                  {pendingCash.length > 0 && (
+                    <div className="text-[11px] font-semibold mt-0.5" style={{ color: 'var(--ink-3)' }}>+{pendingCash.length} more once {pendingCash.length === 1 ? 'its' : 'their'} round ends</div>
+                  )}
+                </div>
+              ) : pendingCash.length > 0 ? (
+                <div className="w-full py-2.5 px-3 rounded-xl font-semibold text-sm text-center" style={{ background: 'rgba(10,27,51,0.04)', color: 'var(--ink-2)', border: '1px solid rgba(10,27,51,0.1)' }}>⏳ {pendingCash.length} player{pendingCash.length === 1 ? '' : 's'} out — cash in opens when the round's last match is over</div>
               ) : openCount > 0 ? (
                 <div className="w-full py-2.5 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(217,154,0,0.1)', color: 'var(--gold)', border: '1px solid rgba(217,154,0,0.28)' }}>🛒 {openCount} open slot{openCount === 1 ? '' : 's'} · ${liveBud.toFixed(1)}M to spend</div>
               ) : (
