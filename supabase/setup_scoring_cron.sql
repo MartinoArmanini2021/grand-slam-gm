@@ -18,10 +18,10 @@
 --      it's only ever used here, server-side; never put it in the app.
 --   4. Run.
 --
+-- ⚠️ PREREQUISITE: run supabase/app_config.sql first (this body calls active_tournament_id()).
 -- TO STOP IT (after the tournament): select cron.unschedule('recompute-scores');
--- TO CHANGE THE TOURNAMENT: update the body's tournamentId AND the Edge Function's
---   default (supabase/functions/recompute-score/index.ts) so they always match
---   ACTIVE_TOURNAMENT_ID in src/data/tournamentConfig.ts.
+-- TO CHANGE THE TOURNAMENT: you no longer edit this file — just update the ONE app_config row
+--   (see supabase/app_config.sql / docs/SWITCHING_TOURNAMENTS.md). This cron reads it every run.
 -- ─────────────────────────────────────────────────────────────────────────────
 
 create extension if not exists pg_cron;
@@ -41,9 +41,9 @@ select cron.schedule(
       'Content-Type',  'application/json',
       'Authorization', 'Bearer <SERVICE_ROLE_KEY>'
     ),
-    -- Explicit id (do NOT rely on the function default) so scoring always targets the
-    -- active tournament even if the default drifts.
-    body    := '{"tournamentId":"montreal_2026"}'::jsonb
+    -- Single source of truth: the active tournament comes from public.app_config, so this cron
+    -- and the ingest cron can never target different tournaments (see supabase/app_config.sql).
+    body    := jsonb_build_object('tournamentId', public.active_tournament_id())
   );
   $$
 );

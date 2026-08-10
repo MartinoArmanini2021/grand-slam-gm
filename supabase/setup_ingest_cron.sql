@@ -17,9 +17,12 @@
 --      (Project Settings → API → service_role secret). Keep it secret — server-side only.
 --   4. Run.
 --
+-- ⚠️ PREREQUISITE: run supabase/app_config.sql first (this body calls active_tournament_id()).
 -- TO STOP IT (after the tournament):  select cron.unschedule('ingest-draw');
--- TO CHANGE THE TOURNAMENT: update the body's tournamentId AND the Edge Function's
---   TOURNAMENT_ID/WIKI_PAGE so they match ACTIVE_TOURNAMENT_ID in tournamentConfig.ts.
+-- TO CHANGE THE TOURNAMENT: update the ONE app_config row (see supabase/app_config.sql). This cron
+--   reads it every run. You still redeploy ingest-draw built for the new tournament's field +
+--   Wikipedia page — and it now REFUSES to ingest a tournament it wasn't built for, so a mismatch
+--   is a loud error in ingest_health, never silent corruption. Full steps: docs/SWITCHING_TOURNAMENTS.md.
 -- ─────────────────────────────────────────────────────────────────────────────
 
 create extension if not exists pg_cron;
@@ -39,7 +42,8 @@ select cron.schedule(
       'Content-Type',  'application/json',
       'Authorization', 'Bearer <SERVICE_ROLE_KEY>'
     ),
-    body    := '{"tournamentId":"montreal_2026"}'::jsonb
+    -- Single source of truth: the active tournament comes from public.app_config (see app_config.sql).
+    body    := jsonb_build_object('tournamentId', public.active_tournament_id())
   );
   $$
 );
@@ -49,4 +53,4 @@ select cron.schedule(
 --   select net.http_post(
 --     url := 'https://mrdmlfumdsxufifjulbt.supabase.co/functions/v1/ingest-draw',
 --     headers := jsonb_build_object('Content-Type','application/json','Authorization','Bearer <SERVICE_ROLE_KEY>'),
---     body := '{"tournamentId":"montreal_2026"}'::jsonb );
+--     body := jsonb_build_object('tournamentId', public.active_tournament_id()) );

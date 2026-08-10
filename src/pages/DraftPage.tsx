@@ -142,7 +142,11 @@ export default function DraftPage() {
 
   const th = 'text-left px-2 py-2 text-[11px] font-bold uppercase tracking-wide';
 
-  const roundLabel = currentRoundIndex < ROUNDS.length ? ROUNDS[currentRoundIndex].label : 'Tournament complete';
+  // The market status chip — derived from RESULTS (liveRoundStatus), NOT the frozen currentRoundIndex
+  // (pinned at 0 in production, which made this permanently read "Round of 64" whatever round it was).
+  const roundLabel = liveSt
+    ? `${ROUNDS.find(r => r.id === liveSt.round)?.short ?? liveSt.round} ${liveSt.underway ? 'underway' : 'up next'}`
+    : 'Tournament complete';
 
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-3 pt-6 pb-6">

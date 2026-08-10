@@ -246,7 +246,16 @@ Deno.serve(async (req) => {
     let body: { page?: string; tournamentId?: string; overrides?: Override[]; clearOverrides?: { round: string; slot: number }[] } = {};
     try { body = await req.json(); } catch { /* cron/no-body invoke */ }
     const page = body.page ?? WIKI_PAGE;
-    tournamentId = body.tournamentId ?? TOURNAMENT_ID;
+    // SAFETY: this function is BUILT for one tournament — its field (name resolution) + WIKI_PAGE are
+    // baked in at deploy. So it may only ingest the tournament it was built for. If the cron/config
+    // asks for a different one (e.g. app_config was flipped to Cincinnati but this wasn't redeployed
+    // yet), REFUSE loudly rather than fetch the wrong draw and write it under the wrong id. A custom
+    // body.page (manual re-parse of the same event) is still allowed.
+    const requestedId = body.tournamentId ?? TOURNAMENT_ID;
+    if (requestedId !== TOURNAMENT_ID) {
+      throw new Error(`ingest-draw is deployed for "${TOURNAMENT_ID}" but was asked to ingest "${requestedId}". Redeploy it built for "${requestedId}" (its field + WIKI_PAGE) before switching app_config.active_tournament_id.`);
+    }
+    tournamentId = requestedId;
 
     const wikiUrl = `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(page)}`
       + `&prop=wikitext&formatversion=2&format=json&origin=*`;

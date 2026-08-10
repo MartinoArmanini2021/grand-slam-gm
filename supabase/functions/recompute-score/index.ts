@@ -94,12 +94,17 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const db = createClient(url, serviceKey);
 
-    // Optional { tournamentId } body; default to the active tournament id.
-    // Default MUST equal ACTIVE_TOURNAMENT_ID in src/data/tournamentConfig.ts — keep in
-    // sync when switching tournaments (this file is standalone Deno, so it can't import it).
-    // The cron should also post {"tournamentId":"montreal_2026"} explicitly (see docs/GO_LIVE.md).
-    let tournamentId = 'montreal_2026';
-    try { const b = await req.json(); if (b?.tournamentId) tournamentId = b.tournamentId; } catch { /* no body */ }
+    // Which tournament to score. The cron posts it explicitly (from public.app_config, the single
+    // source of truth). If a bodyless manual invoke omits it, fall back to app_config too — so this
+    // default can never drift from the crons. The hardcoded fallback guards a missing config row.
+    // (Scoring only reads matches/entries by tournament_id — no field/page coupling — so it's always
+    // safe to score whatever the config says.)
+    let tournamentId: string | undefined;
+    try { const b = await req.json(); tournamentId = b?.tournamentId; } catch { /* no body */ }
+    if (!tournamentId) {
+      const { data: cfg } = await db.from('app_config').select('value').eq('key', 'active_tournament_id').maybeSingle();
+      tournamentId = cfg?.value ?? 'montreal_2026';
+    }
 
     // Results the server holds → the rounds that are actually "done".
     const { data: matchRows, error: mErr } = await db
