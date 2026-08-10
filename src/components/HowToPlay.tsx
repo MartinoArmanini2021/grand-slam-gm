@@ -7,9 +7,9 @@ const scoringLine = ROUNDS.map(r => `${r.short} +${r.points}`).join(', ');
 
 const RULES: { icon: string; title: string; body: string }[] = [
   { icon: '🎾', title: 'Draft 10 players', body: 'You get $150M to sign a 10-player squad — exactly 2 Platinum, 3 Gold and 5 Silver. Stars cost more, so choose: two galácticos and bargain support, or a deeper balanced squad.' },
-  { icon: '📈', title: 'Win rounds, score points', body: `Every round your player wins scores — ${scoringLine}. Lower-ranked winners score more per win.` },
+  { icon: '📈', title: 'Win rounds, score points', body: `Every round your player wins scores — ${scoringLine}. Deeper rounds are worth far more.` },
   { icon: '👑', title: 'Captain & Vice-Captain', body: 'Two of your squad lead on court: your Captain scores ×2 and your Vice-Captain ×1.5. The other 8 sit on the bench (they still score ×1). Re-pick your two leaders each round.' },
-  { icon: '🔥', title: 'Upset bonus', body: 'When a lower-ranked player beats a higher seed, you earn bonus points (bigger in the later rounds). Backing the right underdog pays off.' },
+  { icon: '🔥', title: 'Upset bonus', body: 'Beat a higher-ranked player and your win is multiplied — the bigger the ranking gap, the bigger the multiplier (up to ×2). A favourite winning still scores the full base. Back the right underdog and it pays off.' },
   { icon: '💸', title: 'Elimination = money back', body: 'When your player is knocked out you get part of their price back — more the further they reached — and can spend it to transfer in someone still alive.' },
   { icon: '🔒', title: 'Transfers close before the final', body: 'Reinforce your squad through the semi-finals — a quarter-final casualty can still be replaced for the semis. Only the final squad is locked, so plan ahead.' },
   { icon: '🤝', title: 'Play with friends', body: 'Sign up (it\'s free), then go to League → Private → Create a league and share its 6-letter code. Your friends sign up, open League → Private, and enter the code — now you\'re all on the same leaderboard.' },

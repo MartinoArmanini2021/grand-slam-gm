@@ -13,7 +13,7 @@ const FIELDS: Record<string, unknown> = {
 const rawField = FIELDS[ACTIVE_TOURNAMENT_ID] ?? montrealField;
 
 // ── Real National Bank Open 2026 (Montréal) men's singles field ──────────────
-// The 74 entrants of the actual Montréal field (see montreal2026Field.json —
+// The 77 entrants of the actual Montréal field (see montreal2026Field.json —
 // matched from the official nationalbankopen.com entry list to the 300-player
 // stats pool; Sinner/Alcaraz/Djokovic all skipped the event, so Zverev leads).
 // Current ATP rank + 2026 form/surface stats are overlaid from the pool below.

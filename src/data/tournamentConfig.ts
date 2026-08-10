@@ -120,7 +120,7 @@ export interface Tournament {
 export const TOURNAMENTS: Record<string, Tournament> = {
   // Active tournament: the National Bank Open (Montréal) — run LIVE. Results arrive
   // from the feed/admin as the tournament is played; nothing is pre-baked. The real
-  // 74-entrant Montréal field (montreal2026Field.json) is the draftable roster; only
+  // 77-entrant Montréal field (montreal2026Field.json) is the draftable roster; only
   // the live match RESULTS/pairings are still pending until the draw publishes.
   // Montréal hard court: green surround (stands), blue playing surface.
   montreal_2026: {

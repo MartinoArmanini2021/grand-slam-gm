@@ -1,3 +1,8 @@
+> **⚠️ Status is partly out of date (Aug 4).** For the current, code‑verified status and the
+> prioritised per‑item action plan, see **[ACTION_PLAN_2026-08.md](./ACTION_PLAN_2026-08.md)**.
+> Notably now DONE (this doc still shows open): CI, off‑machine git remote, server‑authoritative
+> scoring, RLS hardening; the test count is **300**, not 247. This doc is kept for the product/architecture background.
+
 # Grand Slam GM — Project Status & Roadmap
 
 **A fantasy‑tennis web app. This document is the single source of truth on what the app is, what has been built, its current health, and the plan to make it excellent for the US Open.**

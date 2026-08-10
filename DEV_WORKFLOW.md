@@ -40,7 +40,7 @@ Run these before any deploy — they cover the draft, transfers, captain/vice, t
 150-game fuzz of the full play loop, so a regression in the game dynamics fails here, not in front of users:
 
 ```bash
-npm test        # 247 unit/integration tests
+npm test        # 300 unit/integration tests
 npm run typecheck
 npm run build   # the deploy scripts run this too and abort on failure
 ```

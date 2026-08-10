@@ -138,6 +138,21 @@ declare
 begin
   if v_uid is null then raise exception 'Not authenticated'; end if;
 
+  -- RATE GUARD (defense-in-depth vs a save FLOOD — the Aug-2026 save-storm, ~89M expensive
+  -- conflicts/24h from a stuck tab). A transaction-scoped advisory lock keyed on the user means
+  -- only ONE save_entry may run at a time per account. A burst of concurrent saves (a stuck tab,
+  -- a second device, or a malicious direct caller with a valid JWT) is rejected HERE — cheaply,
+  -- before the expensive `SELECT … FOR UPDATE` and the matches scan below — instead of piling up
+  -- expensive row locks and exhausting the pool. Auto-released at transaction end.
+  --   Why errcode 40001: the client already treats 40001 as a "conflict → converge on the cloud
+  --   copy" and trips its circuit breaker after a few in a row. So a legit two-tab race converges
+  --   safely (last-write-wins, as today), and a real flood self-limits via the client breaker —
+  --   with NO client change. A single well-behaved tab (which serialises its own saves) never hits
+  --   this, so normal play is completely unaffected.
+  if not pg_try_advisory_xact_lock(hashtext('save_entry:' || v_uid::text)::bigint) then
+    raise exception 'A save is already in progress for your account — converging' using errcode = '40001';
+  end if;
+
   -- B3: pin the entry to the canonical PUBLIC league and reject any other p_league. Entries
   -- only ever live in the public league (private-league boards join on user_id, not on the
   -- entry's league_id), so accepting an arbitrary p_league would let a client create a SECOND
