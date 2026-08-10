@@ -20,7 +20,25 @@ const BRANCH = PREVIEW ? 'dev' : 'main';               // Cloudflare treats non-
 const TARGET_URL = PREVIEW ? 'https://dev.grand-slam-gm.pages.dev' : 'https://grand-slam-gm.pages.dev';
 const LABEL = PREVIEW ? 'DEV PREVIEW' : 'PRODUCTION';
 const run = (cmd) => execSync(cmd, { stdio: 'inherit' });
+const git = (cmd) => execSync(`git ${cmd}`, { encoding: 'utf8' }).trim();
 console.log(`\n▶ Deploying to ${LABEL}  (branch: ${BRANCH} · ${TARGET_URL})`);
+
+// 0) SAFETY: a PRODUCTION deploy must ship a known commit — so "what's live" always maps to a
+//    git commit + a release tag we can restore to. Refuse to publish an uncommitted working tree
+//    (closes the footgun where a half-finished edit ships via wrangler's --commit-dirty). Preview
+//    deploys are exempt; --allow-dirty is the emergency-hotfix escape hatch. (dist / build info are
+//    gitignored, so a fresh build never trips this — only real tracked changes do.)
+const ALLOW_DIRTY = process.argv.includes('--allow-dirty');
+if (!PREVIEW && !ALLOW_DIRTY) {
+  const dirty = git('status --porcelain');
+  if (dirty) {
+    console.error('\n✗ Uncommitted changes — a PRODUCTION deploy must ship a committed version.');
+    console.error('  Commit (or stash) first, then deploy — so the live site always matches a git');
+    console.error('  commit + release tag. For a genuine emergency, re-run with --allow-dirty.');
+    console.error('\n  Changed files:\n' + dirty.split('\n').map((l) => `    ${l}`).join('\n'));
+    process.exit(1);
+  }
+}
 
 // 1) No stale dist can survive.
 rmSync('dist', { recursive: true, force: true });
@@ -56,3 +74,21 @@ for (let i = 0; i < ATTEMPTS && !served; i++) {
 }
 if (!served) { console.error(`\n✗ ${LABEL} did NOT serve ${bundle} within ~${ATTEMPTS * 3}s — likely a stale/failed deploy. Investigate (or it's just slow propagation — re-check the live bundle).`); process.exit(1); }
 console.log(`\n✓ Deployed and verified: ${LABEL} is serving ${bundle}.`);
+
+// 7) TAG the release (PRODUCTION only) — a permanent, pushed "known-good" restore point. The tree
+//    was verified clean above, so HEAD is exactly what's live. To restore later: `git checkout
+//    <tag> && npm run deploy` rebuilds that version back through the full test gate. Best-effort —
+//    a tag failure never fails an already-live deploy. See docs/ROLLBACK.md.
+if (!PREVIEW) {
+  try {
+    const stamp = new Date().toISOString().replace(/\.\d+Z$/, 'Z').replace(/[:]/g, '').replace(/-/g, '').replace('T', '-'); // 20260810-113000Z
+    const tag = `release-${stamp}`;
+    const sha = git('rev-parse --short HEAD');
+    execSync(`git tag -a ${tag} -m "Live bundle ${bundle} · commit ${sha}"`, { stdio: 'ignore' });
+    execSync(`git push -q origin ${tag}`, { stdio: 'ignore' });
+    console.log(`\n🏷  Release tagged ${tag} (bundle ${bundle} · commit ${sha}) and pushed — your restore point.`);
+  } catch (e) {
+    console.warn(`\n⚠ Could not create/push the release tag (deploy is still live): ${e.message}`);
+    console.warn('  You can tag manually: git tag -a release-<stamp> -m "..." && git push origin --tags');
+  }
+}
