@@ -133,6 +133,7 @@ export interface GameStore {
   initialSquad: string[]; // the squad as drafted (before any transfers) — for history
   transfers: Transfer[];  // mid-tournament replacements you've made, in order
   cashedIn: string[];     // eliminated players you've CASHED IN — money is manual, credited on cash-in
+  finalized: boolean;     // "Lock Squad" — the manager confirmed their current buys, hiding Undo early (persisted)
   captain: string | null;
   viceCaptain: string | null;
   captainHistory: { round: RoundId; playerId: string }[];
@@ -158,6 +159,7 @@ export interface GameStore {
   cashInPlayer: (id: string) => void; // claim an eliminated player's refund (removes them from the squad)
   buyPlayer: (id: string) => void;    // buy a replacement into an open (cashed-in) slot — any tier
   undoBuy: (id: string) => void;      // reverse a just-bought player while its round hasn't started (unlocked)
+  finalizeSquad: () => void;          // "Lock Squad" — confirm current buys now (persisted; auto-clears on a new buy)
   playNextRound: () => void;
   continueToNextRound: () => void;
   setActiveTab: (tab: GameStore['activeTab']) => void;
@@ -179,6 +181,7 @@ export const useGameStore = create<GameStore>()(
       initialSquad: [],
       transfers: [],
       cashedIn: [],
+      finalized: false,
       captain: null,
       viceCaptain: null,
       captainHistory: [],
@@ -376,7 +379,8 @@ export const useGameStore = create<GameStore>()(
         const out = openSlots[0]; // backfill the oldest open slot (which cashed player is arbitrary)
         const newTransfers = [...transfers, { out, in: id, round }];
         const newTeam = [...myTeam, id];
-        set({ myTeam: newTeam, transfers: newTransfers, budget: liveBudget(initialSquad, newTransfers, newTeam, cashedIn) });
+        // A fresh signing is unconfirmed → clear any prior "Lock Squad" so it shows as undoable.
+        set({ myTeam: newTeam, transfers: newTransfers, budget: liveBudget(initialSquad, newTransfers, newTeam, cashedIn), finalized: false });
         track('transfer_made', { out, in: id, round });
       },
 
@@ -401,6 +405,13 @@ export const useGameStore = create<GameStore>()(
           viceCaptain: viceCaptain === id ? null : viceCaptain,
         });
         track('transfer_undone', { in: id, round: t.round });
+      },
+
+      // "Lock Squad": the manager confirms their current unlocked buys now, hiding Undo until the
+      // round starts (or a new buy re-opens it). Persisted (partialize) so the lock survives a reload.
+      finalizeSquad: () => {
+        if (get().phase === 'draft') return; // draft uses finalizeDraft; this is the live-market lock
+        set({ finalized: true });
       },
 
       playNextRound: () => {
@@ -511,6 +522,7 @@ export const useGameStore = create<GameStore>()(
         initialSquad: [],
         transfers: [],
         cashedIn: [],
+        finalized: false,
         captain: null,
         viceCaptain: null,
         captainHistory: [],
@@ -538,6 +550,7 @@ export const useGameStore = create<GameStore>()(
       // back to Home on reload (see below).
       partialize: (s) => ({
         phase: s.phase, myTeam: s.myTeam, initialSquad: s.initialSquad, transfers: s.transfers, cashedIn: s.cashedIn,
+        finalized: s.finalized,
         captain: s.captain, viceCaptain: s.viceCaptain,
         captainHistory: s.captainHistory, viceCaptainHistory: s.viceCaptainHistory, budget: s.budget,
         budgetReturns: s.budgetReturns, currentRoundIndex: s.currentRoundIndex,

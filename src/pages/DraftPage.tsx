@@ -29,16 +29,16 @@ const SURF = TOURNAMENT.surface;
 const SORT_LABEL: Record<SortKey, string> = { ranking: '# Rank', surface: `${SURFACE.label} %`, price: '$ Price' };
 
 export default function DraftPage() {
-  const { myTeam, captain, viceCaptain, budget, phase, currentRoundIndex, initialSquad, transfers, cashedIn, removePlayer, cashInPlayer, buyPlayer, undoBuy, setCaptain, setViceCaptain, finalizeDraft, openPlayer, setActiveTab } = useGameStore();
+  const { myTeam, captain, viceCaptain, budget, phase, currentRoundIndex, initialSquad, transfers, cashedIn, finalized, removePlayer, cashInPlayer, buyPlayer, undoBuy, setCaptain, setViceCaptain, finalizeDraft, finalizeSquad, openPlayer, setActiveTab } = useGameStore();
   const [sort, setSort] = useState<SortKey>('ranking');
   const [search, setSearch] = useState('');
   const [tierFilter, setTierFilter] = useState<Tier | null>(null);
   const [confirm, setConfirm] = useState<Player | null>(null);
   const [buyConfirm, setBuyConfirm] = useState<Player | null>(null); // LIVE market buy → confirm → buy
   const [showTransferHelp, setShowTransferHelp] = useState(false);   // "How transfers work" help card
-  // Optional EARLY finalize (session only). Buys already commit on purchase and auto-lock when their
-  // round starts; this just hides the Undo controls for a manager who's sure. Not persisted.
-  const [finalized, setFinalized] = useState(false);
+  // Optional EARLY finalize ("Lock Squad"), now PERSISTED in the store (survives reload). Buys already
+  // commit on purchase and auto-lock when their round starts; this just hides the Undo controls for a
+  // manager who's sure. A new buy re-opens it (buyPlayer clears finalized).
   const [pickerOpen, setPickerOpen] = useState(false);
   const [showLocked, setShowLocked] = useState(false);
   // "Watch the players" hint — shown atop the list until the user dismisses it (persisted),
@@ -122,7 +122,7 @@ export default function DraftPage() {
     cashInPlayer(id);
     toast(`Cashed in ${getPlayer(id).name} · +$${amt}M`, 'good');
   };
-  const doBuy = (id: string) => { buyPlayer(id); setFinalized(false); toast(`Signed ${getPlayer(id).name} — you can undo until the round starts`, 'good'); };
+  const doBuy = (id: string) => { buyPlayer(id); toast(`Signed ${getPlayer(id).name} — you can undo until the round starts`, 'good'); };
 
   const sorted = useMemo(() => [...PLAYERS]
     .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()))
@@ -614,7 +614,7 @@ export default function DraftPage() {
                    starts. This lets a manager lock them in NOW (hide the Undo controls) if they're set. */
                 <>
                   <button
-                    onClick={() => setFinalized(true)}
+                    onClick={finalizeSquad}
                     className="w-full py-3 rounded-xl font-bold text-sm text-white transition-transform active:scale-[0.99]"
                     style={{ background: 'var(--blue)' }}
                   >
