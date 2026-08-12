@@ -42,6 +42,15 @@ export type LiveScores = Record<string, MatchScore>;
 // Stable identity for a match within a tournament (round + draw slot).
 export const matchKey = (round: RoundId, slot: number): string => `${round}_${slot}`;
 
+// A pairing is only real once BOTH sides are known. While the draw publishes, a pairing can be
+// (realPlayer, TBD) — and a stale/legacy result recorded against it must never score. The parser
+// no longer produces those, but a browser that recorded one before the fix still carries it in
+// persisted localStorage (results are merged, never deleted), so every consumer below re-checks
+// here. This is the single chokepoint all client scoring flows through, so the guard heals an
+// already-corrupted save instead of needing a data migration.
+const TBD_ID = 'tbd';
+export const pairingKnown = (m: LiveMatch): boolean => m.p1Id !== TBD_ID && m.p2Id !== TBD_ID;
+
 // Project the live draw + recorded winners into engine-shaped Match[]. A pairing
 // with no recorded winner is omitted, so downstream code only ever sees completed
 // matches with a real winnerId — preserving the engine's existing contract (a round
@@ -49,6 +58,7 @@ export const matchKey = (round: RoundId, slot: number): string => `${round}_${sl
 export function liveMatches(draw: LiveMatch[], results: LiveResults): Match[] {
   const out: Match[] = [];
   for (const m of draw) {
+    if (!pairingKnown(m)) continue; // half-published pairing → not a played match
     const winnerId = results[matchKey(m.round, m.slot)];
     if (!winnerId) continue;
     out.push({
@@ -68,6 +78,9 @@ export function liveMatches(draw: LiveMatch[], results: LiveResults): Match[] {
 // a round the real world hasn't finished.
 export function roundComplete(draw: LiveMatch[], results: LiveResults, round: RoundId): boolean {
   const inRound = draw.filter(m => m.round === round);
+  // A half-published pairing means the round is NOT complete — counting it as decided (off a
+  // phantom result) would let a round be "played"/scored before it has actually finished.
+  if (inRound.some(m => !pairingKnown(m))) return false;
   return inRound.length > 0 && inRound.every(m => !!results[matchKey(m.round, m.slot)]);
 }
 
@@ -77,6 +90,7 @@ export function roundComplete(draw: LiveMatch[], results: LiveResults, round: Ro
 // Player.exit field (which only describes Wimbledon) when running live.
 export function liveExit(draw: LiveMatch[], results: LiveResults, playerId: string): TournamentResult | null {
   for (const m of draw) {
+    if (!pairingKnown(m)) continue; // can't be knocked out by a match that isn't fully drawn
     if (m.p1Id !== playerId && m.p2Id !== playerId) continue;
     const winnerId = results[matchKey(m.round, m.slot)];
     if (winnerId && winnerId !== playerId) return m.round as TournamentResult;

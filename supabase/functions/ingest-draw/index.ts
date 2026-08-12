@@ -147,7 +147,8 @@ function parseBracket(
       if (p1.bold && !p2.bold) winnerId = p1.id;
       else if (p2.bold && !p1.bold) winnerId = p2.id;
       else winnerId = nextRound[slot]?.id;
-      if (winnerId === p1.id || winnerId === p2.id) results[matchKey(round, slot)] = winnerId;
+      const bothKnown = p1.id !== TBD.id && p2.id !== TBD.id;
+      if (bothKnown && (winnerId === p1.id || winnerId === p2.id)) results[matchKey(round, slot)] = winnerId;
     }
   }
   return { draw, results, meta, scores };

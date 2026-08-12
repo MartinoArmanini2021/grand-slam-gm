@@ -172,7 +172,15 @@ export function parseBracket(
       if (p1.bold && !p2.bold) winnerId = p1.id;
       else if (p2.bold && !p1.bold) winnerId = p2.id;
       else winnerId = nextRound[slot]?.id;
-      if (winnerId === p1.id || winnerId === p2.id) results[matchKey(round, slot)] = winnerId;
+      // A HALF-PUBLISHED pairing has no result — ever. In display mode (includeIncomplete) a
+      // pairing can be (realPlayer, TBD) while the draw is still publishing, and the advancement
+      // fallback above would read the next round and declare the known side the "winner" of a
+      // match that has not been played. That phantom win scored real points on the client (the
+      // server, which never includes incomplete pairings, awarded none) — the two-different-scores
+      // bug. The pairing is still returned for the bracket UI; it simply has no winner until both
+      // sides are known.
+      const bothKnown = p1.id !== TBD.id && p2.id !== TBD.id;
+      if (bothKnown && (winnerId === p1.id || winnerId === p2.id)) results[matchKey(round, slot)] = winnerId;
     }
   }
   return { draw, results, meta, scores };
