@@ -1,10 +1,10 @@
 # Grand Slam GM
 
-A Grand Slam fantasy tennis game — be the GM of your own squad. Draft a 6-player squad under a $100M budget,
-pick a captain each round, score points as your players win, earn upset bonuses
-when underdogs beat higher seeds, and make transfers until the quarter-finals.
-Compete against simulated league managers, and see how the format would have
-played out across the last four real Grand Slams.
+A Grand Slam fantasy tennis game — be the GM of your own squad. Draft a 10-player squad under a $150M budget
+(an exact tier quota of 2 Platinum · 3 Gold · 5 Silver), name a captain (×2) and vice-captain (×1.5) each round,
+score points as your players win, earn upset bonuses when underdogs beat higher seeds, and make transfers
+between rounds through the semi-finals. Compete against simulated league managers, and see how the format
+would have played out across the last four real Grand Slams.
 
 ## Run locally
 ```bash
