@@ -3,7 +3,8 @@ import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { useLeagueBoard } from '../data/leagueBoard';
 import { getPlayer } from '../data/players';
-import { ROUNDS, playerRoundPoints, playedScoredRounds, liveScore, getPlayerExit, isInLiveDraw, tournamentStarted } from '../data/tournament';
+import { ROUNDS, playerRoundPoints, playedScoredRounds, getPlayerExit, isInLiveDraw, tournamentStarted } from '../data/tournament';
+import { useMyScore } from '../data/useMyScore';
 import { lastName, fmtScore } from '../data/format';
 import SquadCourt from '../components/SquadCourt';
 import PlayerAvatar from '../components/PlayerAvatar';
@@ -29,8 +30,9 @@ export default function TeamPage() {
   const { teamName, teamEmblem, username } = useProfile();
   // Real league members come from the public board (everyone is a member of it).
   const board = useLeagueBoard(null);
-  // Your own total, derived live from results — score per-match like the leaderboard.
-  const myScore = liveScore(initialSquad, transfers, captainHistory, viceCaptainHistory);
+  // Your own total — the server-authoritative score (matches your leaderboard row and the
+  // header badge), with the instant client projection as a fallback until it lands.
+  const { score: myScore } = useMyScore();
 
   if (viewTeam === 'you') {
     return (
@@ -210,7 +212,10 @@ function PointsByRound({ initialSquad, transfers, captainHistory, viceCaptainHis
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.08)' }}>
       <div className="px-4 py-3 flex items-center justify-between gap-2 flex-wrap" style={{ borderBottom: '1px solid rgba(10,27,51,0.06)' }}>
-        <h2 className="text-sm font-bold" style={{ color: 'var(--ink)' }}>Points by round</h2>
+        <div className="min-w-0">
+          <h2 className="text-sm font-bold" style={{ color: 'var(--ink)' }}>Points by round</h2>
+          <p className="text-[10px] mt-0.5" style={{ color: 'var(--ink-3)' }}>Live points — the official total updates every few minutes.</p>
+        </div>
         <div className="flex items-center gap-2.5 text-[10px]" style={{ color: 'var(--ink-3)' }}>
           <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--green)' }} />still in</span>
           <span className="flex items-center gap-1"><span className="text-[8px] font-extrabold uppercase px-1 rounded" style={{ background: 'rgba(229,71,43,0.12)', color: 'var(--ember)' }}>out</span>eliminated</span>

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useLiveStore } from '../store/liveStore';
 import { ROUNDS, liveRoundStatus, liveScoreBreakdown } from '../data/tournament';
+import { useMyScore } from '../data/useMyScore';
 import { fmtScore } from '../data/format';
 import BracketTree from '../components/BracketTree';
 import { TOURNAMENT } from '../data/tournamentConfig';
@@ -20,7 +21,10 @@ export default function TournamentPage() {
     () => liveScoreBreakdown(initialSquad, transfers, captainHistory, viceCaptainHistory),
     [draw, results, initialSquad, transfers, captainHistory, viceCaptainHistory],
   );
-  const myScore = roundScores.reduce((a, b) => a + b.points, 0);
+  // The headline total is the server-authoritative score (matches the leaderboard); the
+  // per-round breakdown below is the live client projection. At the finished state — the only
+  // place this total shows — the recompute has converged, so they agree.
+  const { score: myScore } = useMyScore();
 
   // The round in focus for the status box: the earliest UNFINISHED round — Underway if it already
   // has results, Up Next if its predecessor is done and it hasn't started. (draw/results are

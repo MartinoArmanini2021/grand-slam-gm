@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useMemo, Fragment } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { useLiveStore } from '../store/liveStore';
-import { ROUNDS, roundHasResult, tournamentStarted, liveScore, liveBudget, liveRoundStatus } from '../data/tournament';
+import { ROUNDS, roundHasResult, tournamentStarted, liveBudget, liveRoundStatus } from '../data/tournament';
+import { useMyScore } from '../data/useMyScore';
 import { isSquadValid, SQUAD_SIZE } from '../data/squadRules';
 import { fmtScore } from '../data/format';
 import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
@@ -19,7 +20,7 @@ const TEAM_TARGET = SQUAD_SIZE;
 export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?: boolean; onWelcomeClose?: () => void } = {}) {
   const {
     phase, myTeam, currentRoundIndex,
-    initialSquad, transfers, cashedIn, captainHistory, viceCaptainHistory,
+    initialSquad, transfers, cashedIn,
     setActiveTab, openTeam,
   } = useGameStore();
   const { teamName, teamEmblem } = useProfile();
@@ -29,10 +30,10 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
   // players (incl. opening-round exits) are already in the budget, no "play the round" step.
   const draw = useLiveStore(s => s.draw);
   const results = useLiveStore(s => s.results);
-  const myScore = useMemo(
-    () => liveScore(initialSquad, transfers, captainHistory, viceCaptainHistory),
-    [draw, results, initialSquad, transfers, captainHistory, viceCaptainHistory],
-  );
+  // Score = the server-authoritative total (matches the leaderboard row exactly); `pending` is
+  // any live points not yet in that official total, surfaced as a "+N live" hint so a just-won
+  // point is visibly counted while the every-few-minutes recompute catches up.
+  const { score: myScore, pending } = useMyScore();
   const budget = useMemo(
     () => liveBudget(initialSquad, transfers, myTeam, cashedIn),
     [draw, results, initialSquad, transfers, myTeam, cashedIn],
@@ -81,7 +82,7 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
         </div>
 
         <div className="grid grid-cols-3 gap-2 shrink-0">
-          <StatCard label="Score" value={fmtScore(myScore)} unit="points" color="var(--blue)" />
+          <StatCard label="Score" value={fmtScore(myScore)} unit={pending > 0 ? `+${fmtScore(pending)} live` : 'points'} color="var(--blue)" />
           <StatCard label="Budget" value={`$${budget.toFixed(1)}M`} unit="to spend" color="var(--ink)" />
           <StatCard
             label="Squad"

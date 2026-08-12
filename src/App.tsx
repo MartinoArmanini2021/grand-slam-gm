@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useGameStore } from './store/gameStore';
-import { useLiveStore } from './store/liveStore';
 import { track } from './data/analytics';
-import { ROUNDS, liveScore, liveRoundStatus } from './data/tournament';
+import { ROUNDS, liveRoundStatus } from './data/tournament';
+import { useMyScore } from './data/useMyScore';
 import { fmtScore } from './data/format';
 import HomePage from './pages/HomePage';
 import DraftPage from './pages/DraftPage';
@@ -23,6 +23,7 @@ import TournamentSwitcher from './components/TournamentSwitcher';
 import UserProfile from './components/UserProfile';
 import ErrorBoundary from './components/ErrorBoundary';
 import CloudSync from './components/CloudSync';
+import ScoreSync from './components/ScoreSync';
 import LiveFeed from './components/LiveFeed';
 import { useAuth } from './auth/AuthProvider';
 import { useProfile, markTournamentJoined } from './store/profileStore';
@@ -43,16 +44,11 @@ const TABS = [
 ] as const;
 
 export default function App() {
-  const { activeTab, setActiveTab, phase, initialSquad, transfers, captainHistory, viceCaptainHistory } = useGameStore();
-  // Score + current round are LIVE-derived (from results), never the frozen currentRoundIndex /
-  // the store's myScore (which only the never-run manual "play round" flow updates).
-  const draw = useLiveStore(s => s.draw);
-  const results = useLiveStore(s => s.results);
-  const liveTotal = useMemo(
-    () => liveScore(initialSquad, transfers, captainHistory, viceCaptainHistory),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [draw, results, initialSquad, transfers, captainHistory, viceCaptainHistory],
-  );
+  const { activeTab, setActiveTab, phase } = useGameStore();
+  // The header badge shows the SERVER-authoritative total (the same number the leaderboard shows),
+  // with the instant client projection as a fallback — see useMyScore. useMyScore subscribes to the
+  // live draw/results, so `currentRound` below still re-derives the moment a result lands.
+  const { score: liveTotal } = useMyScore();
   const leaderStatus = liveRoundStatus();
   const currentRound = leaderStatus ? ROUNDS.find(r => r.id === leaderStatus.round) ?? null : null;
   const [showRules, setShowRules] = useState(() => !seenRules());
@@ -151,6 +147,9 @@ export default function App() {
       {/* CloudSync is mounted for every signed-in session — including during the gate —
           so entryHydrated resolves and the gate can make its decision. */}
       <CloudSync />
+      {/* ScoreSync keeps the authoritative leaderboard score fresh app-wide (scoreStore), so the
+          header badge, Home and the Team page can never disagree with the leaderboard row. */}
+      <ScoreSync />
       {/* LiveFeed pulls the draw + results for EVERY signed-in user (not just the admin),
           so the bracket and live scoring populate for everyone once play begins. */}
       <LiveFeed />

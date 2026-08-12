@@ -1,7 +1,7 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 -- TURN ON AUTHORITATIVE (anti-cheat) SCORING for the live tournament.
 --
--- WHAT THIS DOES: every 3 minutes, Supabase calls the `recompute-score` Edge
+-- WHAT THIS DOES: every minute, Supabase calls the `recompute-score` Edge
 -- Function, which recomputes every manager's score from the OFFICIAL results in
 -- public.matches (the only trusted source) and writes public.entries.score. Clients
 -- can never write that column, so the leaderboard can't be faked.
@@ -33,7 +33,7 @@ where exists (select 1 from cron.job where jobname = 'recompute-scores');
 
 select cron.schedule(
   'recompute-scores',
-  '*/3 * * * *',                    -- every 3 minutes
+  '* * * * *',                      -- every minute (keeps the leaderboard close to the live score)
   $$
   select net.http_post(
     url     := 'https://mrdmlfumdsxufifjulbt.supabase.co/functions/v1/recompute-score',

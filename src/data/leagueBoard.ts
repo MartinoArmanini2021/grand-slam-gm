@@ -4,7 +4,8 @@ import { useProfile } from '../store/profileStore';
 import { useAuth } from '../auth/AuthProvider';
 import { useVisiblePoll } from '../hooks';
 import { findPlayer } from './players';
-import { liveBudget, liveScore } from './tournament';
+import { liveBudget } from './tournament';
+import { useMyScore } from './useMyScore';
 import { TOURNAMENT } from './tournamentConfig';
 import { publicLeagueId, fetchLeaderboard, fetchMyLeagues, type CloudBoardRow, type MyLeague } from './cloud';
 
@@ -66,6 +67,9 @@ export function useLeagueBoard(leagueId: string | null = null): BoardEntry[] {
   const { teamName, teamEmblem, username } = useProfile();
   const { user } = useAuth();
   const cloud = useCloudBoard(leagueId);
+  // Your own total — the server-authoritative score (the number everyone else sees for you),
+  // falling back to the instant client projection only before the server score lands.
+  const { score: myScore } = useMyScore();
 
   // Real other players (exclude yourself — your live local row represents you). Their
   // cloud squad is sanitized against the CURRENT roster: a foreign entry can hold a
@@ -94,17 +98,16 @@ export function useLeagueBoard(leagueId: string | null = null): BoardEntry[] {
     }));
 
   // Your OWN board row. Squad/captain/budget come from local state (fresher — reflects an
-  // edit before it has round-tripped), but the SCORE is the server-authoritative value from
-  // your own cloud entry, so your row matches exactly what everyone else sees for you (the
-  // client's local myScore can lag or diverge from the server's number). Falls back to the
-  // local score only before your first cloud entry exists (pre-draft, both are 0 anyway).
-  const myCloud = user ? cloud.find(r => r.userId === user.id) : undefined;
+  // edit before it has round-tripped), and the SCORE is myScore (server-authoritative via
+  // useMyScore), so your row matches exactly what everyone else sees for you AND what the
+  // header badge / Home / Team page show. Sourced from your own entry — correct even when
+  // you're outside the top slice the public board returns.
   const board: BoardEntry[] = [
     ...cloudRows,
     ...(user ? [{
       id: 'you', name: teamName, emblem: teamEmblem, manager: username ? `@${username}` : '@you',
       motto: myTeam.length > 0 ? 'Your squad' : 'Draft your squad', color: '#0e6fc4',
-      squad: myTeam, budget: liveBudget(initialSquad, transfers, myTeam, cashedIn), score: myCloud?.score ?? liveScore(initialSquad, transfers, captainHistory, viceCaptainHistory), you: true, captain, viceCaptain,
+      squad: myTeam, budget: liveBudget(initialSquad, transfers, myTeam, cashedIn), score: myScore, you: true, captain, viceCaptain,
       initialSquad, transfers, cashedIn, captainHistory, viceCaptainHistory,
     }] : []),
   ];
