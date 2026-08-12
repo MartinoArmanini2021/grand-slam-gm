@@ -33,7 +33,24 @@ Needed for the cached public leaderboard endpoint to serve real data.
 - Supabase → SQL Editor → run [`supabase/public_leaderboard.sql`](../supabase/public_leaderboard.sql).
 
 ### 5. Turn on server scoring (cron)  — ✅ *you've done this*
-- `supabase/setup_scoring_cron.sql` — recomputes everyone's score from `matches` every 3 min.
+- `supabase/setup_scoring_cron.sql` — recomputes everyone's score from `matches`.
+  **Re-run it** to pick up the new **every-minute** schedule (was every 3 min): the whole app now
+  displays the server score, so the recompute interval is how fresh everyone's score feels.
+
+### 5a. Make Match Admin corrections reach the leaderboard  — 🔴 *required, once*
+Until this is applied, a correction made in Match Admin is saved **on that device only** — the
+leaderboard keeps the feed's (wrong) result for every other manager, and the next ingest run
+re-applies it. Two steps:
+1. **SQL Editor →** run [`supabase/admin_match_overrides.sql`](../supabase/admin_match_overrides.sql)
+   (adds `public.app_admins` + the `set_match_override` / `clear_match_override` RPCs).
+2. **Grant yourself admin:**
+   ```sql
+   insert into public.app_admins (user_id)
+   select id from auth.users where email = 'you@example.com' on conflict do nothing;
+   ```
+Match Admin then shows **`admin · corrections shared`**; corrections write `match_overrides` +
+`matches`, so they survive every future ingest run and correct everyone's score within a minute.
+Without it the console still works, but shows **`local only`** and says so.
 
 ### 5b. Turn on the results feed (the bridge — now built)  — *do this when the draw publishes (~31 Jul)*
 This is what actually fills the `matches` table, so scores move for everyone. Two steps:
@@ -81,7 +98,9 @@ steps I gave you; move the `VITE_*` env vars into Cloudflare build settings.
 
 - **Watch the scoring cron** ran (Supabase → Database → cron jobs / logs). If it stops, scores freeze.
 - **Watch for unmatched players** — if a feed player name doesn't match the roster, that drafted player
-  silently never scores. (I'm adding a health indicator + manual override for this.)
+  silently never scores. ✅ **Now surfaced in the app:** Match Admin shows a *Server ingest* panel with
+  the last run, its status, and any drafted players missing from the server's draw (they score **0**
+  until the name matches). Fix by correcting the field name, or override the affected match directly.
 - **Keep the service-role key secret** — it bypasses RLS. Never put it in the client or the repo.
 
 ---

@@ -373,3 +373,68 @@ async function guardedSave(
   console.warn('[cloud] saveEntry failed:', iErr?.message);
   return { ok: false, rev: baseRev };
 }
+
+// ── Admin: result corrections + ingest health ────────────────────────────────
+// A correction made in Match Admin must reach public.matches (what the leaderboard is
+// scored from), not just the operator's own browser. These call the SECURITY DEFINER RPCs
+// in supabase/admin_match_overrides.sql with the user's own JWT — the server checks
+// public.app_admins, so no service-role key ever reaches the client.
+
+/** Is the signed-in user a server-side admin (public.app_admins)? False for guests. */
+export async function fetchIsAdmin(): Promise<boolean> {
+  if (!supabase) return false;
+  const { data, error } = await supabase.rpc('is_admin');
+  // The RPC is absent until admin_match_overrides.sql is applied — treat that as "not admin"
+  // (the console still works locally) rather than surfacing an error to the operator.
+  if (error) return false;
+  return data === true;
+}
+
+/** Record a result correction server-side. Throws with the server's reason on refusal. */
+export async function pushMatchOverride(round: string, slot: number, winnerId: string): Promise<void> {
+  if (!supabase) throw new Error('Accounts are not configured.');
+  const { error } = await supabase.rpc('set_match_override', { p_round: round, p_slot: slot, p_winner: winnerId });
+  if (error) throw new Error(error.message);
+}
+
+/** Undo a correction server-side, handing the slot back to the automated feed. */
+export async function pushClearMatchOverride(round: string, slot: number): Promise<void> {
+  if (!supabase) throw new Error('Accounts are not configured.');
+  const { error } = await supabase.rpc('clear_match_override', { p_round: round, p_slot: slot });
+  if (error) throw new Error(error.message);
+}
+
+// The server ingest's own health row (public.ingest_health, readable by everyone). The key
+// field is draftedMissing: a drafted player the server could NOT find in the parsed draw —
+// i.e. a name-match break, which makes them silently score ZERO on the leaderboard. It was
+// already recorded every run; nothing ever surfaced it, so a break could run for days.
+export interface IngestHealth {
+  lastRunAt: string | null;
+  ok: boolean | null;
+  pairings: number | null;
+  resultsKnown: number | null;
+  matchesWritten: number | null;
+  draftedMissingCount: number;
+  draftedMissing: string[];
+  error: string | null;
+}
+
+export async function fetchIngestHealth(tournamentId: string): Promise<IngestHealth | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('ingest_health')
+    .select('last_run_at, ok, pairings, results_known, matches_written, drafted_missing_count, drafted_missing, error')
+    .eq('tournament_id', tournamentId).maybeSingle();
+  if (error || !data) return null;
+  const missing = data.drafted_missing;
+  return {
+    lastRunAt: (data.last_run_at as string) ?? null,
+    ok: (data.ok as boolean) ?? null,
+    pairings: (data.pairings as number) ?? null,
+    resultsKnown: (data.results_known as number) ?? null,
+    matchesWritten: (data.matches_written as number) ?? null,
+    draftedMissingCount: (data.drafted_missing_count as number) ?? 0,
+    draftedMissing: Array.isArray(missing) ? (missing as string[]) : [],
+    error: (data.error as string) ?? null,
+  };
+}

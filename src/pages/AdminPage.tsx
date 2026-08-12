@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLiveStore } from '../store/liveStore';
 import { TOURNAMENT } from '../data/tournamentConfig';
 import { ROUNDS } from '../data/tournament';
 import { roundComplete, matchKey, type LiveMatch } from '../data/liveResults';
 import { PLAYERS, findPlayer } from '../data/players';
 import { useLiveFeed } from '../data/useLiveFeed';
+import { toast } from '../store/toastStore';
+import { fetchIsAdmin, pushMatchOverride, pushClearMatchOverride, fetchIngestHealth, type IngestHealth } from '../data/cloud';
 
 // ── Match Admin ──────────────────────────────────────────────────────────────
 // The operator's console for a LIVE tournament: enter or correct each match's
@@ -29,6 +31,65 @@ function sampleDraw(): LiveMatch[] {
   ];
 }
 
+// The SERVER ingest's health (public.ingest_health), surfaced so a silent break is visible.
+// Two failure modes matter, and neither used to show anywhere in the app:
+//   • the ingest stopped / errored → public.matches freezes → every score stops moving
+//   • draftedMissing → a drafted player the parser could not match to the published draw
+//     (a Wikipedia name change is enough), so that player scores ZERO for everyone
+function ServerHealth({ health, serverAdmin }: { health: IngestHealth | null; serverAdmin: boolean }) {
+  if (!health) return null;
+  const stale = health.lastRunAt ? Date.now() - Date.parse(health.lastRunAt) > 20 * 60_000 : true;
+  const bad = health.ok === false || stale;
+  const missing = health.draftedMissing ?? [];
+  return (
+    <div className="rounded-2xl px-4 py-3 mb-4" style={{ background: '#fff', border: '1px solid rgba(10,27,51,0.08)' }}>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="text-sm min-w-0">
+          <div className="font-bold" style={{ color: 'var(--ink)' }}>Server ingest (feeds the leaderboard)</div>
+          <div className="text-xs mt-0.5" style={{ color: bad ? 'var(--ember)' : 'var(--ink-3)' }}>
+            {health.ok === false ? 'Last run FAILED' : stale ? 'Stale — no successful run recently' : 'Healthy'}
+            {health.lastRunAt && ` · ran ${relTime(Date.parse(health.lastRunAt))}`}
+            {health.matchesWritten != null && ` · ${health.matchesWritten} matches written`}
+          </div>
+        </div>
+        <span
+          className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full shrink-0"
+          style={serverAdmin
+            ? { background: 'rgba(18,161,80,0.14)', color: 'var(--green)' }
+            : { background: 'rgba(217,154,0,0.14)', color: 'var(--gold)' }}
+          title={serverAdmin
+            ? 'Your corrections are saved server-side, for every manager'
+            : 'You are not a server admin — corrections stay on this device only'}
+        >
+          {serverAdmin ? 'admin · corrections shared' : 'local only'}
+        </span>
+      </div>
+
+      {health.error && (
+        <div className="text-xs rounded-lg px-2.5 py-1.5 mt-2" style={{ background: 'rgba(229,71,43,0.08)', color: '#c0341c', border: '1px solid rgba(229,71,43,0.2)' }}>
+          {health.error}
+        </div>
+      )}
+
+      {missing.length > 0 && (
+        <div className="text-xs rounded-lg px-2.5 py-2 mt-2" style={{ background: 'rgba(217,154,0,0.08)', color: 'var(--ink-2)', border: '1px solid rgba(217,154,0,0.28)' }}>
+          <b style={{ color: 'var(--ink)' }}>{missing.length} drafted player{missing.length === 1 ? '' : 's'} not found in the server's draw</b>
+          {' '}— they score <b>0</b> on the leaderboard until the name matches. Check their spelling against the draw page:
+          <div className="mt-1 font-num" style={{ color: 'var(--ink)' }}>{missing.map(nameOf).join(' · ')}</div>
+        </div>
+      )}
+
+      {!serverAdmin && (
+        <div className="text-xs mt-2" style={{ color: 'var(--ink-3)' }}>
+          Corrections below will be saved on this device only. To correct results for everyone, apply
+          <code className="mx-1">supabase/admin_match_overrides.sql</code>and add your account to
+          <code className="mx-1">public.app_admins</code>.
+        </div>
+      )}
+    </div>
+  );
+}
+
 function relTime(ms: number | null): string {
   if (!ms) return 'never';
   const s = Math.round((Date.now() - ms) / 1000);
@@ -43,6 +104,37 @@ export default function AdminPage() {
   const [confirmReset, setConfirmReset] = useState(false);
   const [autoPoll, setAutoPoll] = useState(false);
   const { sync, busy, error } = useLiveFeed(autoPoll);
+  // Server-side admin rights (public.app_admins). Only a real admin can push a correction
+  // into public.matches — which is what the leaderboard is actually scored from.
+  const [serverAdmin, setServerAdmin] = useState(false);
+  const [health, setHealth] = useState<IngestHealth | null>(null);
+
+  useEffect(() => { void fetchIsAdmin().then(setServerAdmin); }, []);
+  useEffect(() => {
+    const load = () => void fetchIngestHealth(TOURNAMENT.id).then(setHealth);
+    load();
+    const id = setInterval(load, 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Record a correction LOCALLY (instant feedback for the operator) and push it to the
+  // server so every other manager's score is corrected too. Local-only would fix this one
+  // browser and leave the leaderboard wrong — the bug this closes.
+  const applyResult = (round: string, slot: number, winnerId: string) => {
+    recordResult(round as Parameters<typeof recordResult>[0], slot, winnerId);
+    if (!serverAdmin) return; // not a server admin → local-only, with the banner explaining why
+    void pushMatchOverride(round, slot, winnerId)
+      .then(() => toast('Correction saved for everyone', 'good'))
+      .catch((e: Error) => toast(`Saved locally only — server refused: ${e.message}`, 'warn'));
+  };
+
+  const applyClear = (round: string, slot: number) => {
+    clearResult(round as Parameters<typeof clearResult>[0], slot);
+    if (!serverAdmin) return;
+    void pushClearMatchOverride(round, slot)
+      .then(() => toast('Correction cleared — the feed decides again', 'good'))
+      .catch((e: Error) => toast(`Cleared locally only — server refused: ${e.message}`, 'warn'));
+  };
 
   const isLive = TOURNAMENT.mode === 'live';
   // Only the rounds this tournament actually has, in order, that have pairings yet.
@@ -108,6 +200,11 @@ export default function AdminPage() {
             )}
           </div>
 
+          {/* Server ingest health — the pipeline that ACTUALLY feeds the leaderboard. The
+              browser feed above is only this operator's preview; if the server ingest is
+              stale or can't name-match a drafted player, those managers silently score 0. */}
+          <ServerHealth health={health} serverAdmin={serverAdmin} />
+
           {draw.length === 0 ? (
             <div className="rounded-2xl px-5 py-8 text-center" style={{ background: '#fff', border: '1px solid rgba(10,27,51,0.08)' }}>
               <div className="font-bold mb-1" style={{ color: 'var(--ink)' }}>No draw loaded yet</div>
@@ -167,7 +264,7 @@ export default function AdminPage() {
                                 return (
                                   <button
                                     key={pid}
-                                    onClick={() => recordResult(m.round, m.slot, pid)}
+                                    onClick={() => applyResult(m.round, m.slot, pid)}
                                     className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-left transition-colors"
                                     style={{
                                       background: isWin ? 'rgba(18,161,80,0.12)' : 'rgba(10,27,51,0.03)',
@@ -190,7 +287,7 @@ export default function AdminPage() {
                               )}
                               {winner && (
                                 <button
-                                  onClick={() => clearResult(m.round, m.slot)}
+                                  onClick={() => applyClear(m.round, m.slot)}
                                   className="w-6 h-6 rounded-md flex items-center justify-center text-xs"
                                   style={{ background: 'rgba(10,27,51,0.05)', color: 'var(--ink-3)' }}
                                   title="Clear this result"
