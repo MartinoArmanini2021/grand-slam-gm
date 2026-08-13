@@ -148,6 +148,15 @@ Deno.serve(async (req) => {
       updated += chunk.length;
     }
 
+    // Heartbeat for the watchdog (supabase/pipeline_watchdog.sql). A fresh last_run_at means the
+    // scorer completed; if it stalls or errors, this stops updating and the watchdog alerts. Best-
+    // effort — if the table doesn't exist yet (watchdog not applied), never fail the rescore over it.
+    try {
+      await db.from('scoring_health').upsert(
+        { tournament_id: tournamentId, last_run_at: new Date().toISOString(), ok: true, entries_scored: updated, error: null },
+        { onConflict: 'tournament_id' });
+    } catch { /* health write is best-effort */ }
+
     return new Response(JSON.stringify({ ok: true, tournamentId, playedRounds, entriesScored: updated }), {
       headers: { 'Content-Type': 'application/json' },
     });

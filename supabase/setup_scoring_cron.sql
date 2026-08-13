@@ -11,12 +11,11 @@
 -- until matches exist.
 --
 -- HOW TO RUN IT:
+--   0. ⚠️ PREREQUISITES (once): run supabase/app_config.sql, then supabase/vault_setup.sql (stores
+--      your service_role key in Vault). After that there's NO key to paste here — the cron reads it
+--      from Vault by name, so it can never be mis-pasted (the silent freeze we hit).
 --   1. Supabase dashboard → SQL Editor → New query.
---   2. Paste this whole file.
---   3. Replace <SERVICE_ROLE_KEY> below with your service-role key
---      (dashboard → Project Settings → API → service_role secret). Keep it secret —
---      it's only ever used here, server-side; never put it in the app.
---   4. Run.
+--   2. Paste this whole file and Run. (No placeholder to edit.)
 --
 -- ⚠️ PREREQUISITE: run supabase/app_config.sql first (this body calls active_tournament_id()).
 -- TO STOP IT (after the tournament): select cron.unschedule('recompute-scores');
@@ -39,7 +38,8 @@ select cron.schedule(
     url     := 'https://mrdmlfumdsxufifjulbt.supabase.co/functions/v1/recompute-score',
     headers := jsonb_build_object(
       'Content-Type',  'application/json',
-      'Authorization', 'Bearer <SERVICE_ROLE_KEY>'
+      -- Key read from Vault (supabase/vault_setup.sql) — no placeholder to mis-paste, ever.
+      'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'gsgm_service_role_key')
     ),
     -- Single source of truth: the active tournament comes from public.app_config, so this cron
     -- and the ingest cron can never target different tournaments (see supabase/app_config.sql).
