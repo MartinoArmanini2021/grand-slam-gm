@@ -166,11 +166,11 @@ export const TOURNAMENTS: Record<string, Tournament> = {
     },
   },
 
-  // ── NEXT UP: the Cincinnati Open (staged, not yet active) ────────────────────
-  // Built and tested on a STAGING deployment (VITE_ACTIVE_TOURNAMENT=cincinnati_2026)
-  // while Montréal runs live. Its field/draw/player_stats are wired when Cincinnati's
-  // entry list publishes; until then staging borrows a placeholder field (see players.ts).
-  // Cincinnati hard court: its signature teal-blue surround + deep-blue playing surface.
+  // ── NEXT UP: the Cincinnati Open ─────────────────────────────────────────────
+  // Real 83-player draftable field built from the published draw (scripts/build-cincinnati-field.mjs)
+  // and reconciled exactly against Wikipedia (scripts/reconcile-field.mjs — 0 missing, 0 phantom).
+  // Same 96-draw Masters shape as Montréal: 32 seeds bye into the second round, so every drafted
+  // player enters at R64. Cincinnati hard court: teal-blue surround + deep-blue playing surface.
   cincinnati_2026: {
     id: 'cincinnati_2026',
     name: 'Cincinnati Open',
@@ -181,7 +181,26 @@ export const TOURNAMENTS: Record<string, Tournament> = {
     drawSize: 96,
     rounds: ['R64', 'R32', 'R16', 'QF', 'SF', 'F'],
     mode: 'live',
-    live: false, // ← not launched yet; flip to true (with the real field wired) to go live
+    // STAGED: real field wired + reconciled + schedule set, but NOT yet exposed in the production
+    // switcher (Montréal is still live and its final must finish ingesting first). Preview it safely
+    // on a staging build — VITE_ACTIVE_TOURNAMENT=cincinnati_2026 — without touching production. At
+    // cutover (Montréal's final scored) flip this to true; full steps in docs/CINCINNATI_CUTOVER.md.
+    live: false,
+    // Official window: 13–23 Aug 2026, Lindner Family Tennis Center, Mason OH (Eastern, UTC−4).
+    // Round START = the FIRST match of each round = that round's LOCK deadline; R64 (seeds' first
+    // matches, Sat 15 Aug) doubles as the DRAFT DEADLINE. Day sessions open 11:00 ET (15:00 UTC).
+    // Sourced from the tournament day-by-day schedule (lta.org.uk / cincinnatiopen.com). Exact per-
+    // match times aren't published until the evening before, so these are stable round-start anchors;
+    // the live results feed also locks a round the moment its first result lands (roundStarted), so a
+    // slightly-off time self-corrects. SF/F times are afternoon estimates until the finals-day OoP.
+    schedule: {
+      R64: '2026-08-15T15:00:00Z', // 2nd round begins — seeds enter, DRAFT CLOSES (11:00 ET Sat)
+      R32: '2026-08-17T15:00:00Z', // 3rd round — 11:00 ET Mon
+      R16: '2026-08-19T15:00:00Z', // round of 16 — 11:00 ET Wed
+      QF:  '2026-08-20T15:00:00Z', // quarter-finals begin — 11:00 ET Thu
+      SF:  '2026-08-22T17:00:00Z', // semi-finals — ~13:00 ET Sat (estimate)
+      F:   '2026-08-23T19:00:00Z', // final — ~15:00 ET Sun (estimate, pending finals-day OoP)
+    },
     court: {
       standTop: '#0a2230', standBottom: '#06161f',
       apron: '#0e7490',                              // teal surround (Cincinnati's look)

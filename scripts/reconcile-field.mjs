@@ -41,10 +41,12 @@ if (typeof wikitext !== 'string') {
   console.error(`could not load draw page "${page}": ${json?.error?.info ?? 'not found'}`);
   process.exitCode = 2;
 } else {
-  // MAIN DRAW = every NTeamBracket EXCEPT the 2-team brackets, which are the qualifying rounds
-  // (players who mostly never reach the main draw). Tournament-shape-agnostic: works for a 96
-  // Masters (8×16 + finals) and a 128 Slam alike.
-  const brackets = splitBrackets(wikitext).filter((b) => /TeamBracket/i.test(b.type) && !/^2TeamBracket/i.test(b.type));
+  // MAIN DRAW = exactly the brackets the app's parseFullDraw consumes: the 16-team section
+  // brackets (R128/R64/R32/R16) plus the 8-team finals (QF/SF/F). Everything else — 2- AND
+  // 4-team brackets — is QUALIFYING (Cincinnati's qualifying uses 4-team brackets), which never
+  // counts as main draw. Matching the app parser keeps this guard exact for both a 96 Masters
+  // (8×16 + finals) and a 128 Slam.
+  const brackets = splitBrackets(wikitext).filter((b) => /^(8|16)TeamBracket/i.test(b.type));
   const drawById = new Map(); // id → display name
   for (const b of brackets) {
     for (const m of b.text.matchAll(/\|\s*RD\d+-team\d+\s*=\s*(.*?)(?=\s*\|\s*RD|\n\s*\||\n\}\}|$)/gm)) {

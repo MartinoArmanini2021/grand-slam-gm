@@ -17,7 +17,8 @@
 // Manual override:  POST { "overrides": [ { "round": "QF", "slot": 0, "winnerId": "shelton" } ] }
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import field from '../../../src/data/montreal2026Field.json' with { type: 'json' };
+import montrealField from '../../../src/data/montreal2026Field.json' with { type: 'json' };
+import cincinnatiField from '../../../src/data/cincinnati2026Field.json' with { type: 'json' };
 
 // ── auth guard (inlined from supabase/functions/_shared/serviceGuard.ts) ──
 function decodeJwtRole(token: string): string | null {
@@ -218,11 +219,29 @@ function parseFullDraw(
 }
 // ════════════ END PARSER INLINED COPY ════════════
 
-// These MUST stay in sync with src/data/tournamentConfig.ts + src/data/liveData.ts (guarded by
-// liveIngestParity.test.ts). This standalone Deno file can't import the Vite config.
-const TOURNAMENT_ID = 'montreal_2026';
-const WIKI_PAGE = "2026 National Bank Open – Men's singles";
-const SCORED_ROUNDS = ['R64', 'R32', 'R16', 'QF', 'SF', 'F'] as const;
+// REGISTRY of every tournament this deploy can ingest. Each entry's page/rounds/field MUST stay in
+// sync with src/data/tournamentConfig.ts + src/data/liveData.ts (guarded by liveIngestParity.test.ts);
+// this standalone Deno file can't import the Vite config.
+//
+// Why a registry and not one baked-in tournament: previously this function was built for exactly ONE
+// event, so switching tournaments meant redeploying it and flipping app_config in the right order —
+// a coupled release with a real window for mismatch. Carrying every live-or-imminent event means the
+// cutover is just the app_config flip (no redeploy, no ordering hazard), and an id we don't know
+// still fails LOUDLY below instead of ingesting the wrong draw.
+const TOURNAMENTS: Record<string, { page: string; rounds: readonly string[]; roster: { id: string; name: string }[] }> = {
+  montreal_2026: {
+    page: "2026 National Bank Open – Men's singles",
+    rounds: ['R64', 'R32', 'R16', 'QF', 'SF', 'F'],
+    roster: montrealField as { id: string; name: string }[],
+  },
+  cincinnati_2026: {
+    page: "2026 Cincinnati Open – Men's singles",
+    rounds: ['R64', 'R32', 'R16', 'QF', 'SF', 'F'],
+    roster: cincinnatiField as { id: string; name: string }[],
+  },
+};
+// Fallback when a manual invoke sends no tournamentId (the crons always send one, from app_config).
+const DEFAULT_TOURNAMENT_ID = 'montreal_2026';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -233,29 +252,31 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...CORS } });
 
 type Override = { round: string; slot: number; winnerId: string };
-const roster = field as { id: string; name: string }[];
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   const denied = assertServiceRole(req);
   if (denied) return denied;
-  let tournamentId = TOURNAMENT_ID;
+  let tournamentId = DEFAULT_TOURNAMENT_ID;
   try {
     const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
     let body: { page?: string; tournamentId?: string; overrides?: Override[]; clearOverrides?: { round: string; slot: number }[] } = {};
     try { body = await req.json(); } catch { /* cron/no-body invoke */ }
-    const page = body.page ?? WIKI_PAGE;
-    // SAFETY: this function is BUILT for one tournament — its field (name resolution) + WIKI_PAGE are
-    // baked in at deploy. So it may only ingest the tournament it was built for. If the cron/config
-    // asks for a different one (e.g. app_config was flipped to Cincinnati but this wasn't redeployed
-    // yet), REFUSE loudly rather than fetch the wrong draw and write it under the wrong id. A custom
-    // body.page (manual re-parse of the same event) is still allowed.
-    const requestedId = body.tournamentId ?? TOURNAMENT_ID;
-    if (requestedId !== TOURNAMENT_ID) {
-      throw new Error(`ingest-draw is deployed for "${TOURNAMENT_ID}" but was asked to ingest "${requestedId}". Redeploy it built for "${requestedId}" (its field + WIKI_PAGE) before switching app_config.active_tournament_id.`);
+    // SAFETY: each tournament needs its own field (name→id resolution) + Wikipedia page, both baked
+    // in at deploy. So we may only ingest an event present in the registry above. If the cron/config
+    // asks for one we don't carry (e.g. app_config flipped to a new event before this was redeployed),
+    // REFUSE loudly rather than fetch the wrong draw and write it under the wrong id — the error lands
+    // in ingest_health and the watchdog alerts. A custom body.page (manual re-parse) is still allowed.
+    const requestedId = body.tournamentId ?? DEFAULT_TOURNAMENT_ID;
+    const cfg = TOURNAMENTS[requestedId];
+    if (!cfg) {
+      throw new Error(`ingest-draw has no field/page for "${requestedId}" (carries: ${Object.keys(TOURNAMENTS).join(', ')}). Add it to the TOURNAMENTS registry and redeploy before switching app_config.active_tournament_id.`);
     }
     tournamentId = requestedId;
+    const page = body.page ?? cfg.page;
+    const roster = cfg.roster;
+    const SCORED_ROUNDS = cfg.rounds;
 
     const wikiUrl = `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(page)}`
       + `&prop=wikitext&formatversion=2&format=json&origin=*`;

@@ -4,24 +4,57 @@ import fieldJson from '../data/montreal2026Field.json';
 import { buildResolver, parseFullDraw, buildMatchRows, parseBracket } from '../data/drawParser';
 import type { LiveMatch, LiveResults } from '../data/liveResults';
 import { matchKey } from '../data/liveResults';
-import { TOURNAMENT, ACTIVE_TOURNAMENT_ID } from '../data/tournamentConfig';
+import { TOURNAMENT, ACTIVE_TOURNAMENT_ID, TOURNAMENTS } from '../data/tournamentConfig';
 import { LIVE } from '../data/liveData';
 
-// The ingest-draw Edge Function is standalone Deno and can't import the Vite config, so it
-// hardcodes TOURNAMENT_ID / WIKI_PAGE / SCORED_ROUNDS. If those silently drift from the app,
-// the server would ingest the wrong page or wrong rounds and freeze the leaderboard. These
-// tests pin the app's values — if one fails, update supabase/functions/ingest-draw/index.ts
-// (and the cron body's tournamentId) to match.
+// The ingest-draw Edge Function is standalone Deno and can't import the Vite config, so it carries
+// its own TOURNAMENTS registry (page + rounds + field per event). If that drifts from the app, the
+// server would ingest the wrong page or wrong rounds and freeze the leaderboard. These tests pin the
+// app's values against a mirror of that registry — if one fails, update the registry in
+// supabase/functions/ingest-draw/index.ts to match (and redeploy it).
+//
+// MIRROR of the Edge Function's TOURNAMENTS registry. Keep in sync — that's the whole point.
+const INGEST_REGISTRY: Record<string, { page: string; rounds: string[] }> = {
+  montreal_2026:   { page: "2026 National Bank Open – Men's singles", rounds: ['R64', 'R32', 'R16', 'QF', 'SF', 'F'] },
+  cincinnati_2026: { page: "2026 Cincinnati Open – Men's singles",    rounds: ['R64', 'R32', 'R16', 'QF', 'SF', 'F'] },
+};
+
 describe('ingest-draw ↔ app config parity', () => {
-  it('tournament id equals the Edge Function TOURNAMENT_ID', () => {
-    expect(ACTIVE_TOURNAMENT_ID).toBe('montreal_2026');
+  it('the Edge Function registry carries the ACTIVE tournament', () => {
+    // A tournament the app is running but ingest-draw does not carry = a silent leaderboard freeze.
+    expect(Object.keys(INGEST_REGISTRY)).toContain(ACTIVE_TOURNAMENT_ID);
   });
-  it('scored rounds equal the Edge Function SCORED_ROUNDS', () => {
-    expect(TOURNAMENT.rounds).toEqual(['R64', 'R32', 'R16', 'QF', 'SF', 'F']);
+  it('scored rounds equal the registry entry for the active tournament', () => {
+    expect(TOURNAMENT.rounds).toEqual(INGEST_REGISTRY[ACTIVE_TOURNAMENT_ID].rounds);
   });
-  it('Wikipedia page title equals the Edge Function WIKI_PAGE', () => {
-    expect(LIVE.wikipediaPage).toBe("2026 National Bank Open – Men's singles");
+  it('Wikipedia page title equals the registry entry for the active tournament', () => {
+    expect(LIVE.wikipediaPage).toBe(INGEST_REGISTRY[ACTIVE_TOURNAMENT_ID].page);
   });
+});
+
+// Every registry entry must describe its tournament exactly as the app does — so an event that is
+// STAGED today (Cincinnati) is already provably ingestable, making the cutover a config flip rather
+// than a coupled redeploy. (Events not yet built for ingest — e.g. the US Open — simply aren't in the
+// registry yet; the active-tournament test above is what stops one going live un-ingestable.)
+describe('every ingest registry entry matches the app config', () => {
+  for (const [id, entry] of Object.entries(INGEST_REGISTRY)) {
+    it(`${id} matches the app's page + rounds`, () => {
+      const t = TOURNAMENTS[id];
+      expect(t, `app has no tournament config for ${id}`).toBeDefined();
+      expect(entry.rounds).toEqual(t.rounds);
+      expect(entry.page).toBe(`2026 ${t.name} – Men's singles`); // the page LIVE derives at runtime
+    });
+  }
+});
+
+// Every tournament exposed to players must be ingestable — going live without a registry entry
+// would silently freeze that event's leaderboard.
+describe('no live tournament is un-ingestable', () => {
+  for (const t of Object.values(TOURNAMENTS).filter(x => x.live)) {
+    it(`${t.id} (live) is in the ingest registry`, () => {
+      expect(Object.keys(INGEST_REGISTRY)).toContain(t.id);
+    });
+  }
 });
 
 // Exercise the EXACT server path: the roster comes from the field JSON (what ingest-draw
