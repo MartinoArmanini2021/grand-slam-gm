@@ -166,7 +166,23 @@ export function buildView(s: GameStore, hasPrivateLeague: boolean, onPickLeaders
 
   const roundObj = ROUNDS.find(r => r.id === st.round)!;
 
-  // DURING A ROUND — nothing to change; watch it unfold.
+  // ROUND LOCKED, NOT YET PLAYING — the scheduled start has passed but no result has landed. The
+  // schedule is often an ESTIMATE (finals-day order of play publishes late), so we must NOT claim
+  // the match is underway; we only know we've frozen everyone's picks. Same "nothing to change"
+  // shape as the live card, honest wording.
+  if (st.underway && !st.live) {
+    return {
+      accent: 'ember', eyebrow: `${roundObj.short} about to begin`,
+      title: `The ${roundObj.label} is about to begin`,
+      body: 'Your captain and any signings are locked for this round. Points start landing as soon as the first match finishes.',
+      actions: [
+        { label: 'See the draw', sub: 'your players are highlighted', go: () => setTab('tournament'), primary: true },
+        { label: 'See the leaderboard', sub: 'where you sit in the league', go: () => setTab('league') },
+      ],
+    };
+  }
+
+  // DURING A ROUND — genuinely playing (a result proves it); nothing to change, watch it unfold.
   if (st.underway) {
     const score = liveScore(initialSquad, transfers, captainHistory, viceCaptainHistory);
     return {

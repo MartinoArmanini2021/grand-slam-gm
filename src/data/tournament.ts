@@ -125,9 +125,18 @@ export function liveCurrentRound(): RoundId | null {
 // has gone live by its scheduled time counts as underway even before its first result lands (the feed
 // only reports finished matches), so the status box flips to LIVE the moment play begins. Null once
 // the whole draw is played out.
-export function liveRoundStatus(): { round: RoundId; underway: boolean } | null {
+// TWO different questions, deliberately kept apart — conflating them is why the app once announced
+// "The Final is underway" while the Final had not been played:
+//   • underway — should everything be LOCKED? Schedule-driven (roundStarted): the scheduled time has
+//     passed OR a result exists. Locking early is fail-safe, so an ESTIMATED start time is fine here.
+//   • live     — is play actually happening, as a matter of EVIDENCE? Only a recorded result proves
+//     that. Never assert "underway" to the user off an estimate; use this for anything user-facing.
+// So a round can be underway-but-not-live: picks are frozen and we're waiting on the first result.
+export function liveRoundStatus(): { round: RoundId; underway: boolean; live: boolean } | null {
   for (let i = 0; i < ROUNDS.length; i++) {
-    if (!roundPlayable(i)) return { round: ROUNDS[i].id, underway: roundStarted(ROUNDS[i].id) };
+    if (!roundPlayable(i)) {
+      return { round: ROUNDS[i].id, underway: roundStarted(ROUNDS[i].id), live: roundHasResult(ROUNDS[i].id) };
+    }
   }
   return null; // every round fully played
 }

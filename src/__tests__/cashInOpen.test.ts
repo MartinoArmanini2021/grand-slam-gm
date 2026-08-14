@@ -45,7 +45,9 @@ describe('roundStarted — market shuts when a round goes live by schedule, befo
     const r16HasResult = sampleDraw.some(m => m.round === 'R16' && useLiveStore.getState().results[matchKey('R16', m.slot)]);
     expect(r16HasResult).toBe(false);          // no finished R16 match yet…
     expect(roundStarted('R16')).toBe(true);    // …but it's started by the clock
-    expect(liveRoundStatus()).toEqual({ round: 'R16', underway: true });
+    // Underway (locked) by SCHEDULE, but not `live` — no result has landed, so nothing user-facing
+    // may claim the R16 is being played. This is the exact shape of the finals-day wording bug.
+    expect(liveRoundStatus()).toEqual({ round: 'R16', underway: true, live: false });
     expect(cashInOpen()).toBe(false);          // market shut while R16 is live
     expect(transferWindowOpen()).toBe(false);
     expect(liveLeaderRound()).toBe('QF');      // you now set your QF captain, not R16's

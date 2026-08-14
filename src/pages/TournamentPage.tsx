@@ -27,7 +27,10 @@ export default function TournamentPage() {
   // subscribed above, so this re-derives live.) Null once the whole draw is played out.
   const status = liveRoundStatus();
   const focusRound = status ? ROUNDS.find(r => r.id === status.round) : null;
-  const underway = status?.underway ?? false;
+  // "Underway" is claimed only on EVIDENCE (a recorded result). A round whose estimated start has
+  // passed with nothing finished yet reads "About to Begin" — locked, but not asserted as playing.
+  const underway = status?.live ?? false;
+  const lockedNotLive = !!status && status.underway && !status.live;
   const showStatus = phase !== 'draft' && phase !== 'finished' && !!focusRound;
 
   return (
@@ -44,7 +47,7 @@ export default function TournamentPage() {
         <div className="mb-6 rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid rgba(10,27,51,0.09)' }}>
           <div className="px-5 py-4" style={{ borderBottom: '1px solid rgba(10,27,51,0.07)' }}>
             <div className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: underway ? 'var(--green)' : 'var(--ink-2)' }}>
-              {underway ? 'Underway' : 'Up Next'}
+              {underway ? 'Underway' : lockedNotLive ? 'About to Begin' : 'Up Next'}
             </div>
             <div className="text-lg font-bold" style={{ color: 'var(--ink)' }}>{focusRound.label}</div>
           </div>
