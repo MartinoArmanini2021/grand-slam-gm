@@ -19,7 +19,6 @@ import Logo from './components/Logo';
 import { NAV_ICONS } from './components/NavIcons';
 import AuthScreen from './components/AuthScreen';
 import JoinTournament from './components/JoinTournament';
-import TournamentSwitcher from './components/TournamentSwitcher';
 import UserProfile from './components/UserProfile';
 import ErrorBoundary from './components/ErrorBoundary';
 import CloudSync from './components/CloudSync';
@@ -260,8 +259,9 @@ function AppShell({
               )}
             </div>
 
+            {/* The tournament switcher used to sit here; it ate too much of the phone title bar
+                for a control you touch once an event. It now lives at the foot of Home. */}
             <div className="flex items-center gap-2 shrink-0">
-              <TournamentSwitcher />
               <button
                 onClick={() => { track('howtoplay_opened'); setShowRules(true); }}
                 aria-label="How to play"

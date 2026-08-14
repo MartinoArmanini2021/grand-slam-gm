@@ -11,6 +11,7 @@ import { useLeagueBoard, useMyLeagues } from '../data/leagueBoard';
 import SquadCourt from '../components/SquadCourt';
 import NextMove from '../components/NextMove';
 import TournamentWelcome from '../components/TournamentWelcome';
+import TournamentSwitcher from '../components/TournamentSwitcher';
 import ScoringPendingNote from '../components/ScoringPendingNote';
 import type { GamePhase } from '../types';
 
@@ -195,6 +196,10 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
           </>
         )}
         </div>{/* /leaderboard */}
+
+      {/* Switch between live tournaments. Deliberately the LAST thing on Home — it's a once-an-event
+          control, and it used to crowd the header on a phone. */}
+      <TournamentSwitcher />
 
       {/* The celebratory "you're in" moment, shown once right after joining. */}
       {welcome && (
