@@ -5,7 +5,7 @@ import { lastName, fmtScore } from '../data/format';
 import { isSquadValid } from '../data/squadRules';
 import {
   ROUNDS, isEliminated, tournamentStarted, liveRoundStatus, liveLeaderRound,
-  leaderOfRecord, liveScore, roundStarted,
+  leaderOfRecord, liveScore, roundStarted, transferWindowOpen,
 } from '../data/tournament';
 import { TOURNAMENT } from '../data/tournamentConfig';
 import { useCountdown } from './Countdown';
@@ -118,7 +118,7 @@ export default function NextMove({ hasPrivateLeague, onPickLeaders }: { hasPriva
 
 // ── the state machine — pure, testable, derived entirely from real state ──────
 export function buildView(s: GameStore, hasPrivateLeague: boolean, onPickLeaders: () => void, setTab: GameStore['setActiveTab']): View {
-  const { phase, myTeam, initialSquad, transfers, captain, viceCaptain, captainHistory, viceCaptainHistory } = s;
+  const { phase, myTeam, initialSquad, transfers, captain, viceCaptain, captainHistory, viceCaptainHistory, finalized } = s;
   const firstRound = TOURNAMENT.rounds[0];
 
   // A brand-new sign-up during a LIVE event: the draft is closed, so don't offer a dead draft.
@@ -199,10 +199,24 @@ export function buildView(s: GameStore, hasPrivateLeague: boolean, onPickLeaders
     ? (capName ? `${capName} captains — ×2, locks when ${roundObj.short} starts` : undefined)
     : (effCap && !capAlive ? 'your captain is out — pick a new one' : `choose your ×2 & ×1.5 for the ${roundObj.short}`);
 
+  // The market is a between-rounds desk that shuts FOR GOOD after the semi-finals: a signing then
+  // could only score in the Final, and an elimination refunds 0 — so buyPlayer/cashInPlayer both
+  // refuse. Offering "replace your eliminated players" there sends the manager to a Market where
+  // every button is dead, so say the squad is final instead. (Mirrors transferWindowOpen exactly,
+  // the same guard the store commits against, so the card can never invite a rejected action.)
+  const marketOpen = transferWindowOpen();
+  const replaceStep: Step = marketOpen
+    ? { label: 'Replace eliminated players', sub: replaceDone ? 'no one knocked out — you’re covered' : `${eliminated.length} knocked out — cash in & sign replacements`, done: replaceDone, go: () => setTab('draft') }
+    : { label: 'Squad is final', sub: 'no transfers after the semi-finals — play the squad you have', done: true, go: () => setTab('draft') };
+
+  // "Lock Squad" (finalized) is the manager's EXPLICIT confirmation of their unlocked signings —
+  // honour it, or the step stays open forever after they've clicked it (they lock, nothing ticks).
+  // Done when there's nothing pending, or when they've locked what is.
+  const lockDone = !hasUnlocked || finalized;
   const steps: Step[] = [
-    { label: 'Replace eliminated players', sub: replaceDone ? 'no one knocked out — you’re covered' : `${eliminated.length} knocked out — cash in & sign replacements`, done: replaceDone, go: () => setTab('draft') },
+    replaceStep,
     { label: `Set your captain for the ${roundObj.short}`, sub: capSub, done: capDone, go: onPickLeaders },
-    { label: 'Lock your squad', sub: hasUnlocked ? 'confirm your signings — they auto-lock at the first ball' : 'you’re set for the round', done: !hasUnlocked, go: () => setTab('draft') },
+    { label: 'Lock your squad', sub: !hasUnlocked ? 'you’re set for the round' : finalized ? 'signings confirmed — locked in' : 'confirm your signings — they auto-lock at the first ball', done: lockDone, go: () => setTab('draft') },
   ];
   return { accent: 'ember', eyebrow: `Before the ${roundObj.short}`, title: `Get ready for the ${roundObj.label}`, steps,
     deadline: TOURNAMENT.schedule?.[st.round], deadlineLabel: `${roundObj.short} starts in` };
