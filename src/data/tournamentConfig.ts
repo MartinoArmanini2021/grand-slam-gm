@@ -270,6 +270,19 @@ function resolveActiveId(): string {
 export const ACTIVE_TOURNAMENT_ID = resolveActiveId();
 export const TOURNAMENT: Tournament = TOURNAMENTS[ACTIVE_TOURNAMENT_ID];
 
+// The round played BEFORE this tournament's first SCORED round, or undefined when there isn't one.
+// A 96-draw Masters byes its 32 seeds into the second round, so the 64 unseeded contest an opening
+// round this game does NOT score (Cincinnati: R128 = the tournament's "first round"). A Grand Slam
+// has no byes and scores from its first round, so this is undefined there.
+//
+// The app READS that round — so it knows who is already knocked out and can stop the market selling
+// a dead player — but never SCORES it: scoring iterates TOURNAMENT.rounds, which excludes it. Pinned
+// by a test (a win in the opening round must be worth exactly 0).
+export const OPENING_ROUND: RoundId | undefined = (() => {
+  const first = ROUND_ORDER.indexOf(TOURNAMENT.rounds[0]);
+  return first > 0 ? ROUND_ORDER[first - 1] : undefined;
+})();
+
 // Switch the active tournament: persist the choice and reload so the whole app re-inits
 // for it (each tournament has its own squad/leaderboard, isolated by id). No-op for the
 // current one or a non-live id.

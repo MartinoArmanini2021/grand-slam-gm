@@ -2,7 +2,7 @@ import { useState, useMemo, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useLiveStore } from '../store/liveStore';
 import { PLAYERS, getPlayer } from '../data/players';
-import { ROUNDS, isPlayerOut, getPlayerExit, tournamentStarted, isEliminated, cashInOpen, liveBudget, playerRefund, cashedInTotal, transferWindowOpen, roundStarted, liveLeaderRound, liveRoundStatus } from '../data/tournament';
+import { ROUNDS, isPlayerOut, getPlayerExit, tournamentStarted, isEliminated, cashInOpen, liveBudget, playerRefund, cashedInTotal, transferWindowOpen, roundStarted, liveLeaderRound, liveRoundStatus, transfersUsed } from '../data/tournament';
 import { round1 } from '../data/format';
 import { getTier, TIER_META, type Tier } from '../data/tiers';
 import { tierCounts, squadShortfall, isSquadValid, isTierFull, TIER_MINIMUMS, SQUAD_SIZE, STARTING_BUDGET, MAX_TRANSFERS } from '../data/squadRules';
@@ -78,7 +78,7 @@ export default function DraftPage() {
   const openCount = cashedIn.filter(c => !transfers.some(t => t.out === c)).length;
   // Transfer allowance: each re-signing spends one of MAX_TRANSFERS for the whole tournament, so
   // recovery stays a real decision rather than a free reset (see squadRules.MAX_TRANSFERS).
-  const transfersLeft = Math.max(0, MAX_TRANSFERS - transfers.length);
+  const transfersLeft = Math.max(0, MAX_TRANSFERS - transfersUsed(transfers));
   const canBuy = live && windowOpen && openCount > 0 && transfersLeft > 0;
   // Every eliminated player you still hold — across ALL rounds (their refund is shown regardless of
   // when they fell). Cash-in TIMING is one gate for the whole squad: open only at a round break

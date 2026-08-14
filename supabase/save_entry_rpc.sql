@@ -208,7 +208,15 @@ begin
   --      the best-vs-worst drafter gap collapsed from 45.3 pts to 11.5). Capped at 3.
   --      Compared against GREATEST(cap, what's already stored) so an entry that is already over
   --      the cap (made before this rule) can still be saved unchanged — only ADDING is refused.
-  v_tr_count := jsonb_array_length(coalesce(p_state->'transfers', '[]'::jsonb));
+  --      FREE REPAIRS: a transfer logged against a round this tournament holds NO matches for is a
+  --      repair of the UNSCORED opening round (a Masters' first round, which the seeds bye past and
+  --      which the ingest deliberately never writes to public.matches). Those players never reached
+  --      a round that pays, so replacing them doesn't spend the allowance. Deriving that from the
+  --      matches table rather than a client-supplied flag keeps it unspoofable.
+  select count(*) into v_tr_count
+    from jsonb_array_elements(coalesce(p_state->'transfers', '[]'::jsonb)) t
+   where exists (select 1 from public.matches m
+                  where m.tournament_id = p_tournament and m.round = t->>'round');
 
   -- Lock + load the existing entry (atomic rev guard + captain lock in one txn).
   select * into v_existing from public.entries
@@ -216,8 +224,10 @@ begin
   v_found := found;
 
   -- (d3) apply the transfer cap now that the stored entry is loaded (see d2).
-  v_prior_tr := case when v_found
-    then jsonb_array_length(coalesce(v_existing.state->'transfers', '[]'::jsonb)) else 0 end;
+  select count(*) into v_prior_tr
+    from jsonb_array_elements(case when v_found then coalesce(v_existing.state->'transfers', '[]'::jsonb) else '[]'::jsonb end) t
+   where exists (select 1 from public.matches m
+                  where m.tournament_id = p_tournament and m.round = t->>'round');
   if v_tr_count > greatest(3, v_prior_tr) then
     raise exception 'You have used all 3 transfers for this tournament';
   end if;

@@ -23,8 +23,13 @@ describe('live feed — full 96-draw stitching (real 2025 NBO page)', () => {
     expect(count('F')).toBe(1);
   });
 
-  it('drops the unscored opening round (R128)', () => {
-    expect(count('R128')).toBe(0);
+  // CHANGED 2026-08-14: the client now READS the unscored opening round. It is played while the
+  // draft is still open, so without it the market happily sold players who had already gone home.
+  // Reading it is safe because scoring looks the base up in TOURNAMENT.rounds, which excludes it —
+  // a win there is worth 0 (pinned in openingRound.test.ts). The SERVER ingest still omits it, so
+  // public.matches stays scored-rounds-only and recompute-score can never pay for it.
+  it('READS the unscored opening round, so eliminations are known during the draft', () => {
+    expect(count('R128')).toBe(32);
   });
 
   it('derives the correct champion (Ben Shelton, 2025 Toronto)', () => {
@@ -32,7 +37,7 @@ describe('live feed — full 96-draw stitching (real 2025 NBO page)', () => {
   });
 
   it('resolves a winner for every match — the 2025 draw is complete', () => {
-    const total = 32 + 16 + 8 + 4 + 2 + 1; // 63
+    const total = 32 + 32 + 16 + 8 + 4 + 2 + 1; // 95 = the opening round + the six scored ones
     expect(draw).toHaveLength(total);
     expect(Object.keys(results)).toHaveLength(total);
   });

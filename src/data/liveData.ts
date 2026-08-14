@@ -12,7 +12,7 @@
 import type { RoundId } from '../types';
 import { PLAYERS } from './players';
 import type { LiveMatch, LiveResults, PlayerMetaMap, LiveScores } from './liveResults';
-import { TOURNAMENT } from './tournamentConfig';
+import { TOURNAMENT, OPENING_ROUND } from './tournamentConfig';
 import { flagEmoji } from './flags';
 import {
   buildResolver, cleanTeam, splitBrackets, teamTarget,
@@ -58,8 +58,15 @@ export function parseBracket(wikitext: string, roundIds: RoundId[]): { draw: Liv
 // CLIENT bracket shows the draw the moment it publishes — seeds paired with a "TBD" opponent
 // that fills in as the first round is played. (The server ingest uses the default, false, so
 // public.matches only ever holds fully-known pairings for scoring.)
+// The CLIENT also reads the unscored OPENING round (a Masters' first round, which the 32 seeds bye
+// past). It is never scored — scoring iterates TOURNAMENT.rounds — but the app needs its results to
+// know who is already out, so the market can't sell a player who went home before the scored rounds
+// began. The SERVER ingest deliberately does NOT write it (public.matches holds scored rounds only),
+// which is what keeps recompute-score from ever paying points for it.
+const PARSED_ROUNDS = OPENING_ROUND ? [OPENING_ROUND, ...TOURNAMENT.rounds] : TOURNAMENT.rounds;
+
 export function parseFullDraw(wikitext: string): { draw: LiveMatch[]; results: LiveResults; meta: PlayerMetaMap; scores: LiveScores } {
-  const { draw, results, meta, scores } = parseFullDrawCore(wikitext, { scoredRounds: TOURNAMENT.rounds, resolve, includeIncomplete: true });
+  const { draw, results, meta, scores } = parseFullDrawCore(wikitext, { scoredRounds: PARSED_ROUNDS, resolve, includeIncomplete: true });
   return { draw, results, meta: toPlayerMeta(meta), scores };
 }
 

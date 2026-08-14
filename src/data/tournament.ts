@@ -1,6 +1,6 @@
 import type { Match, RoundId, TournamentResult } from '../types';
 import { findPlayer } from './players';
-import { TOURNAMENT, ROUND_META, ROUND_ORDER } from './tournamentConfig';
+import { TOURNAMENT, ROUND_META, ROUND_ORDER, OPENING_ROUND } from './tournamentConfig';
 import { useLiveStore } from '../store/liveStore';
 import { liveMatches, liveExit, roundComplete } from './liveResults';
 import { STARTING_BUDGET } from './squadRules';
@@ -346,19 +346,39 @@ export const BUDGET_RETURN_RATES: Record<RoundId, number> = {
   F:    0,
 };
 
-// A player eliminated in the OPENING round (before R64 — this app doesn't score it) refunds at
-// the earliest rate. Kept equal to the R128 tier so the curve stays "earlier exit → less back".
-const OPENING_ROUND_RETURN = 0.75; // earliest possible exit → highest refund (barely played, most value unrealized)
+// A player knocked out in the UNSCORED opening round refunds in FULL. They never reached a round
+// that pays, so the manager got literally nothing for the money — charging a haircut would punish
+// them for the tournament's own scheduling (the opening round is played while the draft is still
+// open). Replacing such a player is also FREE of the transfer cap, see openingRoundExit below.
+const OPENING_ROUND_RETURN = 1.0;
+
+// Was this player knocked out in the tournament's unscored opening round? True only where such a
+// round exists (a Masters where the seeds bye; never at a Slam). Two ways to detect it: their
+// recorded exit IS that round (the client reads it — see liveData PARSED_ROUNDS), or the older
+// signal, absent from the scored draw once play has begun.
+export function openingRoundExit(id: string): boolean {
+  if (!OPENING_ROUND) return false;
+  if (rawExit(id) === OPENING_ROUND) return true;
+  return tournamentStarted() && !isInLiveDraw(id);
+}
 
 // The refund a squad player is worth right now: their price × the round they were knocked out in
-// (opening-round exits at OPENING_ROUND_RETURN). A still-alive player is worth 0 (nothing to
+// (an unscored opening-round exit returns everything). A still-alive player is worth 0 (nothing to
 // refund yet). This is LIVE — it reflects the results the moment they land, like the score.
 export function playerRefund(id: string): number {
   const price = findPlayer(id)?.price ?? 0;
+  if (openingRoundExit(id)) return round1(price * OPENING_ROUND_RETURN);
   const exit = getPlayerExit(id); // scored-round exit (R64→F), or null
   if (exit) return round1(price * (BUDGET_RETURN_RATES[exit as RoundId] ?? 0));
-  if (tournamentStarted() && !isInLiveDraw(id)) return round1(price * OPENING_ROUND_RETURN); // opening-round KO
   return 0;
+}
+
+// How many of the manager's MAX_TRANSFERS a transfer list has actually consumed. Replacing a player
+// who fell in the unscored opening round is FREE — it repairs a squad that never got to play, so it
+// isn't the recycling the cap exists to limit. Logged against OPENING_ROUND by the store, which is
+// also how the server identifies it (that round has no rows in public.matches).
+export function transfersUsed(transfers: { round: string }[] = []): number {
+  return transfers.filter(t => !OPENING_ROUND || t.round !== OPENING_ROUND).length;
 }
 
 // A manager's available money, LIVE and derived (no manual "play the round" step): the starting
