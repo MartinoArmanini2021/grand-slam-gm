@@ -9,13 +9,13 @@
     "ranking": 2,
     "seed": 1,
     "surface": {
-      "hard": 81,
+      "hard": 76,
       "clay": 88,
       "grass": 86
     },
     "ytd": {
       "wins": 33,
-      "losses": 6,
+      "losses": 7,
       "titles": 1
     },
     "yearResults": [
@@ -46,6 +46,10 @@
       {
         "short": "ROM",
         "result": "R16"
+      },
+      {
+        "short": "MTL",
+        "result": "R64"
       }
     ]
   },
@@ -163,13 +167,13 @@
     "ranking": 8,
     "seed": 4,
     "surface": {
-      "hard": 86,
+      "hard": 83,
       "clay": 67,
       "grass": 67
     },
     "ytd": {
       "wins": 29,
-      "losses": 8,
+      "losses": 9,
       "titles": 2
     },
     "yearResults": [
@@ -225,13 +229,13 @@
     "ranking": 5,
     "seed": 5,
     "surface": {
-      "hard": 63,
+      "hard": 60,
       "clay": 56,
       "grass": 73
     },
     "ytd": {
-      "wins": 18,
-      "losses": 10,
+      "wins": 19,
+      "losses": 11,
       "titles": 0
     },
     "yearResults": [
@@ -287,13 +291,13 @@
     "ranking": 10,
     "seed": 6,
     "surface": {
-      "hard": 70,
-      "clay": 69,
+      "hard": 60,
+      "clay": 63,
       "grass": 80
     },
     "ytd": {
-      "wins": 11,
-      "losses": 5,
+      "wins": 10,
+      "losses": 6,
       "titles": 0
     },
     "yearResults": [
@@ -316,6 +320,10 @@
       {
         "short": "MIA",
         "result": "R16"
+      },
+      {
+        "short": "MTL",
+        "result": "R64"
       }
     ]
   },
@@ -329,13 +337,13 @@
     "ranking": 9,
     "seed": 7,
     "surface": {
-      "hard": 25,
+      "hard": 20,
       "clay": 71,
       "grass": 80
     },
     "ytd": {
       "wins": 15,
-      "losses": 8,
+      "losses": 9,
       "titles": 0
     },
     "yearResults": [
@@ -370,6 +378,10 @@
       {
         "short": "HAM",
         "result": "R128"
+      },
+      {
+        "short": "MTL",
+        "result": "R64"
       }
     ]
   },
@@ -383,14 +395,14 @@
     "ranking": 6,
     "seed": 8,
     "surface": {
-      "hard": 60,
+      "hard": 75,
       "clay": 33,
-      "grass": 47
+      "grass": 61
     },
     "ytd": {
-      "wins": 8,
+      "wins": 14,
       "losses": 9,
-      "titles": 0
+      "titles": 1
     },
     "yearResults": [
       {
@@ -428,6 +440,10 @@
       {
         "short": "AKL",
         "result": "QF"
+      },
+      {
+        "short": "MTL",
+        "result": "W"
       }
     ]
   },
@@ -441,13 +457,13 @@
     "ranking": 12,
     "seed": 9,
     "surface": {
-      "hard": 62,
+      "hard": 63,
       "clay": 57,
       "grass": 67
     },
     "ytd": {
-      "wins": 16,
-      "losses": 10,
+      "wins": 18,
+      "losses": 11,
       "titles": 0
     },
     "yearResults": [
@@ -503,13 +519,13 @@
     "ranking": 15,
     "seed": 10,
     "surface": {
-      "hard": 71,
+      "hard": 63,
       "clay": 67,
-      "grass": 69
+      "grass": 64
     },
     "ytd": {
       "wins": 9,
-      "losses": 4,
+      "losses": 5,
       "titles": 0
     },
     "yearResults": [
@@ -528,6 +544,10 @@
       {
         "short": "ROM",
         "result": "R16"
+      },
+      {
+        "short": "MTL",
+        "result": "R32"
       }
     ]
   },
@@ -541,13 +561,13 @@
     "ranking": 13,
     "seed": 11,
     "surface": {
-      "hard": 56,
+      "hard": 55,
       "clay": 79,
-      "grass": 67
+      "grass": 65
     },
     "ytd": {
-      "wins": 16,
-      "losses": 8,
+      "wins": 17,
+      "losses": 9,
       "titles": 0
     },
     "yearResults": [
@@ -582,6 +602,10 @@
       {
         "short": "AKL",
         "result": "R64"
+      },
+      {
+        "short": "MTL",
+        "result": "R32"
       }
     ]
   },
@@ -595,13 +619,13 @@
     "ranking": 25,
     "seed": 12,
     "surface": {
-      "hard": 63,
+      "hard": 69,
       "clay": 79,
-      "grass": 72
+      "grass": 73
     },
     "ytd": {
-      "wins": 18,
-      "losses": 7,
+      "wins": 22,
+      "losses": 8,
       "titles": 0
     },
     "yearResults": [
@@ -632,6 +656,10 @@
       {
         "short": "ROM",
         "result": "QF"
+      },
+      {
+        "short": "MTL",
+        "result": "SF"
       }
     ]
   },
@@ -645,13 +673,13 @@
     "ranking": 14,
     "seed": 13,
     "surface": {
-      "hard": 56,
+      "hard": 50,
       "clay": 77,
-      "grass": 65
+      "grass": 63
     },
     "ytd": {
       "wins": 15,
-      "losses": 8,
+      "losses": 9,
       "titles": 1
     },
     "yearResults": [
@@ -688,8 +716,12 @@
         "result": "SF"
       },
       {
-        "short": "BAS",
+        "short": "BAD",
         "result": "W"
+      },
+      {
+        "short": "MTL",
+        "result": "R64"
       }
     ]
   },
@@ -703,13 +735,13 @@
     "ranking": 18,
     "seed": 14,
     "surface": {
-      "hard": 73,
+      "hard": 74,
       "clay": 67,
-      "grass": 67
+      "grass": 68
     },
     "ytd": {
-      "wins": 20,
-      "losses": 10,
+      "wins": 23,
+      "losses": 11,
       "titles": 1
     },
     "yearResults": [
@@ -765,13 +797,13 @@
     "ranking": 19,
     "seed": 15,
     "surface": {
-      "hard": 58,
-      "clay": 53,
-      "grass": 53
+      "hard": 54,
+      "clay": 50,
+      "grass": 50
     },
     "ytd": {
       "wins": 8,
-      "losses": 7,
+      "losses": 8,
       "titles": 0
     },
     "yearResults": [
@@ -802,6 +834,10 @@
       {
         "short": "ADL",
         "result": "QF"
+      },
+      {
+        "short": "MTL",
+        "result": "R64"
       }
     ]
   },
@@ -815,13 +851,13 @@
     "ranking": 16,
     "seed": 16,
     "surface": {
-      "hard": 67,
+      "hard": 71,
       "clay": 57,
-      "grass": 62
+      "grass": 65
     },
     "ytd": {
-      "wins": 13,
-      "losses": 8,
+      "wins": 17,
+      "losses": 9,
       "titles": 0
     },
     "yearResults": [
@@ -856,6 +892,10 @@
       {
         "short": "BRI",
         "result": "R64"
+      },
+      {
+        "short": "MTL",
+        "result": "SF"
       }
     ]
   },
@@ -869,12 +909,12 @@
     "ranking": 17,
     "seed": 17,
     "surface": {
-      "hard": 62,
+      "hard": 64,
       "clay": 63,
-      "grass": 63
+      "grass": 64
     },
     "ytd": {
-      "wins": 15,
+      "wins": 16,
       "losses": 9,
       "titles": 0
     },
@@ -908,12 +948,12 @@
         "result": "R64"
       },
       {
-        "short": "DC",
-        "result": "R128"
-      },
-      {
         "short": "BRI",
         "result": "R64"
+      },
+      {
+        "short": "MTL",
+        "result": "R32"
       }
     ]
   },
@@ -927,13 +967,13 @@
     "ranking": 24,
     "seed": 18,
     "surface": {
-      "hard": 64,
+      "hard": 63,
       "clay": 64,
       "grass": 75
     },
     "ytd": {
-      "wins": 22,
-      "losses": 11,
+      "wins": 23,
+      "losses": 12,
       "titles": 0
     },
     "yearResults": [
@@ -989,13 +1029,13 @@
     "ranking": 21,
     "seed": 19,
     "surface": {
-      "hard": 50,
+      "hard": 58,
       "clay": 71,
-      "grass": 62
+      "grass": 63
     },
     "ytd": {
-      "wins": 16,
-      "losses": 10,
+      "wins": 19,
+      "losses": 11,
       "titles": 0
     },
     "yearResults": [
@@ -1036,7 +1076,7 @@
         "result": "QF"
       },
       {
-        "short": "BAS",
+        "short": "BAD",
         "result": "F"
       }
     ]
@@ -1051,13 +1091,13 @@
     "ranking": 22,
     "seed": 20,
     "surface": {
-      "hard": 64,
+      "hard": 58,
       "clay": 56,
       "grass": 83
     },
     "ytd": {
       "wins": 17,
-      "losses": 9,
+      "losses": 10,
       "titles": 1
     },
     "yearResults": [
@@ -1113,13 +1153,13 @@
     "ranking": 23,
     "seed": 21,
     "surface": {
-      "hard": 78,
+      "hard": 77,
       "clay": 67,
       "grass": 71
     },
     "ytd": {
-      "wins": 12,
-      "losses": 5,
+      "wins": 15,
+      "losses": 6,
       "titles": 0
     },
     "yearResults": [
@@ -1142,6 +1182,10 @@
       {
         "short": "ROM",
         "result": "R64"
+      },
+      {
+        "short": "MTL",
+        "result": "QF"
       }
     ]
   },
@@ -1155,13 +1199,13 @@
     "ranking": 30,
     "seed": 22,
     "surface": {
-      "hard": 56,
+      "hard": 44,
       "clay": 64,
-      "grass": 55
+      "grass": 50
     },
     "ytd": {
-      "wins": 12,
-      "losses": 10,
+      "wins": 11,
+      "losses": 11,
       "titles": 0
     },
     "yearResults": [
@@ -1202,7 +1246,7 @@
         "result": "R64"
       },
       {
-        "short": "BAS",
+        "short": "BAD",
         "result": "SF"
       }
     ]
@@ -1217,13 +1261,13 @@
     "ranking": 28,
     "seed": 23,
     "surface": {
-      "hard": 57,
+      "hard": 60,
       "clay": 63,
-      "grass": 61
+      "grass": 62
     },
     "ytd": {
-      "wins": 11,
-      "losses": 7,
+      "wins": 13,
+      "losses": 8,
       "titles": 0
     },
     "yearResults": [
@@ -1254,6 +1298,10 @@
       {
         "short": "ROM",
         "result": "R64"
+      },
+      {
+        "short": "MTL",
+        "result": "R16"
       }
     ]
   },
@@ -1267,13 +1315,13 @@
     "ranking": 29,
     "seed": 24,
     "surface": {
-      "hard": 57,
+      "hard": 50,
       "clay": 50,
       "grass": 67
     },
     "ytd": {
-      "wins": 20,
-      "losses": 14,
+      "wins": 19,
+      "losses": 15,
       "titles": 0
     },
     "yearResults": [
@@ -1329,13 +1377,13 @@
     "ranking": 27,
     "seed": 25,
     "surface": {
-      "hard": 43,
+      "hard": 50,
       "clay": 50,
       "grass": 40
     },
     "ytd": {
-      "wins": 7,
-      "losses": 9,
+      "wins": 9,
+      "losses": 10,
       "titles": 0
     },
     "yearResults": [
@@ -1374,6 +1422,10 @@
       {
         "short": "HER",
         "result": "R64"
+      },
+      {
+        "short": "MTL",
+        "result": "R16"
       }
     ]
   },
@@ -1387,13 +1439,13 @@
     "ranking": 31,
     "seed": 26,
     "surface": {
-      "hard": 50,
+      "hard": 44,
       "clay": 43,
-      "grass": 41
+      "grass": 39
     },
     "ytd": {
       "wins": 7,
-      "losses": 10,
+      "losses": 11,
       "titles": 0
     },
     "yearResults": [
@@ -1449,13 +1501,13 @@
     "ranking": 32,
     "seed": 27,
     "surface": {
-      "hard": 56,
+      "hard": 67,
       "clay": 50,
       "grass": 67
     },
     "ytd": {
-      "wins": 12,
-      "losses": 9,
+      "wins": 17,
+      "losses": 10,
       "titles": 0
     },
     "yearResults": [
@@ -1494,6 +1546,10 @@
       {
         "short": "BRI",
         "result": "F"
+      },
+      {
+        "short": "MTL",
+        "result": "F"
       }
     ]
   },
@@ -1507,13 +1563,13 @@
     "ranking": 38,
     "seed": 28,
     "surface": {
-      "hard": 25,
+      "hard": 33,
       "clay": 73,
       "grass": 56
     },
     "ytd": {
-      "wins": 9,
-      "losses": 7,
+      "wins": 10,
+      "losses": 8,
       "titles": 0
     },
     "yearResults": [
@@ -1540,6 +1596,10 @@
       {
         "short": "ROM",
         "result": "R32"
+      },
+      {
+        "short": "MTL",
+        "result": "R32"
       }
     ]
   },
@@ -1553,13 +1613,13 @@
     "ranking": 35,
     "seed": 29,
     "surface": {
-      "hard": 60,
+      "hard": 50,
       "clay": 75,
       "grass": 50
     },
     "ytd": {
       "wins": 14,
-      "losses": 7,
+      "losses": 8,
       "titles": 1
     },
     "yearResults": [
@@ -1590,6 +1650,10 @@
       {
         "short": "QUE",
         "result": "R64"
+      },
+      {
+        "short": "MTL",
+        "result": "R64"
       }
     ]
   },
@@ -1603,12 +1667,12 @@
     "ranking": 34,
     "seed": 30,
     "surface": {
-      "hard": 29,
-      "clay": 47,
+      "hard": 38,
+      "clay": 50,
       "grass": 78
     },
     "ytd": {
-      "wins": 9,
+      "wins": 10,
       "losses": 10,
       "titles": 1
     },
@@ -1646,12 +1710,12 @@
         "result": "R128"
       },
       {
-        "short": "DC",
+        "short": "HER",
         "result": "R128"
       },
       {
-        "short": "HER",
-        "result": "R128"
+        "short": "EAS",
+        "result": "W"
       }
     ]
   },
@@ -1665,12 +1729,12 @@
     "ranking": 33,
     "seed": 31,
     "surface": {
-      "hard": 17,
+      "hard": 29,
       "clay": 70,
       "grass": 50
     },
     "ytd": {
-      "wins": 10,
+      "wins": 11,
       "losses": 10,
       "titles": 0
     },
@@ -1704,12 +1768,12 @@
         "result": "R32"
       },
       {
-        "short": "DC",
+        "short": "EAS",
         "result": "R128"
       },
       {
-        "short": "EAS",
-        "result": "R128"
+        "short": "MTL",
+        "result": "R32"
       }
     ]
   },
@@ -1765,13 +1829,13 @@
     "ranking": 26,
     "seed": null,
     "surface": {
-      "hard": 50,
+      "hard": 44,
       "clay": 64,
-      "grass": 59
+      "grass": 57
     },
     "ytd": {
       "wins": 13,
-      "losses": 9,
+      "losses": 10,
       "titles": 0
     },
     "yearResults": [
@@ -1810,6 +1874,10 @@
       {
         "short": "HAM",
         "result": "R64"
+      },
+      {
+        "short": "MTL",
+        "result": "R64"
       }
     ]
   },
@@ -1823,13 +1891,13 @@
     "ranking": 37,
     "seed": null,
     "surface": {
-      "hard": 55,
-      "clay": 50,
-      "grass": 50
+      "hard": 50,
+      "clay": 47,
+      "grass": 47
     },
     "ytd": {
       "wins": 8,
-      "losses": 8,
+      "losses": 9,
       "titles": 0
     },
     "yearResults": [
@@ -1864,6 +1932,10 @@
       {
         "short": "EAS",
         "result": "R128"
+      },
+      {
+        "short": "MTL",
+        "result": "R64"
       }
     ]
   },
@@ -1877,13 +1949,13 @@
     "ranking": 39,
     "seed": null,
     "surface": {
-      "hard": 58,
+      "hard": 63,
       "clay": 40,
-      "grass": 47
+      "grass": 52
     },
     "ytd": {
-      "wins": 9,
-      "losses": 10,
+      "wins": 12,
+      "losses": 11,
       "titles": 0
     },
     "yearResults": [
@@ -1939,13 +2011,13 @@
     "ranking": 41,
     "seed": null,
     "surface": {
-      "hard": 14,
+      "hard": 13,
       "clay": 43,
       "grass": 80
     },
     "ytd": {
       "wins": 8,
-      "losses": 11,
+      "losses": 12,
       "titles": 0
     },
     "yearResults": [
@@ -1984,6 +2056,10 @@
       {
         "short": "HAM",
         "result": "R128"
+      },
+      {
+        "short": "MTL",
+        "result": "R128"
       }
     ]
   },
@@ -1997,13 +2073,13 @@
     "ranking": 42,
     "seed": null,
     "surface": {
-      "hard": 60,
+      "hard": 50,
       "clay": 57,
-      "grass": 60
+      "grass": 56
     },
     "ytd": {
       "wins": 9,
-      "losses": 6,
+      "losses": 7,
       "titles": 0
     },
     "yearResults": [
@@ -2030,6 +2106,10 @@
       {
         "short": "ROM",
         "result": "R128"
+      },
+      {
+        "short": "MTL",
+        "result": "R128"
       }
     ]
   },
@@ -2045,11 +2125,11 @@
     "surface": {
       "hard": 67,
       "clay": 50,
-      "grass": 59
+      "grass": 60
     },
     "ytd": {
-      "wins": 13,
-      "losses": 9,
+      "wins": 15,
+      "losses": 10,
       "titles": 0
     },
     "yearResults": [
@@ -2088,6 +2168,10 @@
       {
         "short": "AKL",
         "result": "R64"
+      },
+      {
+        "short": "MTL",
+        "result": "R32"
       }
     ]
   },
@@ -2101,13 +2185,13 @@
     "ranking": 46,
     "seed": null,
     "surface": {
-      "hard": 20,
-      "clay": 38,
+      "hard": 17,
+      "clay": 35,
       "grass": 63
     },
     "ytd": {
       "wins": 6,
-      "losses": 10,
+      "losses": 11,
       "titles": 0
     },
     "yearResults": [
@@ -2163,13 +2247,13 @@
     "ranking": 47,
     "seed": null,
     "surface": {
-      "hard": 20,
+      "hard": 38,
       "clay": 50,
-      "grass": 36
+      "grass": 41
     },
     "ytd": {
-      "wins": 5,
-      "losses": 9,
+      "wins": 7,
+      "losses": 10,
       "titles": 0
     },
     "yearResults": [
@@ -2206,8 +2290,12 @@
         "result": "R128"
       },
       {
-        "short": "BAS",
+        "short": "BAD",
         "result": "R64"
+      },
+      {
+        "short": "MTL",
+        "result": "R32"
       }
     ]
   },
@@ -2221,13 +2309,13 @@
     "ranking": 48,
     "seed": null,
     "surface": {
-      "hard": 50,
+      "hard": 58,
       "clay": 56,
       "grass": 50
     },
     "ytd": {
-      "wins": 11,
-      "losses": 10,
+      "wins": 14,
+      "losses": 11,
       "titles": 0
     },
     "yearResults": [
@@ -2268,7 +2356,7 @@
         "result": "R64"
       },
       {
-        "short": "BAS",
+        "short": "BAD",
         "result": "QF"
       }
     ]
@@ -2285,11 +2373,11 @@
     "surface": {
       "hard": 50,
       "clay": 43,
-      "grass": 40
+      "grass": 41
     },
     "ytd": {
-      "wins": 8,
-      "losses": 12,
+      "wins": 9,
+      "losses": 13,
       "titles": 0
     },
     "yearResults": [
@@ -2345,13 +2433,13 @@
     "ranking": 50,
     "seed": null,
     "surface": {
-      "hard": 40,
+      "hard": 43,
       "clay": 57,
       "grass": 50
     },
     "ytd": {
-      "wins": 8,
-      "losses": 8,
+      "wins": 9,
+      "losses": 9,
       "titles": 0
     },
     "yearResults": [
@@ -2382,6 +2470,10 @@
       {
         "short": "EAS",
         "result": "QF"
+      },
+      {
+        "short": "MTL",
+        "result": "R64"
       }
     ]
   },
@@ -2395,13 +2487,13 @@
     "ranking": 51,
     "seed": null,
     "surface": {
-      "hard": 38,
+      "hard": 40,
       "clay": 57,
       "grass": 47
     },
     "ytd": {
-      "wins": 8,
-      "losses": 9,
+      "wins": 9,
+      "losses": 10,
       "titles": 0
     },
     "yearResults": [
@@ -2440,6 +2532,10 @@
       {
         "short": "ADL",
         "result": "R128"
+      },
+      {
+        "short": "MTL",
+        "result": "R64"
       }
     ]
   },
@@ -2453,13 +2549,13 @@
     "ranking": 52,
     "seed": null,
     "surface": {
-      "hard": 50,
+      "hard": 56,
       "clay": 43,
-      "grass": 47
+      "grass": 50
     },
     "ytd": {
-      "wins": 7,
-      "losses": 8,
+      "wins": 9,
+      "losses": 9,
       "titles": 0
     },
     "yearResults": [
@@ -2494,6 +2590,10 @@
       {
         "short": "BRI",
         "result": "R128"
+      },
+      {
+        "short": "MTL",
+        "result": "R32"
       }
     ]
   },
@@ -2562,8 +2662,8 @@
       "grass": 44
     },
     "ytd": {
-      "wins": 7,
-      "losses": 9,
+      "wins": 8,
+      "losses": 10,
       "titles": 0
     },
     "yearResults": [
@@ -2602,6 +2702,10 @@
       {
         "short": "AKL",
         "result": "SF"
+      },
+      {
+        "short": "MTL",
+        "result": "R64"
       }
     ]
   },
@@ -2615,13 +2719,13 @@
     "ranking": 55,
     "seed": null,
     "surface": {
-      "hard": 43,
+      "hard": 55,
       "clay": 50,
       "grass": 40
     },
     "ytd": {
-      "wins": 8,
-      "losses": 10,
+      "wins": 11,
+      "losses": 11,
       "titles": 0
     },
     "yearResults": [
@@ -2662,7 +2766,7 @@
         "result": "R128"
       },
       {
-        "short": "BAS",
+        "short": "BAD",
         "result": "R64"
       }
     ]
@@ -2677,13 +2781,13 @@
     "ranking": 56,
     "seed": null,
     "surface": {
-      "hard": 64,
+      "hard": 62,
       "clay": 43,
-      "grass": 53
+      "grass": 52
     },
     "ytd": {
-      "wins": 10,
-      "losses": 9,
+      "wins": 11,
+      "losses": 10,
       "titles": 0
     },
     "yearResults": [
@@ -2720,8 +2824,12 @@
         "result": "F"
       },
       {
-        "short": "BAS",
+        "short": "BAD",
         "result": "QF"
+      },
+      {
+        "short": "MTL",
+        "result": "R64"
       }
     ]
   },
@@ -2735,13 +2843,13 @@
     "ranking": 57,
     "seed": null,
     "surface": {
-      "hard": 44,
+      "hard": 54,
       "clay": 69,
-      "grass": 56
+      "grass": 59
     },
     "ytd": {
-      "wins": 14,
-      "losses": 11,
+      "wins": 17,
+      "losses": 12,
       "titles": 0
     },
     "yearResults": [
@@ -2774,8 +2882,12 @@
         "result": "R64"
       },
       {
-        "short": "BAS",
+        "short": "BAD",
         "result": "QF"
+      },
+      {
+        "short": "MTL",
+        "result": "R16"
       }
     ]
   },
@@ -2789,13 +2901,13 @@
     "ranking": 58,
     "seed": null,
     "surface": {
-      "hard": 20,
+      "hard": 29,
       "clay": 40,
-      "grass": 27
+      "grass": 31
     },
     "ytd": {
-      "wins": 3,
-      "losses": 8,
+      "wins": 4,
+      "losses": 9,
       "titles": 0
     },
     "yearResults": [
@@ -2830,6 +2942,10 @@
       {
         "short": "ADL",
         "result": "R128"
+      },
+      {
+        "short": "MTL",
+        "result": "R64"
       }
     ]
   },
@@ -2843,13 +2959,13 @@
     "ranking": 59,
     "seed": null,
     "surface": {
-      "hard": 60,
+      "hard": 70,
       "clay": 63,
-      "grass": 56
+      "grass": 62
     },
     "ytd": {
-      "wins": 9,
-      "losses": 7,
+      "wins": 13,
+      "losses": 8,
       "titles": 0
     },
     "yearResults": [
@@ -2876,6 +2992,10 @@
       {
         "short": "QUE",
         "result": "R128"
+      },
+      {
+        "short": "MTL",
+        "result": "QF"
       }
     ]
   },
@@ -2889,13 +3009,13 @@
     "ranking": 60,
     "seed": null,
     "surface": {
-      "hard": 22,
+      "hard": 25,
       "clay": 25,
-      "grass": 22
+      "grass": 20
     },
     "ytd": {
       "wins": 2,
-      "losses": 7,
+      "losses": 8,
       "titles": 0
     },
     "yearResults": [
@@ -2922,6 +3042,10 @@
       {
         "short": "EAS",
         "result": "R128"
+      },
+      {
+        "short": "MTL",
+        "result": "R128"
       }
     ]
   },
@@ -2935,13 +3059,13 @@
     "ranking": 61,
     "seed": null,
     "surface": {
-      "hard": 0,
+      "hard": 14,
       "clay": 44,
-      "grass": 29
+      "grass": 32
     },
     "ytd": {
-      "wins": 5,
-      "losses": 12,
+      "wins": 6,
+      "losses": 13,
       "titles": 0
     },
     "yearResults": [
@@ -2997,13 +3121,13 @@
     "ranking": 62,
     "seed": null,
     "surface": {
-      "hard": 70,
+      "hard": 64,
       "clay": 60,
-      "grass": 62
+      "grass": 59
     },
     "ytd": {
       "wins": 13,
-      "losses": 8,
+      "losses": 9,
       "titles": 0
     },
     "yearResults": [
@@ -3030,6 +3154,10 @@
       {
         "short": "BRI",
         "result": "R128"
+      },
+      {
+        "short": "MTL",
+        "result": "R128"
       }
     ]
   },
@@ -3049,13 +3177,17 @@
     },
     "ytd": {
       "wins": 0,
-      "losses": 1,
+      "losses": 2,
       "titles": 0
     },
     "yearResults": [
       {
-        "short": "BAS",
+        "short": "BAD",
         "result": "SF"
+      },
+      {
+        "short": "MTL",
+        "result": "R128"
       }
     ]
   },
@@ -3069,13 +3201,13 @@
     "ranking": 65,
     "seed": null,
     "surface": {
-      "hard": 56,
+      "hard": 50,
       "clay": 67,
-      "grass": 60
+      "grass": 57
     },
     "ytd": {
       "wins": 12,
-      "losses": 8,
+      "losses": 9,
       "titles": 0
     },
     "yearResults": [
@@ -3110,6 +3242,10 @@
       {
         "short": "AKL",
         "result": "R128"
+      },
+      {
+        "short": "MTL",
+        "result": "R128"
       }
     ]
   },
@@ -3123,12 +3259,12 @@
     "ranking": 66,
     "seed": null,
     "surface": {
-      "hard": 50,
+      "hard": 64,
       "clay": 25,
-      "grass": 40
+      "grass": 50
     },
     "ytd": {
-      "wins": 6,
+      "wins": 9,
       "losses": 9,
       "titles": 0
     },
@@ -3158,16 +3294,16 @@
         "result": "F"
       },
       {
-        "short": "DC",
-        "result": "R128"
-      },
-      {
         "short": "ADL",
         "result": "R64"
       },
       {
         "short": "HER",
         "result": "R64"
+      },
+      {
+        "short": "MTL",
+        "result": "R16"
       }
     ]
   },
@@ -3181,13 +3317,13 @@
     "ranking": 67,
     "seed": null,
     "surface": {
-      "hard": 38,
-      "clay": 27,
+      "hard": 33,
+      "clay": 25,
       "grass": 25
     },
     "ytd": {
       "wins": 4,
-      "losses": 11,
+      "losses": 12,
       "titles": 0
     },
     "yearResults": [
@@ -3248,8 +3384,8 @@
       "grass": 50
     },
     "ytd": {
-      "wins": 9,
-      "losses": 9,
+      "wins": 10,
+      "losses": 10,
       "titles": 0
     },
     "yearResults": [
@@ -3280,6 +3416,10 @@
       {
         "short": "HAM",
         "result": "R128"
+      },
+      {
+        "short": "MTL",
+        "result": "R64"
       }
     ]
   },
@@ -3293,13 +3433,13 @@
     "ranking": 69,
     "seed": null,
     "surface": {
-      "hard": 29,
+      "hard": 25,
       "clay": 50,
-      "grass": 38
+      "grass": 35
     },
     "ytd": {
       "wins": 6,
-      "losses": 10,
+      "losses": 11,
       "titles": 0
     },
     "yearResults": [
@@ -3355,13 +3495,13 @@
     "ranking": 70,
     "seed": null,
     "surface": {
-      "hard": 20,
+      "hard": 38,
       "clay": 40,
       "grass": 60
     },
     "ytd": {
-      "wins": 6,
-      "losses": 9,
+      "wins": 8,
+      "losses": 10,
       "titles": 0
     },
     "yearResults": [
@@ -3400,6 +3540,10 @@
       {
         "short": "HER",
         "result": "R128"
+      },
+      {
+        "short": "MTL",
+        "result": "R32"
       }
     ]
   },
@@ -3413,13 +3557,13 @@
     "ranking": 71,
     "seed": null,
     "surface": {
-      "hard": 54,
-      "clay": 57,
+      "hard": 50,
+      "clay": 54,
       "grass": 75
     },
     "ytd": {
       "wins": 13,
-      "losses": 10,
+      "losses": 11,
       "titles": 1
     },
     "yearResults": [
@@ -3475,13 +3619,13 @@
     "ranking": 72,
     "seed": null,
     "surface": {
-      "hard": 67,
+      "hard": 57,
       "clay": 67,
-      "grass": 60
+      "grass": 56
     },
     "ytd": {
       "wins": 9,
-      "losses": 6,
+      "losses": 7,
       "titles": 0
     },
     "yearResults": [
@@ -3508,6 +3652,10 @@
       {
         "short": "AKL",
         "result": "R64"
+      },
+      {
+        "short": "MTL",
+        "result": "R128"
       }
     ]
   },
@@ -3521,13 +3669,13 @@
     "ranking": 73,
     "seed": null,
     "surface": {
-      "hard": 44,
+      "hard": 50,
       "clay": 57,
       "grass": 50
     },
     "ytd": {
       "wins": 11,
-      "losses": 11,
+      "losses": 10,
       "titles": 0
     },
     "yearResults": [
@@ -3564,8 +3712,8 @@
         "result": "R128"
       },
       {
-        "short": "DC",
-        "result": "R128"
+        "short": "MTL",
+        "result": "R64"
       }
     ]
   },
@@ -3579,13 +3727,13 @@
     "ranking": 74,
     "seed": null,
     "surface": {
-      "hard": 44,
-      "clay": 40,
+      "hard": 45,
+      "clay": 41,
       "grass": 50
     },
     "ytd": {
-      "wins": 8,
-      "losses": 12,
+      "wins": 9,
+      "losses": 13,
       "titles": 0
     },
     "yearResults": [
@@ -3641,13 +3789,13 @@
     "ranking": 75,
     "seed": null,
     "surface": {
-      "hard": 0,
+      "hard": 14,
       "clay": 25,
-      "grass": 18
+      "grass": 23
     },
     "ytd": {
-      "wins": 2,
-      "losses": 9,
+      "wins": 3,
+      "losses": 10,
       "titles": 0
     },
     "yearResults": [
@@ -3686,6 +3834,10 @@
       {
         "short": "AKL",
         "result": "R128"
+      },
+      {
+        "short": "MTL",
+        "result": "R64"
       }
     ]
   },
@@ -3699,13 +3851,13 @@
     "ranking": 76,
     "seed": null,
     "surface": {
-      "hard": 50,
-      "clay": 42,
+      "hard": 45,
+      "clay": 40,
       "grass": 50
     },
     "ytd": {
       "wins": 8,
-      "losses": 11,
+      "losses": 12,
       "titles": 0
     },
     "yearResults": [
@@ -3761,13 +3913,13 @@
     "ranking": 77,
     "seed": null,
     "surface": {
-      "hard": 44,
+      "hard": 40,
       "clay": 25,
-      "grass": 44
+      "grass": 40
     },
     "ytd": {
       "wins": 4,
-      "losses": 5,
+      "losses": 6,
       "titles": 0
     },
     "yearResults": [
@@ -3790,6 +3942,10 @@
       {
         "short": "ROM",
         "result": "R128"
+      },
+      {
+        "short": "MTL",
+        "result": "R128"
       }
     ]
   },
@@ -3803,13 +3959,13 @@
     "ranking": 78,
     "seed": null,
     "surface": {
-      "hard": 13,
+      "hard": 11,
       "clay": 20,
-      "grass": 13
+      "grass": 11
     },
     "ytd": {
       "wins": 1,
-      "losses": 7,
+      "losses": 8,
       "titles": 0
     },
     "yearResults": [
@@ -3836,6 +3992,10 @@
       {
         "short": "HAM",
         "result": "R128"
+      },
+      {
+        "short": "MTL",
+        "result": "R128"
       }
     ]
   },
@@ -3849,13 +4009,13 @@
     "ranking": 79,
     "seed": null,
     "surface": {
-      "hard": 38,
+      "hard": 33,
       "clay": 40,
-      "grass": 36
+      "grass": 33
     },
     "ytd": {
       "wins": 5,
-      "losses": 9,
+      "losses": 10,
       "titles": 0
     },
     "yearResults": [
@@ -3890,6 +4050,10 @@
       {
         "short": "EAS",
         "result": "R128"
+      },
+      {
+        "short": "MTL",
+        "result": "R128"
       }
     ]
   },
@@ -3903,13 +4067,13 @@
     "ranking": 82,
     "seed": null,
     "surface": {
-      "hard": 38,
-      "clay": 36,
+      "hard": 40,
+      "clay": 38,
       "grass": 25
     },
     "ytd": {
-      "wins": 5,
-      "losses": 9,
+      "wins": 6,
+      "losses": 10,
       "titles": 0
     },
     "yearResults": [
@@ -3948,6 +4112,10 @@
       {
         "short": "EAS",
         "result": "R128"
+      },
+      {
+        "short": "MTL",
+        "result": "R64"
       }
     ]
   },
@@ -4023,13 +4191,13 @@
     "ranking": 86,
     "seed": null,
     "surface": {
-      "hard": 57,
+      "hard": 56,
       "clay": 40,
       "grass": 40
     },
     "ytd": {
-      "wins": 8,
-      "losses": 9,
+      "wins": 9,
+      "losses": 10,
       "titles": 0
     },
     "yearResults": [
@@ -4068,6 +4236,10 @@
       {
         "short": "HER",
         "result": "QF"
+      },
+      {
+        "short": "MTL",
+        "result": "R64"
       }
     ]
   },
@@ -4081,13 +4253,13 @@
     "ranking": 88,
     "seed": null,
     "surface": {
-      "hard": 58,
+      "hard": 25,
       "clay": 63,
-      "grass": 58
+      "grass": 50
     },
     "ytd": {
       "wins": 7,
-      "losses": 5,
+      "losses": 7,
       "titles": 0
     },
     "yearResults": [
@@ -4106,6 +4278,10 @@
       {
         "short": "MAD",
         "result": "R128"
+      },
+      {
+        "short": "MTL",
+        "result": "R64"
       }
     ]
   },
@@ -4142,7 +4318,7 @@
         "result": "QF"
       },
       {
-        "short": "BAS",
+        "short": "BAD",
         "result": "R128"
       }
     ]
@@ -4207,13 +4383,13 @@
     "ranking": 93,
     "seed": null,
     "surface": {
-      "hard": 50,
+      "hard": 45,
       "clay": 44,
       "grass": 20
     },
     "ytd": {
       "wins": 10,
-      "losses": 14,
+      "losses": 15,
       "titles": 0
     },
     "yearResults": [
@@ -4269,13 +4445,13 @@
     "ranking": 95,
     "seed": null,
     "surface": {
-      "hard": 30,
+      "hard": 27,
       "clay": 40,
       "grass": 25
     },
     "ytd": {
       "wins": 3,
-      "losses": 7,
+      "losses": 8,
       "titles": 0
     },
     "yearResults": [
@@ -4315,13 +4491,13 @@
     "ranking": 96,
     "seed": null,
     "surface": {
-      "hard": 69,
+      "hard": 65,
       "clay": 33,
       "grass": 67
     },
     "ytd": {
       "wins": 17,
-      "losses": 11,
+      "losses": 12,
       "titles": 0
     },
     "yearResults": [
@@ -4360,6 +4536,10 @@
       {
         "short": "ADL",
         "result": "R64"
+      },
+      {
+        "short": "MTL",
+        "result": "R128"
       }
     ]
   },
@@ -4373,13 +4553,13 @@
     "ranking": 97,
     "seed": null,
     "surface": {
-      "hard": 60,
+      "hard": 57,
       "clay": 50,
       "grass": 50
     },
     "ytd": {
-      "wins": 3,
-      "losses": 3,
+      "wins": 4,
+      "losses": 4,
       "titles": 0
     },
     "yearResults": [
@@ -4389,6 +4569,10 @@
       },
       {
         "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MTL",
         "result": "R128"
       }
     ]
@@ -4442,7 +4626,7 @@
         "result": "R128"
       },
       {
-        "short": "BAS",
+        "short": "BAD",
         "result": "R64"
       }
     ]
@@ -4462,8 +4646,8 @@
       "grass": 44
     },
     "ytd": {
-      "wins": 7,
-      "losses": 9,
+      "wins": 8,
+      "losses": 10,
       "titles": 0
     },
     "yearResults": [
@@ -4497,6 +4681,10 @@
       },
       {
         "short": "BRI",
+        "result": "R128"
+      },
+      {
+        "short": "MTL",
         "result": "R128"
       }
     ]
@@ -4545,13 +4733,13 @@
     "ranking": 114,
     "seed": null,
     "surface": {
-      "hard": 33,
+      "hard": 75,
       "clay": 40,
-      "grass": 33
+      "grass": 50
     },
     "ytd": {
-      "wins": 2,
-      "losses": 4,
+      "wins": 5,
+      "losses": 5,
       "titles": 0
     },
     "yearResults": [
@@ -4566,6 +4754,10 @@
       {
         "short": "MAD",
         "result": "R128"
+      },
+      {
+        "short": "MTL",
+        "result": "R32"
       }
     ]
   },
@@ -4579,13 +4771,13 @@
     "ranking": 120,
     "seed": null,
     "surface": {
-      "hard": 43,
-      "clay": 43,
-      "grass": 43
+      "hard": 40,
+      "clay": 44,
+      "grass": 44
     },
     "ytd": {
-      "wins": 3,
-      "losses": 4,
+      "wins": 4,
+      "losses": 5,
       "titles": 0
     },
     "yearResults": [
@@ -4604,6 +4796,10 @@
       {
         "short": "IW",
         "result": "R128"
+      },
+      {
+        "short": "MTL",
+        "result": "R128"
       }
     ]
   },
@@ -4617,12 +4813,12 @@
     "ranking": 126,
     "seed": null,
     "surface": {
-      "hard": 42,
-      "clay": 36,
-      "grass": 36
+      "hard": 46,
+      "clay": 40,
+      "grass": 40
     },
     "ytd": {
-      "wins": 5,
+      "wins": 6,
       "losses": 9,
       "titles": 0
     },
@@ -4652,11 +4848,11 @@
         "result": "R128"
       },
       {
-        "short": "DC",
+        "short": "ADL",
         "result": "R128"
       },
       {
-        "short": "ADL",
+        "short": "MTL",
         "result": "R128"
       }
     ]
@@ -4671,13 +4867,13 @@
     "ranking": 134,
     "seed": null,
     "surface": {
-      "hard": 25,
-      "clay": 25,
-      "grass": 25
+      "hard": 33,
+      "clay": 33,
+      "grass": 33
     },
     "ytd": {
-      "wins": 1,
-      "losses": 3,
+      "wins": 2,
+      "losses": 4,
       "titles": 0
     },
     "yearResults": [
@@ -4692,6 +4888,10 @@
       {
         "short": "WIM",
         "result": "R64"
+      },
+      {
+        "short": "MTL",
+        "result": "R128"
       }
     ]
   },
@@ -4705,13 +4905,13 @@
     "ranking": 136,
     "seed": null,
     "surface": {
-      "hard": 25,
-      "clay": 25,
-      "grass": 25
+      "hard": 40,
+      "clay": 43,
+      "grass": 43
     },
     "ytd": {
-      "wins": 1,
-      "losses": 3,
+      "wins": 3,
+      "losses": 4,
       "titles": 0
     },
     "yearResults": [
@@ -4726,6 +4926,10 @@
       {
         "short": "MIA",
         "result": "R128"
+      },
+      {
+        "short": "MTL",
+        "result": "R64"
       }
     ]
   },
@@ -4774,7 +4978,7 @@
         "result": "R64"
       },
       {
-        "short": "BAS",
+        "short": "BAD",
         "result": "R64"
       }
     ]
@@ -4789,13 +4993,13 @@
     "ranking": 147,
     "seed": null,
     "surface": {
-      "hard": 57,
-      "clay": 64,
+      "hard": 50,
+      "clay": 58,
       "grass": 75
     },
     "ytd": {
       "wins": 7,
-      "losses": 4,
+      "losses": 5,
       "titles": 0
     },
     "yearResults": [
@@ -4814,6 +5018,10 @@
       {
         "short": "EAS",
         "result": "SF"
+      },
+      {
+        "short": "MTL",
+        "result": "R128"
       }
     ]
   },
