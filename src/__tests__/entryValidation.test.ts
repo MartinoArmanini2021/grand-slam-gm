@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import saveEntrySql from '../../supabase/save_entry_rpc.sql?raw';
+import cincinnatiSeedSql from '../../supabase/seed_cincinnati_player_stats.sql?raw';
 import { validateSquadLegality, validateCaptainLock, type RosterPricing } from '../data/entryValidation';
 import { buildLegalityFixtures } from './fixtures/entryFixtures';
 import { PLAYERS } from '../data/players';
@@ -37,9 +38,13 @@ describe('validateSquadLegality — legal cases pass', () => {
     expect(validateSquadLegality(touched(legalSquad().slice(0, 8)), ROSTER)).toBeNull();
   });
   it('a TOUCHED locked squad may drift off 2·3·5 (bought any tier)', () => {
-    // 3 Platinum + a couple others — illegal at the pristine lock, fine once touched.
-    const plats = PLAYERS.filter(p => getTier(p.ranking) === 'Platinum').slice(0, 3).map(p => p.id);
-    const golds = PLAYERS.filter(p => getTier(p.ranking) === 'Gold').slice(0, 2).map(p => p.id);
+    // 3 Platinum + a couple others — illegal at the pristine lock, fine once touched. Take the
+    // CHEAPEST of each tier so the budget rule can never confound what this is actually testing
+    // (an over-budget squad is rejected for a different reason, on a field with pricier stars).
+    const cheapest = (t: Tier, n: number) => PLAYERS.filter(p => getTier(p.ranking) === t)
+      .sort((a, b) => a.price - b.price).slice(0, n).map(p => p.id);
+    const plats = cheapest('Platinum', 3);
+    const golds = cheapest('Gold', 2);
     expect(validateSquadLegality(touched([...plats, ...golds]), ROSTER)).toBeNull();
   });
 });
@@ -139,19 +144,28 @@ describe('validateCaptainLock — no retroactive picks (F1(2))', () => {
   });
 });
 
-// PARITY: the seeded player_stats price/tier in save_entry_rpc.sql MUST equal what the client
-// shows (PLAYERS[i].price / getTier). If this drifts, a legal client squad could be server-
-// rejected (or vice versa). Re-seed by regenerating the INSERT block from PLAYERS.
-describe('save_entry_rpc.sql seed ↔ PLAYERS parity', () => {
-  const sql = saveEntrySql;
+// PARITY: the seeded player_stats price/tier MUST equal what the client shows (PLAYERS[i].price /
+// getTier). If this drifts, a legal client squad could be server-rejected (or vice versa).
+//
+// player_stats is ONE table shared by every tournament, and in production it holds the UNION of every
+// seed that has been applied (save_entry_rpc.sql for Montréal, seed_cincinnati_player_stats.sql for
+// Cincinnati). So the invariant is: every player in the ACTIVE field has a complete, correct row in
+// at least one seed. Checking a single file would break the moment a second event shipped.
+//
+// A NULL price/tier is the specific hazard: save_entry counts the tier quota with
+// `count(*) filter (where ps.tier = …)` and sums the budget with `sum(ps.price)`, so a missing column
+// makes a legal 2/3/5 squad read as 2/3/4 (never lockable) and under-counts spend.
+describe('player_stats seeds ↔ PLAYERS parity', () => {
   const seeded = new Map<string, { ranking: number; price: number; tier: string }>();
-  for (const m of sql.matchAll(/\('([a-z0-9_]+)',\s*(\d+),\s*(\d+),\s*'(\w+)'\)/g)) {
-    seeded.set(m[1], { ranking: Number(m[2]), price: Number(m[3]), tier: m[4] });
+  for (const sql of [saveEntrySql, cincinnatiSeedSql]) {
+    for (const m of sql.matchAll(/\(\s*'([a-z0-9_]+)',\s*(\d+),\s*(\d+),\s*'(\w+)'\s*\)/g)) {
+      seeded.set(m[1], { ranking: Number(m[2]), price: Number(m[3]), tier: m[4] });
+    }
   }
 
-  it('seeds every roster player, and only those', () => {
-    expect(seeded.size).toBe(PLAYERS.length);
-    for (const p of PLAYERS) expect(seeded.has(p.id)).toBe(true);
+  it('seeds every player in the active field, with a complete row', () => {
+    const missing = PLAYERS.filter(p => !seeded.has(p.id)).map(p => `${p.name} (${p.id})`);
+    expect(missing).toEqual([]); // a missing row = that player can never be locked into a squad
   });
   it('every seeded price/tier/ranking matches the client', () => {
     for (const p of PLAYERS) {

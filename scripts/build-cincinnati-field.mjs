@@ -27,6 +27,9 @@ const MANUAL = [
     surface: { hard: 50, clay: 50, grass: 50 }, ytd: { wins: 0, losses: 0, titles: 0 }, yearResults: [] },
   { id: 'kokkinakis', name: 'Thanasi Kokkinakis', country: 'Australia', flag: '🇦🇺', age: 30, hand: 'R', ranking: 443, seed: null,
     surface: { hard: 50, clay: 50, grass: 50 }, ytd: { wins: 0, losses: 0, titles: 0 }, yearResults: [] },
+  // Qualifier. Former US top-40, now rebuilding after injury — outside the top-300 snapshot.
+  { id: 'wolf', name: 'J.J. Wolf', country: 'United States', flag: '🇺🇸', age: 27, hand: 'R', ranking: 688, seed: null,
+    surface: { hard: 50, clay: 50, grass: 50 }, ytd: { wins: 0, losses: 0, titles: 0 }, yearResults: [] },
 ];
 
 const pool = JSON.parse(readFileSync(new URL('../src/data/atp300.json', import.meta.url), 'utf8'));

@@ -181,11 +181,10 @@ export const TOURNAMENTS: Record<string, Tournament> = {
     drawSize: 96,
     rounds: ['R64', 'R32', 'R16', 'QF', 'SF', 'F'],
     mode: 'live',
-    // STAGED: real field wired + reconciled + schedule set, but NOT yet exposed in the production
-    // switcher (Montréal is still live and its final must finish ingesting first). Preview it safely
-    // on a staging build — VITE_ACTIVE_TOURNAMENT=cincinnati_2026 — without touching production. At
-    // cutover (Montréal's final scored) flip this to true; full steps in docs/CINCINNATI_CUTOVER.md.
-    live: false,
+    // LIVE (cut over 14 Aug 2026, once Montréal's final was decided and scored — Shelton champion).
+    // This is the event the app opens on; Montréal stays `live` so managers can still review their
+    // finished run from the switcher. Full cutover record in docs/CINCINNATI_CUTOVER.md.
+    live: true,
     // Official window: 13–23 Aug 2026, Lindner Family Tennis Center, Mason OH (Eastern, UTC−4).
     // Round START = the FIRST match of each round = that round's LOCK deadline; R64 (seeds' first
     // matches, Sat 15 Aug) doubles as the DRAFT DEADLINE. Day sessions open 11:00 ET (15:00 UTC).
@@ -242,7 +241,9 @@ export const TOURNAMENTS: Record<string, Tournament> = {
   },
 };
 
-const DEFAULT_TOURNAMENT_ID = 'montreal_2026';
+// The event the app opens on for a manager who hasn't chosen one. Points at the CURRENT tournament,
+// so a returning manager lands on the one they can still play rather than a finished draw.
+const DEFAULT_TOURNAMENT_ID = 'cincinnati_2026';
 const ACTIVE_STORE_KEY = 'gsgm-active-tournament';
 
 // The tournaments a player can pick between in the app — the `live` ones, ordered as

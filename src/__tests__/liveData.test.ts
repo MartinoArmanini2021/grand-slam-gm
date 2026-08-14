@@ -1,6 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import { parseBracket, cleanTeam } from '../data/liveData';
 import { matchKey } from '../data/liveResults';
+import { findPlayer } from '../data/players';
+
+// These fixtures assert real roster IDS, so they only mean anything while the named players are in
+// the ACTIVE field — otherwise each resolves to a synthetic `x_…` id and the tests fail confusingly.
+// Pin that assumption here so a field change reports the real cause instead. (Bublik was swapped for
+// Medvedev at the Cincinnati cutover: he isn't in that draw.)
+describe('fixture assumption — the named players are in the active field', () => {
+  it.each(['zverev', 'medvedev', 'deminaur', 'fritz'])('%s is draftable', (id) => {
+    expect(findPlayer(id), `fixture player "${id}" is not in the active field — pick another`).toBeDefined();
+  });
+});
 
 describe('cleanTeam — strip Wikipedia markup', () => {
   it('drops flag templates and wiki-links to a bare name', () => {
@@ -18,7 +29,7 @@ const FIXTURE = `
 | RD1=Semifinals
 | RD2=Final
 | RD1-seed01=2 | RD1-team01={{flagicon|GER}} [[Alexander Zverev]]  | RD1-score01-1=6 | RD1-score01-2=6
-| RD1-seed02=11 | RD1-team02={{flagicon|KAZ}} [[Alexander Bublik]] | RD1-score02-1=3 | RD1-score02-2=4
+| RD1-seed02=11 | RD1-team02={{flagicon|RUS}} [[Daniil Medvedev]] | RD1-score02-1=3 | RD1-score02-2=4
 | RD1-seed03=5 | RD1-team03={{flagicon|AUS}} [[Alex de Minaur]]   | RD1-score03-1=7 | RD1-score03-2=6
 | RD1-seed04=22 | RD1-team04={{flagicon|USA}} [[Taylor Fritz]]    | RD1-score04-1=5 | RD1-score04-2=4
 | RD2-seed01=2 | RD2-team01={{flagicon|GER}} [[Alexander Zverev]] | RD2-score01-1=6
@@ -32,7 +43,7 @@ describe('parseBracket — structural parse + advancement winners', () => {
   it('builds the pairings for each round it can', () => {
     // 2 semis + 1 final pairing (both semi winners are known)
     expect(draw).toHaveLength(3);
-    expect(draw.find(m => m.round === 'SF' && m.slot === 0)).toMatchObject({ p1Id: 'zverev', p2Id: 'bublik' });
+    expect(draw.find(m => m.round === 'SF' && m.slot === 0)).toMatchObject({ p1Id: 'zverev', p2Id: 'medvedev' });
     expect(draw.find(m => m.round === 'SF' && m.slot === 1)).toMatchObject({ p1Id: 'deminaur', p2Id: 'fritz' });
     expect(draw.find(m => m.round === 'F' && m.slot === 0)).toMatchObject({ p1Id: 'zverev', p2Id: 'deminaur' });
   });
@@ -54,7 +65,7 @@ describe('parseBracket — structural parse + advancement winners', () => {
 const BOLD_FIXTURE = `
 {{8TeamBracket-Tennis3-v2
 | RD1-team1='''{{flagicon|GER}} [[Alexander Zverev]]'''
-| RD1-team2={{flagicon|KAZ}} [[Alexander Bublik]]
+| RD1-team2={{flagicon|RUS}} [[Daniil Medvedev]]
 | RD1-team3={{flagicon|AUS}} [[Alex de Minaur]]
 | RD1-team4='''{{flagicon|USA}} [[Taylor Fritz]]'''
 }}
@@ -65,7 +76,7 @@ describe('parseBracket — bold winner marker', () => {
 
   it('reads 1-digit team indices and pairs them', () => {
     expect(draw.filter(m => m.round === 'SF')).toHaveLength(2);
-    expect(draw.find(m => m.slot === 0)).toMatchObject({ p1Id: 'zverev', p2Id: 'bublik' });
+    expect(draw.find(m => m.slot === 0)).toMatchObject({ p1Id: 'zverev', p2Id: 'medvedev' });
     expect(draw.find(m => m.slot === 1)).toMatchObject({ p1Id: 'deminaur', p2Id: 'fritz' });
   });
 

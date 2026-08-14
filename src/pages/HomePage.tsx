@@ -18,7 +18,7 @@ const TEAM_TARGET = SQUAD_SIZE;
 
 export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?: boolean; onWelcomeClose?: () => void } = {}) {
   const {
-    phase, myTeam, currentRoundIndex,
+    phase, myTeam,
     initialSquad, transfers, cashedIn, captainHistory, viceCaptainHistory,
     setActiveTab, openTeam,
   } = useGameStore();

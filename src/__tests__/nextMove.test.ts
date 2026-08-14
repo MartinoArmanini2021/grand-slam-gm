@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { buildView } from '../components/NextMove';
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, type GameStore } from '../store/gameStore';
 import { useLiveStore } from '../store/liveStore';
 import { matchKey } from '../data/liveResults';
 import { loadSampleThrough, sampleDraw, sampleResults, roles } from './fixtures/sampleDraw';
-import type { GamePhase } from '../types';
+import type { GamePhase, RoundId } from '../types';
 
 // The "Your next move" coach must correctly match each manager's real status at all times. This
 // pins the state machine across every phase: before the tournament, the mid-event sign-up, before
@@ -122,12 +122,12 @@ describe('NextMove state machine', () => {
 
   it('LOCK SQUAD — an explicit lock ticks the step (it stayed open forever before)', () => {
     loadSampleThrough('R64'); // R64 done, R32 up next → market open, signings score from R32
-    const base = {
+    const base: Partial<GameStore> = {
       phase: 'pre_round' as GamePhase, currentRoundIndex: 0,
       myTeam: [roles.champion, roles.runnerUp],
       initialSquad: [roles.champion, roles.r64Exit],
       // a fresh signing logged against R64 → first scores R32, which hasn't started → "unlocked"
-      transfers: [{ out: roles.r64Exit, in: roles.runnerUp, round: 'R64' }],
+      transfers: [{ out: roles.r64Exit, in: roles.runnerUp, round: 'R64' as RoundId }],
       captain: roles.champion, viceCaptain: roles.runnerUp,
       captainHistory: [{ round: 'R64', playerId: roles.champion }],
       viceCaptainHistory: [{ round: 'R64', playerId: roles.runnerUp }],

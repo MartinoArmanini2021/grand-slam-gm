@@ -3,6 +3,7 @@ import { useLiveStore } from '../store/liveStore';
 import { matchKey } from '../data/liveResults';
 import { cashInOpen, isEliminated, roundStarted, transferWindowOpen, liveLeaderRound, liveRoundStatus } from '../data/tournament';
 import { loadSampleThrough, sampleDraw, sampleResults, roles } from './fixtures/sampleDraw';
+import { TOURNAMENT } from '../data/tournamentConfig';
 
 // The user's rule: money is shown across all rounds, but the cash-in ACTION happens at the end of
 // the CURRENT round. One gate for the whole squad — while any round is underway cash-in is shut
@@ -40,7 +41,9 @@ describe('roundStarted — market shuts when a round goes live by schedule, befo
 
   it('R16 live (scheduled start passed) with 0 results → started, market shut, leaders advance', () => {
     loadSampleThrough('R32');
-    vi.setSystemTime(new Date('2026-08-08T18:00:00Z')); // 90 min after R16's 16:30Z scheduled start
+    // Derive the clock from the ACTIVE tournament's own schedule rather than a hardcoded Montréal
+    // date — otherwise this silently stops testing anything the moment the active event changes.
+    vi.setSystemTime(new Date(Date.parse(TOURNAMENT.schedule!.R16!) + 90 * 60_000)); // 90 min in
 
     const r16HasResult = sampleDraw.some(m => m.round === 'R16' && useLiveStore.getState().results[matchKey('R16', m.slot)]);
     expect(r16HasResult).toBe(false);          // no finished R16 match yet…
