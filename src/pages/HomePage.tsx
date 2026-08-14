@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, Fragment } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { useLiveStore } from '../store/liveStore';
-import { ROUNDS, roundHasResult, tournamentStarted, liveScore, liveBudget, liveRoundStatus } from '../data/tournament';
+import { ROUNDS, tournamentStarted, liveScore, liveBudget, liveRoundStatus } from '../data/tournament';
 import { isSquadValid, SQUAD_SIZE } from '../data/squadRules';
 import { fmtScore } from '../data/format';
 import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
