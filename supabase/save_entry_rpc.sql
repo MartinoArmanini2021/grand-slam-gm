@@ -124,6 +124,7 @@ declare
   v_touched boolean := jsonb_array_length(coalesce(p_state->'transfers', '[]'::jsonb)) > 0
                     or jsonb_array_length(coalesce(p_state->'cashedIn', '[]'::jsonb)) > 0;
   v_size int; v_distinct int; v_total int;
+  v_tr_count int; v_prior_tr int;   -- transfer cap (d2/d3)
   v_plat int; v_gold int; v_silv int;
   v_existing public.entries%rowtype;
   v_found boolean;
@@ -201,10 +202,25 @@ begin
     if v_total > 150 then raise exception 'Squad costs $%M, over the $150M budget', v_total; end if;
   end if;
 
+  -- (d2) TRANSFER CAP (mirrors MAX_TRANSFERS in src/data/squadRules.ts — keep in sync).
+  --      Unlimited re-signing let the optimal manager recycle every loss into the best surviving
+  --      player each round, so all squads converged and drafting stopped mattering (simulation:
+  --      the best-vs-worst drafter gap collapsed from 45.3 pts to 11.5). Capped at 3.
+  --      Compared against GREATEST(cap, what's already stored) so an entry that is already over
+  --      the cap (made before this rule) can still be saved unchanged — only ADDING is refused.
+  v_tr_count := jsonb_array_length(coalesce(p_state->'transfers', '[]'::jsonb));
+
   -- Lock + load the existing entry (atomic rev guard + captain lock in one txn).
   select * into v_existing from public.entries
     where user_id = v_uid and league_id = v_public and tournament_id = p_tournament for update;
   v_found := found;
+
+  -- (d3) apply the transfer cap now that the stored entry is loaded (see d2).
+  v_prior_tr := case when v_found
+    then jsonb_array_length(coalesce(v_existing.state->'transfers', '[]'::jsonb)) else 0 end;
+  if v_tr_count > greatest(3, v_prior_tr) then
+    raise exception 'You have used all 3 transfers for this tournament';
+  end if;
 
   -- (e) F2 rev guard — the entry must be at the rev the client last read.
   if v_found and v_existing.rev <> coalesce(p_base_rev, 0) then

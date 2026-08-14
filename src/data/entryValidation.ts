@@ -12,7 +12,7 @@
 // when no transfers have been made — post-lock transfers spend elimination refunds, a
 // separate accounting the deferred per-round-freeze work will validate server-side.
 
-import { SQUAD_SIZE, STARTING_BUDGET, TIER_MINIMUMS } from './squadRules';
+import { SQUAD_SIZE, STARTING_BUDGET, TIER_MINIMUMS, MAX_TRANSFERS } from './squadRules';
 import { getTier, type Tier } from './tiers';
 
 // The minimal per-player record the validator needs. price + ranking (→ tier) are the
@@ -24,11 +24,17 @@ export interface EntryLegalityInput {
   phase: string;         // 'draft' = still building (partial allowed); anything else = locked
   hasTransfers: boolean; // once transfers exist, raw-sum budget no longer applies (refunds)
   hasCashedIn: boolean;  // once a player is cashed in, the squad may shrink / drift off 2·3·5
+  // Transfer cap (MAX_TRANSFERS). Optional: omit to skip the check (used by fixtures that
+  // predate the cap). `priorTransferCount` is what the server already holds — an entry that is
+  // ALREADY over the cap (made before the rule, or by a future rule change) can still be saved
+  // unchanged; it just can't add another. So the cap blocks new moves, it never bricks an entry.
+  transferCount?: number;
+  priorTransferCount?: number;
 }
 
 // Returns null when legal, else a human-readable reason.
 export function validateSquadLegality(
-  { squad, phase, hasTransfers, hasCashedIn }: EntryLegalityInput,
+  { squad, phase, hasTransfers, hasCashedIn, transferCount, priorTransferCount }: EntryLegalityInput,
   roster: Map<string, RosterPricing>,
 ): string | null {
   if (!Array.isArray(squad)) return 'Invalid squad';
@@ -56,6 +62,15 @@ export function validateSquadLegality(
     if (locked && !touched && counts[tier] !== min) return `A locked squad needs exactly ${min} ${tier} (has ${counts[tier]})`;
   }
   if (!hasTransfers && total > STARTING_BUDGET) return `Squad costs $${total}M — over the $${STARTING_BUDGET}M budget`;
+
+  // Transfer cap. Compared against the greater of the cap and what's already stored, so an entry
+  // that is already over (legacy / pre-cap) saves fine — only ADDING beyond the limit is refused.
+  if (transferCount != null) {
+    const ceiling = Math.max(MAX_TRANSFERS, priorTransferCount ?? 0);
+    if (transferCount > ceiling) {
+      return `You've used all ${MAX_TRANSFERS} transfers for this tournament`;
+    }
+  }
   return null;
 }
 

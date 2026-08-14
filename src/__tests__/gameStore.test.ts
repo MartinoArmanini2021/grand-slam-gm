@@ -4,6 +4,7 @@ import { getPlayer, PLAYERS } from '../data/players';
 import { getTier } from '../data/tiers';
 import type { RoundId } from '../types';
 import { ROUNDS, winPoints, playerRoundPoints, isEliminated, liveBudget, BUDGET_RETURN_RATES } from '../data/tournament';
+import { MAX_TRANSFERS } from '../data/squadRules';
 import { sampleMatches, loadSampleThrough, revealThrough, loadSampleTournament, roles } from './fixtures/sampleDraw';
 
 const store = () => useGameStore.getState();
@@ -232,6 +233,29 @@ describe('mid-tournament substitutions', () => {
     expect(store().myTeam).toContain(roles.runnerUp);
     expect(store().myTeam).not.toContain(roles.r16Exit);
     expect(store().budget).toBeCloseTo(budgetBefore - price(roles.runnerUp), 5);
+  });
+
+  it('refuses a replacement once the transfer allowance is spent', () => {
+    draftAndReachR16();
+    // Pretend the manager has already used all MAX_TRANSFERS this tournament. The swap below is
+    // legal in every other respect (eliminated out, alive + affordable in) — only the cap stops it.
+    useGameStore.setState({
+      transfers: Array.from({ length: MAX_TRANSFERS }, (_, i) => ({ out: `spent${i}`, in: `spent${i}b`, round: 'R64' as RoundId })),
+    });
+    const before = [...store().myTeam];
+    store().replacePlayer(roles.r16Exit, roles.runnerUp);
+    expect(store().myTeam).toEqual(before);              // nothing moved
+    expect(store().transfers).toHaveLength(MAX_TRANSFERS); // and no transfer was logged
+  });
+
+  it('allows the replacement when one transfer remains', () => {
+    draftAndReachR16();
+    useGameStore.setState({
+      transfers: Array.from({ length: MAX_TRANSFERS - 1 }, (_, i) => ({ out: `spent${i}`, in: `spent${i}b`, round: 'R64' as RoundId })),
+    });
+    store().replacePlayer(roles.r16Exit, roles.runnerUp);
+    expect(store().myTeam).toContain(roles.runnerUp);
+    expect(store().transfers).toHaveLength(MAX_TRANSFERS);
   });
 
   it('the replacement scores from the next round on', () => {

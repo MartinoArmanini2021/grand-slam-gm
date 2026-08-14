@@ -227,7 +227,12 @@ export default function CloudSync() {
     // Pre-validate with the SAME rules the server enforces — fail fast, no round-trip.
     const st = useGameStore.getState();
     const illegal = validateSquadLegality(
-      { squad: st.myTeam, phase: st.phase, hasTransfers: (st.transfers?.length ?? 0) > 0, hasCashedIn: (st.cashedIn?.length ?? 0) > 0 }, ROSTER,
+      {
+        squad: st.myTeam, phase: st.phase,
+        hasTransfers: (st.transfers?.length ?? 0) > 0,
+        hasCashedIn: (st.cashedIn?.length ?? 0) > 0,
+        transferCount: st.transfers?.length ?? 0,
+      }, ROSTER,
     );
     if (illegal) { toast(illegal, 'warn'); useSync.getState().setStatus('error'); return; }
     try {

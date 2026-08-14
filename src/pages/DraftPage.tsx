@@ -5,7 +5,7 @@ import { PLAYERS, getPlayer } from '../data/players';
 import { ROUNDS, isPlayerOut, getPlayerExit, tournamentStarted, isEliminated, cashInOpen, liveBudget, playerRefund, cashedInTotal, transferWindowOpen, roundStarted, liveLeaderRound, liveRoundStatus } from '../data/tournament';
 import { round1 } from '../data/format';
 import { getTier, TIER_META, type Tier } from '../data/tiers';
-import { tierCounts, squadShortfall, isSquadValid, isTierFull, TIER_MINIMUMS, SQUAD_SIZE, STARTING_BUDGET } from '../data/squadRules';
+import { tierCounts, squadShortfall, isSquadValid, isTierFull, TIER_MINIMUMS, SQUAD_SIZE, STARTING_BUDGET, MAX_TRANSFERS } from '../data/squadRules';
 import PlayerAvatar from '../components/PlayerAvatar';
 import PlayerVideoButton from '../components/PlayerVideoButton';
 import PlayerTag from '../components/PlayerTag';
@@ -76,7 +76,10 @@ export default function DraftPage() {
   const displayBudget = live ? liveBud : budget;
   // Open slots = players cashed in but not yet backfilled by a buy → you can buy that many.
   const openCount = cashedIn.filter(c => !transfers.some(t => t.out === c)).length;
-  const canBuy = live && windowOpen && openCount > 0;
+  // Transfer allowance: each re-signing spends one of MAX_TRANSFERS for the whole tournament, so
+  // recovery stays a real decision rather than a free reset (see squadRules.MAX_TRANSFERS).
+  const transfersLeft = Math.max(0, MAX_TRANSFERS - transfers.length);
+  const canBuy = live && windowOpen && openCount > 0 && transfersLeft > 0;
   // Every eliminated player you still hold — across ALL rounds (their refund is shown regardless of
   // when they fell). Cash-in TIMING is one gate for the whole squad: open only at a round break
   // (cashInOpen — current round finished). While a round is underway everyone waits, so:
@@ -145,7 +148,9 @@ export default function DraftPage() {
   // The market status chip — derived from RESULTS (liveRoundStatus), NOT the frozen currentRoundIndex
   // (pinned at 0 in production, which made this permanently read "Round of 64" whatever round it was).
   const roundLabel = liveSt
-    ? `${ROUNDS.find(r => r.id === liveSt.round)?.short ?? liveSt.round} ${liveSt.underway ? 'underway' : 'up next'}`
+    // Three states, never claiming play off an estimated start time: a result proves "underway",
+    // a passed schedule only proves the market is shut ("about to begin").
+    ? `${ROUNDS.find(r => r.id === liveSt.round)?.short ?? liveSt.round} ${liveSt.live ? 'underway' : liveSt.underway ? 'about to begin' : 'up next'}`
     : 'Tournament complete';
 
   return (
@@ -169,8 +174,10 @@ export default function DraftPage() {
                 ? `${cashable.length} eliminated player${cashable.length === 1 ? '' : 's'} to Cash In for $${outTotal.toFixed(1)}M — claim the money, then buy any replacement you like.`
                 : pendingCash.length > 0
                   ? `${pendingCash.length} of your players ${pendingCash.length === 1 ? 'is' : 'are'} out, worth $${outTotal.toFixed(1)}M — Cash In opens when ${underwayRoundObj ? `the ${underwayRoundObj.short}` : 'the round'} ends.`
+                  : openCount > 0 && transfersLeft === 0
+                    ? `You've used all ${MAX_TRANSFERS} transfers for this tournament — your squad is set from here. Cashed-in money can no longer be spent.`
                   : openCount > 0
-                    ? `$${liveBud.toFixed(1)}M to spend · ${openCount} open slot${openCount === 1 ? '' : 's'} — buy a replacement of any tier below.`
+                    ? `$${liveBud.toFixed(1)}M to spend · ${openCount} open slot${openCount === 1 ? '' : 's'} · ${transfersLeft} of ${MAX_TRANSFERS} transfer${transfersLeft === 1 ? '' : 's'} left — buy a replacement of any tier below.`
                     : unlockedBuys.length > 0
                       ? `${unlockedBuys.length} new signing${unlockedBuys.length === 1 ? '' : 's'} — you can still undo until the round starts, or Lock Squad to confirm now.`
                       : `$${liveBud.toFixed(1)}M available — Cash In an eliminated player to free up money.`}
@@ -236,10 +243,16 @@ export default function DraftPage() {
               <span><b>{pendingCash.length}</b> of your players {pendingCash.length === 1 ? 'is' : 'are'} out, worth <b className="font-num" style={{ color: 'var(--ember)' }}>+${outTotal.toFixed(1)}M</b>. <b>Cash In opens</b> when {underwayRoundObj ? `the ${underwayRoundObj.short}` : 'the round'} ends — amounts are shown in <b>My Squad</b>.</span>
             </div>
           )}
-          {live && windowOpen && cashable.length === 0 && openCount > 0 && (
+          {live && windowOpen && cashable.length === 0 && openCount > 0 && transfersLeft > 0 && (
             <div className="rounded-2xl px-4 py-2.5 mb-3 flex items-center gap-2 text-sm" style={{ background: 'rgba(217,154,0,0.07)', border: '1px solid rgba(217,154,0,0.3)', color: 'var(--ink)' }}>
               <span>🛒</span>
-              <span>You have <b>{openCount}</b> open slot{openCount === 1 ? '' : 's'} and <b className="font-num" style={{ color: 'var(--blue)' }}>${liveBud.toFixed(1)}M</b> to spend. Tap <b style={{ color: 'var(--green)' }}>+ Buy</b> on any still-alive player — any tier.</span>
+              <span>You have <b>{openCount}</b> open slot{openCount === 1 ? '' : 's'} and <b className="font-num" style={{ color: 'var(--blue)' }}>${liveBud.toFixed(1)}M</b> to spend, with <b>{transfersLeft}</b> of {MAX_TRANSFERS} transfer{transfersLeft === 1 ? '' : 's'} left. Tap <b style={{ color: 'var(--green)' }}>+ Buy</b> on any still-alive player — any tier.</span>
+            </div>
+          )}
+          {live && windowOpen && openCount > 0 && transfersLeft === 0 && (
+            <div className="rounded-2xl px-4 py-2.5 mb-3 flex items-center gap-2 text-sm" style={{ background: 'rgba(10,27,51,0.04)', border: '1px solid rgba(10,27,51,0.14)', color: 'var(--ink-2)' }}>
+              <span>🔒</span>
+              <span>All <b>{MAX_TRANSFERS}</b> transfers used — your squad is set for the rest of the tournament. Make them count: you get {MAX_TRANSFERS} per event.</span>
             </div>
           )}
           {live && windowOpen && cashable.length === 0 && pendingCash.length === 0 && openCount === 0 && (
@@ -458,6 +471,9 @@ export default function DraftPage() {
                           >
                             {liveBud < player.price ? 'Over $' : '+ Buy'}
                           </button>
+                        ) : transfersLeft === 0 ? (
+                          /* ── LIVE: transfer allowance spent — nothing more can be signed ── */
+                          <span className="text-[11px]" style={{ color: 'var(--ink-3)' }} title={`All ${MAX_TRANSFERS} transfers used for this tournament`}>No transfers left</span>
                         ) : (
                           /* ── LIVE: no open slot — cash in an eliminated player first ── */
                           <span className="text-[11px]" style={{ color: 'var(--ink-3)' }}>Available</span>

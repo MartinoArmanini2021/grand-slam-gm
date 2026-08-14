@@ -9,7 +9,7 @@ import { ACTIVE_TOURNAMENT_ID } from '../data/tournamentConfig';
 import { track } from '../data/analytics';
 import { toast } from './toastStore';
 import { findPlayer, PLAYERS } from '../data/players';
-import { SQUAD_SIZE, STARTING_BUDGET, isTierFull } from '../data/squadRules';
+import { SQUAD_SIZE, STARTING_BUDGET, isTierFull, MAX_TRANSFERS } from '../data/squadRules';
 import { getTier } from '../data/tiers';
 import { round1 } from '../data/format';
 
@@ -306,6 +306,7 @@ export const useGameStore = create<GameStore>()(
         const { myTeam, initialSquad, transfers, cashedIn, captain, viceCaptain, phase } = get();
         if (phase === 'finished' || phase === 'draft') return;
         if (!transferWindowOpen()) return; // window shut after the SF
+        if (transfers.length >= MAX_TRANSFERS) return; // transfer cap spent for this tournament
         if (!myTeam.includes(oldId) || myTeam.includes(newId)) return;
         // LIVE rule: swap OUT only an eliminated player, IN only a still-alive one — off the live
         // results (isEliminated), not the app's round index (frozen at R64 while the round plays).
@@ -365,6 +366,7 @@ export const useGameStore = create<GameStore>()(
         const { myTeam, initialSquad, transfers, cashedIn, phase } = get();
         if (phase === 'finished' || phase === 'draft') return;
         if (!transferWindowOpen()) return;
+        if (transfers.length >= MAX_TRANSFERS) return;   // transfer cap spent for this tournament
         if (myTeam.includes(id)) return;                 // already own them
         const player = findPlayer(id);
         if (!player) return;

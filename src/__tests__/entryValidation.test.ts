@@ -4,6 +4,7 @@ import { validateSquadLegality, validateCaptainLock, type RosterPricing } from '
 import { buildLegalityFixtures } from './fixtures/entryFixtures';
 import { PLAYERS } from '../data/players';
 import { getTier, type Tier } from '../data/tiers';
+import { MAX_TRANSFERS } from '../data/squadRules';
 
 const ROSTER = new Map<string, RosterPricing>(PLAYERS.map(p => [p.id, { id: p.id, price: p.price, ranking: p.ranking }]));
 
@@ -82,6 +83,41 @@ describe('shared legality fixtures — TS verdict (RPC drift mirror)', () => {
     validateSquadLegality({ squad: f.state.myTeam, phase: f.state.phase, hasTransfers: f.state.transfers.length > 0, hasCashedIn: false }, ROSTER) === null ? 'accept' : 'reject';
   it.each(buildLegalityFixtures().map(f => [f.name, f] as const))('%s → %o', (_name, f) => {
     expect(tsVerdict(f)).toBe(f.expect);
+  });
+});
+
+// Transfer cap (MAX_TRANSFERS). Unlimited re-signing collapsed the gap between the best and
+// worst drafter from 45.3 pts to 11.5 (scripts/sim-balance.mjs), so recovery is capped.
+describe('transfer cap — recovery is a lifeline, not a reset', () => {
+  const withTransfers = (n: number, prior?: number) => ({
+    squad: legalSquad(), phase: 'pre_round', hasTransfers: n > 0, hasCashedIn: true,
+    transferCount: n, priorTransferCount: prior,
+  });
+  it('allows transfers up to the cap', () => {
+    for (let n = 0; n <= MAX_TRANSFERS; n++) {
+      expect(validateSquadLegality(withTransfers(n), ROSTER)).toBeNull();
+    }
+  });
+  it('REJECTS one past the cap', () => {
+    expect(validateSquadLegality(withTransfers(MAX_TRANSFERS + 1), ROSTER))
+      .toMatch(new RegExp(`all ${MAX_TRANSFERS} transfers`, 'i'));
+  });
+  it('grandfathers an entry already over the cap — it can still be saved unchanged', () => {
+    // An entry made before the rule existed holds 6 transfers. Saving it as-is must not brick.
+    expect(validateSquadLegality(withTransfers(6, 6), ROSTER)).toBeNull();
+  });
+  it('…but such an entry still cannot ADD another transfer', () => {
+    expect(validateSquadLegality(withTransfers(7, 6), ROSTER))
+      .toMatch(new RegExp(`all ${MAX_TRANSFERS} transfers`, 'i'));
+  });
+  it('is skipped entirely when transferCount is not supplied (pre-cap callers)', () => {
+    expect(validateSquadLegality(
+      { squad: legalSquad(), phase: 'pre_round', hasTransfers: true, hasCashedIn: true }, ROSTER,
+    )).toBeNull();
+  });
+  it('the SQL mirrors the cap (keep save_entry_rpc.sql in sync)', () => {
+    expect(saveEntrySql).toMatch(/greatest\(\s*3\s*,\s*v_prior_tr\s*\)/i);
+    expect(MAX_TRANSFERS).toBe(3); // if you change this, change the SQL literal too
   });
 });
 
