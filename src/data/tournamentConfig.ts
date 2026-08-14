@@ -167,7 +167,7 @@ export const TOURNAMENTS: Record<string, Tournament> = {
   },
 
   // ── NEXT UP: the Cincinnati Open ─────────────────────────────────────────────
-  // Real 83-player draftable field built from the published draw (scripts/build-cincinnati-field.mjs)
+  // Real 83-player draftable field built from the published draw (scripts/build-field.mjs)
   // and reconciled exactly against Wikipedia (scripts/reconcile-field.mjs — 0 missing, 0 phantom).
   // Same 96-draw Masters shape as Montréal: 32 seeds bye into the second round, so every drafted
   // player enters at R64. Cincinnati hard court: teal-blue surround + deep-blue playing surface.

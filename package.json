@@ -15,7 +15,9 @@
     "reconcile:field": "node scripts/reconcile-field.mjs",
     "verify:app": "node scripts/verify-app.mjs",
     "gen:avatars": "node scripts/generate-avatars.mjs",
-    "dev:cincinnati": "vite --mode cincinnati"
+    "dev:cincinnati": "vite --mode cincinnati",
+    "field:build": "node scripts/build-field.mjs",
+    "field:seed": "node scripts/gen-seed.mjs"
   },
   "dependencies": {
     "@dicebear/collection": "^9.4.2",

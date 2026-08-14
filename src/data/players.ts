@@ -52,7 +52,10 @@ const TOUR_CALENDAR: Record<string, { surface: Surface; tournament: string; week
   QUE: { surface: 'grass', tournament: "Queen's Club",     week: 25 },
   EAS: { surface: 'grass', tournament: 'Eastbourne',       week: 26 },
   WIM: { surface: 'grass', tournament: 'Wimbledon',        week: 28 },
+  BAD: { surface: 'clay',  tournament: 'Båstad',           week: 29 },
   HAM: { surface: 'clay',  tournament: 'Hamburg',          week: 30 },
+  WDC: { surface: 'hard',  tournament: 'Washington',       week: 31 },
+  MTL: { surface: 'hard',  tournament: 'Montréal',         week: 32 },
   BAS: { surface: 'hard',  tournament: 'Basel',            week: 43 },
   DC:  { surface: 'hard',  tournament: 'Davis Cup',        week: 46 },
 };

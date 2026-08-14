@@ -17,7 +17,7 @@ The cutover is deliberately held until Montréal's final has ingested and scored
 | Exposed to players? | **No** — `live: false` |
 
 Two real main-draw wildcards (Gaël Monfils, Thanasi Kokkinakis) sit outside the top-300 stats pool, so
-they're hand-entered in `scripts/build-cincinnati-field.mjs` (`MANUAL[]`) with real bio data and neutral
+they're hand-entered in `scripts/lib/events.mjs` (`EVENTS.cincinnati_2026.manual`) with real bio data and neutral
 2026 form. They're only included if they're actually in the draw, so a withdrawal drops them automatically.
 
 ## Why the ingest registry matters
@@ -44,7 +44,7 @@ line if you clone fresh.)
 Withdrawals happen right up to first ball. Re-run both, in order:
 
 ```bash
-node scripts/build-cincinnati-field.mjs
+npm run field:build cincinnati_2026
 node scripts/reconcile-field.mjs "2026 Cincinnati Open – Men's singles" src/data/cincinnati2026Field.json
 ```
 
