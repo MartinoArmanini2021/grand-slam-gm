@@ -1,14 +1,17 @@
 import type { Player, Surface, TournamentResult, YearResult } from '../types';
 import montrealField from './montreal2026Field.json';
+import cincinnatiField from './cincinnati2026Field.json';
 import { poolPlayer } from './playerPool';
 import { TOURNAMENT, ACTIVE_TOURNAMENT_ID } from './tournamentConfig';
 
 // The draftable field for the ACTIVE tournament. Each tournament has its own entrant
-// list; add a new field JSON here when a tournament's entry list publishes. Cincinnati
-// borrows the Montréal field as a placeholder for staging until its own field is wired.
+// list; add a new field JSON here when a tournament's entry list publishes. Both fields
+// are built from the real published draw (scripts/build-*-field.mjs) and reconciled
+// against Wikipedia (scripts/reconcile-field.mjs) so every entrant is draftable and no
+// withdrawn player lingers.
 const FIELDS: Record<string, unknown> = {
   montreal_2026: montrealField,
-  cincinnati_2026: montrealField, // TODO: swap in cincinnati2026Field.json when it's built
+  cincinnati_2026: cincinnatiField,
 };
 const rawField = FIELDS[ACTIVE_TOURNAMENT_ID] ?? montrealField;
 
@@ -49,7 +52,10 @@ const TOUR_CALENDAR: Record<string, { surface: Surface; tournament: string; week
   QUE: { surface: 'grass', tournament: "Queen's Club",     week: 25 },
   EAS: { surface: 'grass', tournament: 'Eastbourne',       week: 26 },
   WIM: { surface: 'grass', tournament: 'Wimbledon',        week: 28 },
+  BAD: { surface: 'clay',  tournament: 'Båstad',           week: 29 },
   HAM: { surface: 'clay',  tournament: 'Hamburg',          week: 30 },
+  WDC: { surface: 'hard',  tournament: 'Washington',       week: 31 },
+  MTL: { surface: 'hard',  tournament: 'Montréal',         week: 32 },
   BAS: { surface: 'hard',  tournament: 'Basel',            week: 43 },
   DC:  { surface: 'hard',  tournament: 'Davis Cup',        week: 46 },
 };

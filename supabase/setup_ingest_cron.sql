@@ -10,12 +10,13 @@
 -- WHEN TO RUN THIS: once, when the draw publishes (≈31 Jul). Harmless earlier — with no
 -- draw it just writes nothing. Run setup_scoring_cron.sql too (you already have).
 --
--- HOW TO RUN IT (same as the scoring cron you already applied):
+-- HOW TO RUN IT:
+--   0. ⚠️ PREREQUISITES (once): run supabase/app_config.sql, then supabase/vault_setup.sql (which
+--      stores your service_role key in Vault). After that there is NO key to paste here — the cron
+--      reads it from Vault by name, so it can never be mis-pasted again.
 --   1. Deploy the function first:  supabase functions deploy ingest-draw
 --   2. Supabase dashboard → SQL Editor → New query.
---   3. Paste this whole file; replace <SERVICE_ROLE_KEY> with your service-role key
---      (Project Settings → API → service_role secret). Keep it secret — server-side only.
---   4. Run.
+--   3. Paste this whole file and Run. (No placeholder to edit.)
 --
 -- ⚠️ PREREQUISITE: run supabase/app_config.sql first (this body calls active_tournament_id()).
 -- TO STOP IT (after the tournament):  select cron.unschedule('ingest-draw');
@@ -40,7 +41,9 @@ select cron.schedule(
     url     := 'https://mrdmlfumdsxufifjulbt.supabase.co/functions/v1/ingest-draw',
     headers := jsonb_build_object(
       'Content-Type',  'application/json',
-      'Authorization', 'Bearer <SERVICE_ROLE_KEY>'
+      -- Key read from Vault (supabase/vault_setup.sql) — no placeholder to mis-paste, ever. Rotating
+      -- the key = one vault.update_secret; this line picks it up on the next run automatically.
+      'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'gsgm_service_role_key')
     ),
     -- Single source of truth: the active tournament comes from public.app_config (see app_config.sql).
     body    := jsonb_build_object('tournamentId', public.active_tournament_id())
@@ -52,5 +55,6 @@ select cron.schedule(
 -- Force one run now (also a good smoke test after deploy):
 --   select net.http_post(
 --     url := 'https://mrdmlfumdsxufifjulbt.supabase.co/functions/v1/ingest-draw',
---     headers := jsonb_build_object('Content-Type','application/json','Authorization','Bearer <SERVICE_ROLE_KEY>'),
+--     headers := jsonb_build_object('Content-Type','application/json','Authorization',
+--                'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name='gsgm_service_role_key')),
 --     body := jsonb_build_object('tournamentId', public.active_tournament_id()) );

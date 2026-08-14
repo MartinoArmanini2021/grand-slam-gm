@@ -1,0 +1,94 @@
+// ── Build a tournament's draftable field from its published draw ─────────────────────────────────
+// Fetches the real Wikipedia draw (the SAME source the live feed polls), resolves every main-draw
+// player through the SAME parser the app uses, matches them to the 300-player stats pool, and writes
+// the event's field JSON. Any real entrant outside the pool must be listed in EVENTS[id].manual.
+//
+//   node scripts/build-field.mjs cincinnati_2026          # write the field
+//   node scripts/build-field.mjs usopen_2026 --dry        # report only
+//
+// ALWAYS follow with the reconcile guard, which is what actually proves the field is right:
+//   node scripts/reconcile-field.mjs "<page>" <field.json>
+//
+// Re-run it LATE. Qualifying finishing (or a withdrawal) changes the field — at Cincinnati the draw
+// gained 13 players between the first build and cutover, all of whom would have been undraftable.
+
+import { readFileSync, writeFileSync } from 'node:fs';
+import { buildResolver, splitBrackets, teamTarget } from '../src/data/drawParser.ts';
+import { getEvent, expandManual } from './lib/events.mjs';
+import { tierOf, fetchDraw, norm } from './lib/pricing.mjs';
+
+const [id, ...flags] = process.argv.slice(2);
+if (!id) { console.error('usage: node scripts/build-field.mjs <event-id> [--dry]'); process.exit(2); }
+const DRY = flags.includes('--dry');
+const ev = getEvent(id);
+
+const root = new URL('../', import.meta.url);
+const pool = JSON.parse(readFileSync(new URL('src/data/atp300.json', root), 'utf8'));
+const resolve = buildResolver(pool);            // pool rows are { id, name, … } → resolves a wiki cell
+const poolById = new Map(pool.map(p => [p.id, p]));
+
+const wikitext = await fetchDraw(ev.page);
+
+// ── 1) Seeds: pool id → seed number, from the ==Seeds== list ─────────────────────────────────────
+//     Lines look like:  {{seeds|1|1}} '''{{flagicon|GER}} [[Alexander Zverev]]'''
+const seedById = new Map();
+const seedsStart = wikitext.search(/==\s*Seeds\s*==/i);
+const seedsBlock = seedsStart >= 0 ? wikitext.slice(seedsStart, seedsStart + 4000) : '';
+for (const m of seedsBlock.matchAll(/\{\{seeds\|(\d+)\|[^}]*\}\}\s*'''?\s*(\{\{flagicon\|[^}]*\}\}\s*\[\[[^\]]+\]\])/g)) {
+  const pid = resolve(m[2]);
+  if (pid && !pid.startsWith('x_') && pid !== 'tbd') seedById.set(pid, Number(m[1]));
+}
+
+// ── 2) Every named main-draw player, from the section brackets ───────────────────────────────────
+//     Main draw = the 16-team section brackets + the 8-team finals — exactly what the app's
+//     parseFullDraw consumes. Everything else (2- and 4-team brackets) is QUALIFYING.
+const sections = splitBrackets(wikitext).filter(b => /^(8|16)TeamBracket/i.test(b.type));
+const found = new Map();          // pool id → first raw cell seen
+const unmatched = new Set();      // normalised names the pool doesn't carry
+for (const b of sections) {
+  for (const m of b.text.matchAll(/\|\s*RD\d+-team\d+\s*=\s*(.*?)(?=\s*\|\s*RD|\n\s*\||\n\}\}|$)/gm)) {
+    const raw = m[1];
+    if (!raw || !/\[\[/.test(raw)) continue;    // empty cell / bye / unfilled qualifier slot
+    const pid = resolve(raw);
+    if (pid === 'tbd') continue;
+    if (pid.startsWith('x_')) { unmatched.add(norm(teamTarget(raw))); continue; }
+    if (!found.has(pid)) found.set(pid, raw);
+  }
+}
+
+// ── 3) Emit ──────────────────────────────────────────────────────────────────────────────────────
+const fromPool = [...found.keys()].map(pid => {
+  const p = poolById.get(pid);
+  const surface = p.surface ?? { hard: 50, clay: 50, grass: 50 };
+  return {
+    id: p.id, name: p.name, country: p.country, flag: p.flag,
+    age: p.age ?? null, hand: p.hand ?? 'R',
+    ranking: p.rank, seed: seedById.get(pid) ?? null,
+    surface: { hard: surface.hard ?? 50, clay: surface.clay ?? 50, grass: surface.grass ?? 50 },
+    ytd: p.ytd ?? { wins: 0, losses: 0, titles: 0 },
+    yearResults: (p.results2026 ?? []).map(r => ({ short: r.short, result: r.result })),
+  };
+});
+// Hand-entered entrants count ONLY if they're really in this draw (a withdrawal drops them).
+const manualIn = (ev.manual ?? []).filter(m => unmatched.has(norm(m.name))).map(expandManual);
+const field = [...fromPool, ...manualIn].sort((a, b) => (a.seed ?? 999) - (b.seed ?? 999) || a.ranking - b.ranking);
+const stillMissing = [...unmatched].filter(n => !(ev.manual ?? []).some(m => norm(m.name) === n));
+
+console.log(`\n  event:            ${id} — ${ev.label}`);
+console.log(`  draw page:        ${ev.page}`);
+console.log(`  seeds parsed:     ${seedById.size}`);
+console.log(`  draftable field:  ${field.length}  (${field.filter(p => p.seed != null).length} seeded, ${manualIn.length} hand-entered)`);
+console.log(`  NOT covered:      ${stillMissing.length}  (in the draw, in neither the pool nor EVENTS.manual)`);
+if (stillMissing.length) {
+  console.log('\n  add these to EVENTS.' + id + '.manual if they should be draftable:');
+  for (const n of stillMissing.sort()) console.log(`      · ${n}`);
+}
+
+if (DRY) {
+  console.log('\n  --dry: not writing.\n');
+} else {
+  writeFileSync(new URL(ev.field, root), JSON.stringify(field, null, 2) + '\n');
+  console.log(`\n  ✓ wrote ${field.length} players → ${ev.field}`);
+  console.log(`  → next: node scripts/reconcile-field.mjs "${ev.page}" ${ev.field}`);
+  console.log(`  → then: node scripts/gen-seed.mjs ${id}\n`);
+}

@@ -74,6 +74,10 @@ const EVENTS = [
   { t: '2026 Los Cabos Open', s: H, alt: ['2026 Mifel Tennis Open', '2026 Abierto de Tenis Mifel'] },
   { t: '2026 Austrian Open', s: C, alt: ['2026 Generali Open'] },
   { t: '2026 Mubadala Citi DC Open', s: H, alt: ['2026 Washington Open', '2026 Citi Open'] }, // ✓ (Washington)
+  // — August hard: the Masters immediately before Cincinnati. Montréal is the single most
+  //   relevant form input for a Cincinnati field (same surface, same players, days earlier),
+  //   so it MUST be counted — it was missing while the list stopped at "before Montréal".
+  { t: '2026 National Bank Open', s: H, alt: ['2026 Canadian Open (tennis)', '2026 Rogers Cup'] },
 ];
 
 const pickEvents = () => ONLY === 'slams' ? EVENTS.filter((e) => e.slam) : EVENTS;
@@ -85,7 +89,12 @@ const SHORT = {
   '2026 Monte-Carlo Masters': 'MC', '2026 Dubai Tennis Championships': 'DUB', '2026 Brisbane International': 'BRI',
   '2026 Adelaide International': 'ADL', '2026 ASB Classic': 'AKL', '2026 Hamburg Open': 'HAM',
   "2026 Queen's Club Championships": 'QUE', '2026 Libéma Open': 'HER', '2026 Eastbourne Open': 'EAS',
-  '2026 Swedish Open': 'BAS', '2026 Mubadala Citi DC Open': 'DC', '2026 Barcelona Open Banc Sabadell': 'BCN',
+  // NB: Båstad is BAD and Washington is WDC — NOT 'BAS'/'DC'. Those two codes already mean
+  // Basel (week 43) and the Davis Cup finals (week 46) in players.ts TOUR_CALENDAR, and since
+  // both sit past SEASON_CUTOFF_WEEK every Båstad/Washington result was being silently dropped
+  // from the form strip (and Båstad drawn as a hard court instead of clay).
+  '2026 Swedish Open': 'BAD', '2026 Mubadala Citi DC Open': 'WDC', '2026 Barcelona Open Banc Sabadell': 'BCN',
+  '2026 National Bank Open': 'MTL',
   '2026 Terra Wortmann Open': 'HAL', '2026 Qatar ExxonMobil Open': 'DOH', '2026 ABN AMRO Open': 'ROT', '2026 Rio Open': 'RIO',
 };
 const M1000 = new Set(['2026 BNP Paribas Open', '2026 Miami Open', '2026 Mutua Madrid Open', '2026 Italian Open', '2026 Monte-Carlo Masters']);

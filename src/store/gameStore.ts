@@ -2,14 +2,14 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { GamePhase, RoundId, RoundScore, BudgetReturn, Transfer } from '../types';
 import {
-  ROUNDS, getMatchesForRound, isPlayerOut, BUDGET_RETURN_RATES, winPoints, transferWindowOpen, roundPlayable, roundStarted, liveStartedRound, liveLeaderRound,
-  tournamentStarted, isEliminated, cashInOpen, liveBudget, playerRefund,
+  ROUNDS, getMatchesForRound, isPlayerOut, isUnpickable, BUDGET_RETURN_RATES, winPoints, transferWindowOpen, roundPlayable, roundStarted, liveStartedRound, liveLeaderRound,
+  tournamentStarted, isEliminated, cashInOpen, liveBudget, playerRefund, transfersUsed,
 } from '../data/tournament';
-import { ACTIVE_TOURNAMENT_ID } from '../data/tournamentConfig';
+import { ACTIVE_TOURNAMENT_ID, OPENING_ROUND } from '../data/tournamentConfig';
 import { track } from '../data/analytics';
 import { toast } from './toastStore';
 import { findPlayer, PLAYERS } from '../data/players';
-import { SQUAD_SIZE, STARTING_BUDGET, isTierFull } from '../data/squadRules';
+import { SQUAD_SIZE, STARTING_BUDGET, isTierFull, MAX_TRANSFERS } from '../data/squadRules';
 import { getTier } from '../data/tiers';
 import { round1 } from '../data/format';
 
@@ -203,7 +203,11 @@ export const useGameStore = create<GameStore>()(
         if (myTeam.includes(id)) return;
         const player = findPlayer(id);
         if (!player || budget < player.price) return;
-        if (isPlayerOut(id, [])) return; // never draft an already-out (e.g. DNS) player — they'd never be refundable
+        // Never draft a player who is already out — they could never score and never be refunded.
+        // Must be isUnpickable, NOT isPlayerOut(id, []): the latter reads the frozen currentRoundIndex
+        // and so returned false for everyone, which let managers draft players knocked out in the
+        // (unscored) opening round that is played while the draft is still open.
+        if (isUnpickable(id)) return;
         if (isTierFull(getTier(player.ranking), myTeam)) return; // tier quota already met (e.g. no 3rd Platinum)
         const newTeam = [...myTeam, id];
         set({ myTeam: newTeam, budget: budget - player.price, ...pickLeaders(newTeam, captain, viceCaptain, []) });
@@ -306,6 +310,7 @@ export const useGameStore = create<GameStore>()(
         const { myTeam, initialSquad, transfers, cashedIn, captain, viceCaptain, phase } = get();
         if (phase === 'finished' || phase === 'draft') return;
         if (!transferWindowOpen()) return; // window shut after the SF
+        if (transfersUsed(transfers) >= MAX_TRANSFERS) return; // cap spent (opening-round repairs are free)
         if (!myTeam.includes(oldId) || myTeam.includes(newId)) return;
         // LIVE rule: swap OUT only an eliminated player, IN only a still-alive one — off the live
         // results (isEliminated), not the app's round index (frozen at R64 while the round plays).
@@ -320,7 +325,7 @@ export const useGameStore = create<GameStore>()(
         // Log against the deepest STARTED round (live by schedule or result), NOT currentRoundIndex.
         // The newcomer first scores the NEXT round — never retroactively, and never a round already
         // under way. Refuse when only the final is left (squad locks for it), matching the server's P6 check.
-        const round = liveStartedRound() ?? ROUNDS[0].id;
+        const round = liveStartedRound() ?? OPENING_ROUND ?? ROUNDS[0].id;
         const firstScored = ROUNDS[ROUNDS.findIndex(r => r.id === round) + 1]?.id;
         if (!firstScored || firstScored === ROUNDS[ROUNDS.length - 1].id) return;
         const newTeam = myTeam.map(id => (id === oldId ? newId : id));
@@ -365,6 +370,7 @@ export const useGameStore = create<GameStore>()(
         const { myTeam, initialSquad, transfers, cashedIn, phase } = get();
         if (phase === 'finished' || phase === 'draft') return;
         if (!transferWindowOpen()) return;
+        if (transfersUsed(transfers) >= MAX_TRANSFERS) return;   // cap spent (opening-round repairs are free)
         if (myTeam.includes(id)) return;                 // already own them
         const player = findPlayer(id);
         if (!player) return;
@@ -373,7 +379,7 @@ export const useGameStore = create<GameStore>()(
         const openSlots = cashedIn.filter(c => !transfers.some(t => t.out === c));
         if (openSlots.length === 0) return;
         if (liveBudget(initialSquad, transfers, myTeam, cashedIn) < player.price) return; // can't afford
-        const round = liveStartedRound() ?? ROUNDS[0].id;
+        const round = liveStartedRound() ?? OPENING_ROUND ?? ROUNDS[0].id;
         const firstScored = ROUNDS[ROUNDS.findIndex(r => r.id === round) + 1]?.id;
         if (!firstScored || firstScored === ROUNDS[ROUNDS.length - 1].id) return; // final locked
         const out = openSlots[0]; // backfill the oldest open slot (which cashed player is arbitrary)

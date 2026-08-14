@@ -8,6 +8,7 @@ import { ROUND_META, ROUND_ORDER } from '../data/tournamentConfig';
 import type { RoundId } from '../types';
 import edgeSrc from '../../supabase/functions/recompute-score/index.ts?raw';
 import seedSrc from '../../supabase/server_scoring.sql?raw';
+import cincinnatiSeedSrc from '../../supabase/seed_cincinnati_player_stats.sql?raw';
 
 const store = () => useGameStore.getState();
 
@@ -67,10 +68,15 @@ describe('edge function stays in sync with the canonical scoring curve', () => {
     // The client scores off PLAYERS.ranking; the edge fn scores off player_stats.ranking.
     // If they ever diverge, the authoritative leaderboard silently disagrees with the app.
     // Regenerate BOTH together when the field changes — this guards it.
-    const seed = Object.fromEntries(
-      [...seedSrc.matchAll(/\('([a-z0-9]+)',\s*(\d+)\)/g)].map(m => [m[1], Number(m[2])]),
-    );
-    expect(Object.keys(seed).length, 'seed rows parsed').toBe(PLAYERS.length);
+    // player_stats is ONE table shared by every tournament and holds the UNION of every seed that
+    // has been applied, so check them together: what matters is that each player in the ACTIVE
+    // field has a seeded rank somewhere, and that it agrees with the client.
+    const seed: Record<string, number> = {};
+    for (const src of [seedSrc, cincinnatiSeedSrc]) {
+      for (const m of src.matchAll(/\(\s*'([a-z0-9]+)',\s*(\d+)\s*[,)]/g)) seed[m[1]] = Number(m[2]);
+    }
+    const unseeded = PLAYERS.filter(p => seed[p.id] === undefined).map(p => `${p.name} (${p.id})`);
+    expect(unseeded, 'players with no seeded rank').toEqual([]);
     for (const p of PLAYERS) {
       expect(seed[p.id], `player_stats rank for ${p.id}`).toBe(p.ranking);
     }

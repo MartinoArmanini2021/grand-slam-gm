@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--", "--port", "5174"],
       "port": 5174
+    },
+    {
+      "name": "tennis-fantasy-cincinnati",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:cincinnati", "--", "--port", "5175"],
+      "port": 5175
     }
   ]
 }

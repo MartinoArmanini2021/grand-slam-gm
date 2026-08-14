@@ -1,16 +1,30 @@
 import { useEscapeToClose } from '../hooks';
 import { ROUNDS } from '../data/tournament';
+import { MAX_TRANSFERS } from '../data/squadRules';
+import { OPENING_ROUND } from '../data/tournamentConfig';
 
 // Describe THIS tournament's scored rounds + points, derived from config so the copy is
 // always accurate (a 6-round Masters and a 7-round Slam each read correctly).
 const scoringLine = ROUNDS.map(r => `${r.short} +${r.points}`).join(', ');
 
+// Only at an event with an unscored opening round (a Masters byes its 32 seeds into round two).
+// A Grand Slam scores from its first round, so OPENING_ROUND is undefined and this card is dropped.
+const OPENING_ROUND_RULE = OPENING_ROUND
+  ? [{
+      icon: '⚡',
+      title: 'The first round doesn\'t count',
+      body: `The 32 seeds skip it, so scoring starts at the ${ROUNDS[0].label}. An unseeded player must win their opening match just to reach the start line — winning it earns nothing. If one of yours falls there you get every penny back and it costs you no transfer, and they disappear from the market the moment they lose, so you can never buy someone who's already gone.`,
+    }]
+  : [];
+
 const RULES: { icon: string; title: string; body: string }[] = [
   { icon: '🎾', title: 'Draft 10 players', body: 'You get $150M to sign a 10-player squad — exactly 2 Platinum, 3 Gold and 5 Silver. Stars cost more, so choose: two galácticos and bargain support, or a deeper balanced squad.' },
   { icon: '📈', title: 'Win rounds, score points', body: `Every round your player wins scores — ${scoringLine}. Deeper rounds are worth far more.` },
+  ...OPENING_ROUND_RULE,
   { icon: '👑', title: 'Captain & Vice-Captain', body: 'Two of your squad lead on court: your Captain scores ×2 and your Vice-Captain ×1.5. The other 8 sit on the bench (they still score ×1). Re-pick your two leaders each round.' },
   { icon: '🔥', title: 'Upset bonus', body: 'Beat a higher-ranked player and your win is multiplied — the bigger the ranking gap, the bigger the multiplier (up to ×2). A favourite winning still scores the full base. Back the right underdog and it pays off.' },
-  { icon: '💸', title: 'Elimination = money back', body: 'When your player is knocked out you get part of their price back — more the further they reached — and can spend it to transfer in someone still alive.' },
+  { icon: '💸', title: 'Elimination = money back', body: 'When your player is knocked out you get part of their price back — more the further they reached, since an early exit leaves the most value unspent — and you can put that money straight back into someone still alive.' },
+  { icon: '🔁', title: `${MAX_TRANSFERS} transfers per tournament`, body: `Signing a replacement costs one of your ${MAX_TRANSFERS} transfers for the whole event. Recovery is a lifeline, not a reset — spend them on the losses that really hurt, because your draft is still what decides your tournament.` },
   { icon: '🔒', title: 'Transfers close before the final', body: 'Reinforce your squad through the semi-finals — a quarter-final casualty can still be replaced for the semis. Only the final squad is locked, so plan ahead.' },
   { icon: '🤝', title: 'Play with friends', body: 'Sign up (it\'s free), then go to League → Private → Create a league and share its 6-letter code. Your friends sign up, open League → Private, and enter the code — now you\'re all on the same leaderboard.' },
   { icon: '🏆', title: 'Beat your league', body: 'Everyone gets the same $150M. Climb the League standings and be crowned Grand Slam GM.' },

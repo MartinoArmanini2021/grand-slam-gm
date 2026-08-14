@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, Fragment } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { useLiveStore } from '../store/liveStore';
-import { ROUNDS, roundHasResult, tournamentStarted, liveBudget, liveRoundStatus } from '../data/tournament';
+import { ROUNDS, tournamentStarted, liveBudget, liveRoundStatus } from '../data/tournament';
 import { useMyScore } from '../data/useMyScore';
 import { isSquadValid, SQUAD_SIZE } from '../data/squadRules';
 import { fmtScore } from '../data/format';
@@ -12,6 +12,7 @@ import { useLeagueBoard, useMyLeagues } from '../data/leagueBoard';
 import SquadCourt from '../components/SquadCourt';
 import NextMove from '../components/NextMove';
 import TournamentWelcome from '../components/TournamentWelcome';
+import TournamentSwitcher from '../components/TournamentSwitcher';
 import ScoringPendingNote from '../components/ScoringPendingNote';
 import type { GamePhase } from '../types';
 
@@ -19,7 +20,7 @@ const TEAM_TARGET = SQUAD_SIZE;
 
 export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?: boolean; onWelcomeClose?: () => void } = {}) {
   const {
-    phase, myTeam, currentRoundIndex,
+    phase, myTeam,
     initialSquad, transfers, cashedIn,
     setActiveTab, openTeam,
   } = useGameStore();
@@ -77,7 +78,7 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
             <span className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: SURFACE.accent }}>{TOURNAMENT.location.split(',')[0]} · {SURFACE.label}</span>
           </div>
           <div className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.08em] sm:tracking-[0.2em] mt-1.5" style={{ color: 'var(--ember)' }}>
-            {courtStatus(phase, currentRound, ROUNDS[currentRoundIndex - 1]?.short, !!currentRound && roundHasResult(currentRound.id))}
+            {courtStatus(phase, currentRound, leaderStatus)}
           </div>
         </div>
 
@@ -197,6 +198,10 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
         )}
         </div>{/* /leaderboard */}
 
+      {/* Switch between live tournaments. Deliberately the LAST thing on Home — it's a once-an-event
+          control, and it used to crowd the header on a phone. */}
+      <TournamentSwitcher />
+
       {/* The celebratory "you're in" moment, shown once right after joining. */}
       {welcome && (
         <TournamentWelcome
@@ -208,19 +213,27 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
   );
 }
 
-// Contextual status shown at the top of the court, driven by phase + round.
-function courtStatus(phase: GamePhase, currentRound: { short: string } | null, prevShort?: string, roundStarted = false): string {
-  if (phase === 'draft') return 'Tournament about to begin — choose your players';
-  if (phase === 'pre_round' && currentRound) {
-    // Once the round has its first result, captains are frozen — say so, rather than still
-    // inviting a (now-rejected) captain change.
-    return roundStarted
-      ? `${currentRound.short} underway — captains locked, points are live`
-      : `${currentRound.short} incoming — choose your captain`;
-  }
-  if (phase === 'round_complete' && currentRound) return `${prevShort ?? ''} done — set your captain for ${currentRound.short}`;
-  if (phase === 'finished') return 'Tournament complete — final standings';
-  return '';
+// Contextual status shown at the top of the court. Driven by the LIVE round status, not `phase`
+// (frozen at 'pre_round' in production, so its round_complete/finished branches were dead code)
+// and not the frozen currentRoundIndex. Three honest states, so the line can never claim a round
+// is being played on the strength of an ESTIMATED start time:
+//   • live     — a result exists → play is genuinely happening
+//   • underway — the scheduled time has passed → picks are locked, but claim only that
+//   • neither  — still open, so invite the captain pick
+function courtStatus(
+  phase: GamePhase,
+  currentRound: { short: string } | null,
+  st: { underway: boolean; live: boolean } | null,
+): string {
+  // Pre-tournament drafting. A mid-event sign-up is ALSO phase 'draft' but the tournament has
+  // started, so fall through to the real round status rather than "about to begin".
+  if (phase === 'draft' && !tournamentStarted()) return 'Tournament about to begin — choose your players';
+  // No round left in focus = the whole draw is played out. (This previously fell through to '',
+  // so the header went blank the moment the Final was decided.)
+  if (!st || !currentRound) return 'Tournament complete — final standings';
+  if (st.live) return `${currentRound.short} underway — captains locked, points are live`;
+  if (st.underway) return `${currentRound.short} about to begin — captains locked`;
+  return `${currentRound.short} incoming — choose your captain`;
 }
 
 function StatCard({ label, value, unit, color }: { label: string; value: string; unit: string; color: string }) {

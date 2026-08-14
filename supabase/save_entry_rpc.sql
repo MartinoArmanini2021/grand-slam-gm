@@ -22,87 +22,98 @@
 --    (entryValidation.test.ts) pins these to PLAYERS; re-seed by regenerating this block
 --    if the field or the pricing model changes. Prices are a point-in-time snapshot: they
 --    are fixed for the tournament (rank/form/surface don't change mid-event).
+-- NB (2026-08-14): player_stats is ONE table shared by every event, so these rows were re-aligned to
+-- the ACTIVE event (Cincinnati) after two data corrections: the 2026 form refresh (added Montréal,
+-- fixed the Båstad/Washington short-code collision) and — the bigger one — a current ATP ranking
+-- snapshot. The pool had been carrying ranks dated 2026-07-20, i.e. BEFORE Washington and Montréal;
+-- Jódar was seeded 12 here while listed at rank 25. 61 rankings, 27 prices and 1 tier moved
+-- (Nakashima Silver→Gold). Ranking feeds the UPSET MULTIPLIER, so this changes future scoring —
+-- safe because recompute-score only ever scores active_tournament_id(), and Montréal is complete
+-- and frozen. Do NOT re-point app_config at a finished event after a ranking refresh: it would
+-- rescore that event against ranks it was never played under.
+-- Regenerate with scripts/apply-rankings.mjs → build-field.mjs → gen-seed.mjs (which cross-checks
+-- every seed against this block).
 alter table public.player_stats add column if not exists price int;
 alter table public.player_stats add column if not exists tier  text;
 
 insert into public.player_stats (id, ranking, price, tier) values
-  ('zverev', 2, 50, 'Platinum'),
+  ('zverev', 3, 50, 'Platinum'),
   ('augeraliassime', 4, 34, 'Platinum'),
-  ('shelton', 6, 25, 'Platinum'),
-  ('deminaur', 5, 32, 'Platinum'),
-  ('fritz', 10, 25, 'Platinum'),
-  ('medvedev', 8, 33, 'Platinum'),
-  ('cobolli', 9, 20, 'Platinum'),
+  ('shelton', 6, 31, 'Platinum'),
+  ('deminaur', 8, 25, 'Platinum'),
+  ('fritz', 9, 23, 'Platinum'),
+  ('medvedev', 7, 34, 'Platinum'),
+  ('cobolli', 10, 18, 'Platinum'),
   ('bublik', 11, 19, 'Gold'),
-  ('ruud', 13, 20, 'Gold'),
-  ('rublev', 14, 20, 'Gold'),
-  ('lehecka', 12, 21, 'Gold'),
-  ('musetti', 15, 21, 'Gold'),
-  ('darderi', 21, 15, 'Gold'),
-  ('tien', 16, 18, 'Gold'),
-  ('mensik', 18, 19, 'Gold'),
-  ('tiafoe', 17, 18, 'Gold'),
-  ('vacherot', 19, 15, 'Gold'),
-  ('franciscocerundolo', 22, 17, 'Gold'),
-  ('khachanov', 26, 13, 'Silver'),
+  ('ruud', 17, 17, 'Gold'),
+  ('rublev', 18, 17, 'Gold'),
+  ('lehecka', 14, 19, 'Gold'),
+  ('musetti', 15, 19, 'Gold'),
+  ('darderi', 20, 16, 'Gold'),
+  ('tien', 12, 22, 'Gold'),
+  ('mensik', 16, 20, 'Gold'),
+  ('tiafoe', 23, 16, 'Gold'),
+  ('vacherot', 19, 14, 'Gold'),
+  ('franciscocerundolo', 25, 15, 'Gold'),
+  ('khachanov', 39, 10, 'Silver'),
   ('davidovichfokina', 20, 15, 'Gold'),
-  ('fils', 23, 18, 'Gold'),
-  ('paul', 24, 16, 'Gold'),
-  ('jodar', 25, 16, 'Gold'),
-  ('fonseca', 28, 14, 'Silver'),
-  ('rinderknech', 27, 11, 'Silver'),
-  ('norrie', 39, 10, 'Silver'),
-  ('humbert', 29, 13, 'Silver'),
-  ('nakashima', 32, 12, 'Silver'),
+  ('fils', 21, 18, 'Gold'),
+  ('paul', 24, 15, 'Gold'),
+  ('jodar', 11, 24, 'Gold'),
+  ('fonseca', 26, 14, 'Silver'),
+  ('rinderknech', 28, 12, 'Silver'),
+  ('norrie', 35, 12, 'Silver'),
+  ('humbert', 30, 12, 'Silver'),
+  ('nakashima', 22, 16, 'Gold'),
   ('etcheverry', 31, 10, 'Silver'),
-  ('tabilo', 30, 12, 'Silver'),
-  ('buse', 35, 13, 'Silver'),
-  ('arnaldi', 33, 9, 'Silver'),
-  ('blockx', 38, 10, 'Silver'),
-  ('bergs', 34, 10, 'Silver'),
-  ('navone', 47, 7, 'Silver'),
+  ('tabilo', 29, 11, 'Silver'),
+  ('buse', 36, 12, 'Silver'),
+  ('arnaldi', 34, 10, 'Silver'),
+  ('blockx', 32, 11, 'Silver'),
+  ('bergs', 33, 11, 'Silver'),
+  ('navone', 44, 8, 'Silver'),
   ('moutet', 40, 8, 'Silver'),
-  ('mannarino', 46, 7, 'Silver'),
-  ('shapovalov', 67, 6, 'Silver'),
-  ('cerundolo', 50, 9, 'Silver'),
-  ('collignon', 37, 11, 'Silver'),
+  ('mannarino', 52, 6, 'Silver'),
+  ('shapovalov', 48, 7, 'Silver'),
+  ('cerundolo', 51, 9, 'Silver'),
+  ('collignon', 38, 10, 'Silver'),
   ('munar', 43, 10, 'Silver'),
-  ('majchrzak', 71, 9, 'Silver'),
-  ('michelsen', 44, 11, 'Silver'),
+  ('majchrzak', 68, 8, 'Silver'),
+  ('michelsen', 41, 12, 'Silver'),
   ('quinn', 45, 8, 'Silver'),
-  ('hurkacz', 70, 6, 'Silver'),
-  ('borges', 48, 9, 'Silver'),
-  ('kecmanovic', 58, 6, 'Silver'),
-  ('berrettini', 42, 11, 'Silver'),
-  ('atmane', 49, 8, 'Silver'),
-  ('marozsan', 54, 8, 'Silver'),
-  ('zandschulp', 55, 8, 'Silver'),
-  ('tirante', 57, 9, 'Silver'),
-  ('hanfmann', 52, 9, 'Silver'),
+  ('hurkacz', 69, 7, 'Silver'),
+  ('borges', 47, 10, 'Silver'),
+  ('kecmanovic', 66, 6, 'Silver'),
+  ('berrettini', 42, 10, 'Silver'),
+  ('atmane', 45, 9, 'Silver'),
+  ('marozsan', 63, 8, 'Silver'),
+  ('zandschulp', 59, 9, 'Silver'),
+  ('tirante', 50, 10, 'Silver'),
+  ('hanfmann', 55, 9, 'Silver'),
   ('shang', 270, 4, 'Silver'),
-  ('baez', 56, 9, 'Silver'),
-  ('griekspoor', 66, 7, 'Silver'),
-  ('carabelli', 69, 6, 'Silver'),
-  ('landaluce', 62, 10, 'Silver'),
-  ('altmaier', 61, 5, 'Silver'),
-  ('cilic', 86, 7, 'Silver'),
-  ('kopriva', 68, 8, 'Silver'),
-  ('burruchaga', 60, 5, 'Silver'),
-  ('svajda', 73, 7, 'Silver'),
-  ('bellucci', 79, 6, 'Silver'),
-  ('medjedovic', 72, 9, 'Silver'),
-  ('sonego', 77, 7, 'Silver'),
-  ('kovacevic', 93, 6, 'Silver'),
-  ('busta', 65, 9, 'Silver'),
-  ('vallejo', 63, 6, 'Silver'),
-  ('struff', 41, 8, 'Silver'),
-  ('royer', 75, 4, 'Silver'),
-  ('fucsovics', 76, 7, 'Silver'),
-  ('duckworth', 82, 6, 'Silver'),
+  ('baez', 53, 10, 'Silver'),
+  ('griekspoor', 56, 9, 'Silver'),
+  ('carabelli', 76, 6, 'Silver'),
+  ('landaluce', 67, 9, 'Silver'),
+  ('altmaier', 65, 6, 'Silver'),
+  ('cilic', 80, 7, 'Silver'),
+  ('kopriva', 71, 8, 'Silver'),
+  ('burruchaga', 61, 5, 'Silver'),
+  ('svajda', 84, 7, 'Silver'),
+  ('bellucci', 81, 6, 'Silver'),
+  ('medjedovic', 73, 8, 'Silver'),
+  ('sonego', 88, 6, 'Silver'),
+  ('kovacevic', 96, 6, 'Silver'),
+  ('busta', 72, 8, 'Silver'),
+  ('vallejo', 70, 6, 'Silver'),
+  ('struff', 43, 7, 'Silver'),
+  ('royer', 78, 5, 'Silver'),
+  ('fucsovics', 82, 6, 'Silver'),
+  ('duckworth', 86, 6, 'Silver'),
   ('diallo', 92, 6, 'Silver'),
-  ('merida', 59, 9, 'Silver'),
+  ('merida', 40, 12, 'Silver'),
   ('popyrin', 104, 4, 'Silver'),
-  ('droguet', 114, 6, 'Silver')
+  ('droguet', 115, 7, 'Silver')
 on conflict (id) do update set ranking = excluded.ranking, price = excluded.price, tier = excluded.tier;
 
 -- 2) The single validated write path. SECURITY DEFINER (runs as the table owner, bypassing
@@ -124,6 +135,7 @@ declare
   v_touched boolean := jsonb_array_length(coalesce(p_state->'transfers', '[]'::jsonb)) > 0
                     or jsonb_array_length(coalesce(p_state->'cashedIn', '[]'::jsonb)) > 0;
   v_size int; v_distinct int; v_total int;
+  v_tr_count int; v_prior_tr int;   -- transfer cap (d2/d3)
   v_plat int; v_gold int; v_silv int;
   v_existing public.entries%rowtype;
   v_found boolean;
@@ -201,10 +213,35 @@ begin
     if v_total > 150 then raise exception 'Squad costs $%M, over the $150M budget', v_total; end if;
   end if;
 
+  -- (d2) TRANSFER CAP (mirrors MAX_TRANSFERS in src/data/squadRules.ts — keep in sync).
+  --      Unlimited re-signing let the optimal manager recycle every loss into the best surviving
+  --      player each round, so all squads converged and drafting stopped mattering (simulation:
+  --      the best-vs-worst drafter gap collapsed from 45.3 pts to 11.5). Capped at 3.
+  --      Compared against GREATEST(cap, what's already stored) so an entry that is already over
+  --      the cap (made before this rule) can still be saved unchanged — only ADDING is refused.
+  --      FREE REPAIRS: a transfer logged against a round this tournament holds NO matches for is a
+  --      repair of the UNSCORED opening round (a Masters' first round, which the seeds bye past and
+  --      which the ingest deliberately never writes to public.matches). Those players never reached
+  --      a round that pays, so replacing them doesn't spend the allowance. Deriving that from the
+  --      matches table rather than a client-supplied flag keeps it unspoofable.
+  select count(*) into v_tr_count
+    from jsonb_array_elements(coalesce(p_state->'transfers', '[]'::jsonb)) t
+   where exists (select 1 from public.matches m
+                  where m.tournament_id = p_tournament and m.round = t->>'round');
+
   -- Lock + load the existing entry (atomic rev guard + captain lock in one txn).
   select * into v_existing from public.entries
     where user_id = v_uid and league_id = v_public and tournament_id = p_tournament for update;
   v_found := found;
+
+  -- (d3) apply the transfer cap now that the stored entry is loaded (see d2).
+  select count(*) into v_prior_tr
+    from jsonb_array_elements(case when v_found then coalesce(v_existing.state->'transfers', '[]'::jsonb) else '[]'::jsonb end) t
+   where exists (select 1 from public.matches m
+                  where m.tournament_id = p_tournament and m.round = t->>'round');
+  if v_tr_count > greatest(3, v_prior_tr) then
+    raise exception 'You have used all 3 transfers for this tournament';
+  end if;
 
   -- (e) F2 rev guard — the entry must be at the rev the client last read.
   if v_found and v_existing.rev <> coalesce(p_base_rev, 0) then

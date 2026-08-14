@@ -1,6 +1,6 @@
 import type { Match, RoundId, TournamentResult } from '../types';
 import { findPlayer } from './players';
-import { TOURNAMENT, ROUND_META, ROUND_ORDER } from './tournamentConfig';
+import { TOURNAMENT, ROUND_META, ROUND_ORDER, OPENING_ROUND } from './tournamentConfig';
 import { useLiveStore } from '../store/liveStore';
 import { liveMatches, liveExit, roundComplete } from './liveResults';
 import { STARTING_BUDGET } from './squadRules';
@@ -125,9 +125,18 @@ export function liveCurrentRound(): RoundId | null {
 // has gone live by its scheduled time counts as underway even before its first result lands (the feed
 // only reports finished matches), so the status box flips to LIVE the moment play begins. Null once
 // the whole draw is played out.
-export function liveRoundStatus(): { round: RoundId; underway: boolean } | null {
+// TWO different questions, deliberately kept apart — conflating them is why the app once announced
+// "The Final is underway" while the Final had not been played:
+//   • underway — should everything be LOCKED? Schedule-driven (roundStarted): the scheduled time has
+//     passed OR a result exists. Locking early is fail-safe, so an ESTIMATED start time is fine here.
+//   • live     — is play actually happening, as a matter of EVIDENCE? Only a recorded result proves
+//     that. Never assert "underway" to the user off an estimate; use this for anything user-facing.
+// So a round can be underway-but-not-live: picks are frozen and we're waiting on the first result.
+export function liveRoundStatus(): { round: RoundId; underway: boolean; live: boolean } | null {
   for (let i = 0; i < ROUNDS.length; i++) {
-    if (!roundPlayable(i)) return { round: ROUNDS[i].id, underway: roundStarted(ROUNDS[i].id) };
+    if (!roundPlayable(i)) {
+      return { round: ROUNDS[i].id, underway: roundStarted(ROUNDS[i].id), live: roundHasResult(ROUNDS[i].id) };
+    }
   }
   return null; // every round fully played
 }
@@ -289,6 +298,24 @@ export function isEliminated(playerId: string): boolean {
   return getPlayerExit(playerId) !== null || (tournamentStarted() && !isInLiveDraw(playerId));
 }
 
+// THE single question the market must ask before letting anyone take a player: can they still be
+// picked? Both the draft and the live transfer desk go through here, so the two can never drift.
+//
+// WHY IT ISN'T JUST `isPlayerOut(revealed)`: `revealed` is derived from currentRoundIndex, which is
+// FROZEN AT 0 in production (the manual "play the round" step never runs at a live event). So during
+// the draft `revealed` is [] and isPlayerOut returns false for EVERYONE — which let managers draft
+// players who had already gone home. That is not theoretical: at Cincinnati the unscored opening
+// round is played WHILE THE DRAFT IS STILL OPEN, so 12 of the 96 entrants were already out.
+//
+//  • 'live'  → read the real results. `isEliminated` covers both a scored-round exit and an
+//    opening-round exit, because liveData parses PARSED_ROUNDS (the opening round + the scored ones)
+//    into the live store even though scoring never touches the opening round.
+//  • 'replay' → results are known but deliberately withheld until their round is revealed, so it
+//    MUST keep the revealed-rounds view or the market would spoil the outcome.
+export function isUnpickable(playerId: string, revealed: RoundId[] = []): boolean {
+  return TOURNAMENT.mode === 'live' ? isEliminated(playerId) : isPlayerOut(playerId, revealed);
+}
+
 // Cash-in TIMING (one gate for everyone): the money can only be claimed at a round BREAK — once
 // the current round's last match is over and before the next one starts. While a round is underway,
 // cash-in is shut for the whole squad (you settle up and rebuild at the break), even for players who
@@ -337,19 +364,39 @@ export const BUDGET_RETURN_RATES: Record<RoundId, number> = {
   F:    0,
 };
 
-// A player eliminated in the OPENING round (before R64 — this app doesn't score it) refunds at
-// the earliest rate. Kept equal to the R128 tier so the curve stays "earlier exit → less back".
-const OPENING_ROUND_RETURN = 0.75; // earliest possible exit → highest refund (barely played, most value unrealized)
+// A player knocked out in the UNSCORED opening round refunds in FULL. They never reached a round
+// that pays, so the manager got literally nothing for the money — charging a haircut would punish
+// them for the tournament's own scheduling (the opening round is played while the draft is still
+// open). Replacing such a player is also FREE of the transfer cap, see openingRoundExit below.
+const OPENING_ROUND_RETURN = 1.0;
+
+// Was this player knocked out in the tournament's unscored opening round? True only where such a
+// round exists (a Masters where the seeds bye; never at a Slam). Two ways to detect it: their
+// recorded exit IS that round (the client reads it — see liveData PARSED_ROUNDS), or the older
+// signal, absent from the scored draw once play has begun.
+export function openingRoundExit(id: string): boolean {
+  if (!OPENING_ROUND) return false;
+  if (rawExit(id) === OPENING_ROUND) return true;
+  return tournamentStarted() && !isInLiveDraw(id);
+}
 
 // The refund a squad player is worth right now: their price × the round they were knocked out in
-// (opening-round exits at OPENING_ROUND_RETURN). A still-alive player is worth 0 (nothing to
+// (an unscored opening-round exit returns everything). A still-alive player is worth 0 (nothing to
 // refund yet). This is LIVE — it reflects the results the moment they land, like the score.
 export function playerRefund(id: string): number {
   const price = findPlayer(id)?.price ?? 0;
+  if (openingRoundExit(id)) return round1(price * OPENING_ROUND_RETURN);
   const exit = getPlayerExit(id); // scored-round exit (R64→F), or null
   if (exit) return round1(price * (BUDGET_RETURN_RATES[exit as RoundId] ?? 0));
-  if (tournamentStarted() && !isInLiveDraw(id)) return round1(price * OPENING_ROUND_RETURN); // opening-round KO
   return 0;
+}
+
+// How many of the manager's MAX_TRANSFERS a transfer list has actually consumed. Replacing a player
+// who fell in the unscored opening round is FREE — it repairs a squad that never got to play, so it
+// isn't the recycling the cap exists to limit. Logged against OPENING_ROUND by the store, which is
+// also how the server identifies it (that round has no rows in public.matches).
+export function transfersUsed(transfers: { round: string }[] = []): number {
+  return transfers.filter(t => !OPENING_ROUND || t.round !== OPENING_ROUND).length;
 }
 
 // A manager's available money, LIVE and derived (no manual "play the round" step): the starting
