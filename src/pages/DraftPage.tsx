@@ -2,7 +2,7 @@ import { useState, useMemo, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useLiveStore } from '../store/liveStore';
 import { PLAYERS, getPlayer } from '../data/players';
-import { ROUNDS, isPlayerOut, getPlayerExit, tournamentStarted, isEliminated, cashInOpen, liveBudget, playerRefund, cashedInTotal, transferWindowOpen, roundStarted, liveLeaderRound, liveRoundStatus, transfersUsed } from '../data/tournament';
+import { ROUNDS, isUnpickable, getPlayerExit, tournamentStarted, isEliminated, cashInOpen, liveBudget, playerRefund, cashedInTotal, transferWindowOpen, roundStarted, liveLeaderRound, liveRoundStatus, transfersUsed } from '../data/tournament';
 import { round1 } from '../data/format';
 import { getTier, TIER_META, type Tier } from '../data/tiers';
 import { tierCounts, squadShortfall, isSquadValid, isTierFull, TIER_MINIMUMS, SQUAD_SIZE, STARTING_BUDGET, MAX_TRANSFERS } from '../data/squadRules';
@@ -362,8 +362,12 @@ export default function DraftPage() {
                 {visible.map(player => {
                   const isSelected = myTeam.includes(player.id);
                   const ownedLive = myTeam.includes(player.id); // owned in the PREVIEW (committed + staged buy)
-                  // Live: eliminated = knocked out per the RESULTS (isEliminated). Draft: per revealed rounds.
-                  const out = live ? isEliminated(player.id) : isPlayerOut(player.id, revealed);
+                  // Can this player still be taken? isUnpickable reads the real results at a LIVE event
+                  // (including the unscored opening round, which is played while the draft is open) and
+                  // only falls back to the revealed-rounds view for a spoiler-free replay. Keying this
+                  // off `live` — i.e. "have I locked a squad" — is what let 12 already-eliminated
+                  // Cincinnati entrants stay draftable.
+                  const out = isUnpickable(player.id, revealed);
                   const full = myTeam.length >= TEAM_SIZE;
                   const canAfford = budget >= player.price;
                   const tier = getTier(player.ranking);

@@ -298,6 +298,24 @@ export function isEliminated(playerId: string): boolean {
   return getPlayerExit(playerId) !== null || (tournamentStarted() && !isInLiveDraw(playerId));
 }
 
+// THE single question the market must ask before letting anyone take a player: can they still be
+// picked? Both the draft and the live transfer desk go through here, so the two can never drift.
+//
+// WHY IT ISN'T JUST `isPlayerOut(revealed)`: `revealed` is derived from currentRoundIndex, which is
+// FROZEN AT 0 in production (the manual "play the round" step never runs at a live event). So during
+// the draft `revealed` is [] and isPlayerOut returns false for EVERYONE — which let managers draft
+// players who had already gone home. That is not theoretical: at Cincinnati the unscored opening
+// round is played WHILE THE DRAFT IS STILL OPEN, so 12 of the 96 entrants were already out.
+//
+//  • 'live'  → read the real results. `isEliminated` covers both a scored-round exit and an
+//    opening-round exit, because liveData parses PARSED_ROUNDS (the opening round + the scored ones)
+//    into the live store even though scoring never touches the opening round.
+//  • 'replay' → results are known but deliberately withheld until their round is revealed, so it
+//    MUST keep the revealed-rounds view or the market would spoil the outcome.
+export function isUnpickable(playerId: string, revealed: RoundId[] = []): boolean {
+  return TOURNAMENT.mode === 'live' ? isEliminated(playerId) : isPlayerOut(playerId, revealed);
+}
+
 // Cash-in TIMING (one gate for everyone): the money can only be claimed at a round BREAK — once
 // the current round's last match is over and before the next one starts. While a round is underway,
 // cash-in is shut for the whole squad (you settle up and rebuild at the break), even for players who

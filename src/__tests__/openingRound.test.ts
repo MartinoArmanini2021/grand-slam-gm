@@ -2,10 +2,10 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useLiveStore } from '../store/liveStore';
 import { useGameStore } from '../store/gameStore';
 import {
-  isEliminated, openingRoundExit, playerRefund, transfersUsed, liveScore, playerRoundPoints, ROUNDS,
+  isEliminated, isUnpickable, isPlayerOut, openingRoundExit, playerRefund, transfersUsed, liveScore, playerRoundPoints, ROUNDS,
 } from '../data/tournament';
 import { OPENING_ROUND, TOURNAMENT } from '../data/tournamentConfig';
-import { MAX_TRANSFERS } from '../data/squadRules';
+import { MAX_TRANSFERS, STARTING_BUDGET } from '../data/squadRules';
 import { PLAYERS, getPlayer } from '../data/players';
 import { loadSampleThrough } from './fixtures/sampleDraw';
 import type { RoundId } from '../types';
@@ -39,6 +39,48 @@ describe('the opening round exists and is NOT scored', () => {
 
   it('is absent from the scored rounds, so nothing can pay it out', () => {
     expect(ROUNDS.map(r => r.id)).not.toContain(OPENING_ROUND);
+  });
+});
+
+// THE regression this file most needs. The opening round is played WHILE THE DRAFT IS OPEN, so a
+// manager building their first squad can be looking at players who already went home. The market
+// used to ask `live ? isEliminated(id) : isPlayerOut(id, revealed)` — and `live` means "I have
+// locked a squad", not "the tournament is live". Every drafting manager took the second branch,
+// where `revealed` comes from the frozen currentRoundIndex and is therefore ALWAYS [] in
+// production, so isPlayerOut returned false for everyone. At Cincinnati that left 12 of the 96
+// entrants (Draper and Monfils among them) freely draftable after they had lost.
+describe('a player knocked out in the opening round CANNOT be drafted', () => {
+  it('isUnpickable flags them even during the draft, when nothing is "revealed"', () => {
+    if (!OPENING_ROUND) return;
+    playOpeningRound(a, b);
+    expect(isUnpickable(b, [])).toBe(true);   // the loser — the case that was broken
+    expect(isUnpickable(a, [])).toBe(false);  // the winner is through, still pickable
+  });
+
+  it('the OLD revealed-rounds check would have missed it (guards the regression)', () => {
+    if (!OPENING_ROUND) return;
+    playOpeningRound(a, b);
+    // Exactly what the market used to call during the draft. It cannot see the opening round,
+    // which is precisely why isUnpickable exists.
+    expect(isPlayerOut(b, [])).toBe(false);
+  });
+
+  it('the store REFUSES to add them to a squad', () => {
+    if (!OPENING_ROUND) return;
+    playOpeningRound(a, b);
+    const store = useGameStore.getState();
+    store.addPlayer(b);
+    expect(useGameStore.getState().myTeam).not.toContain(b);
+    // …and the budget is untouched, so a refused add can't silently charge the manager.
+    expect(useGameStore.getState().budget).toBe(STARTING_BUDGET);
+  });
+
+  it('still lets you draft someone who has not played the opening round yet', () => {
+    if (!OPENING_ROUND) return;
+    playOpeningRound(a, b);
+    const seed = PLAYERS.find(p => p.id !== a && p.id !== b)!;
+    useGameStore.getState().addPlayer(seed.id);
+    expect(useGameStore.getState().myTeam).toContain(seed.id);
   });
 });
 

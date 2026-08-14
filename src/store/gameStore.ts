@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { GamePhase, RoundId, RoundScore, BudgetReturn, Transfer } from '../types';
 import {
-  ROUNDS, getMatchesForRound, isPlayerOut, BUDGET_RETURN_RATES, winPoints, transferWindowOpen, roundPlayable, roundStarted, liveStartedRound, liveLeaderRound,
+  ROUNDS, getMatchesForRound, isPlayerOut, isUnpickable, BUDGET_RETURN_RATES, winPoints, transferWindowOpen, roundPlayable, roundStarted, liveStartedRound, liveLeaderRound,
   tournamentStarted, isEliminated, cashInOpen, liveBudget, playerRefund, transfersUsed,
 } from '../data/tournament';
 import { ACTIVE_TOURNAMENT_ID, OPENING_ROUND } from '../data/tournamentConfig';
@@ -203,7 +203,11 @@ export const useGameStore = create<GameStore>()(
         if (myTeam.includes(id)) return;
         const player = findPlayer(id);
         if (!player || budget < player.price) return;
-        if (isPlayerOut(id, [])) return; // never draft an already-out (e.g. DNS) player — they'd never be refundable
+        // Never draft a player who is already out — they could never score and never be refunded.
+        // Must be isUnpickable, NOT isPlayerOut(id, []): the latter reads the frozen currentRoundIndex
+        // and so returned false for everyone, which let managers draft players knocked out in the
+        // (unscored) opening round that is played while the draft is still open.
+        if (isUnpickable(id)) return;
         if (isTierFull(getTier(player.ranking), myTeam)) return; // tier quota already met (e.g. no 3rd Platinum)
         const newTeam = [...myTeam, id];
         set({ myTeam: newTeam, budget: budget - player.price, ...pickLeaders(newTeam, captain, viceCaptain, []) });
