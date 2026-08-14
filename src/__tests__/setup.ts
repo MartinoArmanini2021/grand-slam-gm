@@ -19,3 +19,17 @@ class MemoryStorage {
   get length() { return Object.keys(this.store).length; }
 }
 (globalThis as unknown as { localStorage: MemoryStorage }).localStorage = new MemoryStorage();
+
+// Silence ONE specific zustand warning. Its persist middleware defaults to `window.localStorage`
+// (not the bare global we set above), and the suite runs in the `node` environment where there is
+// no `window` — so every persisted set() logged a warning, thousands of lines per run, burying the
+// actual test output. We deliberately do NOT shim `window`: half the app branches on
+// `typeof window !== 'undefined'`, so inventing one would silently flip those paths under test.
+// Persistence itself isn't under test here (every test drives state directly), so the warning is
+// pure noise. Anything else console.warn says still comes through.
+const ZUSTAND_NO_STORAGE = '[zustand persist middleware] Unable to update item';
+const realWarn = console.warn.bind(console);
+console.warn = (...args: unknown[]) => {
+  if (typeof args[0] === 'string' && args[0].startsWith(ZUSTAND_NO_STORAGE)) return;
+  realWarn(...args);
+};
