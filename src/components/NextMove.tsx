@@ -139,11 +139,16 @@ export function buildView(s: GameStore, hasPrivateLeague: boolean, onPickLeaders
     const leagueDone = hasPrivateLeague || myTeam.length > 0;   // joined a league OR started drafting (playing the world)
     const squadDone = isSquadValid(myTeam);                     // 10 valid players · 2/3/5
     const capDone = !!captain && !!viceCaptain;                 // both leaders chosen
+    // ORDER MATTERS: the first not-done step drives the card's big primary button. Drafting comes
+    // FIRST because it is the only step that must happen before the deadline — and because putting
+    // the league ahead of it made "Create your league →" the app's headline instruction to a manager
+    // with an empty squad, one tap after the welcome card had said "Build my squad →". Four of eight
+    // Cincinnati managers joined and never drafted; this button was pointing them at the wrong tab.
     const steps: Step[] = [
-      { label: 'Create your league', sub: leagueDone ? undefined : 'join with a code · or just play the world', done: leagueDone, go: () => setTab('league') },
-      { label: 'Draft your 10 players', sub: squadDone ? undefined : `${myTeam.length}/10 · 2 Platinum · 3 Gold · 5 Silver`, done: squadDone, go: () => setTab('draft') },
-      { label: 'Pick your Captain & Vice', sub: capDone ? undefined : '×2 and ×1.5 on their points', done: capDone, go: onPickLeaders },
+      { label: 'Draft your 10 players', sub: squadDone ? undefined : `${myTeam.length}/10 · 2 from the top 10 · 3 ranked 11–25 · 5 ranked 26+`, done: squadDone, go: () => setTab('draft') },
+      { label: 'Pick your Captain & Vice', sub: capDone ? undefined : 'they score ×2 and ×1.5', done: capDone, go: onPickLeaders },
       { label: 'Lock your squad', sub: 'before the first match', done: false, go: () => setTab('draft') },
+      { label: 'Add friends (optional)', sub: leagueDone ? undefined : 'join a private league with a code', done: leagueDone, go: () => setTab('league') },
     ];
     return { accent: 'blue', eyebrow: 'Before the tournament', title: 'Get set for the draw', steps,
       deadline: TOURNAMENT.schedule?.[firstRound], deadlineLabel: 'Draft closes in' };

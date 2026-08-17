@@ -16,21 +16,33 @@ const set = (s: Partial<ReturnType<typeof useGameStore.getState>>) => useGameSto
 beforeEach(() => { loadSampleThrough(null); useGameStore.getState().resetGame(); });
 
 describe('NextMove state machine', () => {
-  it('BEFORE THE TOURNAMENT — a 4-step draft checklist; league done once you have a squad or a league', () => {
+  // THE ORDER IS THE POINT. The first not-done step drives the card's big primary button, and it
+  // used to be "Create your league" — so the app's headline instruction to a manager with an empty
+  // squad sent them to the League tab, one tap after the welcome card said "Build my squad →".
+  // Four of eight Cincinnati managers joined and never drafted. Drafting must come first: it is the
+  // only step with a deadline.
+  it('BEFORE THE TOURNAMENT — drafting is step ONE, the league is last and optional', () => {
     loadSampleThrough(null); // no results → tournament hasn't started
     set({ phase: 'draft', myTeam: [], captain: null, viceCaptain: null });
     const v = view();
     expect(v.eyebrow).toBe('Before the tournament');
     expect(v.steps).toHaveLength(4);
-    expect(v.steps![0].done).toBe(false); // no league, no squad
-    expect(v.steps![1].done).toBe(false); // squad not drafted
-    expect(v.steps![3].done).toBe(false); // lock is never "done" while in the draft
-    // Playing "the world" (drafting a player) satisfies the league step.
-    set({ myTeam: [roles.champion] });
-    expect(view().steps![0].done).toBe(true);
-    // Or joining a private league does, with no squad yet.
+    // The regression guard: a brand-new manager is pointed at the DRAFT, not at leagues.
+    expect(v.steps![0].label).toMatch(/draft/i);
+    expect(v.steps![0].done).toBe(false);
+    expect(v.steps!.find(s => !s.done)!.label).toMatch(/draft/i); // → the primary button
+    expect(v.steps![3].label).toMatch(/friend|league/i);          // league demoted to last
+    expect(v.steps![2].done).toBe(false);                         // lock never "done" during the draft
+  });
+
+  it('the league step still completes via a private league or by playing the world', () => {
+    loadSampleThrough(null);
+    set({ phase: 'draft', myTeam: [], captain: null, viceCaptain: null });
+    expect(view().steps![3].done).toBe(false);
+    set({ myTeam: [roles.champion] });                    // drafting anyone = playing the world
+    expect(view().steps![3].done).toBe(true);
     set({ myTeam: [] });
-    expect(view({ hasLeague: true }).steps![0].done).toBe(true);
+    expect(view({ hasLeague: true }).steps![3].done).toBe(true);  // or an actual private league
   });
 
   it('MID-EVENT SIGN-UP — draft phase but the tournament has started → the spectator path, not a dead draft', () => {
