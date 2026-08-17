@@ -7,7 +7,7 @@ import {
 import { OPENING_ROUND, TOURNAMENT } from '../data/tournamentConfig';
 import { MAX_TRANSFERS, STARTING_BUDGET } from '../data/squadRules';
 import { PLAYERS, getPlayer } from '../data/players';
-import { loadSampleThrough } from './fixtures/sampleDraw';
+import { loadSampleThrough, roles } from './fixtures/sampleDraw';
 import type { RoundId } from '../types';
 
 // ── The unscored OPENING round ────────────────────────────────────────────────────────────────
@@ -130,31 +130,42 @@ describe('LOSING the opening round takes you out of the market', () => {
   });
 });
 
+// Free-ness is keyed on WHO went out, not on the transfer's round stamp. The stamp has to stay
+// truthful for scoring (it fixes when the signing starts earning), so a repair made during the
+// R64→R32 break is stamped R64 — and charging off the stamp billed a manager for repairing an
+// opening-round casualty purely because they did it after the first scored round instead of before.
 describe('repairing an opening-round casualty is free of the transfer cap', () => {
-  it('a transfer logged against the opening round does not spend the allowance', () => {
+  it('is free even when the transfer is stamped with a SCORED round', () => {
     if (!OPENING_ROUND) return;
-    const free = Array.from({ length: MAX_TRANSFERS + 2 }, (_, i) =>
-      ({ out: `x${i}`, in: `y${i}`, round: OPENING_ROUND as string }));
-    expect(transfersUsed(free)).toBe(0);
+    playOpeningRound(a, b);                       // b lost the unscored opening round
+    // Stamped R64 (a repair made after the first scored round began) — still free.
+    expect(transfersUsed([{ out: b, in: a, round: first as string }])).toBe(0);
   });
 
-  it('but a transfer in a scored round does', () => {
-    const paid = [{ out: 'x', in: 'y', round: first as string }];
-    expect(transfersUsed(paid)).toBe(1);
+  it('but replacing a player who reached a SCORED round costs one', () => {
+    loadSampleThrough('R64');                     // r64Exit went out in a round that pays
+    expect(transfersUsed([{ out: roles.r64Exit, in: roles.champion, round: first as string }])).toBe(1);
   });
 
-  it('counts only the scored-round ones when they are mixed', () => {
+  it('counts only the ones that reached a scored round when they are mixed', () => {
     if (!OPENING_ROUND) return;
-    const mixed: { out: string; in: string; round: string }[] = [
-      { out: 'a', in: 'b', round: OPENING_ROUND },
-      { out: 'c', in: 'd', round: first },
-      { out: 'e', in: 'f', round: OPENING_ROUND },
-    ];
-    expect(transfersUsed(mixed)).toBe(1);
+    playOpeningRound(a, b);
+    expect(transfersUsed([
+      { out: b, in: a, round: first as string },        // opening-round casualty → free
+      { out: 'someone-who-played', in: a, round: first as string }, // unknown id → never free
+    ])).toBe(1);
   });
 
-  it('the SQL mirrors "free = a round with no matches rows" (keep save_entry_rpc.sql in sync)', async () => {
+  it('an unrecognised out-id is NEVER free (it would otherwise buy unlimited transfers)', () => {
+    // openingRoundExit falls back to "absent from the draw", which is true of any unknown id.
+    const spoof = Array.from({ length: MAX_TRANSFERS + 2 }, (_, i) =>
+      ({ out: `ghost${i}`, in: `y${i}`, round: OPENING_ROUND as string }));
+    expect(transfersUsed(spoof)).toBe(spoof.length);
+  });
+
+  it('the SQL mirrors "free = a known player with no matches rows" (keep save_entry_rpc.sql in sync)', async () => {
     const sql = (await import('../../supabase/save_entry_rpc.sql?raw')).default;
-    expect(sql).toMatch(/where m\.tournament_id = p_tournament and m\.round = t->>'round'/);
+    expect(sql).toMatch(/m\.p1_id = t->>'out' or m\.p2_id = t->>'out'/);        // keyed on who went out
+    expect(sql).toMatch(/not exists \(select 1 from public\.player_stats ps where ps\.id = t->>'out'\)/); // unknown → counts
   });
 });

@@ -219,15 +219,23 @@ begin
   --      the best-vs-worst drafter gap collapsed from 45.3 pts to 11.5). Capped at 3.
   --      Compared against GREATEST(cap, what's already stored) so an entry that is already over
   --      the cap (made before this rule) can still be saved unchanged — only ADDING is refused.
-  --      FREE REPAIRS: a transfer logged against a round this tournament holds NO matches for is a
-  --      repair of the UNSCORED opening round (a Masters' first round, which the seeds bye past and
-  --      which the ingest deliberately never writes to public.matches). Those players never reached
-  --      a round that pays, so replacing them doesn't spend the allowance. Deriving that from the
-  --      matches table rather than a client-supplied flag keeps it unspoofable.
+  --      FREE REPAIRS: replacing a player who never reached a SCORED round doesn't spend the
+  --      allowance — they never got to play for you. The test is the player who went OUT: if no row
+  --      in public.matches names them, they never entered a scored round, because the ingest writes
+  --      only scored rounds and deliberately never the Masters' unscored opening round (the one the
+  --      32 seeds bye past). That covers both shapes of never-arrived — lost the opening round, or
+  --      withdrew before it. Derived from the matches table, never a client flag, so it can't be
+  --      spoofed. NB it is keyed on `out`, NOT on the transfer's `round`: the round stamp must stay
+  --      truthful for scoring (it fixes when the signing starts earning), so a repair made during
+  --      the R64→R32 break is stamped R64 — and charging off that stamp billed a manager for an
+  --      opening-round repair purely because they did it after the first scored round. Mirrors
+  --      transfersUsed() in src/data/tournament.ts (openingRoundExit).
   select count(*) into v_tr_count
     from jsonb_array_elements(coalesce(p_state->'transfers', '[]'::jsonb)) t
-   where exists (select 1 from public.matches m
-                  where m.tournament_id = p_tournament and m.round = t->>'round');
+   where not exists (select 1 from public.player_stats ps where ps.id = t->>'out')   -- unknown id → never free
+      or exists (select 1 from public.matches m
+                  where m.tournament_id = p_tournament
+                    and (m.p1_id = t->>'out' or m.p2_id = t->>'out'));
 
   -- Lock + load the existing entry (atomic rev guard + captain lock in one txn).
   select * into v_existing from public.entries
@@ -237,8 +245,10 @@ begin
   -- (d3) apply the transfer cap now that the stored entry is loaded (see d2).
   select count(*) into v_prior_tr
     from jsonb_array_elements(case when v_found then coalesce(v_existing.state->'transfers', '[]'::jsonb) else '[]'::jsonb end) t
-   where exists (select 1 from public.matches m
-                  where m.tournament_id = p_tournament and m.round = t->>'round');
+   where not exists (select 1 from public.player_stats ps where ps.id = t->>'out')   -- unknown id → never free
+      or exists (select 1 from public.matches m
+                  where m.tournament_id = p_tournament
+                    and (m.p1_id = t->>'out' or m.p2_id = t->>'out'));
   if v_tr_count > greatest(3, v_prior_tr) then
     raise exception 'You have used all 3 transfers for this tournament';
   end if;

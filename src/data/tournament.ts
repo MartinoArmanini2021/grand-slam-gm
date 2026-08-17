@@ -1,5 +1,5 @@
 import type { Match, RoundId, TournamentResult } from '../types';
-import { findPlayer } from './players';
+import { findPlayer, PLAYERS } from './players';
 import { TOURNAMENT, ROUND_META, ROUND_ORDER, OPENING_ROUND } from './tournamentConfig';
 import { useLiveStore } from '../store/liveStore';
 import { liveMatches, liveExit, roundComplete } from './liveResults';
@@ -294,8 +294,32 @@ export function isInLiveDraw(playerId: string): boolean {
 // in the opening round (absent from the draw once it's underway)? Drives the refund + the
 // transfer rule ("you may only swap OUT an eliminated player, and only IN a still-alive one"),
 // off the LIVE results rather than the app's stuck round index.
+// Can we trust "absent from the draw" to mean WITHDREW? Only if the draw we hold actually accounts
+// for essentially the whole field. Absence is evidence of withdrawal only when the draw is complete:
+// before the feed lands `draw` is empty and everyone is trivially absent, and a Wikipedia page
+// caught mid-edit (or vandalised) can drop a whole bracket section — either would hide real,
+// still-alive entrants from the market. So require near-total coverage and FAIL SAFE: below the
+// threshold we conclude nothing, leaving players visible rather than wrongly deleting them. One
+// genuine withdrawal barely moves the ratio (95/96), while a lost section (84/96) trips it.
+const WITHDRAWAL_COVERAGE = 0.9;
+export function drawCoversField(): boolean {
+  const { draw } = useLiveStore.getState();
+  if (draw.length === 0) return false;
+  const inDraw = new Set<string>();
+  for (const m of draw) { inDraw.add(m.p1Id); inDraw.add(m.p2Id); }
+  return PLAYERS.filter(p => inDraw.has(p.id)).length >= PLAYERS.length * WITHDRAWAL_COVERAGE;
+}
+
+// Is the player OUT of the tournament right now? Either
+//   • they lost a round we can see — including the UNSCORED opening round, which liveData parses
+//     into the store (PARSED_ROUNDS) precisely so the market can spot it, or
+//   • the draw has been published and they are nowhere in it — a WITHDRAWAL. This used to be
+//     gated on tournamentStarted() ("a scored round has a result"), which meant a player who pulled
+//     out before the first scored round stayed on sale for the whole draft: they were in no pairing,
+//     so they had no exit, and the tournament had not "started". Keying it to the DRAW being
+//     published instead closes that window, and self-corrects if the draw changes back.
 export function isEliminated(playerId: string): boolean {
-  return getPlayerExit(playerId) !== null || (tournamentStarted() && !isInLiveDraw(playerId));
+  return getPlayerExit(playerId) !== null || (drawCoversField() && !isInLiveDraw(playerId));
 }
 
 // THE single question the market must ask before letting anyone take a player: can they still be
@@ -395,8 +419,19 @@ export function playerRefund(id: string): number {
 // who fell in the unscored opening round is FREE — it repairs a squad that never got to play, so it
 // isn't the recycling the cap exists to limit. Logged against OPENING_ROUND by the store, which is
 // also how the server identifies it (that round has no rows in public.matches).
-export function transfersUsed(transfers: { round: string }[] = []): number {
-  return transfers.filter(t => !OPENING_ROUND || t.round !== OPENING_ROUND).length;
+// Free when the player REPLACED never reached a scored round — judged by who went out, not by which
+// round the transfer is stamped with. The stamp has to stay truthful for scoring (it decides which
+// round the signing starts earning from), so it says R64 for a repair made during the R64→R32 break;
+// reusing it as the "free" marker charged a manager for repairing an opening-round casualty simply
+// because they did it after the first scored round rather than before. openingRoundExit covers both
+// shapes of never-arrived: lost the opening round, or withdrew and never appeared in the draw.
+// The server derives the SAME thing unspoofably — an out player with no rows in public.matches never
+// reached a scored round (see save_entry_rpc.sql) — so client and server agree without a client flag.
+// findPlayer guard: openingRoundExit falls back to "absent from the draw", which is true of ANY
+// unrecognised id — so without it a fabricated `out` would buy unlimited free transfers. Only a
+// real member of this field can earn the exemption. The server applies the same two conditions.
+export function transfersUsed(transfers: { round: string; out?: string; in?: string }[] = []): number {
+  return transfers.filter(t => !(t.out && findPlayer(t.out) && openingRoundExit(t.out))).length;
 }
 
 // A manager's available money, LIVE and derived (no manual "play the round" step): the starting

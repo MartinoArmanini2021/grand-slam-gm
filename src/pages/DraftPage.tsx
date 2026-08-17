@@ -137,11 +137,13 @@ export default function DraftPage() {
       return 0;
     }), [sort, search, tierFilter]);
 
-  // Once live, hide knocked-out players from the market list — it's just the field still in
-  // contention, so it's easy to see who you can actually buy. (They stay in My Squad with Cash In.)
-  const visible = useMemo(() => (live ? sorted.filter(p => !isEliminated(p.id)) : sorted),
+  // The market lists ONLY players still in contention — during the draft as well as once live.
+  // A 96-draw Masters plays its unscored opening round while the draft is still open, so by the
+  // time managers are picking, a chunk of the field has already gone home; showing them at all
+  // (even greyed) just invites a wasted pick. They stay in My Squad with Cash In if you hold one.
+  const visible = useMemo(() => sorted.filter(p => !isUnpickable(p.id, revealed)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [sorted, live, draw, results]);
+    [sorted, revealed, draw, results]);
 
   const th = 'text-left px-2 py-2 text-[11px] font-bold uppercase tracking-wide';
 
