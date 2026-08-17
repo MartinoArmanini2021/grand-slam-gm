@@ -1,0 +1,664 @@
+[
+  {
+    "user_id": "e3a43da2-d991-4594-b991-1fae551b4199",
+    "tournament_id": "montreal_2026",
+    "score": 127,
+    "budget": 18.6,
+    "state": {
+      "phase": "pre_round",
+      "budget": 18.6,
+      "myTeam": [
+        "jodar",
+        "tien",
+        "nakashima"
+      ],
+      "captain": "nakashima",
+      "myScore": 15.5,
+      "cashedIn": [
+        "fritz",
+        "burruchaga",
+        "landaluce",
+        "deminaur",
+        "arnaldi",
+        "hanfmann",
+        "hurkacz",
+        "shang",
+        "fonseca",
+        "mensik",
+        "darderi",
+        "fils"
+      ],
+      "transfers": [
+        {
+          "in": "arnaldi",
+          "out": "fritz",
+          "round": "R64"
+        },
+        {
+          "in": "hanfmann",
+          "out": "burruchaga",
+          "round": "R64"
+        },
+        {
+          "in": "tien",
+          "out": "landaluce",
+          "round": "R32"
+        },
+        {
+          "in": "nakashima",
+          "out": "deminaur",
+          "round": "R32"
+        },
+        {
+          "in": "darderi",
+          "out": "arnaldi",
+          "round": "R16"
+        }
+      ],
+      "roundScores": [
+        {
+          "round": "R64",
+          "points": 15.5,
+          "viceBonus": 0.5,
+          "captainBonus": 0
+        }
+      ],
+      "viceCaptain": "jodar",
+      "initialSquad": [
+        "fils",
+        "jodar",
+        "deminaur",
+        "fritz",
+        "fonseca",
+        "mensik",
+        "landaluce",
+        "hurkacz",
+        "burruchaga",
+        "shang"
+      ],
+      "budgetReturns": [],
+      "captainHistory": [
+        {
+          "round": "R64",
+          "playerId": "landaluce"
+        },
+        {
+          "round": "R32",
+          "playerId": "jodar"
+        },
+        {
+          "round": "R16",
+          "playerId": "fils"
+        },
+        {
+          "round": "QF",
+          "playerId": "tien"
+        },
+        {
+          "round": "F",
+          "playerId": "nakashima"
+        }
+      ],
+      "currentRoundIndex": 1,
+      "viceCaptainHistory": [
+        {
+          "round": "R64",
+          "playerId": "fonseca"
+        },
+        {
+          "round": "R32",
+          "playerId": "mensik"
+        },
+        {
+          "round": "R16",
+          "playerId": "mensik"
+        },
+        {
+          "round": "QF",
+          "playerId": "darderi"
+        },
+        {
+          "round": "F",
+          "playerId": "jodar"
+        }
+      ]
+    }
+  },
+  {
+    "user_id": "524e264f-c7eb-4b03-9200-183dd0cfd647",
+    "tournament_id": "montreal_2026",
+    "score": 2,
+    "budget": 0,
+    "state": {
+      "phase": "pre_round",
+      "budget": 0,
+      "myTeam": [
+        "augeraliassime",
+        "cobolli",
+        "khachanov",
+        "berrettini",
+        "struff",
+        "baez",
+        "tiafoe",
+        "paul",
+        "vacherot",
+        "shapovalov"
+      ],
+      "captain": "augeraliassime",
+      "myScore": 0,
+      "transfers": [],
+      "roundScores": [],
+      "viceCaptain": "cobolli",
+      "initialSquad": [
+        "augeraliassime",
+        "cobolli",
+        "khachanov",
+        "berrettini",
+        "struff",
+        "baez",
+        "tiafoe",
+        "paul",
+        "vacherot",
+        "shapovalov"
+      ],
+      "budgetReturns": [],
+      "captainHistory": [
+        {
+          "round": "R64",
+          "playerId": "augeraliassime"
+        }
+      ],
+      "currentRoundIndex": 0,
+      "viceCaptainHistory": [
+        {
+          "round": "R64",
+          "playerId": "cobolli"
+        }
+      ]
+    }
+  },
+  {
+    "user_id": "45576f33-e1ca-47ea-94a4-3d0deb771ba7",
+    "tournament_id": "montreal_2026",
+    "score": 148,
+    "budget": 10.4,
+    "state": {
+      "phase": "pre_round",
+      "budget": 10.4,
+      "myTeam": [
+        "fils",
+        "jodar",
+        "shelton",
+        "tien",
+        "darderi",
+        "nakashima"
+      ],
+      "captain": "tien",
+      "myScore": 0,
+      "cashedIn": [
+        "augeraliassime",
+        "fritz",
+        "ruud",
+        "berrettini",
+        "munar",
+        "busta",
+        "carabelli",
+        "royer"
+      ],
+      "transfers": [
+        {
+          "in": "shelton",
+          "out": "augeraliassime",
+          "round": "R16"
+        },
+        {
+          "in": "tien",
+          "out": "fritz",
+          "round": "R16"
+        },
+        {
+          "in": "darderi",
+          "out": "ruud",
+          "round": "R16"
+        },
+        {
+          "in": "nakashima",
+          "out": "berrettini",
+          "round": "R16"
+        }
+      ],
+      "roundScores": [],
+      "viceCaptain": "jodar",
+      "initialSquad": [
+        "fritz",
+        "augeraliassime",
+        "ruud",
+        "fils",
+        "jodar",
+        "berrettini",
+        "munar",
+        "carabelli",
+        "busta",
+        "royer"
+      ],
+      "budgetReturns": [],
+      "captainHistory": [
+        {
+          "round": "R64",
+          "playerId": "fritz"
+        },
+        {
+          "round": "SF",
+          "playerId": "tien"
+        }
+      ],
+      "currentRoundIndex": 0,
+      "viceCaptainHistory": [
+        {
+          "round": "R64",
+          "playerId": "augeraliassime"
+        },
+        {
+          "round": "SF",
+          "playerId": "jodar"
+        }
+      ]
+    }
+  },
+  {
+    "user_id": "51face7f-b380-4537-bb14-db16443f97a2",
+    "tournament_id": "montreal_2026",
+    "score": 165.5,
+    "budget": 0.6,
+    "state": {
+      "phase": "pre_round",
+      "budget": 0.6,
+      "myTeam": [
+        "shelton",
+        "fils",
+        "griekspoor",
+        "merida",
+        "tirante"
+      ],
+      "captain": "shelton",
+      "myScore": 0,
+      "cashedIn": [
+        "zverev",
+        "cobolli",
+        "tiafoe",
+        "paul",
+        "royer",
+        "arnaldi",
+        "davidovichfokina",
+        "diallo",
+        "duckworth",
+        "kovacevic"
+      ],
+      "transfers": [
+        {
+          "in": "shelton",
+          "out": "zverev",
+          "round": "R32"
+        },
+        {
+          "in": "fils",
+          "out": "cobolli",
+          "round": "R32"
+        },
+        {
+          "in": "griekspoor",
+          "out": "tiafoe",
+          "round": "R32"
+        },
+        {
+          "in": "merida",
+          "out": "paul",
+          "round": "R32"
+        },
+        {
+          "in": "tirante",
+          "out": "royer",
+          "round": "R32"
+        }
+      ],
+      "roundScores": [],
+      "viceCaptain": "fils",
+      "initialSquad": [
+        "zverev",
+        "cobolli",
+        "davidovichfokina",
+        "arnaldi",
+        "tiafoe",
+        "kovacevic",
+        "diallo",
+        "duckworth",
+        "royer",
+        "paul"
+      ],
+      "budgetReturns": [],
+      "captainHistory": [
+        {
+          "round": "R64",
+          "playerId": "zverev"
+        },
+        {
+          "round": "R16",
+          "playerId": "shelton"
+        }
+      ],
+      "currentRoundIndex": 0,
+      "viceCaptainHistory": [
+        {
+          "round": "R64",
+          "playerId": "cobolli"
+        },
+        {
+          "round": "R16",
+          "playerId": "fils"
+        }
+      ]
+    }
+  },
+  {
+    "user_id": "49b012ea-3c50-4fcd-a18b-59122e2b9db3",
+    "tournament_id": "montreal_2026",
+    "score": 39,
+    "budget": 0,
+    "state": {
+      "phase": "pre_round",
+      "budget": 0,
+      "myTeam": [
+        "fritz",
+        "jodar",
+        "zverev",
+        "paul",
+        "hurkacz",
+        "fils",
+        "shang",
+        "royer",
+        "shapovalov",
+        "altmaier"
+      ],
+      "captain": "zverev",
+      "myScore": 0,
+      "transfers": [],
+      "roundScores": [],
+      "viceCaptain": "fils",
+      "initialSquad": [
+        "fritz",
+        "jodar",
+        "zverev",
+        "paul",
+        "hurkacz",
+        "fils",
+        "shang",
+        "royer",
+        "shapovalov",
+        "altmaier"
+      ],
+      "budgetReturns": [],
+      "captainHistory": [
+        {
+          "round": "R64",
+          "playerId": "zverev"
+        }
+      ],
+      "currentRoundIndex": 0,
+      "viceCaptainHistory": [
+        {
+          "round": "R64",
+          "playerId": "fils"
+        }
+      ]
+    }
+  },
+  {
+    "user_id": "0f7892be-a038-494c-ab5a-e4484c221ec7",
+    "tournament_id": "montreal_2026",
+    "score": 186,
+    "budget": 7.6,
+    "state": {
+      "phase": "pre_round",
+      "budget": 7.6,
+      "myTeam": [
+        "tien",
+        "jodar",
+        "shelton"
+      ],
+      "captain": "shelton",
+      "myScore": 0,
+      "cashedIn": [
+        "munar",
+        "cilic",
+        "medvedev",
+        "vacherot",
+        "davidovichfokina",
+        "struff",
+        "burruchaga",
+        "shapovalov",
+        "deminaur",
+        "musetti",
+        "tiafoe",
+        "arnaldi",
+        "fonseca",
+        "darderi"
+      ],
+      "transfers": [
+        {
+          "in": "arnaldi",
+          "out": "munar",
+          "round": "R64"
+        },
+        {
+          "in": "fonseca",
+          "out": "cilic",
+          "round": "R64"
+        },
+        {
+          "in": "musetti",
+          "out": "medvedev",
+          "round": "R64"
+        },
+        {
+          "in": "tien",
+          "out": "vacherot",
+          "round": "R32"
+        },
+        {
+          "in": "jodar",
+          "out": "davidovichfokina",
+          "round": "R32"
+        },
+        {
+          "in": "shelton",
+          "out": "struff",
+          "round": "R16"
+        },
+        {
+          "in": "darderi",
+          "out": "burruchaga",
+          "round": "R16"
+        }
+      ],
+      "roundScores": [],
+      "viceCaptain": "tien",
+      "initialSquad": [
+        "munar",
+        "deminaur",
+        "burruchaga",
+        "medvedev",
+        "shapovalov",
+        "davidovichfokina",
+        "struff",
+        "cilic",
+        "vacherot",
+        "tiafoe"
+      ],
+      "budgetReturns": [],
+      "captainHistory": [
+        {
+          "round": "R64",
+          "playerId": "cilic"
+        },
+        {
+          "round": "R16",
+          "playerId": "fonseca"
+        },
+        {
+          "round": "QF",
+          "playerId": "shelton"
+        }
+      ],
+      "currentRoundIndex": 0,
+      "viceCaptainHistory": [
+        {
+          "round": "R64",
+          "playerId": "deminaur"
+        },
+        {
+          "round": "R16",
+          "playerId": "tien"
+        },
+        {
+          "round": "QF",
+          "playerId": "tien"
+        }
+      ]
+    }
+  },
+  {
+    "user_id": "96f09bf4-1502-4e1e-8749-4a0c6a8fb0c4",
+    "tournament_id": "montreal_2026",
+    "score": 199.5,
+    "budget": 22.4,
+    "state": {
+      "phase": "pre_round",
+      "budget": 22.4,
+      "myTeam": [
+        "jodar",
+        "tien",
+        "nakashima",
+        "shelton"
+      ],
+      "captain": "jodar",
+      "myScore": 0,
+      "cashedIn": [
+        "diallo",
+        "medvedev",
+        "fritz",
+        "mensik",
+        "paul",
+        "michelsen",
+        "atmane",
+        "zandschulp",
+        "hurkacz"
+      ],
+      "transfers": [
+        {
+          "in": "tien",
+          "out": "diallo",
+          "round": "R64"
+        },
+        {
+          "in": "nakashima",
+          "out": "medvedev",
+          "round": "R64"
+        },
+        {
+          "in": "shelton",
+          "out": "fritz",
+          "round": "QF"
+        }
+      ],
+      "roundScores": [],
+      "viceCaptain": "shelton",
+      "initialSquad": [
+        "michelsen",
+        "paul",
+        "mensik",
+        "hurkacz",
+        "zandschulp",
+        "atmane",
+        "jodar",
+        "medvedev",
+        "fritz",
+        "diallo"
+      ],
+      "budgetReturns": [],
+      "captainHistory": [
+        {
+          "round": "R64",
+          "playerId": "mensik"
+        },
+        {
+          "round": "SF",
+          "playerId": "jodar"
+        }
+      ],
+      "currentRoundIndex": 0,
+      "viceCaptainHistory": [
+        {
+          "round": "R64",
+          "playerId": "michelsen"
+        },
+        {
+          "round": "SF",
+          "playerId": "shelton"
+        }
+      ]
+    }
+  },
+  {
+    "user_id": "47409344-9ef0-4e0d-8856-bff9dfc81806",
+    "tournament_id": "montreal_2026",
+    "score": 10,
+    "budget": 0,
+    "state": {
+      "phase": "pre_round",
+      "budget": 0,
+      "myTeam": [
+        "michelsen",
+        "baez",
+        "rublev",
+        "arnaldi",
+        "augeraliassime",
+        "davidovichfokina",
+        "kovacevic",
+        "diallo",
+        "fritz",
+        "darderi"
+      ],
+      "captain": "davidovichfokina",
+      "myScore": 0,
+      "transfers": [],
+      "roundScores": [],
+      "viceCaptain": "baez",
+      "initialSquad": [
+        "michelsen",
+        "baez",
+        "rublev",
+        "arnaldi",
+        "augeraliassime",
+        "davidovichfokina",
+        "kovacevic",
+        "diallo",
+        "fritz",
+        "darderi"
+      ],
+      "budgetReturns": [],
+      "captainHistory": [
+        {
+          "round": "R64",
+          "playerId": "davidovichfokina"
+        }
+      ],
+      "currentRoundIndex": 0,
+      "viceCaptainHistory": [
+        {
+          "round": "R64",
+          "playerId": "baez"
+        }
+      ]
+    }
+  }
+]
