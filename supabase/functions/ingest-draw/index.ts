@@ -184,6 +184,25 @@ function parseFullDraw(
 
   if (sections.length === 0) return parseBracket(wikitext, scoredRounds, resolve, includeIncomplete);
 
+  // SHAPE GUARD. Slots are structural — sectionIndex × pairsPerSection + local slot — which keeps a
+  // match's identity stable as the draw fills in. splitBrackets matches ANY NTeamBracket, so an extra
+  // 16-team bracket appearing on the page would push every later section's index up by one and hand
+  // already-recorded winners to different pairings: the exact failure structural slots exist to stop.
+  // Both a 96-draw Masters and a 128-draw Slam publish exactly 8.
+  //
+  // Guarded on MORE than 8, not "not exactly 8", and the asymmetry is deliberate. Extra sections are
+  // the dangerous direction. FEWER is normal and safe: a partially-published page simply has trailing
+  // sections missing, and because section i always owns the same slot range, the ones already present
+  // keep the numbering they will still have once the rest arrive. (It is also what the parser unit
+  // tests exercise, with a single-section fixture.)
+  //
+  // NB this cannot catch a bracket inserted EARLIER while the total stays 8 — nothing stateless can.
+  // It catches the case actually reported. Failing loudly writes ok:false to ingest_health and trips
+  // the watchdog, while buildMatchRows' never-regress merge preserves every result already stored.
+  if (sections.length > 8) {
+    throw new Error(`Draw shape unexpected: ${sections.length} section brackets, expected at most 8. Refusing to parse rather than risk renumbering slots.`);
+  }
+
   const perRound: Partial<Record<RoundId, { slot: number; winner: string | undefined; p1Id: string; p2Id: string; score: MatchScore | undefined }[]>> = {};
   const meta: DrawMetaMap = {};
   const pairsPerSection = (roundIds: RoundId[], roundId: RoundId) => 2 ** (roundIds.length - 1 - roundIds.indexOf(roundId));

@@ -128,7 +128,10 @@ declare
   v_squad text[];
   v_phase text := coalesce(p_state->>'phase', 'draft');
   v_locked boolean := (coalesce(p_state->>'phase', 'draft') <> 'draft');
+  -- CLIENT-SUPPLIED (untrusted): only ever used to shape non-limit behaviour, NEVER to decide a
+  -- cap. v_stored_has_transfers below is the trustworthy one, read from the locked stored row.
   v_has_transfers boolean := jsonb_array_length(coalesce(p_state->'transfers', '[]'::jsonb)) > 0;
+  v_stored_has_transfers boolean := false;   -- derived from the STORED entry (see the lock below)
   -- "touched" = the manager has begun mid-tournament changes (cashed a player in OR bought one).
   -- Until then a LOCKED squad is still the pristine draft, so it must be exactly 10 · 2/3/5. Once
   -- touched, cash-in-and-buy is allowed to shrink the squad (<10) and drift off 2/3/5 (any tier).
@@ -185,6 +188,16 @@ begin
   if v_size > 10 then raise exception 'Squad can''t exceed 10 players (got %)', v_size; end if;
   if v_locked and not v_touched and v_size <> 10 then raise exception 'Your squad must be exactly 10 players to lock (got %)', v_size; end if;
 
+  -- LOCK + LOAD THE STORED ENTRY FIRST. This used to sit further down, after validation, which is
+  -- what made the budget bypass possible: with no server-side copy to consult, gate (d) fell back to
+  -- the client's own p_state. Taking the row lock here costs nothing extra (the same lock was taken
+  -- a few statements later) and gives every check below a trustworthy view of what is actually saved.
+  select * into v_existing from public.entries
+    where user_id = v_uid and league_id = v_public and tournament_id = p_tournament for update;
+  v_found := found;
+  v_stored_has_transfers := v_found
+    and jsonb_array_length(coalesce(v_existing.state->'transfers', '[]'::jsonb)) > 0;
+
   -- (b) every id is a real, known player
   if exists (select 1 from unnest(v_squad) sid where not exists (select 1 from public.player_stats ps where ps.id = sid)) then
     raise exception 'Squad contains an unknown player';
@@ -208,7 +221,13 @@ begin
 
   -- (d) budget: sum of seeded prices ≤ 150, enforced while no transfers exist (post-lock
   --     transfers spend elimination refunds — a separate accounting, deferred to the freeze).
-  if not v_has_transfers then
+  --
+  --     ⚠️ SECURITY: this gate MUST read the STORED entry, never p_state. p_state is the raw client
+  --     payload, so deriving "has transfers" from it let any signed-in caller switch the cap off by
+  --     inventing a single transfer entry — squad size and the 2/3/5 quota still held, the $150M did
+  --     not, for the whole draft window. v_stored_has_transfers comes from the row we just locked,
+  --     which only this RPC can write, so a client cannot influence it. Keep it that way.
+  if not v_stored_has_transfers then
     select coalesce(sum(ps.price), 0) into v_total from unnest(v_squad) sid join public.player_stats ps on ps.id = sid;
     if v_total > 150 then raise exception 'Squad costs $%M, over the $150M budget', v_total; end if;
   end if;
@@ -237,10 +256,7 @@ begin
                   where m.tournament_id = p_tournament
                     and (m.p1_id = t->>'out' or m.p2_id = t->>'out'));
 
-  -- Lock + load the existing entry (atomic rev guard + captain lock in one txn).
-  select * into v_existing from public.entries
-    where user_id = v_uid and league_id = v_public and tournament_id = p_tournament for update;
-  v_found := found;
+  -- (the entry was locked + loaded ABOVE, before validation, so gate (d) can trust it)
 
   -- (d3) apply the transfer cap now that the stored entry is loaded (see d2).
   select count(*) into v_prior_tr
