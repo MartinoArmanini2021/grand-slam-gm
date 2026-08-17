@@ -295,11 +295,19 @@ export const useGameStore = create<GameStore>()(
         // Snapshot the drafted squad; keep the two leaders (they're kept defaulted).
         const leaders = pickLeaders(myTeam, captain, viceCaptain, []);
         const { captainHistory, viceCaptainHistory } = get();
-        // Commit R64's captain-of-record now (while it's still open) so the server accepts
-        // it and the board applies the multiplier; a no-op if R64 already has a result.
+        // Commit the captain-of-record against the earliest round that has NOT started yet — NOT a
+        // hardcoded ROUNDS[0]. The draft closes on the first RESULT, but a round counts as started
+        // at its SCHEDULED time, so there is a real window (first ball bowled, nothing finished) in
+        // which a manager can still lock. Stamping ROUNDS[0] there made recordLeaders a silent
+        // no-op — it refuses a started round — leaving captainHistory EMPTY. And empty is fatal, not
+        // merely late: leaderOfRecord carries forward from the most recent earlier entry, so with no
+        // entry at all the manager got no captain or vice multiplier for the ENTIRE tournament. That
+        // is exactly what happened to one Cincinnati manager, who had both picked in the UI and
+        // scored as if neither existed. Now their pick counts from the first round it legitimately
+        // can (a no-op only when every round has started).
         set({
           phase: 'pre_round', ...leaders, initialSquad: [...myTeam],
-          ...recordLeaders(ROUNDS[0].id, leaders.captain, leaders.viceCaptain, captainHistory, viceCaptainHistory),
+          ...recordLeaders(liveLeaderRound() ?? ROUNDS[0].id, leaders.captain, leaders.viceCaptain, captainHistory, viceCaptainHistory),
         });
         track('squad_locked', { size: myTeam.length, spend: STARTING_BUDGET - get().budget });
       },
