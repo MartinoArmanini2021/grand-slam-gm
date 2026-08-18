@@ -105,7 +105,8 @@ A Grand Slam (128, no byes) scores all seven rounds instead, and has no unscored
   vice on court and the rest on the bench. Per-surface palettes (grass/hard/clay), stands,
   crowd speckle, net, painted lines. This is the visual centrepiece.
 - **BracketTree** — the live draw as a navigable bracket.
-- **PlayerAvatar** — generated avatars (DiceBear) with tier-coloured rings.
+- **PlayerAvatar** — the real official ATP headshot per player, hotlinked, inside a
+  tier-coloured ring, with a graceful fallback chain (see §9).
 - Confetti, toasts, countdown timers, first-run tour.
 
 ---
@@ -150,7 +151,7 @@ Tier colours: Platinum `#7DE2FC`, Gold `#FBBF3B`, Silver `#AEB8C4`.
 ## 5. Tech stack
 
 **Frontend** — React 19 · TypeScript · Vite 8 · Tailwind 3.4 · Zustand 5 (state)
-· PostHog (analytics) · DiceBear (avatars). Hosted on **Cloudflare Pages**.
+· PostHog (analytics). Hosted on **Cloudflare Pages**.
 
 **Backend** — **Supabase** (Postgres + Row Level Security + Auth + Edge Functions),
 plus one Cloudflare Pages Function for an edge-cached public leaderboard.
@@ -241,3 +242,59 @@ screens and could be reproduced quickly and probably made prettier. The hard par
 
 A rebuild that ignores 1–4 will demo beautifully and then quietly pay people the wrong
 number of points, which is the one bug a fantasy game cannot survive.
+
+---
+
+## 9. Real data (shipped alongside this brief)
+
+`lovable-cincinnati-field.json` — the **complete, real Cincinnati 2026 field**, exported
+straight from the running app so prices and tiers are exactly what players see.
+
+96 players. Each record:
+
+```json
+{
+  "id": "zverev",
+  "name": "Alexander Zverev",
+  "country": "Germany",
+  "flag": "🇩🇪",
+  "ranking": 3,
+  "seed": 1,
+  "tier": "Platinum",
+  "price": 50,
+  "age": 29,
+  "hand": "R",
+  "photoUrl": "https://www.atptour.com/-/media/alias/player-headshot/Z355",
+  "surface": { "hard": 76, "clay": 88, "grass": 86 },
+  "ytd": { "wins": 33, "losses": 7, "titles": 1 },
+  "yearResults": [ { "tournament": "Australian Open", "surface": "hard",
+                     "short": "AO", "result": "SF" } ]
+}
+```
+
+- **32 seeded** (seed 1–32, bye into the R64), 64 unseeded.
+- Prices span **$4M–$50M**, tuned so a legal 10-player squad fits $150M but forces choices.
+- `tier` is derived from `ranking` (≤10 Platinum, 11–25 Gold, 26+ Silver) and drives the
+  2/3/5 quota.
+- `surface` = win percentages; `ytd` and `yearResults` power the player-profile form strip.
+
+### Player images — read this before rebuilding them
+
+There are **no image files to copy**. Avatars **hotlink the official ATP headshot** at the
+`photoUrl` in each record. This is deliberate: downloading those URLs server-side returns a
+*different, inconsistent* image than the browser gets, so the app must hotlink from the client.
+
+- 93 of 96 have a headshot. The 3 without (Monfils, Kokkinakis, Wolf — all outside the
+  top 300 pool) fall back automatically.
+- Fallback chain: ATP headshot → initials monogram → illustrated icon.
+- Each avatar carries a **tier-coloured ring** (Platinum `#7DE2FC`, Gold `#FBBF3B`,
+  Silver `#AEB8C4`) — 2px ring plus a 4px white halo.
+
+So the instruction for a rebuild is: use `photoUrl` directly in an `<img src>`, keep the
+error fallback, and do not try to self-host the images.
+
+### Other data in the repo (not exported here)
+- `atp300.json` (183 KB) — the 300-player stats pool: rankings, form, surface splits,
+  season results, and every `photoUrl`. Source for pricing and for any future field.
+- `montreal2026Field.json`, `wimbledon2026Field.json` — previous events.
+- Live results are **not** a data file: they are read from the published draw at runtime.
