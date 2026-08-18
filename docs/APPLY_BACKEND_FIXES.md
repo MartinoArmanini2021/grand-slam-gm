@@ -105,6 +105,18 @@ new scoped lookups.
 
 ## Step 3 — the scorer
 
+> ⚠️ **Do not run this until step 2's check (a) has shown you `cincinnati_2026 96 0`.** This version
+> asks for rankings *for Cincinnati*. If step 2 has not run there are none, and the scorer does not
+> treat that as an error — [`recompute-score/index.ts:62`](../supabase/functions/recompute-score/index.ts)
+> falls back to `?? 40`, so every player becomes rank 40 and every match computes as "no upset."
+> Every upset bonus on the leaderboard would disappear within 3 minutes, silently. It repairs itself
+> on the next run once step 2 lands, but your managers would see wrong scores in between.
+
+**Run this from the project folder**, not from your home directory:
+
+```
+cd C:\Users\marti\tennis-fantasy
+```
 ```
 npx supabase functions deploy recompute-score --project-ref mrdmlfumdsxufifjulbt
 ```
@@ -119,6 +131,11 @@ this deploy would have been urgent rather than routine.
 
 ## Step 4 — the results feed
 
+Again, **from the project folder**:
+
+```
+cd C:\Users\marti\tennis-fantasy
+```
 ```
 npx supabase functions deploy ingest-draw --project-ref mrdmlfumdsxufifjulbt
 ```
