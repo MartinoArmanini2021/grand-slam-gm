@@ -15,10 +15,17 @@
 import { execSync } from 'node:child_process';
 import { rmSync, existsSync, readFileSync } from 'node:fs';
 
-const PREVIEW = process.argv.includes('preview');
-const BRANCH = PREVIEW ? 'dev' : 'main';               // Cloudflare treats non-`main` branches as previews
-const TARGET_URL = PREVIEW ? 'https://dev.grand-slam-gm.pages.dev' : 'https://grand-slam-gm.pages.dev';
-const LABEL = PREVIEW ? 'DEV PREVIEW' : 'PRODUCTION';
+// A NAMED branch target: `node scripts/deploy.mjs branch=ux-revamp` publishes to its own Cloudflare
+// preview at <branch>.grand-slam-gm.pages.dev, leaving BOTH dev and production untouched. Added for
+// the Phase 3 revamp, which has to live somewhere the current app can be compared against — and
+// which must never be one mistyped argument away from replacing it.
+const NAMED = (process.argv.find(a => a.startsWith('branch=')) || '').slice(7);
+const PREVIEW = NAMED ? true : process.argv.includes('preview');
+const BRANCH = NAMED || (PREVIEW ? 'dev' : 'main');    // Cloudflare treats non-`main` branches as previews
+const TARGET_URL = NAMED
+  ? `https://${NAMED}.grand-slam-gm.pages.dev`
+  : PREVIEW ? 'https://dev.grand-slam-gm.pages.dev' : 'https://grand-slam-gm.pages.dev';
+const LABEL = NAMED ? `PREVIEW (${NAMED})` : PREVIEW ? 'DEV PREVIEW' : 'PRODUCTION';
 const run = (cmd) => execSync(cmd, { stdio: 'inherit' });
 const git = (cmd) => execSync(`git ${cmd}`, { encoding: 'utf8' }).trim();
 console.log(`\n▶ Deploying to ${LABEL}  (branch: ${BRANCH} · ${TARGET_URL})`);

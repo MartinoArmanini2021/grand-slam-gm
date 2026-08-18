@@ -18,7 +18,8 @@
     "dev:cincinnati": "vite --mode cincinnati",
     "field:build": "node scripts/build-field.mjs",
     "field:seed": "node scripts/gen-seed.mjs",
-    "dev:montreal": "vite --mode montreal"
+    "dev:montreal": "vite --mode montreal",
+    "deploy:ux": "node scripts/deploy.mjs branch=ux-revamp"
   },
   "dependencies": {
     "@dicebear/collection": "^9.4.2",
