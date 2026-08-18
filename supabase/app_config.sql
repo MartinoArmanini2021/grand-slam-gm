@@ -15,11 +15,29 @@ create table if not exists public.app_config (
 insert into public.app_config (key, value) values ('active_tournament_id', 'montreal_2026')
 on conflict (key) do nothing;
 
--- The helper the crons call each run. STABLE, with a hardcoded fallback so a missing/renamed row
--- can never break the pipeline. SECURITY DEFINER so the cron role can always read it.
+-- The helper the crons call each run. STABLE; SECURITY DEFINER so the cron role can always read it.
+--
+-- NO HARDCODED FALLBACK, deliberately — this used to end `, 'montreal_2026')`, described as "a
+-- fallback so a missing/renamed row can never break the pipeline". It did not keep the pipeline
+-- working; it kept it silently pointed at a dead event. If the config row were ever deleted or
+-- renamed, both crons would have started operating on Montréal: ingest-draw carries Montréal in its
+-- registry, so it would have cheerfully re-scraped a finished draw and rewritten public.matches,
+-- while recompute-score rescored Montréal's entries against a player table that no longer holds its
+-- rows — every ranking resolving to the `?? 40` default, so every upset bonus in a FINISHED event
+-- silently erased. Cincinnati, meanwhile, would simply stop being scored. And the watchdog would
+-- have said nothing, because it calls this same function: it would have checked Montréal's health
+-- rows, found them freshly updated by the very runs doing the damage, and reported all clear.
+--
+-- Returning NULL makes every path loud instead:
+--   • the ingest cron posts tournamentId: null -> ingest-draw answers 400 and writes ok=false ->
+--     the watchdog alerts (it reads `ok` as of 2026-08-18, not just freshness)
+--   • the scoring cron posts null -> recompute-score reads app_config directly, finds nothing, and
+--     throws -> it writes scoring_health only on success, so last_run_at goes stale -> alert
+--   • the watchdog itself gets null -> matches no health row -> "last ran never" -> alert
+-- This is fix 1.4 applied to the SQL layer: nothing may guess which tournament you meant.
 create or replace function public.active_tournament_id() returns text
 language sql stable security definer set search_path = public as $$
-  select coalesce((select value from public.app_config where key = 'active_tournament_id'), 'montreal_2026');
+  select value from public.app_config where key = 'active_tournament_id';
 $$;
 
 -- Server-only config — never exposed to the app's anon/authenticated clients (the service role,
