@@ -103,7 +103,14 @@ Deno.serve(async (req) => {
     try { const b = await req.json(); tournamentId = b?.tournamentId; } catch { /* no body */ }
     if (!tournamentId) {
       const { data: cfg } = await db.from('app_config').select('value').eq('key', 'active_tournament_id').maybeSingle();
-      tournamentId = cfg?.value ?? 'montreal_2026';
+      tournamentId = cfg?.value ?? undefined;
+    }
+    // NO HARDCODED FALLBACK. This used to end in `?? 'montreal_2026'`, so if app_config were ever
+    // unreadable the scorer would silently rewrite a FINISHED tournament's standings instead of the
+    // live one — and report success while doing it. app_config is the single source of truth; if it
+    // cannot be read, the right answer is to stop and be seen stopping.
+    if (!tournamentId) {
+      throw new Error('recompute-score could not resolve a tournament: no tournamentId in the request and app_config.active_tournament_id is unset or unreadable.');
     }
 
     // Results the server holds → the rounds that are actually "done".

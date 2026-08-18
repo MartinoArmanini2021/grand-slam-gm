@@ -259,8 +259,10 @@ const TOURNAMENTS: Record<string, { page: string; rounds: readonly string[]; ros
     roster: cincinnatiField as { id: string; name: string }[],
   },
 };
-// Fallback when a manual invoke sends no tournamentId (the crons always send one, from app_config).
-const DEFAULT_TOURNAMENT_ID = 'montreal_2026';
+// NO DEFAULT, deliberately. A hardcoded fallback here meant a bodyless invoke silently ingested
+// whatever that constant named — and once that event finished, every such call quietly re-scraped
+// a dead tournament and reported success. The crons always send an id (from app_config, the single
+// source of truth), so a missing one means the caller has not said what it wants: answer 400.
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -276,7 +278,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   const denied = assertServiceRole(req);
   if (denied) return denied;
-  let tournamentId = DEFAULT_TOURNAMENT_ID;
+  let tournamentId = '(none supplied)';
   try {
     const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
@@ -287,7 +289,10 @@ Deno.serve(async (req) => {
     // asks for one we don't carry (e.g. app_config flipped to a new event before this was redeployed),
     // REFUSE loudly rather than fetch the wrong draw and write it under the wrong id — the error lands
     // in ingest_health and the watchdog alerts. A custom body.page (manual re-parse) is still allowed.
-    const requestedId = body.tournamentId ?? DEFAULT_TOURNAMENT_ID;
+    const requestedId = body.tournamentId;
+    if (!requestedId) {
+      return json({ ok: false, error: `ingest-draw requires an explicit tournamentId (carries: ${Object.keys(TOURNAMENTS).join(', ')}). Refusing to guess which tournament you meant.` }, 400);
+    }
     const cfg = TOURNAMENTS[requestedId];
     if (!cfg) {
       throw new Error(`ingest-draw has no field/page for "${requestedId}" (carries: ${Object.keys(TOURNAMENTS).join(', ')}). Add it to the TOURNAMENTS registry and redeploy before switching app_config.active_tournament_id.`);
