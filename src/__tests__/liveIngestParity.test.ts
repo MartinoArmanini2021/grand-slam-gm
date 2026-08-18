@@ -47,10 +47,11 @@ describe('every ingest registry entry matches the app config', () => {
   }
 });
 
-// Every tournament exposed to players must be ingestable — going live without a registry entry
-// would silently freeze that event's leaderboard.
+// Every RUNNING tournament must be ingestable — going live without a registry entry would silently
+// freeze that event's leaderboard. Scoped to status 'live': a 'completed' event is never ingested
+// again (its results are final), and a 'staged' one is not exposed to players yet.
 describe('no live tournament is un-ingestable', () => {
-  for (const t of Object.values(TOURNAMENTS).filter(x => x.live)) {
+  for (const t of Object.values(TOURNAMENTS).filter(x => x.status === 'live')) {
     it(`${t.id} (live) is in the ingest registry`, () => {
       expect(Object.keys(INGEST_REGISTRY)).toContain(t.id);
     });

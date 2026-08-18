@@ -92,6 +92,26 @@ export const SURFACE_THEME: Record<Surface, SurfaceTheme> = {
 //    source of results and the gating on "can this round be played" differ.
 export type TournamentMode = 'replay' | 'live';
 
+// ── Where an event is in its lifecycle ───────────────────────────────────────
+// This replaced a single `live: boolean`, which had to mean two different things at once —
+// "players can see this" and "players can play this" — and so could not express the state that
+// actually matters most of the year: a FINISHED event you can still look back at.
+//
+// That gap was a live hazard, not a tidiness problem. Montréal stayed flagged `live` after it
+// ended, so it sat in the switcher as an equal choice next to the running event. Its players are
+// no longer in the server's table under its own id (each event owns its rows since fix 1.3), so a
+// save against it is rejected as "Squad contains an unknown player" — and CloudSync answers a
+// rejected save by calling revertToCloud(), which DISCARDS the manager's local state. One tap on a
+// finished tournament could throw away work.
+//
+//   staged    — invisible in production. Fully buildable and testable: a staging build forces it
+//               with VITE_ACTIVE_TOURNAMENT. Promote to 'live' to launch it.
+//   live      — the running event. Playable, scored, writable. Exactly one should be live.
+//   completed — finished. Visible and browsable (final standings, your squad, every result) but
+//               STRICTLY read-only: nothing may write to the server for it, ever again. Its scores
+//               in public.entries are final and no scoring run recomputes them.
+export type TournamentStatus = 'staged' | 'live' | 'completed';
+
 export interface Tournament {
   id: string;
   name: string;      // "Wimbledon"
@@ -102,10 +122,10 @@ export interface Tournament {
   drawSize: number;  // 128 for a Slam; Masters draws differ
   rounds: RoundId[]; // the ordered rounds this tournament plays & scores
   mode: TournamentMode;
-  // Playable in PRODUCTION? Only `live` tournaments appear in the in-app switcher, so an
-  // upcoming one can be fully built + config'd (and tested on staging) without exposing it
-  // to players. Flip to true to launch it. (Staging can still force any id via env.)
-  live: boolean;
+  // Where this event is in its lifecycle. See TournamentStatus — this replaced a single
+  // `live: boolean`, which conflated "players can see it" with "players can play it" and so had
+  // no way to express a finished event you can still look at.
+  status: TournamentStatus;
   // The ISO datetime (UTC) each round's play begins = the LOCK DEADLINE for that round:
   //   • schedule[firstRound] is when the draft closes (you must have a squad by then).
   //   • schedule[round] is when captain/vice lock for that round.
@@ -136,7 +156,7 @@ export const TOURNAMENTS: Record<string, Tournament> = {
     drawSize: 96,
     rounds: ['R64', 'R32', 'R16', 'QF', 'SF', 'F'],
     mode: 'live',
-    live: true, // ← the live production tournament
+    status: 'completed', // finished 2026-08-14 (Shelton champion) - browsable, never writable
     // Official window: draw ceremony Fri 31 Jul 2026; main draw runs Sat 1 Aug → the
     // expanded-Masters final on Thu 13 Aug 2026 (UTC times below). R64 doubles as the
     // draft deadline — the squad must be locked before the first ball is struck. The
@@ -184,7 +204,7 @@ export const TOURNAMENTS: Record<string, Tournament> = {
     // LIVE (cut over 14 Aug 2026, once Montréal's final was decided and scored — Shelton champion).
     // This is the event the app opens on; Montréal stays `live` so managers can still review their
     // finished run from the switcher. Full cutover record in docs/CINCINNATI_CUTOVER.md.
-    live: true,
+    status: 'live',      // the running event
     // Official window: 13–23 Aug 2026, Lindner Family Tennis Center, Mason OH (Eastern, UTC−4).
     // Round START = the FIRST match of each round = that round's LOCK deadline; R64 (seeds' first
     // matches, Sat 15 Aug) doubles as the DRAFT DEADLINE. Day sessions open 11:00 ET (15:00 UTC).
@@ -225,7 +245,7 @@ export const TOURNAMENTS: Record<string, Tournament> = {
     drawSize: 128,
     rounds: ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'], // all seven — Grand Slams have no byes
     mode: 'live',
-    live: false, // staged — flip to true once the field is wired + schedule confirmed
+    status: 'staged',    // promote to 'live' once the field is wired + schedule confirmed
     // Placeholder — the US Open main draw runs late Aug into Sep 2026. Replace with the official
     // order of play when it publishes. schedule[R128] doubles as the DRAFT DEADLINE.
     schedule: {
@@ -241,20 +261,34 @@ export const TOURNAMENTS: Record<string, Tournament> = {
   },
 };
 
-// The event the app opens on for a manager who hasn't chosen one. Points at the CURRENT tournament,
-// so a returning manager lands on the one they can still play rather than a finished draw.
-const DEFAULT_TOURNAMENT_ID = 'cincinnati_2026';
 const ACTIVE_STORE_KEY = 'gsgm-active-tournament';
 
-// The tournaments a player can pick between in the app — the `live` ones, ordered as
-// declared. When there's only one, the switcher hides entirely.
-export const LIVE_TOURNAMENTS: Tournament[] = Object.values(TOURNAMENTS).filter(t => t.live);
+// The tournaments a player can pick between: everything except `staged`, in declared order. A
+// finished event stays here on purpose — that is the whole point of `completed`, and the season
+// story depends on being able to look back at it.
+export const SELECTABLE_TOURNAMENTS: Tournament[] = Object.values(TOURNAMENTS).filter(t => t.status !== 'staged');
+
+// The event the app opens on for a manager who has not chosen one: the FIRST LIVE tournament,
+// derived rather than hardcoded.
+//
+// This used to be a constant reading 'cincinnati_2026'. Correct on the day it was written and wrong
+// the moment Cincinnati ends — every new manager would have booted into a finished draw, with no
+// squad to build and nothing to play. A hardcoded default is a promise to keep editing this line at
+// exactly the right moment, and that promise had already been broken once (it still said Montréal
+// while Cincinnati was running).
+//
+// The `?? SELECTABLE_TOURNAMENTS[0]` tail covers the genuinely eventless gap between two events —
+// better to open on the most recent finished one, read-only, than on nothing at all.
+const DEFAULT_TOURNAMENT: Tournament | undefined =
+  Object.values(TOURNAMENTS).find(t => t.status === 'live') ?? SELECTABLE_TOURNAMENTS[0];
 
 // Which tournament is running THIS session. Precedence:
-//   1. VITE_ACTIVE_TOURNAMENT env — a STAGING build forces a specific (even not-yet-live)
-//      tournament onto its own URL, without touching production.
-//   2. the player's saved switcher choice (only honoured if that tournament is `live`).
-//   3. the default (Montréal).
+//   1. VITE_ACTIVE_TOURNAMENT env — a STAGING build forces a specific (even `staged`) tournament
+//      onto its own URL, without touching production.
+//   2. the player's saved switcher choice — honoured for `completed` as well as `live`, since
+//      browsing a finished event is a supported thing to be doing. NOT honoured for `staged`: those
+//      are unfinished builds and a stale pick must not strand anyone in one.
+//   3. the default above.
 // Resolved ONCE at boot; switching re-boots the app (see switchTournament) so every
 // per-tournament constant (config, field, store keys) re-initialises cleanly.
 function resolveActiveId(): string {
@@ -262,9 +296,9 @@ function resolveActiveId(): string {
   if (env && TOURNAMENTS[env]) return env;
   try {
     const stored = localStorage.getItem(ACTIVE_STORE_KEY);
-    if (stored && TOURNAMENTS[stored]?.live) return stored;
+    if (stored && TOURNAMENTS[stored] && TOURNAMENTS[stored].status !== 'staged') return stored;
   } catch { /* ignore */ }
-  return DEFAULT_TOURNAMENT_ID;
+  return DEFAULT_TOURNAMENT?.id ?? Object.keys(TOURNAMENTS)[0];
 }
 
 export const ACTIVE_TOURNAMENT_ID = resolveActiveId();
@@ -285,12 +319,25 @@ export const OPENING_ROUND: RoundId | undefined = (() => {
 
 // Switch the active tournament: persist the choice and reload so the whole app re-inits
 // for it (each tournament has its own squad/leaderboard, isolated by id). No-op for the
-// current one or a non-live id.
+// current one or a `staged` id.
 export function switchTournament(id: string): void {
-  if (id === ACTIVE_TOURNAMENT_ID || !TOURNAMENTS[id]?.live) return;
+  if (id === ACTIVE_TOURNAMENT_ID || !TOURNAMENTS[id] || TOURNAMENTS[id].status === 'staged') return;
   try { localStorage.setItem(ACTIVE_STORE_KEY, id); } catch { /* ignore */ }
   window.location.reload();
 }
+
+// ── The read-only gate ───────────────────────────────────────────────────────
+// TRUE when the active tournament is finished. Every path that would write — to the store or to
+// the server — must check this. It is a plain boolean resolved at boot, not a hook, so it can be
+// read from stores and plain modules as well as components.
+//
+// This is the CLIENT reflecting a rule, not enforcing it. The server is the enforcer and already
+// refuses: since fix 1.3 each event owns its player rows, so save_entry cannot validate a squad for
+// an event whose rows are gone and rejects it as "Squad contains an unknown player". The gate below
+// exists so the app never PROVOKES that rejection — because CloudSync answers a rejected save by
+// calling revertToCloud(), which discards the manager's local state. Never rely on this flag for
+// correctness; rely on it to keep the app from asking a question the server will refuse.
+export const IS_READ_ONLY: boolean = TOURNAMENT.status === 'completed';
 
 // Convenience: the active surface's theme, with any per-tournament court override
 // applied (e.g. Montréal's green-surround / blue-surface hard court).
