@@ -1,171 +1,149 @@
 # Apply sequence — backend fixes 1.2, 1.3, 1.4
 
 **Runs against the LIVE database while Cincinnati is mid-tournament with four active managers.**
-The order is load-bearing. Follow it top to bottom. Nothing here deploys the app itself.
+The order is load-bearing. Nothing here deploys the app itself.
 
-> **This runbook was adversarially reviewed before you were given it**, and the review found real
-> faults in the first draft — a wrong expected output, a rollback that could not execute, and a
-> false assumption about what is in the table. Those are fixed below. What survived the review is
-> the core claim: **the gaps between steps are safe**, because the function currently live looks
-> players up by id alone and each id still resolves to exactly one row throughout.
+> **Status: step 1 is DONE** (applied 2026-08-18 — primary key confirmed as
+> `PRIMARY KEY (tournament_id, id)`). Continue from step 2.
 
 ---
 
-## Before you start
+## Before each paste — the one habit that matters
 
-**Pick your moment: between rounds.** No step blocks saves for more than a second, but if something
-goes wrong you want managers idle rather than mid-draft.
+A failed clipboard copy leaves the *previous* contents in place, and pasting that into the SQL
+editor produces a cheerful **"Success. No rows returned"** while doing absolutely nothing. That
+happened on the first attempt at step 1 and cost us a detour.
 
-**You need:** the Supabase SQL editor, and a terminal in `C:\Users\marti\tennis-fantasy`.
+**So: after pasting, look at the first line in the editor box and check it matches the file.**
+Every file below starts with a comment naming itself.
 
-Steps 1, 2 and 3 are SQL files you paste into the Supabase SQL editor. To put one on your clipboard,
-run its command in the **terminal** — copy each at the step that needs it, not all up front. No
-output means it worked; then paste into the editor with Ctrl+V.
-
-```
-Get-Content C:\Users\marti\tennis-fantasy\supabase\player_stats_scope.sql -Raw | Set-Clipboard
-```
-```
-Get-Content C:\Users\marti\tennis-fantasy\supabase\seed_cincinnati_player_stats.sql -Raw | Set-Clipboard
-```
-```
-Get-Content C:\Users\marti\tennis-fantasy\supabase\save_entry_rpc.sql -Raw | Set-Clipboard
-```
-
-And, only if you ever need the undo in step 3's row of the rollback table:
-
-```
-Get-Content C:\Users\marti\tennis-fantasy\supabase\rollback_save_entry_pre_1_3.sql -Raw | Set-Clipboard
-```
-
-**What is actually in the player table.** It holds **109 rows, but Cincinnati has only 96 players.**
-The extra 13 are leftovers from older seeds — Sinner, Wawrinka, Safiullin and others who are in no
-current field, six of them missing price/tier. The migration therefore does *not* guess: it parks
-everything under `legacy_unscoped`, and the seed in step 2 defines what Cincinnati is. After step 2,
-Cincinnati contains exactly 96 players — provable rather than assumed.
+To copy a file, run its command in the **terminal**. `Set-Clipboard` prints nothing when it works —
+silence is success, not failure.
 
 ---
 
-## Step 1 — the migration
+## Step 1 — the migration ✅ DONE
 
-SQL editor, new query, paste `supabase/player_stats_scope.sql`, Run.
+`supabase/player_stats_scope.sql` — applied. Adds `tournament_id` to the player table and swaps the
+primary key from `(id)` to `(tournament_id, id)`, so each event owns its own rankings and prices and
+a finished event can no longer be rescored by loading the next one's field.
 
-**Expected output — two results.**
-
-1. The grouped count:
-
-```
-tournament_id      players   incomplete_rows
-legacy_unscoped    109       6
-```
-
-`incomplete_rows = 6` is **expected here** — those are the leftovers with missing price/tier. They
-become harmless the moment step 2 gives Cincinnati its own clean rows.
-
-2. The key assertion, which must read exactly:
-
-```
-PRIMARY KEY (tournament_id, id)
-```
-
-**If any of this differs, stop and tell me.** A mismatch is a stop condition, not a curiosity.
-
-**Why first.** The new save function asks "which tournament does this player belong to?". Applied
-before the column exists, every squad save fails instantly.
-
-**Is the gap safe?** Yes. The live function looks players up by id alone, and every row still has a
-unique id, so saves keep working normally until step 3.
-
-**If it fails:** nothing changed — the file runs in a transaction and rolls back whole.
+All 109 pre-existing rows are parked under `legacy_unscoped`. That is deliberate: the table held
+**109 rows but Cincinnati's field is only 96**, the other 13 being residue from older seeds (Sinner
+at rank 1, Wawrinka, Safiullin), six of them with missing price/tier. Rather than guess which rows
+were Cincinnati's, the migration parks them all and the seed defines Cincinnati.
 
 ---
 
-## Step 2 — Cincinnati's own player rows
-
-SQL editor, paste `supabase/seed_cincinnati_player_stats.sql`, Run.
-
-**Expected:** no errors. Re-run the grouped query from step 1 and you should now see:
+## Step 2 — the seed AND the save function, together, in one transaction
 
 ```
-tournament_id      players   incomplete_rows
-cincinnati_2026    96        0
-legacy_unscoped    109       6
+Get-Content C:\Users\marti\tennis-fantasy\supabase\apply_step2_step3_atomic.sql -Raw | Set-Clipboard
 ```
 
-**`cincinnati_2026` must be 96 with 0 incomplete.** A NULL price or tier is the fault that reads a
-legal 2/3/5 squad as 2/3/4, so it can never be locked.
+Paste into the SQL editor, confirm the first line reads
+`-- Runbook steps 2 AND 3, APPLIED AS ONE TRANSACTION`, and Run.
 
-**This step is new** and must come before step 3: the new save function reads Cincinnati's rows, and
-until this runs there are none.
+**These were originally two separate steps. Combining them is a correction to my own step order,
+and it is not optional.** Step 1 parked all 109 rows as `legacy_unscoped`; the seed adds Cincinnati's
+96 under `cincinnati_2026`. Between those two moments every Cincinnati player exists **twice** — and
+the `save_entry` deployed right now joins the player table by id alone, with no tournament filter:
 
----
+```
+from unnest(v_squad) sid join public.player_stats ps on ps.id = sid
+```
 
-## Step 3 — the validated write path
+Two rows per player means that join returns every squad member twice, so the tier quota counts
+double — a legal 2/3/5 squad reads as 4/6/10 — and the budget sums double, so a $148M squad reads as
+$296M. Every save in that window would fail, telling the manager they had broken a rule they had
+not. Running the new function *first* fails too: it filters on the tournament and would find no rows
+yet, rejecting every squad as "unknown player". **Both orders break; only one transaction works.**
+Inside it, no other session ever sees the half-finished state.
 
-SQL editor, paste `supabase/save_entry_rpc.sql`, Run.
+If anything in the file fails, the whole thing rolls back and you are exactly where you started.
 
-This one file delivers **both** the salary-cap fix (1.2) and the tournament scoping (1.3). It
-replaces the function wholesale — no partial state.
+### Verify — three checks, all of which must pass
 
-**One late change you should know about.** Until this morning this file *also* re-seeded the player
-table, carrying 77 rows left over from Montréal. Seven of them — Bublik, Davidovich Fokina, Diallo,
-Moutet, Munar, Popyrin and Quinn — **are not in the Cincinnati draw.** Running it would have told
-the server those seven were legal Cincinnati picks and pushed the table to 103 rows, so step 2's
-count would no longer have matched the draw. The seed block is gone; seeding is step 2's job and
-only step 2's. A test now fails if a seed ever creeps back into this file.
+**a) The counts.** Expect exactly two rows:
 
-**Re-run step 1's grouped query afterwards.** It must still say `cincinnati_2026 96 0`. If step 3
-changed that number, something re-seeded and I want to know.
+```sql
+select tournament_id, count(*) as players,
+       count(*) filter (where price is null or tier is null) as incomplete_rows
+from public.player_stats group by tournament_id order by tournament_id;
+```
 
-**Verify the cap fix took** — expect `t`:
+```
+cincinnati_2026    96    0
+legacy_unscoped   109    6
+```
+
+`cincinnati_2026` **must be 96 with 0 incomplete** — a NULL price or tier is the fault that reads a
+legal squad as illegal, so it can never be locked. The `6` on the legacy row is the old residue and
+is expected.
+
+**b) The two copies agree.** Expect **0 rows**:
+
+```sql
+select c.id, l.ranking as parked_rank, c.ranking as seeded_rank
+from public.player_stats c join public.player_stats l on l.id = c.id
+where c.tournament_id = 'cincinnati_2026' and l.tournament_id = 'legacy_unscoped'
+  and (l.ranking is distinct from c.ranking or l.price is distinct from c.price
+       or l.tier is distinct from c.tier);
+```
+
+This matters because the **scorer deployed right now still reads rankings unfiltered** and collapses
+duplicates by keeping whichever it sees last. That is harmless only while the parked copy and the
+seeded copy hold the same numbers. They should — Cincinnati's field was already in this table before
+the migration parked it — but "should" is not "is". **If this returns any rows, stop and tell me:
+scores could move, and step 3 becomes urgent rather than routine.**
+
+**c) The salary-cap fix took.** Expect `t`:
 
 ```sql
 select prosrc like '%v_stored_has_transfers%' as budget_gate_reads_stored_row
 from pg_proc where proname = 'save_entry';
 ```
 
-**Then save a squad yourself** — open the app, change a captain, save. This is the first moment the
-scoped lookups are exercised for real.
+**Then save a squad yourself** — open the app, change a captain, save. First real exercise of the
+new scoped lookups.
 
 ---
 
-## Step 4 — the scorer
+## Step 3 — the scorer
 
 ```
 npx supabase functions deploy recompute-score --project-ref mrdmlfumdsxufifjulbt
 ```
 
-**Why after the migration.** It now filters rankings by tournament; deployed earlier it would error
-every run and scoring would stop. Meanwhile the deployed version reads rankings unfiltered, which
-returns the same rows, so nothing drifts while you work.
+Filters rankings by tournament. Until this lands, the deployed version reads them unfiltered — which
+check (b) above confirms is safe.
 
 ---
 
-## Step 5 — the results feed
+## Step 4 — the results feed
 
 ```
 npx supabase functions deploy ingest-draw --project-ref mrdmlfumdsxufifjulbt
 ```
 
-Carries the draw shape guard (1.1) and the removal of the hardcoded default (1.4). Independent of
-the migration — its position is convenience.
+Carries the draw shape guard (1.1) and removes the hardcoded default (1.4).
 
 **One deliberate behaviour change:** it now refuses a call that does not name a tournament rather
 than assuming Montréal. Your crons always name one. A bare manual invoke will answer `400` by design.
 
 ---
 
-## Step 6 — verify
+## Step 5 — verify the whole thing
 
-**Capture the scores BEFORE step 1** — do this now and keep the output:
+**Capture the scores BEFORE step 2** — do this now, keep the output:
 
 ```sql
 select user_id, score from public.entries
 where tournament_id = 'cincinnati_2026' order by score desc;
 ```
 
-Five minutes after step 5, run it again — **every number must be identical.** Nothing in this
-sequence should move a single point. If one moved, that is a real finding and I want to see it.
+Five minutes after step 4, run it again — **every number must be identical.** Nothing here should
+move a single point. If one moved, that is a real finding and I want to see it.
 
 Then the pipeline:
 
@@ -182,23 +160,22 @@ Both rows: `last_run_at` within a few minutes, `ok = true`.
 ## If you need to undo
 
 **Reverse order — work up this table from the bottom.** Undoing step 1 first would break the
-already-applied steps 2 and 3, which both read the new column.
+already-applied step 2, which reads the new column.
 
 | Undo | How |
 |---|---|
-| **First:** steps 4, 5 | `npx supabase functions deploy <name>` from an earlier checkout. No data risk — redeploying changes no rows. |
-| **Then:** step 3 | Paste `supabase/rollback_save_entry_pre_1_3.sql`. **Use that file, not the original from git** — the original re-seeds with `on conflict (id)`, which cannot execute against the new key and aborts before reaching the function, so it would appear to revert and would not. |
-| **Then:** step 2 | `delete from public.player_stats where tournament_id = 'cincinnati_2026';` |
-| **Last:** step 1 | `alter table public.player_stats drop constraint player_stats_pkey; alter table public.player_stats add primary key (id); alter table public.player_stats drop column tournament_id;` — only valid once the three above are done. |
+| **First:** steps 3, 4 | Redeploy each function from an earlier checkout. No data risk — redeploying changes no rows. |
+| **Then:** step 2 | Paste `supabase/rollback_save_entry_pre_1_3.sql`, THEN `delete from public.player_stats where tournament_id = 'cincinnati_2026';` — **in that order.** Removing the seeded rows while the scoped function is still installed would leave it with no players and reject every save. **Use that rollback file, not the original from git** — the original re-seeds with `on conflict (id)`, which cannot execute against the new key and aborts before reaching the function, so it would appear to revert and would not. |
+| **Last:** step 1 | `alter table public.player_stats drop constraint player_stats_pkey; alter table public.player_stats add primary key (id); alter table public.player_stats drop column tournament_id;` — only valid once the rows above are done. |
 
 ---
 
 ## After this lands — two standing rules
 
 1. **Do not switch the app to Montréal.** With Montréal's player rows absent, a save against it
-   would be rejected as "unknown player". Note this is the *in-app tournament switcher*, not just a
+   would be rejected as "unknown player". This is the *in-app tournament switcher*, not just a
    database setting — the client picks its tournament from its own config. Until the `completed`
    read-only status ships (Phase 2.1), Montréal being selectable is a live hazard, and that is the
    next thing I would build.
-2. **The US Open seed** is generated with `node scripts/gen-seed.mjs usopen_2026` and applied like
-   step 2. It can no longer disturb Cincinnati or Montréal — that is the point of what you applied.
+2. **The US Open seed** is generated with `node scripts/gen-seed.mjs usopen_2026`. It can no longer
+   disturb Cincinnati or Montréal — that is the point of what you applied.
