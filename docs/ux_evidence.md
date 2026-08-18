@@ -14,9 +14,14 @@ where people stopped, not merely where they hesitated.
 | Entries | **8** |
 | Locked a squad (and therefore score) | **4** |
 | Never locked (score exactly 0) | **4** |
-| Set a captain | **8 — everyone** |
 
-Every single manager picked a captain. Every one of them engaged. **Half still scored zero.**
+> **CORRECTION (this document was wrong).** An earlier version of this table included "Set a
+> captain: 8 — everyone", and concluded that every manager had actively engaged. **That inference
+> was false, and it was load-bearing.** `pickLeaders` ([gameStore.ts:23](../src/store/gameStore.ts))
+> is called by `addPlayer` on *every* pick and assigns the highest-ranked available player as
+> captain automatically. A populated captain field therefore proves only that someone added at
+> least one player — nothing about intent. Caught by the Phase 3.2 audit, verified here, and
+> removed. The four-of-eight figure stands; the claim about engagement does not.
 
 ## The four who scored nothing
 
@@ -68,6 +73,33 @@ them.
    nothing. Whatever else changes, this must not survive.
 4. **Repeated saving is a symptom.** rev counts of 23, 10 and 7 on *unfinished* squads say people
    are re-reading the same screen for information it does not give them.
+
+## A competing explanation I could NOT rule out
+
+The Phase 3.2 audit found that **the draft stays fully interactive after it closes**: `addPlayer`
+([gameStore.ts:199](../src/store/gameStore.ts)) has no `tournamentStarted()` guard, and
+`draftClosed` is computed but used only on the button, ~900px further down the page.
+
+I observed this directly. Browsing live Cincinnati — whose draft closed on 15 August — the Market
+header still read **"Draft open · Build your squad — $7.0M to spend · 7/10 picked"**. The app
+invites someone to build a squad it will not accept.
+
+That raises a real alternative to "they gave up": some of the four may have signed up *after the
+deadline* and spent their budget on an entry that could never be entered. `51face7f` (2 players,
+$69M untouched) and `524e264f` (6 players, $31M spare) fit that shape better than they fit
+abandonment.
+
+**I could not test it.** `public.entries` has no `created_at` — only `updated_at`, which the scoring
+run bumps every three minutes, so all eight rows carry an identical timestamp and cannot date a
+signup. The distinction matters a great deal for what to fix first:
+
+- If they gave up mid-draft → the fix is the affordability projection (built).
+- If they arrived late → the fix is to stop advertising a draft that cannot be entered, which is a
+  different change entirely.
+
+Both are worth doing, and both are in the plan. But I am not able to say which of your managers hit
+which, and I would rather say so than pick the flattering one. **Adding `created_at` to `entries`
+would answer it for the next event** — that is a schema change, so it is your call, not mine.
 
 ## What is NOT evidence here
 

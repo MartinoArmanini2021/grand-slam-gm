@@ -198,6 +198,13 @@ export const useGameStore = create<GameStore>()(
 
       addPlayer: (id) => {
         if (IS_READ_ONLY) return;                 // finished tournament: nothing may change
+        // THE DRAFT IS OVER ONCE PLAY STARTS. `phase` alone did not cover this: a manager who
+        // arrives after the first result is still in phase 'draft' (they have never locked), so
+        // every pick was accepted, the budget drained, tier chips filled — and the entry was then
+        // refused by save_entry's P6 freeze, ~900px down the page. The app sold a draft it could
+        // not accept. Two of the four Cincinnati managers who scored nothing fit that shape,
+        // though it could not be proven (entries has no created_at — see docs/ux_evidence.md).
+        if (tournamentStarted()) return;
         const { myTeam, budget, phase, captain, viceCaptain } = get();
         if (phase !== 'draft') return; // squad is locked after the draft — use transfers
         if (myTeam.length >= SQUAD_SIZE) return;

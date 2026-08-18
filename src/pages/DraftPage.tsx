@@ -162,12 +162,18 @@ export default function DraftPage() {
       <div className="mb-4">
         <div className="flex items-baseline gap-x-3 gap-y-1 flex-wrap">
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight" style={{ color: 'var(--ink)' }}>Transfer Market</h1>
-          <span className="text-xs font-bold uppercase tracking-[0.15em]" style={{ color: phase === 'draft' ? 'var(--green)' : 'var(--ember)' }}>
-            {phase === 'draft' ? 'Draft open' : roundLabel}
+          {/* "Draft open" was shown whenever phase === 'draft' — which is true for anyone who has
+              never locked, INCLUDING someone arriving after play began. Browsing live Cincinnati,
+              whose draft closed on 15 August, this header read "Draft open · Build your squad".
+              The status now reads the tournament, not the manager's own progress through it. */}
+          <span className="text-xs font-bold uppercase tracking-[0.15em]" style={{ color: phase === 'draft' && !draftClosed ? 'var(--green)' : 'var(--ember)' }}>
+            {phase === 'draft' ? (draftClosed ? 'Draft closed' : 'Draft open') : roundLabel}
           </span>
         </div>
         <p className="text-xs mt-0.5" style={{ color: 'var(--ink-2)' }}>
-          {phase === 'draft'
+          {phase === 'draft' && draftClosed
+            ? `${TOURNAMENT.name} has already started, so this draft is closed — you can follow it live, and you'll be able to enter the next event.`
+            : phase === 'draft'
             ? `Build your squad — $${budget.toFixed(1)}M to spend · ${myTeam.length}/${TEAM_SIZE} picked`
             : !windowOpen
               ? (underwayRoundObj
