@@ -1,3 +1,19 @@
+-- ###############################################################################################
+-- ##  DO NOT APPLY. NOT REVIEWED BY A HUMAN OR BY THE ASSISTANT.
+-- ##
+-- ##  Written by an audit subagent while investigating the v_touched bypass. It landed in the
+-- ##  working tree and was committed by an over-broad `git add -A` - not requested, not read, not
+-- ##  checked. Kept only because its analysis looks substantive; discarding it would lose that.
+-- ##
+-- ##  It rewrites save_entry: the SINGLE validated write path, on a live game with real managers.
+-- ##  Do not paste it into the SQL editor until it has been read line by line and its claims
+-- ##  independently verified - especially the assertion that it "cannot reject an honest save",
+-- ##  which is the exact failure that would cost a manager their work.
+-- ##
+-- ##  Renamed from fix_1_4_touched_bypass.sql: 1.4 is already the hardcoded-default fix, and a
+-- ##  wrong number on a production SQL file is how the wrong thing gets applied in a hurry.
+-- ###############################################################################################
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- FIX 1.4 — close the `v_touched` bypass (the twin of fix 1.2's budget bypass).
 --
