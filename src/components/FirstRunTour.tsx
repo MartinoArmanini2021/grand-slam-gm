@@ -55,7 +55,11 @@ export default function FirstRunTour({ paused }: { paused: boolean }) {
     if (user) void markTourSeen(user.id);             // persist per-account, cross-device
     setDismissed(true);
   };
-  const next = () => { if (i < STEPS.length - 1) setI(i + 1); else { setTab('home'); close(); } };
+  // Finish on the MARKET, not Home. The tour is reached by tapping "Build my squad →", and it used
+  // to end with setTab('home') — teleporting the manager off the very screen they had just asked for
+  // and leaving them on Home with an empty squad. Drafting is the one thing that must happen before
+  // the deadline, so the tour hands them straight to it.
+  const next = () => { if (i < STEPS.length - 1) setI(i + 1); else { setTab('draft'); close(); } };
   const step = STEPS[i];
   const last = i === STEPS.length - 1;
 

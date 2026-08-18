@@ -163,9 +163,13 @@ export default function App() {
           </div>
         </div>
       ) : showJoinGate ? (
-        // The Join + Welcome flow IS the onboarding, so don't also pop the first-run
-        // rules modal on top of it (the "?" button still opens it anytime).
-        <JoinTournament onJoined={() => { setActiveTab('home'); setWelcome(true); setShowRules(false); markSeen(); }} />
+        // Don't stack the rules modal on top of the welcome card — but do NOT mark them seen either.
+        // markSeen() here silently consumed the only screen that explains how points are earned:
+        // the join + welcome flow contains no rules at all, so a first-time manager was routed past
+        // the explanation AND permanently flagged as having read it, on every device. Leaving the
+        // flag unset means the rules still surface on their next visit, and the "?" remains the
+        // manual route in the meantime.
+        <JoinTournament onJoined={() => { setActiveTab('home'); setWelcome(true); setShowRules(false); }} />
       ) : (
         <AppShell
           tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab}

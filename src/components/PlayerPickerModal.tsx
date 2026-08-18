@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { PLAYERS } from '../data/players';
 import { getTier, TIER_META } from '../data/tiers';
+import { isUnpickable } from '../data/tournament';
 import { SQUAD_SIZE, isTierFull } from '../data/squadRules';
 import { useEscapeToClose } from '../hooks';
 import PlayerAvatar from './PlayerAvatar';
@@ -21,7 +22,14 @@ export default function PlayerPickerModal({ open, onClose, assignRole }: { open:
   useEscapeToClose(onClose, open);
   if (!open) return null;
 
+  // Offer only players still in contention. This modal is the MOST prominent add affordance on the
+  // squad panel, and it was listing the whole field while the market table filtered — so it happily
+  // offered players who had already gone home. At Cincinnati that was 32 of 96 entrants (the unscored
+  // opening round is played while the draft is open), concentrated in exactly the lower-ranked band
+  // the quota pushes you towards. Tapping one ran the full confirm flow and then failed with a toast
+  // that listed three possible reasons, none of them the real one.
   const list = [...PLAYERS]
+    .filter(p => !isUnpickable(p.id))
     .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => a.ranking - b.ranking);
 
