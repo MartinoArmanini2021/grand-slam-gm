@@ -25,7 +25,7 @@ import CloudSync from './components/CloudSync';
 import LiveFeed from './components/LiveFeed';
 import { useAuth } from './auth/AuthProvider';
 import { useProfile, markTournamentJoined } from './store/profileStore';
-import { TOURNAMENT } from './data/tournamentConfig';
+import { TOURNAMENT, IS_READ_ONLY } from './data/tournamentConfig';
 import { joinLeague } from './data/cloud';
 import { toast } from './store/toastStore';
 
@@ -143,7 +143,11 @@ export default function App() {
   const awaitingCloud = !joined && !entryHydrated && !entryLoadFailed;
   // Never show the gate if we couldn't confirm the cloud state — its reset could wipe a
   // squad we failed to load; a reload re-checks.
-  const showJoinGate = !joined && !awaitingCloud && !entryLoadFailed;
+  // Never gate a FINISHED tournament behind "join". Joining means drafting a squad, and there is
+  // nothing to draft — worse, JoinTournament's flow calls resetGame(), so the one screen offered to
+  // someone browsing a past event would wipe their local state for it. Someone who never played
+  // Montréal should simply see how it went.
+  const showJoinGate = !joined && !awaitingCloud && !entryLoadFailed && !IS_READ_ONLY;
 
   return (
     <>

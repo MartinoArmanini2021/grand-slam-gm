@@ -1,4 +1,5 @@
 import { useSync } from '../store/syncStore';
+import { IS_READ_ONLY } from '../data/tournamentConfig';
 
 // Explicit save affordance for the player's own squad, shown top-right on the court.
 // Reflects the true sync status and lets the player force an immediate save. Auto-save
@@ -13,6 +14,11 @@ const STYLES = {
 export default function SaveButton() {
   const status = useSync(s => s.status);
   const saveNow = useSync(s => s.saveNow);
+  // A finished tournament has nothing to save, so there is nothing honest for this button to say.
+  // 'Saved' would be a claim about a write that never happened, and 'Retry save' would invite a tap
+  // that can only fail. Render nothing: the absence of a save control IS the message that this
+  // event is over, reinforced by the "Finished" label on the tournament itself.
+  if (IS_READ_ONLY) return null;
   const s = STYLES[status];
   return (
     <button

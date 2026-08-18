@@ -4,7 +4,7 @@ import { useProfile, markTournamentJoined } from '../store/profileStore';
 import { useGameStore, sanitizeState } from '../store/gameStore';
 import { useSync } from '../store/syncStore';
 import { toast } from '../store/toastStore';
-import { TOURNAMENT } from '../data/tournamentConfig';
+import { TOURNAMENT, IS_READ_ONLY } from '../data/tournamentConfig';
 import { PLAYERS } from '../data/players';
 import { validateSquadLegality, type RosterPricing } from '../data/entryValidation';
 import {
@@ -182,9 +182,14 @@ export default function CloudSync() {
         } else if (hasCloud) {
           markTournamentJoined(TOURNAMENT.id);          // entry exists → joined; keep newer local, push it up
           entryRev.current = entry!.rev;                // guard the push-up on the cloud's current rev
-          const r = await saveEntry(user.id, lid, TOURNAMENT.id, gameSnapshot(), entryRev.current);
-          if (r.ok) { entryRev.current = r.rev; markSaved(); }
-        } else if (useGameStore.getState().myTeam.length > 0) {
+          // READ-ONLY: never push up on a finished tournament. These two branches fire at BOOT with
+          // no user action, which makes them the easiest gate to forget — disabling every button in
+          // the UI would not have stopped them.
+          if (!IS_READ_ONLY) {
+            const r = await saveEntry(user.id, lid, TOURNAMENT.id, gameSnapshot(), entryRev.current);
+            if (r.ok) { entryRev.current = r.rev; markSaved(); }
+          }
+        } else if (useGameStore.getState().myTeam.length > 0 && !IS_READ_ONLY) {
           const r = await saveEntry(user.id, lid, TOURNAMENT.id, gameSnapshot(), entryRev.current); // first push-up (insert)
           if (r.ok) { entryRev.current = r.rev; markSaved(); }
         }
@@ -205,6 +210,9 @@ export default function CloudSync() {
   // both the debounce below and the manual Save button (via useSync.saveNow).
   const doSave = useCallback(async () => {
     if (!user || gameHydratedFor.current !== user.id) return;
+    // READ-ONLY: a finished tournament has nothing to save. Return BEFORE setting status 'saving',
+    // so browsing Montréal never flickers a save indicator for a write that will not happen.
+    if (IS_READ_ONLY) return;
     // Circuit breaker: after MAX_CONFLICTS conflicts in a row with no success, STOP auto-retrying —
     // this is what kills a runaway save loop dead. A real user edit or a success re-arms it.
     if (conflictStreak.current >= MAX_CONFLICTS) { useSync.getState().setStatus('error'); return; }
@@ -292,6 +300,11 @@ export default function CloudSync() {
   // field-list deps missed) flags the squad "unsaved" and debounces a save; a cloud
   // restore (applyingCloud) is ignored so it never shows as unsaved.
   useEffect(() => {
+    // READ-ONLY: don't even watch. Without this the subscriber would still call markLocalDirty()
+    // on any state change, persisting an "unsaved edits" flag that can never be cleared — and that
+    // flag is what makes the hydrate effect keep local state INSTEAD of the cloud copy on the next
+    // load. A finished tournament would slowly drift away from its own final record.
+    if (IS_READ_ONLY) return;
     const snap = (s: ReturnType<typeof useGameStore.getState>) => JSON.stringify([
       s.myTeam, s.captain, s.viceCaptain, s.phase, s.currentRoundIndex,
       s.budget, s.transfers, s.captainHistory, s.roundScores,

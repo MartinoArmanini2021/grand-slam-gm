@@ -5,7 +5,7 @@ import {
   ROUNDS, getMatchesForRound, isPlayerOut, isUnpickable, BUDGET_RETURN_RATES, winPoints, transferWindowOpen, roundPlayable, roundStarted, liveStartedRound, liveLeaderRound,
   tournamentStarted, isEliminated, cashInOpen, liveBudget, playerRefund, transfersUsed,
 } from '../data/tournament';
-import { ACTIVE_TOURNAMENT_ID, OPENING_ROUND } from '../data/tournamentConfig';
+import { ACTIVE_TOURNAMENT_ID, OPENING_ROUND, IS_READ_ONLY } from '../data/tournamentConfig';
 import { track } from '../data/analytics';
 import { toast } from './toastStore';
 import { findPlayer, PLAYERS } from '../data/players';
@@ -197,6 +197,7 @@ export const useGameStore = create<GameStore>()(
       playerReturnTab: 'home',
 
       addPlayer: (id) => {
+        if (IS_READ_ONLY) return;                 // finished tournament: nothing may change
         const { myTeam, budget, phase, captain, viceCaptain } = get();
         if (phase !== 'draft') return; // squad is locked after the draft — use transfers
         if (myTeam.length >= SQUAD_SIZE) return;
@@ -214,6 +215,7 @@ export const useGameStore = create<GameStore>()(
       },
 
       removePlayer: (id) => {
+        if (IS_READ_ONLY) return;                 // finished tournament: nothing may change
         const { myTeam, budget, captain, viceCaptain, phase } = get();
         if (phase !== 'draft') return; // squad is locked after the draft
         if (!myTeam.includes(id)) return; // not owned → nothing to refund (guards a double-tap of ✕)
@@ -233,6 +235,7 @@ export const useGameStore = create<GameStore>()(
       // then keeps it in force each later round until the manager changes it — so a captain is
       // doubled every round, not only R64. Derived from RESULTS, never the frozen round index.
       setCaptain: (id) => {
+        if (IS_READ_ONLY) return;                 // finished tournament: nothing may change
         const { myTeam, captain, viceCaptain, phase, captainHistory, viceCaptainHistory } = get();
         if (phase !== 'draft' && phase !== 'pre_round') return;
         if (!myTeam.includes(id)) return;
@@ -247,6 +250,7 @@ export const useGameStore = create<GameStore>()(
       },
 
       setViceCaptain: (id) => {
+        if (IS_READ_ONLY) return;                 // finished tournament: nothing may change
         const { myTeam, captain, viceCaptain, phase, captainHistory, viceCaptainHistory } = get();
         if (phase !== 'draft' && phase !== 'pre_round') return;
         if (!myTeam.includes(id)) return;
@@ -262,6 +266,7 @@ export const useGameStore = create<GameStore>()(
       // Send a captain/vice back to the bench, leaving the slot BLANK (no auto-fill)
       // so the manager can deliberately choose who fills it.
       benchLeader: (id) => {
+        if (IS_READ_ONLY) return;                 // finished tournament: nothing may change
         const { captain, viceCaptain, phase, captainHistory, viceCaptainHistory } = get();
         if (phase !== 'draft' && phase !== 'pre_round') return;
         let newCap = captain, newVice = viceCaptain;
@@ -277,6 +282,7 @@ export const useGameStore = create<GameStore>()(
       // Re-field two on-court leaders after a state restore (cloud / localStorage),
       // so a squad hydrated from an older save always shows a captain + vice.
       ensureLeaders: () => {
+        if (IS_READ_ONLY) return;                 // finished tournament: nothing may change
         const { myTeam, captain, viceCaptain, currentRoundIndex, phase } = get();
         if (phase !== 'draft' && phase !== 'pre_round') return;
         const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
@@ -284,6 +290,7 @@ export const useGameStore = create<GameStore>()(
       },
 
       finalizeDraft: () => {
+        if (IS_READ_ONLY) return;                 // finished tournament: nothing may change
         const { myTeam, captain, viceCaptain, phase } = get();
         if (phase !== 'draft') return; // already locked in
         if (tournamentStarted()) return; // P6: the draft is closed once the tournament has a result
@@ -315,6 +322,7 @@ export const useGameStore = create<GameStore>()(
       // Mid-tournament substitution (atomic, used by the court): cash an eliminated player IN and
       // buy a still-alive replacement in one tap. Any tier — the money is the only limit.
       replacePlayer: (oldId, newId) => {
+        if (IS_READ_ONLY) return;                 // finished tournament: nothing may change
         const { myTeam, initialSquad, transfers, cashedIn, captain, viceCaptain, phase } = get();
         if (phase === 'finished' || phase === 'draft') return;
         if (!transferWindowOpen()) return; // window shut after the SF
@@ -352,6 +360,7 @@ export const useGameStore = create<GameStore>()(
       // CASH IN an eliminated squad player: claim its elimination refund NOW (money is manual, not
       // auto-credited) and remove it from the active squad, leaving an open slot + money to spend.
       cashInPlayer: (id) => {
+        if (IS_READ_ONLY) return;                 // finished tournament: nothing may change
         const { myTeam, initialSquad, transfers, cashedIn, captain, viceCaptain, currentRoundIndex, phase } = get();
         if (phase === 'finished' || phase === 'draft') return;
         if (!transferWindowOpen()) return;   // window shut after the SF
@@ -375,6 +384,7 @@ export const useGameStore = create<GameStore>()(
       // BUY a still-alive player into an open slot (one freed by a cash-in). Any tier; the budget
       // is the only limit. Logged as a transfer against the live round so it scores from next round.
       buyPlayer: (id) => {
+        if (IS_READ_ONLY) return;                 // finished tournament: nothing may change
         const { myTeam, initialSquad, transfers, cashedIn, phase } = get();
         if (phase === 'finished' || phase === 'draft') return;
         if (!transferWindowOpen()) return;
@@ -403,6 +413,7 @@ export const useGameStore = create<GameStore>()(
       // cashed-in seat is simply un-backfilled again). Once that round has a result the buy is locked
       // in and this no-ops (the server would reject undoing a transfer that already scored).
       undoBuy: (id) => {
+        if (IS_READ_ONLY) return;                 // finished tournament: nothing may change
         const { myTeam, initialSquad, transfers, cashedIn, captain, viceCaptain, phase } = get();
         if (phase === 'finished' || phase === 'draft') return;
         const t = transfers.find(x => x.in === id);
@@ -424,11 +435,13 @@ export const useGameStore = create<GameStore>()(
       // "Lock Squad": the manager confirms their current unlocked buys now, hiding Undo until the
       // round starts (or a new buy re-opens it). Persisted (partialize) so the lock survives a reload.
       finalizeSquad: () => {
+        if (IS_READ_ONLY) return;                 // finished tournament: nothing may change
         if (get().phase === 'draft') return; // draft uses finalizeDraft; this is the live-market lock
         set({ finalized: true });
       },
 
       playNextRound: () => {
+        if (IS_READ_ONLY) return;                 // finished tournament: nothing may change
         const { currentRoundIndex, myTeam, captainHistory, viceCaptainHistory, budgetReturns, myScore, roundScores, phase } = get();
         if (currentRoundIndex >= ROUNDS.length) return;
         // Only playable from pre_round. Guards a double-tap that would otherwise
@@ -505,6 +518,7 @@ export const useGameStore = create<GameStore>()(
       // Move from the results screen to captain-picking for the next round. Guarded
       // so it can only advance from round_complete (never re-open a finished game).
       continueToNextRound: () => {
+        if (IS_READ_ONLY) return;                 // finished tournament: nothing may change
         const { phase, myTeam, currentRoundIndex, captainHistory, viceCaptainHistory } = get();
         if (phase !== 'round_complete') return;
         // Re-field two leaders by default (best-ranked still-alive members) so a

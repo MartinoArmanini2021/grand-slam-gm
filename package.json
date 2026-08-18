@@ -17,7 +17,8 @@
     "gen:avatars": "node scripts/generate-avatars.mjs",
     "dev:cincinnati": "vite --mode cincinnati",
     "field:build": "node scripts/build-field.mjs",
-    "field:seed": "node scripts/gen-seed.mjs"
+    "field:seed": "node scripts/gen-seed.mjs",
+    "dev:montreal": "vite --mode montreal"
   },
   "dependencies": {
     "@dicebear/collection": "^9.4.2",

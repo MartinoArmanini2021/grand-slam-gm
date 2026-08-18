@@ -5,6 +5,7 @@
 // just map between the app's shapes and the DB columns.
 
 import { supabase } from '../auth/supabaseClient';
+import { IS_READ_ONLY } from './tournamentConfig';
 
 // Row shape for public.profiles (snake_case, as stored).
 export interface CloudProfile {
@@ -320,6 +321,17 @@ export async function saveEntry(
   userId: string, leagueId: string, tournamentId: string, e: EntryWrite, baseRev = 0,
 ): Promise<{ ok: boolean; rev: number; conflict?: boolean; invalid?: string }> {
   if (!supabase) return { ok: false, rev: baseRev };
+  // READ-ONLY BACKSTOP. A finished tournament is never writable. Callers are expected to check
+  // IS_READ_ONLY themselves and not get here — this is the net under them, placed at the one point
+  // every entry write passes through, so a path added later cannot quietly reopen the hole.
+  //
+  // Deliberately returns a PLAIN failure and not `invalid`: `invalid` makes CloudSync call
+  // revertToCloud(), and re-fetching to "undo" an edit that was never sent is pointless churn on a
+  // tournament nobody can change. Nothing is lost either way — there was nothing to save.
+  if (IS_READ_ONLY) {
+    console.warn('[cloud] save suppressed: %s has finished and is read-only', tournamentId);
+    return { ok: false, rev: baseRev };
+  }
   const rpc = await supabase.rpc('save_entry', {
     p_tournament: tournamentId, p_league: leagueId, p_state: e.state, p_base_rev: baseRev,
   });

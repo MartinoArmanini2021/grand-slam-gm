@@ -4,14 +4,38 @@
     {
       "name": "tennis-fantasy",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--", "--port", "5174"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5174"
+      ],
       "port": 5174
     },
     {
       "name": "tennis-fantasy-cincinnati",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev:cincinnati", "--", "--port", "5175"],
+      "runtimeArgs": [
+        "run",
+        "dev:cincinnati",
+        "--",
+        "--port",
+        "5175"
+      ],
       "port": 5175
+    },
+    {
+      "name": "tennis-fantasy-montreal",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev:montreal",
+        "--",
+        "--port",
+        "5176"
+      ],
+      "port": 5176
     }
   ]
 }
