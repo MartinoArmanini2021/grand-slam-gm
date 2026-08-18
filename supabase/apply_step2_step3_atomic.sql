@@ -1,43 +1,79 @@
--- ── Runbook steps 2 AND 3, APPLIED AS ONE TRANSACTION ────────────────────────────────────────────
+-- ── Runbook step 2 — seed + save function, as ONE transaction ────────────────────────────────────
 -- Paste this whole file into the Supabase SQL editor and Run it ONCE. It replaces what the runbook
--- previously described as two separate steps.
+-- originally described as two separate steps. Requires step 1 (player_stats_scope.sql) to be done.
 --
--- WHY THEY MUST BE ATOMIC. This is a correction to my own step order, found before it ran.
+-- ═══ WHY THIS FILE EXISTS — a correction to my own step order, caught before it ran ═══
 --
--- The migration (step 1) parked all 109 pre-existing rows under 'legacy_unscoped'. The seed then
--- writes Cincinnati's 96 players under 'cincinnati_2026'. For a moment, therefore, EVERY Cincinnati
--- player exists TWICE — once parked, once seeded.
+-- Step 1 parked all 109 pre-existing rows under 'legacy_unscoped'. All 96 Cincinnati players were
+-- ALREADY in that table (verified: 0 missing, 0 ranking/price/tier differences against the seed),
+-- so naively seeding them under 'cincinnati_2026' would leave every Cincinnati player with TWO
+-- rows — 205 rows, 96 duplicated ids.
 --
--- The save_entry function currently deployed is the pre-1.3 one. It joins the table by id ALONE,
--- with no tournament filter:
+-- The save_entry deployed right now is the pre-1.3 one. It joins the player table by id ALONE:
 --
 --     from unnest(v_squad) sid join public.player_stats ps on ps.id = sid
 --
--- With two rows per player that join returns each squad member twice, so:
---   • the tier quota counts double — a legal 2/3/5 squad reads as 4/6/10 and the function raises
+-- (rollback_save_entry_pre_1_3.sql lines 127 and 138 — the tier quota and the budget sum). With two
+-- rows per player that join returns each squad member twice, so a legal 2/3/5 squad counts as
+-- 4/6/10 and a $148M squad sums to $296M. Every save fails:
 --     'Too many in a tier (Platinum 4/2, Gold 6/3, Silver 10/5)'
---   • the budget sums double — a $148M squad reads as $296M and it raises
 --     'Squad costs $296M, over the $150M budget'
 --
--- So in the window between seeding and replacing the function, EVERY save fails, with an error
--- message that is not merely wrong but actively misleading — it accuses the manager of breaking a
--- rule they have not broken. The runbook claimed the gaps between steps were safe. That was true of
--- every other gap and false of this one.
+-- And it is worse than a failed save. cloud.ts maps that raise to `invalid`, and CloudSync.tsx:261
+-- responds to `invalid` by calling revertToCloud() — so the manager's captain change is DISCARDED
+-- and overwritten with the server copy, under a toast accusing them of a rule they did not break.
+-- Client-side pre-validation passes, so nothing catches it before the round trip.
 --
--- Reordering does not help: run the new function first and it filters on tournament_id =
--- 'cincinnati_2026', finds no rows yet, and rejects every squad with 'Squad contains an unknown
--- player'. Both orders break. Only atomicity works.
+-- Reversing the order does not help: the new function filters on tournament_id, would find no rows
+-- yet, and would reject every squad as 'Squad contains an unknown player'.
 --
--- Inside one transaction no other session ever observes the intermediate state: concurrent callers
--- block for the sub-second this takes, then see the finished result. DDL is transactional in
--- Postgres, so `create or replace function` is covered too.
+-- ═══ WHAT THIS FILE DOES ABOUT IT ═══
 --
--- If ANYTHING in here fails, the whole thing rolls back and you are exactly where you started.
+-- Two independent defences, because this runs on a live game:
+--
+--   1. NO DUPLICATE EVER EXISTS. Rather than seeding a second copy alongside the parked one, the
+--      96 Cincinnati players are MOVED from 'legacy_unscoped' to 'cincinnati_2026'. Ids stay unique
+--      at every instant, so even the unscoped function that is live right now reads exactly one row
+--      per player and behaves correctly throughout. End state is 109 rows, not 205.
+--
+--      The 96 are named explicitly below, taken from the seed. NOT selected by a "has price and
+--      tier" heuristic — that would also promote bublik, davidovichfokina, diallo, moutet, munar,
+--      popyrin and quinn, who are residue from older fields and are NOT in the Cincinnati draw.
+--
+--   2. ONE TRANSACTION. Even with unique ids, the seed and the function replacement commit together
+--      or not at all, so no session can observe a half-applied state. DDL is transactional in
+--      Postgres, so 'create or replace function' is covered. If anything fails, everything rolls
+--      back and you are exactly where you started.
+--
+-- The transaction ends with assertions that RAISE if the end state is wrong — which rolls the whole
+-- thing back and shows you an error, rather than reporting success over a half-done migration.
 -- ─────────────────────────────────────────────────────────────────────────────────────────────────
 
 begin;
 
--- ═══ PART 1 of 2 — the Cincinnati seed (was runbook step 2) ═══════════════════════════════════
+-- ═══ PART 1 of 3 — move the 96 Cincinnati players out of the parked set ══════════════════════════
+-- Idempotent: re-running matches nothing, because they are no longer 'legacy_unscoped'.
+update public.player_stats
+   set tournament_id = 'cincinnati_2026'
+ where tournament_id = 'legacy_unscoped'
+   and id in (
+  'zverev', 'augeraliassime', 'djokovic', 'shelton', 'medvedev', 'deminaur', 'fritz', 'cobolli',
+  'jodar', 'tien', 'lehecka', 'musetti', 'mensik', 'ruud', 'rublev', 'vacherot', 'darderi',
+  'fils', 'nakashima', 'tiafoe', 'paul', 'franciscocerundolo', 'fonseca', 'rinderknech',
+  'tabilo', 'humbert', 'etcheverry', 'blockx', 'bergs', 'arnaldi', 'norrie', 'buse', 'fery',
+  'collignon', 'khachanov', 'merida', 'michelsen', 'berrettini', 'struff', 'navone', 'atmane',
+  'borges', 'shapovalov', 'tsitsipas', 'tirante', 'cerundolo', 'mannarino', 'baez', 'assche',
+  'hanfmann', 'griekspoor', 'halys', 'zandschulp', 'burruchaga', 'machac', 'marozsan',
+  'altmaier', 'kecmanovic', 'landaluce', 'majchrzak', 'hurkacz', 'vallejo', 'kopriva', 'busta',
+  'medjedovic', 'brooksby', 'carabelli', 'choinski', 'royer', 'faria', 'cilic', 'bellucci',
+  'fucsovics', 'svajda', 'duckworth', 'sonego', 'shimabukuro', 'trungelliti', 'wong',
+  'hijikata', 'kovacevic', 'walton', 'prizmic', 'jong', 'droguet', 'zheng', 'connell',
+  'jacquet', 'mejia', 'dimitrov', 'draper', 'lajal', 'shang', 'monfils', 'kokkinakis', 'wolf'
+   );
+
+-- ═══ PART 2 of 3 — the Cincinnati seed (verbatim from seed_cincinnati_player_stats.sql) ══════════
+-- After part 1 these rows already exist with these exact values, so the upsert is a no-op that
+-- corrects any drift and creates anything part 1 did not find. Belt and braces.
 
 -- ── Cincinnati Open 2026 — player_stats seed for server-side validation + scoring ────────────────
 -- WHY ALL FOUR COLUMNS: save_entry validates the TIER QUOTA off player_stats.tier and the BUDGET off
@@ -159,7 +195,7 @@ on conflict (tournament_id, id) do update set ranking = excluded.ranking, price 
 --        count(*) filter (where price is null or tier is null)         as broken
 --   from public.player_stats;
 
--- ═══ PART 2 of 2 — the validated write path (was runbook step 3) ═════════════════════════════
+-- ═══ PART 3 of 3 — the validated write path (verbatim from save_entry_rpc.sql) ════════════════════
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- F1 (+ Phase-2 B2/B3) — Server-side entry validation + the SINGLE validated write path.
@@ -449,26 +485,45 @@ drop policy if exists "create league" on public.leagues;
 revoke insert, update, delete on public.leagues from authenticated;
 revoke insert, update, delete on public.leagues from anon;
 
+-- ═══ ASSERT before committing ════════════════════════════════════════════════════════════════════
+-- The project's documented failure mode is a paste that reports success having done nothing. These
+-- make that impossible for this file: any wrong end state raises, and the raise rolls back part 1,
+-- part 2 and part 3 together.
+do $$
+declare
+  v_cin int; v_incomplete int; v_legacy int; v_dupes int;
+begin
+  select count(*), count(*) filter (where price is null or tier is null)
+    into v_cin, v_incomplete
+    from public.player_stats where tournament_id = 'cincinnati_2026';
+
+  select count(*) into v_legacy
+    from public.player_stats where tournament_id = 'legacy_unscoped';
+
+  select count(*) into v_dupes from (
+    select id from public.player_stats group by id having count(*) > 1
+  ) d;
+
+  if v_cin <> 96 then
+    raise exception 'Cincinnati should have exactly 96 players, found %', v_cin;
+  end if;
+  if v_incomplete <> 0 then
+    raise exception '% Cincinnati row(s) are missing price or tier - a legal 2/3/5 squad would read as illegal and could never be locked', v_incomplete;
+  end if;
+  if v_dupes <> 0 then
+    raise exception '% player id(s) appear under more than one tournament - the live save_entry joins on id alone and would double-count them', v_dupes;
+  end if;
+  if not exists (select 1 from pg_proc where proname = 'save_entry' and prosrc like '%v_stored_has_transfers%') then
+    raise exception 'save_entry did not install the salary-cap fix (budget gate still reads the client payload)';
+  end if;
+
+  raise notice 'OK - cincinnati_2026 % players, 0 incomplete; legacy_unscoped %; 0 duplicate ids', v_cin, v_legacy;
+end $$;
+
 commit;
 
--- ── Verify — run these AFTER the commit above ────────────────────────────────────────────────────
--- 1) Two rows, exactly:
---        cincinnati_2026    96    0
---        legacy_unscoped   109    6
+-- ── Verify AFTER the commit ──────────────────────────────────────────────────────────────────────
+-- Expect exactly two rows:  cincinnati_2026  96  0   /   legacy_unscoped  13  6
 -- select tournament_id, count(*) as players,
 --        count(*) filter (where price is null or tier is null) as incomplete_rows
 --   from public.player_stats group by tournament_id order by tournament_id;
---
--- 2) The parked copy and the seeded copy must agree on every shared player. They should: the
---    Cincinnati field was already seeded into this table before the migration parked it, so the
---    two copies are the same numbers under two labels. This matters because the scorer deployed
---    right now still reads rankings unfiltered and collapses duplicates by taking the last one —
---    harmless only while the values agree. Expect 0 rows.
--- select c.id, l.ranking as parked_rank, c.ranking as seeded_rank, l.price as parked_price, c.price as seeded_price
---   from public.player_stats c join public.player_stats l on l.id = c.id
---  where c.tournament_id = 'cincinnati_2026' and l.tournament_id = 'legacy_unscoped'
---    and (l.ranking is distinct from c.ranking or l.price is distinct from c.price or l.tier is distinct from c.tier);
---
--- 3) The budget gate reads the stored row, not the client payload. Expect t.
--- select prosrc like '%v_stored_has_transfers%' as budget_gate_reads_stored_row
---   from pg_proc where proname = 'save_entry';

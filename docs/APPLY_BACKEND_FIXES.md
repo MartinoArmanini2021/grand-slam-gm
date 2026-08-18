@@ -42,27 +42,36 @@ Get-Content C:\Users\marti\tennis-fantasy\supabase\apply_step2_step3_atomic.sql 
 ```
 
 Paste into the SQL editor, confirm the first line reads
-`-- Runbook steps 2 AND 3, APPLIED AS ONE TRANSACTION`, and Run.
+`-- ── Runbook step 2 — seed + save function, as ONE transaction`, and Run.
 
-**These were originally two separate steps. Combining them is a correction to my own step order,
-and it is not optional.** Step 1 parked all 109 rows as `legacy_unscoped`; the seed adds Cincinnati's
-96 under `cincinnati_2026`. Between those two moments every Cincinnati player exists **twice** — and
-the `save_entry` deployed right now joins the player table by id alone, with no tournament filter:
+**This was originally two separate steps. Merging them is a correction to my own step order, and it
+is not optional.**
+
+Step 1 parked all 109 rows as `legacy_unscoped`. Every one of Cincinnati's 96 players was *already*
+in that table, so simply seeding them under `cincinnati_2026` would have left each of them with
+**two** rows. The `save_entry` running on your server right now joins the player table by id alone,
+with no notion of tournament:
 
 ```
 from unnest(v_squad) sid join public.player_stats ps on ps.id = sid
 ```
 
-Two rows per player means that join returns every squad member twice, so the tier quota counts
-double — a legal 2/3/5 squad reads as 4/6/10 — and the budget sums double, so a $148M squad reads as
-$296M. Every save in that window would fail, telling the manager they had broken a rule they had
-not. Running the new function *first* fails too: it filters on the tournament and would find no rows
-yet, rejecting every squad as "unknown player". **Both orders break; only one transaction works.**
-Inside it, no other session ever sees the half-finished state.
+Two rows per player means every squad member gets counted twice — a legal 2/3/5 squad reads as
+4/6/10, a $148M squad sums to $296M — and every save is rejected with a message accusing the manager
+of breaking a rule they haven't. **And it doesn't stop at a rejection:** the app responds to a
+rejected save by reverting to the server's copy, so their captain change is *discarded*, not just
+refused. Running the new function first fails too — it filters by tournament and would find no rows
+yet, rejecting every squad as "unknown player".
 
-If anything in the file fails, the whole thing rolls back and you are exactly where you started.
+So the file **moves** the 96 players out of the parked set instead of adding a second copy. Each id
+stays unique at every instant, which keeps even the old function reading correctly throughout. The
+single transaction on top of that is a second, independent safety net. End state is 109 rows — the
+same as now, relabelled — not 205.
 
-### Verify — three checks, all of which must pass
+If anything in the file fails, the whole thing rolls back and you are exactly where you started. The
+file also checks its own work before committing, so it cannot report success over a half-done job.
+
+### Verify — two checks
 
 **a) The counts.** Expect exactly two rows:
 
@@ -74,30 +83,15 @@ from public.player_stats group by tournament_id order by tournament_id;
 
 ```
 cincinnati_2026    96    0
-legacy_unscoped   109    6
+legacy_unscoped    13    6
 ```
 
 `cincinnati_2026` **must be 96 with 0 incomplete** — a NULL price or tier is the fault that reads a
-legal squad as illegal, so it can never be locked. The `6` on the legacy row is the old residue and
-is expected.
+legal squad as illegal, so it can never be locked. The remaining `13` are the old residue (Sinner,
+Wawrinka, Safiullin and others in no current field), 6 of them incomplete. That is expected and
+harmless: nothing reads them.
 
-**b) The two copies agree.** Expect **0 rows**:
-
-```sql
-select c.id, l.ranking as parked_rank, c.ranking as seeded_rank
-from public.player_stats c join public.player_stats l on l.id = c.id
-where c.tournament_id = 'cincinnati_2026' and l.tournament_id = 'legacy_unscoped'
-  and (l.ranking is distinct from c.ranking or l.price is distinct from c.price
-       or l.tier is distinct from c.tier);
-```
-
-This matters because the **scorer deployed right now still reads rankings unfiltered** and collapses
-duplicates by keeping whichever it sees last. That is harmless only while the parked copy and the
-seeded copy hold the same numbers. They should — Cincinnati's field was already in this table before
-the migration parked it — but "should" is not "is". **If this returns any rows, stop and tell me:
-scores could move, and step 3 becomes urgent rather than routine.**
-
-**c) The salary-cap fix took.** Expect `t`:
+**b) The salary-cap fix took.** Expect `t`:
 
 ```sql
 select prosrc like '%v_stored_has_transfers%' as budget_gate_reads_stored_row
@@ -115,8 +109,11 @@ new scoped lookups.
 npx supabase functions deploy recompute-score --project-ref mrdmlfumdsxufifjulbt
 ```
 
-Filters rankings by tournament. Until this lands, the deployed version reads them unfiltered — which
-check (b) above confirms is safe.
+Filters rankings by tournament. Until this lands, the deployed version reads rankings **unfiltered**
+— it simply asks for every row and looks players up by id. That is safe here precisely because step 2
+moved the 96 rather than copying them: there is exactly one row per player, so filtered and
+unfiltered reads return the same rankings and no score can move. Had we left duplicates in place,
+this deploy would have been urgent rather than routine.
 
 ---
 
@@ -165,7 +162,7 @@ already-applied step 2, which reads the new column.
 | Undo | How |
 |---|---|
 | **First:** steps 3, 4 | Redeploy each function from an earlier checkout. No data risk — redeploying changes no rows. |
-| **Then:** step 2 | Paste `supabase/rollback_save_entry_pre_1_3.sql`, THEN `delete from public.player_stats where tournament_id = 'cincinnati_2026';` — **in that order.** Removing the seeded rows while the scoped function is still installed would leave it with no players and reject every save. **Use that rollback file, not the original from git** — the original re-seeds with `on conflict (id)`, which cannot execute against the new key and aborts before reaching the function, so it would appear to revert and would not. |
+| **Then:** step 2 | Paste `supabase/rollback_save_entry_pre_1_3.sql`, THEN `update public.player_stats set tournament_id = 'legacy_unscoped' where tournament_id = 'cincinnati_2026';` — **in that order.** **`UPDATE`, never `DELETE`.** Step 2 *moved* these rows rather than copying them, so they are the only copy of Cincinnati's player data — deleting them would destroy the live field and every save would fail with "unknown player". **Use that rollback file, not the original from git** — the original re-seeds with `on conflict (id)`, which cannot execute against the new key and aborts before reaching the function, so it would appear to revert and would not. |
 | **Last:** step 1 | `alter table public.player_stats drop constraint player_stats_pkey; alter table public.player_stats add primary key (id); alter table public.player_stats drop column tournament_id;` — only valid once the rows above are done. |
 
 ---
