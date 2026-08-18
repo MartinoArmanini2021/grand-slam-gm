@@ -131,13 +131,17 @@ function B_squadForRound(e, round) {
   return squad;
 }
 function B_captainForRound(e, round) {
+  // CORRECTED 2026-08-18: captain and vice resolve INDEPENDENTLY, each tracking the latest pick
+  // that actually specifies that field, so changing only the vice no longer drops the captain.
   const target = B_idx(round);
-  let best = null;
+  let captain = null, vice = null, cr = -1, vr = -1;
   for (const p of e.captain_picks) {
     if (B_idx(p.round) > target) continue;
-    if (!best || B_idx(p.round) >= B_idx(best.round)) best = p;
+    const r = B_idx(p.round);
+    if (p.captain && r >= cr) { captain = p.captain; cr = r; }
+    if (p.vice && r >= vr) { vice = p.vice; vr = r; }
   }
-  return { captain: best?.captain ?? null, vice: best?.vice ?? null };
+  return { captain, vice };
 }
 function engineB(e, matches, ranks) {
   let total = 0; const byRound = {};
@@ -155,8 +159,9 @@ function engineB(e, matches, ranks) {
       const upset = B_upset(ranks[winner], loser ? ranks[loser] : null);
       const role = winner === captain ? 'captain' : winner === vice ? 'vice' : null;
       const roleMult = role === 'captain' ? 2 : role === 'vice' ? 1.5 : 1;
-      // THE KEY DIFFERENCE: no intermediate rounding. base x upset x role, rounded to 2dp at the end.
-      points += B_round2(base * upset * roleMult);
+      // CORRECTED 2026-08-18: round base x upset to a whole number FIRST, then apply the role.
+      const win = Math.round(base * upset);
+      points += win * roleMult;
     }
     points = B_round2(points);
     byRound[round] = points; total = B_round2(total + points);
