@@ -32,7 +32,9 @@ const rows = field.map(p => ({
 
 // ── Cross-check against every OTHER seed already in the repo ─────────────────────────────────────
 const others = [
-  'supabase/save_entry_rpc.sql',                                        // the Montréal block
+  // save_entry_rpc.sql used to be listed here — it carried an embedded 77-row seed. That block is
+  // gone (it held 7 players who are not in the Cincinnati draw); seeds now live only in their own
+  // per-event files, which is the only place this cross-check should ever have been reading.
   ...Object.entries(EVENTS).filter(([k]) => k !== id).map(([, e]) => e.seed),
 ];
 const seen = new Map();   // id → { ranking, price, tier, from }

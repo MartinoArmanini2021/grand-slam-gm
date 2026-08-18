@@ -16,107 +16,28 @@
 -- entries are revoked — the RPC is the only way in for a client.
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- 1) Authoritative price + tier per player, SEEDED from the client's canonical values
---    (getTier / PLAYERS[i].price). The tier boundaries live only in src/data/tiers.ts —
---    this table holds their SNAPSHOT so the RPC never reimplements them. A parity test
---    (entryValidation.test.ts) pins these to PLAYERS; re-seed by regenerating this block
---    if the field or the pricing model changes. Prices are a point-in-time snapshot: they
---    are fixed for the tournament (rank/form/surface don't change mid-event).
--- NB (2026-08-14): player_stats is ONE table shared by every event, so these rows were re-aligned to
--- the ACTIVE event (Cincinnati) after two data corrections: the 2026 form refresh (added Montréal,
--- fixed the Båstad/Washington short-code collision) and — the bigger one — a current ATP ranking
--- snapshot. The pool had been carrying ranks dated 2026-07-20, i.e. BEFORE Washington and Montréal;
--- Jódar was seeded 12 here while listed at rank 25. 61 rankings, 27 prices and 1 tier moved
--- (Nakashima Silver→Gold). Ranking feeds the UPSET MULTIPLIER, so this changes future scoring —
--- safe because recompute-score only ever scores active_tournament_id(), and Montréal is complete
--- and frozen. Do NOT re-point app_config at a finished event after a ranking refresh: it would
--- rescore that event against ranks it was never played under.
--- Regenerate with scripts/apply-rankings.mjs → build-field.mjs → gen-seed.mjs (which cross-checks
--- every seed against this block).
+-- 1) Authoritative price + tier per player live in public.player_stats, seeded PER EVENT by
+--    scripts/gen-seed.mjs (e.g. supabase/seed_cincinnati_player_stats.sql). save_entry validates
+--    the TIER QUOTA off player_stats.tier and the BUDGET off .price, and recompute-score reads
+--    .ranking for the upset multiplier. The tier boundaries live only in src/data/tiers.ts; the
+--    table holds their snapshot so this RPC never reimplements them. A parity test
+--    (entryValidation.test.ts) pins the seeds to PLAYERS.
+--
+-- NO SEED IS EMBEDDED IN THIS FILE ANY MORE, and that removal is a bug fix, not tidying.
+-- This file used to carry a 77-row block — the Montréal field, re-aligned to Cincinnati's
+-- rankings during the 2026-08-14 refresh and then stamped 'cincinnati_2026' when fix 1.3 added
+-- the tournament column. Seven of those 77 (bublik, davidovichfokina, diallo, moutet, munar,
+-- popyrin, quinn) are NOT in the 96-player Cincinnati draw. Applying this file would have
+-- inserted them as Cincinnati rows, i.e. told the server that seven non-entrants were legal
+-- picks for a tournament they are not playing in — and left Cincinnati at 103 rows, so the
+-- count that is supposed to prove the seed is right would have quietly disagreed with the draw.
+--
+-- The seed and the function are now separate files on purpose: a seed is per-event data with a
+-- generator and a cross-check, while this is code. Coupling them is what let a stale field ride
+-- along inside a security fix. Run the event's seed file first, then this.
+
 alter table public.player_stats add column if not exists price int;
 alter table public.player_stats add column if not exists tier  text;
-
-insert into public.player_stats (tournament_id, id, ranking, price, tier)
-select 'cincinnati_2026', * from (values
-  ('zverev', 3, 50, 'Platinum'),
-  ('augeraliassime', 4, 34, 'Platinum'),
-  ('shelton', 6, 31, 'Platinum'),
-  ('deminaur', 8, 25, 'Platinum'),
-  ('fritz', 9, 23, 'Platinum'),
-  ('medvedev', 7, 34, 'Platinum'),
-  ('cobolli', 10, 18, 'Platinum'),
-  ('bublik', 11, 19, 'Gold'),
-  ('ruud', 17, 17, 'Gold'),
-  ('rublev', 18, 17, 'Gold'),
-  ('lehecka', 14, 19, 'Gold'),
-  ('musetti', 15, 19, 'Gold'),
-  ('darderi', 20, 16, 'Gold'),
-  ('tien', 12, 22, 'Gold'),
-  ('mensik', 16, 20, 'Gold'),
-  ('tiafoe', 23, 16, 'Gold'),
-  ('vacherot', 19, 14, 'Gold'),
-  ('franciscocerundolo', 25, 15, 'Gold'),
-  ('khachanov', 39, 10, 'Silver'),
-  ('davidovichfokina', 20, 15, 'Gold'),
-  ('fils', 21, 18, 'Gold'),
-  ('paul', 24, 15, 'Gold'),
-  ('jodar', 11, 24, 'Gold'),
-  ('fonseca', 26, 14, 'Silver'),
-  ('rinderknech', 28, 12, 'Silver'),
-  ('norrie', 35, 12, 'Silver'),
-  ('humbert', 30, 12, 'Silver'),
-  ('nakashima', 22, 16, 'Gold'),
-  ('etcheverry', 31, 10, 'Silver'),
-  ('tabilo', 29, 11, 'Silver'),
-  ('buse', 36, 12, 'Silver'),
-  ('arnaldi', 34, 10, 'Silver'),
-  ('blockx', 32, 11, 'Silver'),
-  ('bergs', 33, 11, 'Silver'),
-  ('navone', 44, 8, 'Silver'),
-  ('moutet', 40, 8, 'Silver'),
-  ('mannarino', 52, 6, 'Silver'),
-  ('shapovalov', 48, 7, 'Silver'),
-  ('cerundolo', 51, 9, 'Silver'),
-  ('collignon', 38, 10, 'Silver'),
-  ('munar', 43, 10, 'Silver'),
-  ('majchrzak', 68, 8, 'Silver'),
-  ('michelsen', 41, 12, 'Silver'),
-  ('quinn', 45, 8, 'Silver'),
-  ('hurkacz', 69, 7, 'Silver'),
-  ('borges', 47, 10, 'Silver'),
-  ('kecmanovic', 66, 6, 'Silver'),
-  ('berrettini', 42, 10, 'Silver'),
-  ('atmane', 45, 9, 'Silver'),
-  ('marozsan', 63, 8, 'Silver'),
-  ('zandschulp', 59, 9, 'Silver'),
-  ('tirante', 50, 10, 'Silver'),
-  ('hanfmann', 55, 9, 'Silver'),
-  ('shang', 270, 4, 'Silver'),
-  ('baez', 53, 10, 'Silver'),
-  ('griekspoor', 56, 9, 'Silver'),
-  ('carabelli', 76, 6, 'Silver'),
-  ('landaluce', 67, 9, 'Silver'),
-  ('altmaier', 65, 6, 'Silver'),
-  ('cilic', 80, 7, 'Silver'),
-  ('kopriva', 71, 8, 'Silver'),
-  ('burruchaga', 61, 5, 'Silver'),
-  ('svajda', 84, 7, 'Silver'),
-  ('bellucci', 81, 6, 'Silver'),
-  ('medjedovic', 73, 8, 'Silver'),
-  ('sonego', 88, 6, 'Silver'),
-  ('kovacevic', 96, 6, 'Silver'),
-  ('busta', 72, 8, 'Silver'),
-  ('vallejo', 70, 6, 'Silver'),
-  ('struff', 43, 7, 'Silver'),
-  ('royer', 78, 5, 'Silver'),
-  ('fucsovics', 82, 6, 'Silver'),
-  ('duckworth', 86, 6, 'Silver'),
-  ('diallo', 92, 6, 'Silver'),
-  ('merida', 40, 12, 'Silver'),
-  ('popyrin', 104, 4, 'Silver'),
-  ('droguet', 115, 7, 'Silver')
-) as v(id, ranking, price, tier)
-on conflict (tournament_id, id) do update set ranking = excluded.ranking, price = excluded.price, tier = excluded.tier;
 
 -- 2) The single validated write path. SECURITY DEFINER (runs as the table owner, bypassing
 --    RLS) but self-checks auth.uid(), so a caller can only ever write their OWN entry. It

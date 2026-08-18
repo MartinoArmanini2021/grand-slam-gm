@@ -147,10 +147,11 @@ describe('validateCaptainLock — no retroactive picks (F1(2))', () => {
 // PARITY: the seeded player_stats price/tier MUST equal what the client shows (PLAYERS[i].price /
 // getTier). If this drifts, a legal client squad could be server-rejected (or vice versa).
 //
-// player_stats is ONE table shared by every tournament, and in production it holds the UNION of every
-// seed that has been applied (save_entry_rpc.sql for Montréal, seed_cincinnati_player_stats.sql for
-// Cincinnati). So the invariant is: every player in the ACTIVE field has a complete, correct row in
-// at least one seed. Checking a single file would break the moment a second event shipped.
+// player_stats holds a row per (tournament, player), seeded from the per-event files that
+// scripts/gen-seed.mjs writes. So the invariant runs BOTH ways: every player in the active field
+// needs a complete, correct row, AND no seed may name a player who is not in the field. The second
+// direction is not hypothetical — save_entry_rpc.sql shipped a 77-row block that, once stamped with
+// a tournament id, would have registered 7 non-entrants as legal Cincinnati picks.
 //
 // A NULL price/tier is the specific hazard: save_entry counts the tier quota with
 // `count(*) filter (where ps.tier = …)` and sums the budget with `sum(ps.price)`, so a missing column
@@ -174,5 +175,21 @@ describe('player_stats seeds ↔ PLAYERS parity', () => {
       expect(s.ranking).toBe(p.ranking);
       expect(s.tier).toBe(getTier(p.ranking));
     }
+  });
+
+  // THE REVERSE DIRECTION, and the one that actually bit. A seed carrying somebody who is not in
+  // the draw tells the server they are a legal pick for an event they are not playing — they can
+  // be drafted, spend budget and fill a tier slot, and can never score, because no result will
+  // ever name them. It also breaks the row count that is supposed to prove the seed is correct.
+  it('no seed names a player outside the active field', () => {
+    const field = new Set(PLAYERS.map(p => p.id));
+    expect([...seeded.keys()].filter(id => !field.has(id))).toEqual([]);
+  });
+
+  // save_entry_rpc.sql is CODE; a seed is per-event DATA with a generator and a cross-check.
+  // They were coupled, and that is how a stale 77-row field rode along inside a security fix:
+  // applying the RPC would silently have rewritten the player pool. Keep them apart.
+  it('save_entry_rpc.sql carries no embedded seed', () => {
+    expect(saveEntrySql).not.toMatch(/insert\s+into\s+public\.player_stats/i);
   });
 });

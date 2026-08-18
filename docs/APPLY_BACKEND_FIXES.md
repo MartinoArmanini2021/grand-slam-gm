@@ -93,6 +93,16 @@ SQL editor, paste `supabase/save_entry_rpc.sql`, Run.
 This one file delivers **both** the salary-cap fix (1.2) and the tournament scoping (1.3). It
 replaces the function wholesale — no partial state.
 
+**One late change you should know about.** Until this morning this file *also* re-seeded the player
+table, carrying 77 rows left over from Montréal. Seven of them — Bublik, Davidovich Fokina, Diallo,
+Moutet, Munar, Popyrin and Quinn — **are not in the Cincinnati draw.** Running it would have told
+the server those seven were legal Cincinnati picks and pushed the table to 103 rows, so step 2's
+count would no longer have matched the draw. The seed block is gone; seeding is step 2's job and
+only step 2's. A test now fails if a seed ever creeps back into this file.
+
+**Re-run step 1's grouped query afterwards.** It must still say `cincinnati_2026 96 0`. If step 3
+changed that number, something re-seeded and I want to know.
+
 **Verify the cap fix took** — expect `t`:
 
 ```sql
