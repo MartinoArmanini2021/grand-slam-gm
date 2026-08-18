@@ -1,0 +1,541 @@
+[
+  {
+    "tournament_id": "montreal_2026",
+    "id": "zverev",
+    "ranking": 2,
+    "price": 50,
+    "tier": "Platinum"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "augeraliassime",
+    "ranking": 4,
+    "price": 34,
+    "tier": "Platinum"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "shelton",
+    "ranking": 6,
+    "price": 25,
+    "tier": "Platinum"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "deminaur",
+    "ranking": 5,
+    "price": 32,
+    "tier": "Platinum"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "fritz",
+    "ranking": 10,
+    "price": 25,
+    "tier": "Platinum"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "medvedev",
+    "ranking": 8,
+    "price": 33,
+    "tier": "Platinum"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "cobolli",
+    "ranking": 9,
+    "price": 20,
+    "tier": "Platinum"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "bublik",
+    "ranking": 11,
+    "price": 19,
+    "tier": "Gold"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "ruud",
+    "ranking": 13,
+    "price": 20,
+    "tier": "Gold"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "rublev",
+    "ranking": 14,
+    "price": 20,
+    "tier": "Gold"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "lehecka",
+    "ranking": 12,
+    "price": 21,
+    "tier": "Gold"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "musetti",
+    "ranking": 15,
+    "price": 21,
+    "tier": "Gold"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "darderi",
+    "ranking": 21,
+    "price": 15,
+    "tier": "Gold"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "tien",
+    "ranking": 16,
+    "price": 18,
+    "tier": "Gold"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "mensik",
+    "ranking": 18,
+    "price": 19,
+    "tier": "Gold"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "tiafoe",
+    "ranking": 17,
+    "price": 18,
+    "tier": "Gold"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "vacherot",
+    "ranking": 19,
+    "price": 15,
+    "tier": "Gold"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "franciscocerundolo",
+    "ranking": 22,
+    "price": 17,
+    "tier": "Gold"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "khachanov",
+    "ranking": 26,
+    "price": 13,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "davidovichfokina",
+    "ranking": 20,
+    "price": 15,
+    "tier": "Gold"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "fils",
+    "ranking": 23,
+    "price": 18,
+    "tier": "Gold"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "paul",
+    "ranking": 24,
+    "price": 16,
+    "tier": "Gold"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "jodar",
+    "ranking": 25,
+    "price": 16,
+    "tier": "Gold"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "fonseca",
+    "ranking": 28,
+    "price": 14,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "rinderknech",
+    "ranking": 27,
+    "price": 11,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "norrie",
+    "ranking": 39,
+    "price": 10,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "humbert",
+    "ranking": 29,
+    "price": 13,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "nakashima",
+    "ranking": 32,
+    "price": 12,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "etcheverry",
+    "ranking": 31,
+    "price": 10,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "tabilo",
+    "ranking": 30,
+    "price": 12,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "buse",
+    "ranking": 35,
+    "price": 13,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "arnaldi",
+    "ranking": 33,
+    "price": 9,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "blockx",
+    "ranking": 38,
+    "price": 10,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "bergs",
+    "ranking": 34,
+    "price": 10,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "navone",
+    "ranking": 47,
+    "price": 7,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "moutet",
+    "ranking": 40,
+    "price": 8,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "mannarino",
+    "ranking": 46,
+    "price": 7,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "shapovalov",
+    "ranking": 67,
+    "price": 6,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "cerundolo",
+    "ranking": 50,
+    "price": 9,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "collignon",
+    "ranking": 37,
+    "price": 11,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "munar",
+    "ranking": 43,
+    "price": 10,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "majchrzak",
+    "ranking": 71,
+    "price": 9,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "michelsen",
+    "ranking": 44,
+    "price": 11,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "quinn",
+    "ranking": 45,
+    "price": 8,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "hurkacz",
+    "ranking": 70,
+    "price": 6,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "borges",
+    "ranking": 48,
+    "price": 9,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "kecmanovic",
+    "ranking": 58,
+    "price": 6,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "berrettini",
+    "ranking": 42,
+    "price": 11,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "atmane",
+    "ranking": 49,
+    "price": 8,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "marozsan",
+    "ranking": 54,
+    "price": 8,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "zandschulp",
+    "ranking": 55,
+    "price": 8,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "tirante",
+    "ranking": 57,
+    "price": 9,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "hanfmann",
+    "ranking": 52,
+    "price": 9,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "shang",
+    "ranking": 270,
+    "price": 4,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "baez",
+    "ranking": 56,
+    "price": 9,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "griekspoor",
+    "ranking": 66,
+    "price": 7,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "carabelli",
+    "ranking": 69,
+    "price": 6,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "landaluce",
+    "ranking": 62,
+    "price": 10,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "altmaier",
+    "ranking": 61,
+    "price": 5,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "cilic",
+    "ranking": 86,
+    "price": 7,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "kopriva",
+    "ranking": 68,
+    "price": 8,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "burruchaga",
+    "ranking": 60,
+    "price": 5,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "svajda",
+    "ranking": 73,
+    "price": 7,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "bellucci",
+    "ranking": 79,
+    "price": 6,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "medjedovic",
+    "ranking": 72,
+    "price": 9,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "sonego",
+    "ranking": 77,
+    "price": 7,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "kovacevic",
+    "ranking": 93,
+    "price": 6,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "busta",
+    "ranking": 65,
+    "price": 9,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "vallejo",
+    "ranking": 63,
+    "price": 6,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "struff",
+    "ranking": 41,
+    "price": 8,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "royer",
+    "ranking": 75,
+    "price": 4,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "fucsovics",
+    "ranking": 76,
+    "price": 7,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "duckworth",
+    "ranking": 82,
+    "price": 6,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "diallo",
+    "ranking": 92,
+    "price": 6,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "merida",
+    "ranking": 59,
+    "price": 9,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "popyrin",
+    "ranking": 104,
+    "price": 4,
+    "tier": "Silver"
+  },
+  {
+    "tournament_id": "montreal_2026",
+    "id": "droguet",
+    "ranking": 114,
+    "price": 6,
+    "tier": "Silver"
+  }
+]

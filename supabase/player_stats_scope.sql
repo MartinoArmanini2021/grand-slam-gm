@@ -13,17 +13,32 @@
 -- THE FIX. Primary key becomes (tournament_id, id): every tournament keeps its own rankings and
 -- prices, permanently. A finished event's numbers can no longer be touched by loading the next one.
 --
--- EXISTING ROWS. The 109 rows currently in the table are the CINCINNATI field (they were re-seeded
--- on 2026-08-14 with a fresh ATP snapshot), so they are assigned to cincinnati_2026. Montréal is
--- deliberately NOT backfilled — its final numbers are archived in docs/archive/montreal_2026/ and
--- its stored scores in public.entries are already final. See the note at the bottom.
+-- EXISTING ROWS — READ THIS, THE OBVIOUS ASSUMPTION IS WRONG. The table holds 109 rows, but the
+-- Cincinnati field is only 96. The extra 13 are residue from earlier global seeds (Sinner at rank 1,
+-- Wawrinka, Safiullin, Giron and others) — players in no current field, and SIX of them carry NULL
+-- price/tier, the exact broken shape the seed generator exists to prevent. Blanket-stamping all 109
+-- as cincinnati_2026 would relabel that residue as live Cincinnati data and enshrine it.
+--
+-- So: every existing row is parked under 'legacy_unscoped', and the Cincinnati seed (step 2 of the
+-- runbook) then writes the 96 real entrants under cincinnati_2026. After that, cincinnati_2026
+-- contains exactly the 96 seeded players and nothing else — provable, rather than assumed.
+--
+-- The residue is parked rather than deleted: nothing can reach it (a squad is filtered to the active
+-- field before it is ever saved, and no scoring run reads that id), it is one UPDATE to recover, and
+-- deleting rows on a live database to tidy up is not a trade worth making.
+--
+-- Montréal is deliberately not restored here. Its stored scores are already final and nothing
+-- recomputes them; its true at-event rankings are archived in
+-- docs/archive/montreal_2026/player_stats_montreal.json if you ever want its history back.
 -- ─────────────────────────────────────────────────────────────────────────────────────────────────
 
 begin;
 
--- 1) Add the column and give every existing row its owner.
+-- 1) Add the column. Park every pre-existing row under 'legacy_unscoped' — we cannot tell from
+--    inside the database which tournament they were meant for, and guessing is how the residue
+--    described above would become "Cincinnati data". The seed decides what Cincinnati is.
 alter table public.player_stats add column if not exists tournament_id text;
-update public.player_stats set tournament_id = 'cincinnati_2026' where tournament_id is null;
+update public.player_stats set tournament_id = 'legacy_unscoped' where tournament_id is null;
 alter table public.player_stats alter column tournament_id set not null;
 
 -- 2) Swap the primary key from (id) to (tournament_id, id). Guarded on the CURRENT definition so a
@@ -48,16 +63,23 @@ create index if not exists player_stats_tournament_idx on public.player_stats (t
 commit;
 
 -- ── Verify ───────────────────────────────────────────────────────────────────────────────────────
--- Expect one row: cincinnati_2026 with 109 players.
-select tournament_id, count(*) as players, min(ranking) as best_rank, max(ranking) as worst_rank
+-- After THIS file alone, expect a single row: legacy_unscoped, 109 players.
+-- After the Cincinnati seed (runbook step 2) you should see TWO rows:
+--     cincinnati_2026    96
+--     legacy_unscoped   109
+-- and the completeness check below must return 0. A NULL price or tier on a live row is the failure
+-- that silently reads a legal 2/3/5 squad as 2/3/4, so it can never be locked.
+select tournament_id, count(*) as players,
+       count(*) filter (where price is null or tier is null) as incomplete_rows
 from public.player_stats
 group by tournament_id
 order by tournament_id;
 
--- And the key should now be composite:
---   select pg_get_constraintdef(oid) from pg_constraint
---    where conrelid = 'public.player_stats'::regclass and contype = 'p';
---   -> PRIMARY KEY (tournament_id, id)
+-- Assert the key actually swapped — this is the one thing the file exists to do, so check it rather
+-- than assume it. Expect exactly: PRIMARY KEY (tournament_id, id)
+select pg_get_constraintdef(oid) as primary_key
+from pg_constraint
+where conrelid = 'public.player_stats'::regclass and contype = 'p';
 
 -- ── A consequence worth knowing ──────────────────────────────────────────────────────────────────
 -- With Montréal's rows absent, nothing can rescore Montréal — which is the point; its scores in
@@ -68,5 +90,9 @@ order by tournament_id;
 --     finished tournament must be read-only — but the client must not attempt such a save. This is
 --     handled by the `completed` status work (Phase 2.1); until that ships, do not re-point
 --     app_config at montreal_2026.
--- If you ever want Montréal's history restored, docs/archive/montreal_2026/player_stats.json holds
--- the exact rankings its scores were computed from.
+-- Montréal's true at-event rankings are in docs/archive/montreal_2026/player_stats_montreal.json
+-- (77 players, rebuilt from montreal2026Field.json, which the 2026-08-14 ranking refresh never
+-- touched — Jodar is 25 there, as he was at Montréal, not the 11 he became afterwards).
+-- NB docs/archive/montreal_2026/player_stats.json is a dump of the LIVE table as of 2026-08-18 —
+-- i.e. post-refresh Cincinnati numbers. It is NOT what Montréal was scored under. Do not restore
+-- from it believing otherwise.
