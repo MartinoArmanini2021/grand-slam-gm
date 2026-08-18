@@ -183,6 +183,26 @@ export function parseBracket(
 export interface MatchRow {
   tournament_id: string; round: string; slot: number;
   p1_id: string; p2_id: string; winner_id: string | null;
+  score_line: string | null;
+}
+
+// The set score as a human reads it: winner first, sets space-separated - '6-4 3-6 7-6'.
+// parseFullDraw already extracts the per-set games and, until now, buildMatchRows threw them away;
+// every user's browser then re-fetched and re-parsed the same page to show them. Winner-first
+// because that is how a score is written on any draw sheet, and storing pairing order would force
+// every consumer to re-derive the orientation from winner_id.
+export function scoreLine(sc: MatchScore | undefined, p1: string, _p2: string, winner: string | null): string | null {
+  if (!sc || !winner) return null;
+  const winnerIsP1 = winner === p1;
+  const a = winnerIsP1 ? sc.p1 : sc.p2;
+  const b = winnerIsP1 ? sc.p2 : sc.p1;
+  const sets: string[] = [];
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    const x = a[i], y = b[i];
+    if (!x || !y) continue;
+    sets.push(x + '-' + y);
+  }
+  return sets.length ? sets.join(' ') : null;
 }
 
 // Build the rows to upsert into public.matches. The critical guarantee: a winner that is
@@ -196,6 +216,7 @@ export function buildMatchRows(
   results: LiveResults,
   existingWinners: Record<string, string | null> = {},
   overrides: Record<string, string> = {},
+  scores: LiveScores = {},
 ): MatchRow[] {
   return draw.map((m) => {
     const key = matchKey(m.round, m.slot);
@@ -205,7 +226,11 @@ export function buildMatchRows(
     const ov = overrides[key];
     const validOverride = ov === m.p1Id || ov === m.p2Id ? ov : undefined;
     const winner = validOverride ?? results[key] ?? existingWinners[key] ?? null;
-    return { tournament_id: tournamentId, round: m.round, slot: m.slot, p1_id: m.p1Id, p2_id: m.p2Id, winner_id: winner };
+    return {
+      tournament_id: tournamentId, round: m.round, slot: m.slot,
+      p1_id: m.p1Id, p2_id: m.p2Id, winner_id: winner,
+      score_line: scoreLine(scores[key], m.p1Id, m.p2Id, winner),
+    };
   });
 }
 

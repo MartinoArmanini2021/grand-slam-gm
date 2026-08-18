@@ -1,0 +1,5133 @@
+[
+ {
+  "id": "zverev",
+  "atp_id": "Z355",
+  "name": "Alexander Zverev",
+  "country": "Germany",
+  "flag": "🇩🇪",
+  "atp_rank": 3,
+  "seed": 1,
+  "age": 29,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "platinum",
+  "price": 50,
+  "hard_pct": 76,
+  "clay_pct": 88,
+  "grass_pct": 86,
+  "ytd_wins": 33,
+  "ytd_losses": 7,
+  "ytd_titles": 1,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "SF"
+   },
+   {
+    "short": "RG",
+    "result": "W"
+   },
+   {
+    "short": "WIM",
+    "result": "F"
+   },
+   {
+    "short": "IW",
+    "result": "SF"
+   },
+   {
+    "short": "MIA",
+    "result": "SF"
+   },
+   {
+    "short": "MAD",
+    "result": "F"
+   },
+   {
+    "short": "ROM",
+    "result": "R16"
+   },
+   {
+    "short": "MTL",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "augeraliassime",
+  "atp_id": "AG37",
+  "name": "Felix Auger-Aliassime",
+  "country": "Canada",
+  "flag": "🇨🇦",
+  "atp_rank": 4,
+  "seed": 2,
+  "age": 26,
+  "hand": "R",
+  "style": "Grass-court mover",
+  "tier": "platinum",
+  "price": 34,
+  "hard_pct": 60,
+  "clay_pct": 60,
+  "grass_pct": 71,
+  "ytd_wins": 17,
+  "ytd_losses": 10,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "QF"
+   },
+   {
+    "short": "WIM",
+    "result": "QF"
+   },
+   {
+    "short": "IW",
+    "result": "R16"
+   },
+   {
+    "short": "MIA",
+    "result": "R32"
+   },
+   {
+    "short": "MAD",
+    "result": "R32"
+   },
+   {
+    "short": "ROM",
+    "result": "R64"
+   },
+   {
+    "short": "DUB",
+    "result": "SF"
+   },
+   {
+    "short": "HAM",
+    "result": "R64"
+   },
+   {
+    "short": "HER",
+    "result": "QF"
+   }
+  ]
+ },
+ {
+  "id": "djokovic",
+  "atp_id": "D643",
+  "name": "Novak Djokovic",
+  "country": "Serbia",
+  "flag": "🇷🇸",
+  "atp_rank": 5,
+  "seed": 3,
+  "age": 39,
+  "hand": "R",
+  "style": "Grass-court threat",
+  "tier": "platinum",
+  "price": 37,
+  "hard_pct": 80,
+  "clay_pct": 50,
+  "grass_pct": 83,
+  "ytd_wins": 15,
+  "ytd_losses": 5,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "F"
+   },
+   {
+    "short": "RG",
+    "result": "R32"
+   },
+   {
+    "short": "WIM",
+    "result": "SF"
+   },
+   {
+    "short": "IW",
+    "result": "R16"
+   },
+   {
+    "short": "ROM",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "medvedev",
+  "atp_id": "MM58",
+  "name": "Daniil Medvedev",
+  "country": "Russia",
+  "flag": "🇷🇺",
+  "atp_rank": 7,
+  "seed": 4,
+  "age": 30,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "platinum",
+  "price": 34,
+  "hard_pct": 83,
+  "clay_pct": 67,
+  "grass_pct": 67,
+  "ytd_wins": 29,
+  "ytd_losses": 9,
+  "ytd_titles": 2,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R16"
+   },
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R32"
+   },
+   {
+    "short": "IW",
+    "result": "F"
+   },
+   {
+    "short": "MIA",
+    "result": "R32"
+   },
+   {
+    "short": "MAD",
+    "result": "R16"
+   },
+   {
+    "short": "ROM",
+    "result": "SF"
+   },
+   {
+    "short": "DUB",
+    "result": "W"
+   },
+   {
+    "short": "BRI",
+    "result": "W"
+   },
+   {
+    "short": "HER",
+    "result": "SF"
+   }
+  ]
+ },
+ {
+  "id": "deminaur",
+  "atp_id": "DH58",
+  "name": "Alex de Minaur",
+  "country": "Australia",
+  "flag": "🇦🇺",
+  "atp_rank": 8,
+  "seed": 5,
+  "age": 27,
+  "hand": "R",
+  "style": "Grass-court threat",
+  "tier": "platinum",
+  "price": 25,
+  "hard_pct": 60,
+  "clay_pct": 56,
+  "grass_pct": 73,
+  "ytd_wins": 19,
+  "ytd_losses": 11,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "QF"
+   },
+   {
+    "short": "RG",
+    "result": "R32"
+   },
+   {
+    "short": "WIM",
+    "result": "R16"
+   },
+   {
+    "short": "IW",
+    "result": "R32"
+   },
+   {
+    "short": "MIA",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R64"
+   },
+   {
+    "short": "ROM",
+    "result": "R64"
+   },
+   {
+    "short": "HAM",
+    "result": "SF"
+   },
+   {
+    "short": "QUE",
+    "result": "QF"
+   },
+   {
+    "short": "HER",
+    "result": "F"
+   }
+  ]
+ },
+ {
+  "id": "fritz",
+  "atp_id": "FB98",
+  "name": "Taylor Fritz",
+  "country": "United States",
+  "flag": "🇺🇸",
+  "atp_rank": 9,
+  "seed": 6,
+  "age": 29,
+  "hand": "R",
+  "style": "Grass-court threat",
+  "tier": "platinum",
+  "price": 23,
+  "hard_pct": 60,
+  "clay_pct": 63,
+  "grass_pct": 80,
+  "ytd_wins": 10,
+  "ytd_losses": 6,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R16"
+   },
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "QF"
+   },
+   {
+    "short": "IW",
+    "result": "R32"
+   },
+   {
+    "short": "MIA",
+    "result": "R16"
+   },
+   {
+    "short": "MTL",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "cobolli",
+  "atp_id": "C0E9",
+  "name": "Flavio Cobolli",
+  "country": "Italy",
+  "flag": "🇮🇹",
+  "atp_rank": 10,
+  "seed": 7,
+  "age": 24,
+  "hand": "R",
+  "style": "Grass-court threat",
+  "tier": "platinum",
+  "price": 18,
+  "hard_pct": 20,
+  "clay_pct": 71,
+  "grass_pct": 80,
+  "ytd_wins": 15,
+  "ytd_losses": 9,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "F"
+   },
+   {
+    "short": "WIM",
+    "result": "QF"
+   },
+   {
+    "short": "IW",
+    "result": "R32"
+   },
+   {
+    "short": "MIA",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "QF"
+   },
+   {
+    "short": "ROM",
+    "result": "R32"
+   },
+   {
+    "short": "HAM",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "shelton",
+  "atp_id": "S0S1",
+  "name": "Ben Shelton",
+  "country": "United States",
+  "flag": "🇺🇸",
+  "atp_rank": 6,
+  "seed": 8,
+  "age": 24,
+  "hand": "L",
+  "style": "Left-handed Hard-court baseliner",
+  "tier": "platinum",
+  "price": 31,
+  "hard_pct": 75,
+  "clay_pct": 33,
+  "grass_pct": 61,
+  "ytd_wins": 14,
+  "ytd_losses": 9,
+  "ytd_titles": 1,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "QF"
+   },
+   {
+    "short": "RG",
+    "result": "R64"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R32"
+   },
+   {
+    "short": "MIA",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R64"
+   },
+   {
+    "short": "ROM",
+    "result": "R64"
+   },
+   {
+    "short": "HAM",
+    "result": "R64"
+   },
+   {
+    "short": "AKL",
+    "result": "QF"
+   },
+   {
+    "short": "MTL",
+    "result": "W"
+   }
+  ]
+ },
+ {
+  "id": "lehecka",
+  "atp_id": "L0BV",
+  "name": "Jiri Lehecka",
+  "country": "Czechia",
+  "flag": "🇨🇿",
+  "atp_rank": 14,
+  "seed": 9,
+  "age": 25,
+  "hand": "R",
+  "style": "Grass-court mover",
+  "tier": "gold",
+  "price": 19,
+  "hard_pct": 63,
+  "clay_pct": 57,
+  "grass_pct": 67,
+  "ytd_wins": 18,
+  "ytd_losses": 11,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R16"
+   },
+   {
+    "short": "IW",
+    "result": "R64"
+   },
+   {
+    "short": "MIA",
+    "result": "F"
+   },
+   {
+    "short": "MAD",
+    "result": "QF"
+   },
+   {
+    "short": "ROM",
+    "result": "R32"
+   },
+   {
+    "short": "DUB",
+    "result": "QF"
+   },
+   {
+    "short": "QUE",
+    "result": "R64"
+   },
+   {
+    "short": "BRI",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "musetti",
+  "atp_id": "M0EJ",
+  "name": "Lorenzo Musetti",
+  "country": "Italy",
+  "flag": "🇮🇹",
+  "atp_rank": 15,
+  "seed": 10,
+  "age": 24,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "gold",
+  "price": 19,
+  "hard_pct": 63,
+  "clay_pct": 67,
+  "grass_pct": 64,
+  "ytd_wins": 9,
+  "ytd_losses": 5,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "QF"
+   },
+   {
+    "short": "IW",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R16"
+   },
+   {
+    "short": "ROM",
+    "result": "R16"
+   },
+   {
+    "short": "MTL",
+    "result": "R32"
+   }
+  ]
+ },
+ {
+  "id": "ruud",
+  "atp_id": "RH16",
+  "name": "Casper Ruud",
+  "country": "Norway",
+  "flag": "🇳🇴",
+  "atp_rank": 17,
+  "seed": 11,
+  "age": 28,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "gold",
+  "price": 17,
+  "hard_pct": 55,
+  "clay_pct": 79,
+  "grass_pct": 65,
+  "ytd_wins": 17,
+  "ytd_losses": 9,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R16"
+   },
+   {
+    "short": "RG",
+    "result": "R16"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R16"
+   },
+   {
+    "short": "MIA",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "QF"
+   },
+   {
+    "short": "ROM",
+    "result": "F"
+   },
+   {
+    "short": "AKL",
+    "result": "R64"
+   },
+   {
+    "short": "MTL",
+    "result": "R32"
+   }
+  ]
+ },
+ {
+  "id": "jodar",
+  "atp_id": "J0DZ",
+  "name": "Rafael Jodar",
+  "country": "Spain",
+  "flag": "🇪🇸",
+  "atp_rank": 11,
+  "seed": 12,
+  "age": 20,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "gold",
+  "price": 24,
+  "hard_pct": 69,
+  "clay_pct": 79,
+  "grass_pct": 73,
+  "ytd_wins": 22,
+  "ytd_losses": 8,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R64"
+   },
+   {
+    "short": "RG",
+    "result": "QF"
+   },
+   {
+    "short": "WIM",
+    "result": "R32"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "MIA",
+    "result": "R32"
+   },
+   {
+    "short": "MAD",
+    "result": "QF"
+   },
+   {
+    "short": "ROM",
+    "result": "QF"
+   },
+   {
+    "short": "MTL",
+    "result": "SF"
+   }
+  ]
+ },
+ {
+  "id": "rublev",
+  "atp_id": "RE44",
+  "name": "Andrey Rublev",
+  "country": "Russia",
+  "flag": "🇷🇺",
+  "atp_rank": 18,
+  "seed": 13,
+  "age": 29,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "gold",
+  "price": 17,
+  "hard_pct": 50,
+  "clay_pct": 77,
+  "grass_pct": 63,
+  "ytd_wins": 15,
+  "ytd_losses": 9,
+  "ytd_titles": 1,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R32"
+   },
+   {
+    "short": "RG",
+    "result": "R16"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R64"
+   },
+   {
+    "short": "MIA",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R64"
+   },
+   {
+    "short": "ROM",
+    "result": "QF"
+   },
+   {
+    "short": "DUB",
+    "result": "SF"
+   },
+   {
+    "short": "BAD",
+    "result": "W"
+   },
+   {
+    "short": "MTL",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "mensik",
+  "atp_id": "M0NI",
+  "name": "Jakub Mensik",
+  "country": "Czechia",
+  "flag": "🇨🇿",
+  "atp_rank": 16,
+  "seed": 14,
+  "age": 21,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "gold",
+  "price": 20,
+  "hard_pct": 74,
+  "clay_pct": 67,
+  "grass_pct": 68,
+  "ytd_wins": 23,
+  "ytd_losses": 11,
+  "ytd_titles": 1,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R16"
+   },
+   {
+    "short": "RG",
+    "result": "SF"
+   },
+   {
+    "short": "WIM",
+    "result": "R64"
+   },
+   {
+    "short": "IW",
+    "result": "R32"
+   },
+   {
+    "short": "MIA",
+    "result": "R32"
+   },
+   {
+    "short": "MAD",
+    "result": "R16"
+   },
+   {
+    "short": "ROM",
+    "result": "R64"
+   },
+   {
+    "short": "DUB",
+    "result": "QF"
+   },
+   {
+    "short": "HAM",
+    "result": "R64"
+   },
+   {
+    "short": "QUE",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "vacherot",
+  "atp_id": "VA25",
+  "name": "Valentin Vacherot",
+  "country": "Monaco",
+  "flag": "🇲🇨",
+  "atp_rank": 19,
+  "seed": 15,
+  "age": 28,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "gold",
+  "price": 14,
+  "hard_pct": 54,
+  "clay_pct": 50,
+  "grass_pct": 50,
+  "ytd_wins": 8,
+  "ytd_losses": 8,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R32"
+   },
+   {
+    "short": "RG",
+    "result": "R64"
+   },
+   {
+    "short": "IW",
+    "result": "R32"
+   },
+   {
+    "short": "MIA",
+    "result": "R16"
+   },
+   {
+    "short": "MAD",
+    "result": "R64"
+   },
+   {
+    "short": "BRI",
+    "result": "R128"
+   },
+   {
+    "short": "ADL",
+    "result": "QF"
+   },
+   {
+    "short": "MTL",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "tien",
+  "atp_id": "T0HA",
+  "name": "Learner Tien",
+  "country": "United States",
+  "flag": "🇺🇸",
+  "atp_rank": 12,
+  "seed": 16,
+  "age": 21,
+  "hand": "L",
+  "style": "Left-handed Hard-court baseliner",
+  "tier": "gold",
+  "price": 22,
+  "hard_pct": 71,
+  "clay_pct": 57,
+  "grass_pct": 65,
+  "ytd_wins": 17,
+  "ytd_losses": 9,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "QF"
+   },
+   {
+    "short": "RG",
+    "result": "R32"
+   },
+   {
+    "short": "WIM",
+    "result": "R64"
+   },
+   {
+    "short": "IW",
+    "result": "QF"
+   },
+   {
+    "short": "MIA",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R64"
+   },
+   {
+    "short": "ROM",
+    "result": "R16"
+   },
+   {
+    "short": "BRI",
+    "result": "R64"
+   },
+   {
+    "short": "MTL",
+    "result": "SF"
+   }
+  ]
+ },
+ {
+  "id": "tiafoe",
+  "atp_id": "TD51",
+  "name": "Frances Tiafoe",
+  "country": "United States",
+  "flag": "🇺🇸",
+  "atp_rank": 23,
+  "seed": 17,
+  "age": 29,
+  "hand": "R",
+  "style": "Grass-court mover",
+  "tier": "gold",
+  "price": 16,
+  "hard_pct": 64,
+  "clay_pct": 63,
+  "grass_pct": 64,
+  "ytd_wins": 16,
+  "ytd_losses": 9,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R32"
+   },
+   {
+    "short": "RG",
+    "result": "R16"
+   },
+   {
+    "short": "WIM",
+    "result": "R32"
+   },
+   {
+    "short": "IW",
+    "result": "R16"
+   },
+   {
+    "short": "MIA",
+    "result": "QF"
+   },
+   {
+    "short": "ROM",
+    "result": "R32"
+   },
+   {
+    "short": "HAM",
+    "result": "R64"
+   },
+   {
+    "short": "BRI",
+    "result": "R64"
+   },
+   {
+    "short": "MTL",
+    "result": "R32"
+   }
+  ]
+ },
+ {
+  "id": "paul",
+  "atp_id": "PL56",
+  "name": "Tommy Paul",
+  "country": "United States",
+  "flag": "🇺🇸",
+  "atp_rank": 24,
+  "seed": 18,
+  "age": 29,
+  "hand": "R",
+  "style": "Grass-court threat",
+  "tier": "gold",
+  "price": 15,
+  "hard_pct": 63,
+  "clay_pct": 64,
+  "grass_pct": 75,
+  "ytd_wins": 23,
+  "ytd_losses": 12,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R16"
+   },
+   {
+    "short": "RG",
+    "result": "R32"
+   },
+   {
+    "short": "WIM",
+    "result": "R32"
+   },
+   {
+    "short": "IW",
+    "result": "R32"
+   },
+   {
+    "short": "MIA",
+    "result": "QF"
+   },
+   {
+    "short": "MAD",
+    "result": "R64"
+   },
+   {
+    "short": "ROM",
+    "result": "R32"
+   },
+   {
+    "short": "HAM",
+    "result": "F"
+   },
+   {
+    "short": "QUE",
+    "result": "F"
+   },
+   {
+    "short": "BRI",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "darderi",
+  "atp_id": "D0FJ",
+  "name": "Luciano Darderi",
+  "country": "Italy",
+  "flag": "🇮🇹",
+  "atp_rank": 20,
+  "seed": 19,
+  "age": 24,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "gold",
+  "price": 16,
+  "hard_pct": 58,
+  "clay_pct": 71,
+  "grass_pct": 63,
+  "ytd_wins": 19,
+  "ytd_losses": 11,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R16"
+   },
+   {
+    "short": "RG",
+    "result": "R64"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R64"
+   },
+   {
+    "short": "MIA",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R32"
+   },
+   {
+    "short": "ROM",
+    "result": "SF"
+   },
+   {
+    "short": "HAM",
+    "result": "QF"
+   },
+   {
+    "short": "AKL",
+    "result": "QF"
+   },
+   {
+    "short": "BAD",
+    "result": "F"
+   }
+  ]
+ },
+ {
+  "id": "franciscocerundolo",
+  "atp_id": "C0AU",
+  "name": "Francisco Cerundolo",
+  "country": "Argentina",
+  "flag": "🇦🇷",
+  "atp_rank": 25,
+  "seed": 20,
+  "age": 28,
+  "hand": "R",
+  "style": "Grass-court threat",
+  "tier": "gold",
+  "price": 15,
+  "hard_pct": 58,
+  "clay_pct": 56,
+  "grass_pct": 83,
+  "ytd_wins": 17,
+  "ytd_losses": 10,
+  "ytd_titles": 1,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R16"
+   },
+   {
+    "short": "RG",
+    "result": "R32"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R32"
+   },
+   {
+    "short": "MIA",
+    "result": "QF"
+   },
+   {
+    "short": "MAD",
+    "result": "R16"
+   },
+   {
+    "short": "ROM",
+    "result": "R32"
+   },
+   {
+    "short": "HAM",
+    "result": "R128"
+   },
+   {
+    "short": "QUE",
+    "result": "W"
+   },
+   {
+    "short": "ADL",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "fils",
+  "atp_id": "F0F1",
+  "name": "Arthur Fils",
+  "country": "France",
+  "flag": "🇫🇷",
+  "atp_rank": 21,
+  "seed": 21,
+  "age": 22,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "gold",
+  "price": 18,
+  "hard_pct": 77,
+  "clay_pct": 67,
+  "grass_pct": 71,
+  "ytd_wins": 15,
+  "ytd_losses": 6,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "WIM",
+    "result": "R64"
+   },
+   {
+    "short": "IW",
+    "result": "QF"
+   },
+   {
+    "short": "MIA",
+    "result": "SF"
+   },
+   {
+    "short": "MAD",
+    "result": "SF"
+   },
+   {
+    "short": "ROM",
+    "result": "R64"
+   },
+   {
+    "short": "MTL",
+    "result": "QF"
+   }
+  ]
+ },
+ {
+  "id": "tabilo",
+  "atp_id": "TE30",
+  "name": "Alejandro Tabilo",
+  "country": "Chile",
+  "flag": "🇨🇱",
+  "atp_rank": 29,
+  "seed": 22,
+  "age": 29,
+  "hand": "L",
+  "style": "Left-handed Clay-court grinder",
+  "tier": "silver",
+  "price": 11,
+  "hard_pct": 44,
+  "clay_pct": 64,
+  "grass_pct": 50,
+  "ytd_wins": 11,
+  "ytd_losses": 11,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R16"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R64"
+   },
+   {
+    "short": "MIA",
+    "result": "R32"
+   },
+   {
+    "short": "MAD",
+    "result": "R64"
+   },
+   {
+    "short": "ROM",
+    "result": "R64"
+   },
+   {
+    "short": "QUE",
+    "result": "R128"
+   },
+   {
+    "short": "AKL",
+    "result": "R64"
+   },
+   {
+    "short": "BAD",
+    "result": "SF"
+   }
+  ]
+ },
+ {
+  "id": "fonseca",
+  "atp_id": "F0FV",
+  "name": "Joao Fonseca",
+  "country": "Brazil",
+  "flag": "🇧🇷",
+  "atp_rank": 26,
+  "seed": 23,
+  "age": 20,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "silver",
+  "price": 14,
+  "hard_pct": 60,
+  "clay_pct": 63,
+  "grass_pct": 62,
+  "ytd_wins": 13,
+  "ytd_losses": 8,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "QF"
+   },
+   {
+    "short": "WIM",
+    "result": "R32"
+   },
+   {
+    "short": "IW",
+    "result": "R16"
+   },
+   {
+    "short": "MIA",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R32"
+   },
+   {
+    "short": "ROM",
+    "result": "R64"
+   },
+   {
+    "short": "MTL",
+    "result": "R16"
+   }
+  ]
+ },
+ {
+  "id": "humbert",
+  "atp_id": "HH26",
+  "name": "Ugo Humbert",
+  "country": "France",
+  "flag": "🇫🇷",
+  "atp_rank": 30,
+  "seed": 24,
+  "age": 28,
+  "hand": "L",
+  "style": "Left-handed Grass-court mover",
+  "tier": "silver",
+  "price": 12,
+  "hard_pct": 50,
+  "clay_pct": 50,
+  "grass_pct": 67,
+  "ytd_wins": 19,
+  "ytd_losses": 15,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R64"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R64"
+   },
+   {
+    "short": "MIA",
+    "result": "R16"
+   },
+   {
+    "short": "MAD",
+    "result": "R64"
+   },
+   {
+    "short": "ROM",
+    "result": "R32"
+   },
+   {
+    "short": "DUB",
+    "result": "R64"
+   },
+   {
+    "short": "HAM",
+    "result": "QF"
+   },
+   {
+    "short": "QUE",
+    "result": "SF"
+   }
+  ]
+ },
+ {
+  "id": "rinderknech",
+  "atp_id": "RC91",
+  "name": "Arthur Rinderknech",
+  "country": "France",
+  "flag": "🇫🇷",
+  "atp_rank": 28,
+  "seed": 25,
+  "age": 31,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "silver",
+  "price": 12,
+  "hard_pct": 50,
+  "clay_pct": 50,
+  "grass_pct": 40,
+  "ytd_wins": 9,
+  "ytd_losses": 10,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R64"
+   },
+   {
+    "short": "WIM",
+    "result": "R32"
+   },
+   {
+    "short": "IW",
+    "result": "R32"
+   },
+   {
+    "short": "MIA",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R32"
+   },
+   {
+    "short": "DUB",
+    "result": "QF"
+   },
+   {
+    "short": "QUE",
+    "result": "R128"
+   },
+   {
+    "short": "HER",
+    "result": "R64"
+   },
+   {
+    "short": "MTL",
+    "result": "R16"
+   }
+  ]
+ },
+ {
+  "id": "etcheverry",
+  "atp_id": "EA24",
+  "name": "Tomas Martin Etcheverry",
+  "country": "Argentina",
+  "flag": "🇦🇷",
+  "atp_rank": 31,
+  "seed": 26,
+  "age": 27,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "silver",
+  "price": 10,
+  "hard_pct": 44,
+  "clay_pct": 43,
+  "grass_pct": 39,
+  "ytd_wins": 7,
+  "ytd_losses": 11,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R32"
+   },
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R64"
+   },
+   {
+    "short": "MIA",
+    "result": "R16"
+   },
+   {
+    "short": "MAD",
+    "result": "R16"
+   },
+   {
+    "short": "ROM",
+    "result": "R64"
+   },
+   {
+    "short": "HAM",
+    "result": "R64"
+   },
+   {
+    "short": "AKL",
+    "result": "R128"
+   },
+   {
+    "short": "EAS",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "nakashima",
+  "atp_id": "N0AE",
+  "name": "Brandon Nakashima",
+  "country": "United States",
+  "flag": "🇺🇸",
+  "atp_rank": 22,
+  "seed": 27,
+  "age": 25,
+  "hand": "R",
+  "style": "Grass-court mover",
+  "tier": "gold",
+  "price": 16,
+  "hard_pct": 67,
+  "clay_pct": 50,
+  "grass_pct": 67,
+  "ytd_wins": 17,
+  "ytd_losses": 10,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R32"
+   },
+   {
+    "short": "WIM",
+    "result": "R64"
+   },
+   {
+    "short": "IW",
+    "result": "R32"
+   },
+   {
+    "short": "MIA",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R64"
+   },
+   {
+    "short": "ROM",
+    "result": "R32"
+   },
+   {
+    "short": "QUE",
+    "result": "SF"
+   },
+   {
+    "short": "BRI",
+    "result": "F"
+   },
+   {
+    "short": "MTL",
+    "result": "F"
+   }
+  ]
+ },
+ {
+  "id": "blockx",
+  "atp_id": "B0PG",
+  "name": "Alexander Blockx",
+  "country": "Belgium",
+  "flag": "🇧🇪",
+  "atp_rank": 32,
+  "seed": 28,
+  "age": 21,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "silver",
+  "price": 11,
+  "hard_pct": 33,
+  "clay_pct": 73,
+  "grass_pct": 56,
+  "ytd_wins": 10,
+  "ytd_losses": 8,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R64"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "MAD",
+    "result": "SF"
+   },
+   {
+    "short": "ROM",
+    "result": "R32"
+   },
+   {
+    "short": "MTL",
+    "result": "R32"
+   }
+  ]
+ },
+ {
+  "id": "buse",
+  "atp_id": "B0ID",
+  "name": "Ignacio Buse",
+  "country": "Peru",
+  "flag": "🇵🇪",
+  "atp_rank": 36,
+  "seed": 29,
+  "age": 22,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "silver",
+  "price": 12,
+  "hard_pct": 50,
+  "clay_pct": 75,
+  "grass_pct": 50,
+  "ytd_wins": 14,
+  "ytd_losses": 8,
+  "ytd_titles": 1,
+  "year_results": [
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R64"
+   },
+   {
+    "short": "MIA",
+    "result": "R128"
+   },
+   {
+    "short": "MAD",
+    "result": "R64"
+   },
+   {
+    "short": "ROM",
+    "result": "R64"
+   },
+   {
+    "short": "HAM",
+    "result": "W"
+   },
+   {
+    "short": "QUE",
+    "result": "R64"
+   },
+   {
+    "short": "MTL",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "bergs",
+  "atp_id": "BU13",
+  "name": "Zizou Bergs",
+  "country": "Belgium",
+  "flag": "🇧🇪",
+  "atp_rank": 33,
+  "seed": 30,
+  "age": 27,
+  "hand": "R",
+  "style": "Grass-court threat",
+  "tier": "silver",
+  "price": 11,
+  "hard_pct": 38,
+  "clay_pct": 50,
+  "grass_pct": 78,
+  "ytd_wins": 10,
+  "ytd_losses": 10,
+  "ytd_titles": 1,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R32"
+   },
+   {
+    "short": "IW",
+    "result": "R64"
+   },
+   {
+    "short": "MIA",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "ROM",
+    "result": "R128"
+   },
+   {
+    "short": "DUB",
+    "result": "R128"
+   },
+   {
+    "short": "HER",
+    "result": "R128"
+   },
+   {
+    "short": "EAS",
+    "result": "W"
+   }
+  ]
+ },
+ {
+  "id": "arnaldi",
+  "atp_id": "A0FC",
+  "name": "Matteo Arnaldi",
+  "country": "Italy",
+  "flag": "🇮🇹",
+  "atp_rank": 34,
+  "seed": 31,
+  "age": 25,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "silver",
+  "price": 10,
+  "hard_pct": 29,
+  "clay_pct": 70,
+  "grass_pct": 50,
+  "ytd_wins": 11,
+  "ytd_losses": 10,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "SF"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "MIA",
+    "result": "R128"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "ROM",
+    "result": "R32"
+   },
+   {
+    "short": "EAS",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R32"
+   }
+  ]
+ },
+ {
+  "id": "fery",
+  "atp_id": "F0DM",
+  "name": "Arthur Fery",
+  "country": "Great Britain",
+  "flag": "🇬🇧",
+  "atp_rank": 37,
+  "seed": 32,
+  "age": 24,
+  "hand": "R",
+  "style": "Grass-court threat",
+  "tier": "silver",
+  "price": 13,
+  "hard_pct": 60,
+  "clay_pct": 69,
+  "grass_pct": 73,
+  "ytd_wins": 11,
+  "ytd_losses": 5,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R64"
+   },
+   {
+    "short": "WIM",
+    "result": "SF"
+   },
+   {
+    "short": "MIA",
+    "result": "R128"
+   },
+   {
+    "short": "QUE",
+    "result": "QF"
+   },
+   {
+    "short": "EAS",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "norrie",
+  "atp_id": "N771",
+  "name": "Cameron Norrie",
+  "country": "Great Britain",
+  "flag": "🇬🇧",
+  "atp_rank": 35,
+  "seed": null,
+  "age": 31,
+  "hand": "L",
+  "style": "Left-handed Hard-court baseliner",
+  "tier": "silver",
+  "price": 12,
+  "hard_pct": 63,
+  "clay_pct": 40,
+  "grass_pct": 52,
+  "ytd_wins": 12,
+  "ytd_losses": 11,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R32"
+   },
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "QF"
+   },
+   {
+    "short": "MIA",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R16"
+   },
+   {
+    "short": "ROM",
+    "result": "R64"
+   },
+   {
+    "short": "QUE",
+    "result": "R128"
+   },
+   {
+    "short": "BRI",
+    "result": "R64"
+   },
+   {
+    "short": "AKL",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "collignon",
+  "atp_id": "C0JP",
+  "name": "Raphael Collignon",
+  "country": "Belgium",
+  "flag": "🇧🇪",
+  "atp_rank": 38,
+  "seed": null,
+  "age": 25,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "silver",
+  "price": 10,
+  "hard_pct": 50,
+  "clay_pct": 47,
+  "grass_pct": 47,
+  "ytd_wins": 8,
+  "ytd_losses": 9,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R32"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "MIA",
+    "result": "R32"
+   },
+   {
+    "short": "BRI",
+    "result": "QF"
+   },
+   {
+    "short": "ADL",
+    "result": "R128"
+   },
+   {
+    "short": "EAS",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "khachanov",
+  "atp_id": "KE29",
+  "name": "Karen Khachanov",
+  "country": "Russia",
+  "flag": "🇷🇺",
+  "atp_rank": 39,
+  "seed": null,
+  "age": 30,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "silver",
+  "price": 10,
+  "hard_pct": 44,
+  "clay_pct": 64,
+  "grass_pct": 57,
+  "ytd_wins": 13,
+  "ytd_losses": 10,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R32"
+   },
+   {
+    "short": "RG",
+    "result": "R32"
+   },
+   {
+    "short": "WIM",
+    "result": "R32"
+   },
+   {
+    "short": "IW",
+    "result": "R64"
+   },
+   {
+    "short": "MIA",
+    "result": "R32"
+   },
+   {
+    "short": "MAD",
+    "result": "R32"
+   },
+   {
+    "short": "ROM",
+    "result": "QF"
+   },
+   {
+    "short": "DUB",
+    "result": "R64"
+   },
+   {
+    "short": "HAM",
+    "result": "R64"
+   },
+   {
+    "short": "MTL",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "merida",
+  "atp_id": "M0N7",
+  "name": "Daniel Merida",
+  "country": "Spain",
+  "flag": "🇪🇸",
+  "atp_rank": 40,
+  "seed": null,
+  "age": null,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "silver",
+  "price": 12,
+  "hard_pct": 70,
+  "clay_pct": 63,
+  "grass_pct": 62,
+  "ytd_wins": 13,
+  "ytd_losses": 8,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R64"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "MAD",
+    "result": "R32"
+   },
+   {
+    "short": "ROM",
+    "result": "R128"
+   },
+   {
+    "short": "QUE",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "QF"
+   }
+  ]
+ },
+ {
+  "id": "michelsen",
+  "atp_id": "M0QI",
+  "name": "Alex Michelsen",
+  "country": "United States",
+  "flag": "🇺🇸",
+  "atp_rank": 41,
+  "seed": null,
+  "age": 22,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "silver",
+  "price": 12,
+  "hard_pct": 67,
+  "clay_pct": 50,
+  "grass_pct": 60,
+  "ytd_wins": 15,
+  "ytd_losses": 10,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R32"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R16"
+   },
+   {
+    "short": "MIA",
+    "result": "R16"
+   },
+   {
+    "short": "MAD",
+    "result": "R32"
+   },
+   {
+    "short": "ROM",
+    "result": "R128"
+   },
+   {
+    "short": "BRI",
+    "result": "SF"
+   },
+   {
+    "short": "AKL",
+    "result": "R64"
+   },
+   {
+    "short": "MTL",
+    "result": "R32"
+   }
+  ]
+ },
+ {
+  "id": "berrettini",
+  "atp_id": "BK40",
+  "name": "Matteo Berrettini",
+  "country": "Italy",
+  "flag": "🇮🇹",
+  "atp_rank": 42,
+  "seed": null,
+  "age": 30,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "silver",
+  "price": 10,
+  "hard_pct": 50,
+  "clay_pct": 57,
+  "grass_pct": 56,
+  "ytd_wins": 9,
+  "ytd_losses": 7,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "RG",
+    "result": "QF"
+   },
+   {
+    "short": "WIM",
+    "result": "R32"
+   },
+   {
+    "short": "IW",
+    "result": "R64"
+   },
+   {
+    "short": "MIA",
+    "result": "R32"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "ROM",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "struff",
+  "atp_id": "SL28",
+  "name": "Jan Lennard Struff",
+  "country": "Germany",
+  "flag": "🇩🇪",
+  "atp_rank": 43,
+  "seed": null,
+  "age": 36,
+  "hand": "R",
+  "style": "Grass-court threat",
+  "tier": "silver",
+  "price": 7,
+  "hard_pct": 13,
+  "clay_pct": 43,
+  "grass_pct": 80,
+  "ytd_wins": 8,
+  "ytd_losses": 12,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R64"
+   },
+   {
+    "short": "WIM",
+    "result": "QF"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "MIA",
+    "result": "R128"
+   },
+   {
+    "short": "MAD",
+    "result": "R64"
+   },
+   {
+    "short": "ROM",
+    "result": "R64"
+   },
+   {
+    "short": "DUB",
+    "result": "R128"
+   },
+   {
+    "short": "HAM",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "navone",
+  "atp_id": "N0BS",
+  "name": "Mariano Navone",
+  "country": "Argentina",
+  "flag": "🇦🇷",
+  "atp_rank": 44,
+  "seed": null,
+  "age": 25,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "silver",
+  "price": 8,
+  "hard_pct": 38,
+  "clay_pct": 50,
+  "grass_pct": 41,
+  "ytd_wins": 7,
+  "ytd_losses": 10,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R64"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "MIA",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R64"
+   },
+   {
+    "short": "ROM",
+    "result": "R32"
+   },
+   {
+    "short": "AKL",
+    "result": "R128"
+   },
+   {
+    "short": "BAD",
+    "result": "R64"
+   },
+   {
+    "short": "MTL",
+    "result": "R32"
+   }
+  ]
+ },
+ {
+  "id": "atmane",
+  "atp_id": "A0GC",
+  "name": "Terence Atmane",
+  "country": "France",
+  "flag": "🇫🇷",
+  "atp_rank": 45,
+  "seed": null,
+  "age": 25,
+  "hand": "L",
+  "style": "Left-handed Hard-court baseliner",
+  "tier": "silver",
+  "price": 9,
+  "hard_pct": 50,
+  "clay_pct": 43,
+  "grass_pct": 41,
+  "ytd_wins": 9,
+  "ytd_losses": 13,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "MIA",
+    "result": "R16"
+   },
+   {
+    "short": "MAD",
+    "result": "R32"
+   },
+   {
+    "short": "ROM",
+    "result": "R64"
+   },
+   {
+    "short": "HAM",
+    "result": "R128"
+   },
+   {
+    "short": "ADL",
+    "result": "R128"
+   },
+   {
+    "short": "HER",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "borges",
+  "atp_id": "BT72",
+  "name": "Nuno Borges",
+  "country": "Portugal",
+  "flag": "🇵🇹",
+  "atp_rank": 47,
+  "seed": null,
+  "age": 29,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "silver",
+  "price": 10,
+  "hard_pct": 58,
+  "clay_pct": 56,
+  "grass_pct": 50,
+  "ytd_wins": 14,
+  "ytd_losses": 11,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R32"
+   },
+   {
+    "short": "RG",
+    "result": "R32"
+   },
+   {
+    "short": "WIM",
+    "result": "R64"
+   },
+   {
+    "short": "IW",
+    "result": "R64"
+   },
+   {
+    "short": "MIA",
+    "result": "R128"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "ROM",
+    "result": "R64"
+   },
+   {
+    "short": "AKL",
+    "result": "R64"
+   },
+   {
+    "short": "HER",
+    "result": "R64"
+   },
+   {
+    "short": "BAD",
+    "result": "QF"
+   }
+  ]
+ },
+ {
+  "id": "shapovalov",
+  "atp_id": "SU55",
+  "name": "Denis Shapovalov",
+  "country": "Canada",
+  "flag": "🇨🇦",
+  "atp_rank": 48,
+  "seed": null,
+  "age": 27,
+  "hand": "L",
+  "style": "Left-handed Hard-court baseliner",
+  "tier": "silver",
+  "price": 7,
+  "hard_pct": 33,
+  "clay_pct": 25,
+  "grass_pct": 25,
+  "ytd_wins": 4,
+  "ytd_losses": 12,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R64"
+   },
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R32"
+   },
+   {
+    "short": "MIA",
+    "result": "R128"
+   },
+   {
+    "short": "MAD",
+    "result": "R64"
+   },
+   {
+    "short": "ROM",
+    "result": "R128"
+   },
+   {
+    "short": "DUB",
+    "result": "R128"
+   },
+   {
+    "short": "QUE",
+    "result": "R64"
+   },
+   {
+    "short": "BRI",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "tsitsipas",
+  "atp_id": "TE51",
+  "name": "Stefanos Tsitsipas",
+  "country": "Greece",
+  "flag": "🇬🇷",
+  "atp_rank": 49,
+  "seed": null,
+  "age": 28,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "silver",
+  "price": 9,
+  "hard_pct": 40,
+  "clay_pct": 57,
+  "grass_pct": 47,
+  "ytd_wins": 9,
+  "ytd_losses": 10,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R64"
+   },
+   {
+    "short": "RG",
+    "result": "R64"
+   },
+   {
+    "short": "WIM",
+    "result": "R64"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "MIA",
+    "result": "R32"
+   },
+   {
+    "short": "MAD",
+    "result": "R16"
+   },
+   {
+    "short": "ROM",
+    "result": "R128"
+   },
+   {
+    "short": "DUB",
+    "result": "R128"
+   },
+   {
+    "short": "ADL",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "tirante",
+  "atp_id": "T0A1",
+  "name": "Thiago Agustin Tirante",
+  "country": "Argentina",
+  "flag": "🇦🇷",
+  "atp_rank": 50,
+  "seed": null,
+  "age": 25,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "silver",
+  "price": 10,
+  "hard_pct": 54,
+  "clay_pct": 69,
+  "grass_pct": 59,
+  "ytd_wins": 17,
+  "ytd_losses": 12,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R64"
+   },
+   {
+    "short": "RG",
+    "result": "R32"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "MIA",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R32"
+   },
+   {
+    "short": "ROM",
+    "result": "R16"
+   },
+   {
+    "short": "EAS",
+    "result": "R64"
+   },
+   {
+    "short": "BAD",
+    "result": "QF"
+   },
+   {
+    "short": "MTL",
+    "result": "R16"
+   }
+  ]
+ },
+ {
+  "id": "cerundolo",
+  "atp_id": "C0C8",
+  "name": "Juan Manuel Cerundolo",
+  "country": "Argentina",
+  "flag": "🇦🇷",
+  "atp_rank": 51,
+  "seed": null,
+  "age": 25,
+  "hand": "L",
+  "style": "Left-handed Clay-court grinder",
+  "tier": "silver",
+  "price": 9,
+  "hard_pct": 43,
+  "clay_pct": 57,
+  "grass_pct": 50,
+  "ytd_wins": 9,
+  "ytd_losses": 9,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R16"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R64"
+   },
+   {
+    "short": "ROM",
+    "result": "R128"
+   },
+   {
+    "short": "EAS",
+    "result": "QF"
+   },
+   {
+    "short": "MTL",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "mannarino",
+  "atp_id": "ME82",
+  "name": "Adrian Mannarino",
+  "country": "France",
+  "flag": "🇫🇷",
+  "atp_rank": 52,
+  "seed": null,
+  "age": 38,
+  "hand": "L",
+  "style": "Left-handed Grass-court mover",
+  "tier": "silver",
+  "price": 6,
+  "hard_pct": 17,
+  "clay_pct": 35,
+  "grass_pct": 63,
+  "ytd_wins": 6,
+  "ytd_losses": 11,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R64"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "MIA",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "ROM",
+    "result": "R128"
+   },
+   {
+    "short": "QUE",
+    "result": "R64"
+   },
+   {
+    "short": "AKL",
+    "result": "R128"
+   },
+   {
+    "short": "HER",
+    "result": "SF"
+   }
+  ]
+ },
+ {
+  "id": "baez",
+  "atp_id": "B0BI",
+  "name": "Sebastian Baez",
+  "country": "Argentina",
+  "flag": "🇦🇷",
+  "atp_rank": 53,
+  "seed": null,
+  "age": 26,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "silver",
+  "price": 10,
+  "hard_pct": 62,
+  "clay_pct": 43,
+  "grass_pct": 52,
+  "ytd_wins": 11,
+  "ytd_losses": 10,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R64"
+   },
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R32"
+   },
+   {
+    "short": "MIA",
+    "result": "R128"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "ROM",
+    "result": "R64"
+   },
+   {
+    "short": "AKL",
+    "result": "F"
+   },
+   {
+    "short": "BAD",
+    "result": "QF"
+   },
+   {
+    "short": "MTL",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "assche",
+  "atp_id": "V0DZ",
+  "name": "Luca Van Assche",
+  "country": "France",
+  "flag": "🇫🇷",
+  "atp_rank": 54,
+  "seed": null,
+  "age": 22,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "silver",
+  "price": 5,
+  "hard_pct": 11,
+  "clay_pct": 20,
+  "grass_pct": 11,
+  "ytd_wins": 1,
+  "ytd_losses": 8,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "RG",
+    "result": "R64"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "ROM",
+    "result": "R128"
+   },
+   {
+    "short": "HAM",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "hanfmann",
+  "atp_id": "H997",
+  "name": "Yannick Hanfmann",
+  "country": "Germany",
+  "flag": "🇩🇪",
+  "atp_rank": 55,
+  "seed": null,
+  "age": 35,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "silver",
+  "price": 9,
+  "hard_pct": 56,
+  "clay_pct": 43,
+  "grass_pct": 50,
+  "ytd_wins": 9,
+  "ytd_losses": 9,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R64"
+   },
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R64"
+   },
+   {
+    "short": "MIA",
+    "result": "R128"
+   },
+   {
+    "short": "MAD",
+    "result": "R64"
+   },
+   {
+    "short": "ROM",
+    "result": "R64"
+   },
+   {
+    "short": "HAM",
+    "result": "R64"
+   },
+   {
+    "short": "BRI",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R32"
+   }
+  ]
+ },
+ {
+  "id": "griekspoor",
+  "atp_id": "GJ37",
+  "name": "Tallon Griekspoor",
+  "country": "Netherlands",
+  "flag": "🇳🇱",
+  "atp_rank": 56,
+  "seed": null,
+  "age": 30,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "silver",
+  "price": 9,
+  "hard_pct": 64,
+  "clay_pct": 25,
+  "grass_pct": 50,
+  "ytd_wins": 9,
+  "ytd_losses": 9,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "MAD",
+    "result": "R32"
+   },
+   {
+    "short": "ROM",
+    "result": "R64"
+   },
+   {
+    "short": "DUB",
+    "result": "F"
+   },
+   {
+    "short": "ADL",
+    "result": "R64"
+   },
+   {
+    "short": "HER",
+    "result": "R64"
+   },
+   {
+    "short": "MTL",
+    "result": "R16"
+   }
+  ]
+ },
+ {
+  "id": "halys",
+  "atp_id": "HB64",
+  "name": "Quentin Halys",
+  "country": "France",
+  "flag": "🇫🇷",
+  "atp_rank": 57,
+  "seed": null,
+  "age": 30,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "silver",
+  "price": 10,
+  "hard_pct": 67,
+  "clay_pct": 50,
+  "grass_pct": 40,
+  "ytd_wins": 16,
+  "ytd_losses": 11,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R64"
+   },
+   {
+    "short": "RG",
+    "result": "R32"
+   },
+   {
+    "short": "WIM",
+    "result": "R64"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "MIA",
+    "result": "R16"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "DUB",
+    "result": "R128"
+   },
+   {
+    "short": "BRI",
+    "result": "R64"
+   },
+   {
+    "short": "ADL",
+    "result": "R64"
+   },
+   {
+    "short": "EAS",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "zandschulp",
+  "atp_id": "V812",
+  "name": "Botic van de Zandschulp",
+  "country": "Netherlands",
+  "flag": "🇳🇱",
+  "atp_rank": 59,
+  "seed": null,
+  "age": 31,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "silver",
+  "price": 9,
+  "hard_pct": 55,
+  "clay_pct": 50,
+  "grass_pct": 40,
+  "ytd_wins": 11,
+  "ytd_losses": 11,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R32"
+   },
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R64"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "MIA",
+    "result": "R64"
+   },
+   {
+    "short": "ROM",
+    "result": "R32"
+   },
+   {
+    "short": "DUB",
+    "result": "R128"
+   },
+   {
+    "short": "QUE",
+    "result": "R64"
+   },
+   {
+    "short": "HER",
+    "result": "R128"
+   },
+   {
+    "short": "BAD",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "burruchaga",
+  "atp_id": "B0FV",
+  "name": "Roman Andres Burruchaga",
+  "country": "Argentina",
+  "flag": "🇦🇷",
+  "atp_rank": 61,
+  "seed": null,
+  "age": 25,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "silver",
+  "price": 5,
+  "hard_pct": 25,
+  "clay_pct": 25,
+  "grass_pct": 20,
+  "ytd_wins": 2,
+  "ytd_losses": 8,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "RG",
+    "result": "R64"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "MIA",
+    "result": "R128"
+   },
+   {
+    "short": "ROM",
+    "result": "R128"
+   },
+   {
+    "short": "HAM",
+    "result": "R128"
+   },
+   {
+    "short": "EAS",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "machac",
+  "atp_id": "M0FH",
+  "name": "Tomas Machac",
+  "country": "Czechia",
+  "flag": "🇨🇿",
+  "atp_rank": 62,
+  "seed": null,
+  "age": 26,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "silver",
+  "price": 11,
+  "hard_pct": 73,
+  "clay_pct": 50,
+  "grass_pct": 65,
+  "ytd_wins": 11,
+  "ytd_losses": 6,
+  "ytd_titles": 1,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R32"
+   },
+   {
+    "short": "RG",
+    "result": "R64"
+   },
+   {
+    "short": "MIA",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R64"
+   },
+   {
+    "short": "ROM",
+    "result": "R64"
+   },
+   {
+    "short": "BRI",
+    "result": "R128"
+   },
+   {
+    "short": "ADL",
+    "result": "W"
+   }
+  ]
+ },
+ {
+  "id": "marozsan",
+  "atp_id": "M0CI",
+  "name": "Fabian Marozsan",
+  "country": "Hungary",
+  "flag": "🇭🇺",
+  "atp_rank": 63,
+  "seed": null,
+  "age": 27,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "silver",
+  "price": 8,
+  "hard_pct": 50,
+  "clay_pct": 25,
+  "grass_pct": 44,
+  "ytd_wins": 8,
+  "ytd_losses": 10,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R32"
+   },
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R64"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "MIA",
+    "result": "R128"
+   },
+   {
+    "short": "MAD",
+    "result": "R64"
+   },
+   {
+    "short": "ROM",
+    "result": "R128"
+   },
+   {
+    "short": "DUB",
+    "result": "R128"
+   },
+   {
+    "short": "AKL",
+    "result": "SF"
+   },
+   {
+    "short": "MTL",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "altmaier",
+  "atp_id": "AE14",
+  "name": "Daniel Altmaier",
+  "country": "Germany",
+  "flag": "🇩🇪",
+  "atp_rank": 65,
+  "seed": null,
+  "age": 28,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "silver",
+  "price": 6,
+  "hard_pct": 14,
+  "clay_pct": 44,
+  "grass_pct": 32,
+  "ytd_wins": 6,
+  "ytd_losses": 13,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "MIA",
+    "result": "R128"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "ROM",
+    "result": "R64"
+   },
+   {
+    "short": "HAM",
+    "result": "QF"
+   },
+   {
+    "short": "BRI",
+    "result": "R128"
+   },
+   {
+    "short": "ADL",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "kecmanovic",
+  "atp_id": "KI95",
+  "name": "Miomir Kecmanovic",
+  "country": "Serbia",
+  "flag": "🇷🇸",
+  "atp_rank": 66,
+  "seed": null,
+  "age": 27,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "silver",
+  "price": 6,
+  "hard_pct": 29,
+  "clay_pct": 40,
+  "grass_pct": 31,
+  "ytd_wins": 4,
+  "ytd_losses": 9,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R64"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R64"
+   },
+   {
+    "short": "MIA",
+    "result": "R128"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "ROM",
+    "result": "R64"
+   },
+   {
+    "short": "ADL",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "landaluce",
+  "atp_id": "L0IL",
+  "name": "Martin Landaluce",
+  "country": "Spain",
+  "flag": "🇪🇸",
+  "atp_rank": 67,
+  "seed": null,
+  "age": 21,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "silver",
+  "price": 9,
+  "hard_pct": 64,
+  "clay_pct": 60,
+  "grass_pct": 59,
+  "ytd_wins": 13,
+  "ytd_losses": 9,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "RG",
+    "result": "R32"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "MIA",
+    "result": "QF"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "ROM",
+    "result": "QF"
+   },
+   {
+    "short": "BRI",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "majchrzak",
+  "atp_id": "MQ75",
+  "name": "Kamil Majchrzak",
+  "country": "Poland",
+  "flag": "🇵🇱",
+  "atp_rank": 68,
+  "seed": null,
+  "age": 31,
+  "hand": "R",
+  "style": "Grass-court threat",
+  "tier": "silver",
+  "price": 8,
+  "hard_pct": 50,
+  "clay_pct": 54,
+  "grass_pct": 75,
+  "ytd_wins": 13,
+  "ytd_losses": 11,
+  "ytd_titles": 1,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R64"
+   },
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R64"
+   },
+   {
+    "short": "IW",
+    "result": "R64"
+   },
+   {
+    "short": "MIA",
+    "result": "R32"
+   },
+   {
+    "short": "DUB",
+    "result": "R128"
+   },
+   {
+    "short": "HAM",
+    "result": "R128"
+   },
+   {
+    "short": "QUE",
+    "result": "R128"
+   },
+   {
+    "short": "BRI",
+    "result": "QF"
+   },
+   {
+    "short": "HER",
+    "result": "W"
+   }
+  ]
+ },
+ {
+  "id": "hurkacz",
+  "atp_id": "HB71",
+  "name": "Hubert Hurkacz",
+  "country": "Poland",
+  "flag": "🇵🇱",
+  "atp_rank": 69,
+  "seed": null,
+  "age": 29,
+  "hand": "R",
+  "style": "Grass-court mover",
+  "tier": "silver",
+  "price": 7,
+  "hard_pct": 38,
+  "clay_pct": 40,
+  "grass_pct": 60,
+  "ytd_wins": 8,
+  "ytd_losses": 10,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R64"
+   },
+   {
+    "short": "RG",
+    "result": "R64"
+   },
+   {
+    "short": "WIM",
+    "result": "R16"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "MIA",
+    "result": "R128"
+   },
+   {
+    "short": "MAD",
+    "result": "R64"
+   },
+   {
+    "short": "ROM",
+    "result": "R128"
+   },
+   {
+    "short": "DUB",
+    "result": "R128"
+   },
+   {
+    "short": "HER",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R32"
+   }
+  ]
+ },
+ {
+  "id": "vallejo",
+  "atp_id": "V0DP",
+  "name": "Adolfo Daniel Vallejo",
+  "country": "Paraguay",
+  "flag": "🇵🇾",
+  "atp_rank": 70,
+  "seed": null,
+  "age": 22,
+  "hand": "R",
+  "style": "Grass-court mover",
+  "tier": "silver",
+  "price": 6,
+  "hard_pct": 0,
+  "clay_pct": 0,
+  "grass_pct": 0,
+  "ytd_wins": 0,
+  "ytd_losses": 2,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "BAD",
+    "result": "SF"
+   },
+   {
+    "short": "MTL",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "kopriva",
+  "atp_id": "KI82",
+  "name": "Vit Kopriva",
+  "country": "Czechia",
+  "flag": "🇨🇿",
+  "atp_rank": 71,
+  "seed": null,
+  "age": 29,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "silver",
+  "price": 8,
+  "hard_pct": 50,
+  "clay_pct": 56,
+  "grass_pct": 50,
+  "ytd_wins": 10,
+  "ytd_losses": 10,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R64"
+   },
+   {
+    "short": "RG",
+    "result": "R64"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R16"
+   },
+   {
+    "short": "ROM",
+    "result": "R64"
+   },
+   {
+    "short": "HAM",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "busta",
+  "atp_id": "CD85",
+  "name": "Pablo Carreno Busta",
+  "country": "Spain",
+  "flag": "🇪🇸",
+  "atp_rank": 72,
+  "seed": null,
+  "age": 35,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "silver",
+  "price": 8,
+  "hard_pct": 50,
+  "clay_pct": 67,
+  "grass_pct": 57,
+  "ytd_wins": 12,
+  "ytd_losses": 9,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R16"
+   },
+   {
+    "short": "WIM",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R64"
+   },
+   {
+    "short": "ROM",
+    "result": "R128"
+   },
+   {
+    "short": "DUB",
+    "result": "R64"
+   },
+   {
+    "short": "BRI",
+    "result": "R128"
+   },
+   {
+    "short": "AKL",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "medjedovic",
+  "atp_id": "M0JF",
+  "name": "Hamad Medjedovic",
+  "country": "Serbia",
+  "flag": "🇷🇸",
+  "atp_rank": 73,
+  "seed": null,
+  "age": 23,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "silver",
+  "price": 8,
+  "hard_pct": 57,
+  "clay_pct": 67,
+  "grass_pct": 56,
+  "ytd_wins": 9,
+  "ytd_losses": 7,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R64"
+   },
+   {
+    "short": "RG",
+    "result": "R64"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "ROM",
+    "result": "R16"
+   },
+   {
+    "short": "QUE",
+    "result": "R64"
+   },
+   {
+    "short": "AKL",
+    "result": "R64"
+   },
+   {
+    "short": "MTL",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "brooksby",
+  "atp_id": "B0CD",
+  "name": "Jenson Brooksby",
+  "country": "United States",
+  "flag": "🇺🇸",
+  "atp_rank": 74,
+  "seed": null,
+  "age": 26,
+  "hand": "R",
+  "style": "Grass-court mover",
+  "tier": "silver",
+  "price": 7,
+  "hard_pct": 45,
+  "clay_pct": 41,
+  "grass_pct": 50,
+  "ytd_wins": 9,
+  "ytd_losses": 13,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R32"
+   },
+   {
+    "short": "IW",
+    "result": "R64"
+   },
+   {
+    "short": "MIA",
+    "result": "R128"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "ROM",
+    "result": "R128"
+   },
+   {
+    "short": "DUB",
+    "result": "QF"
+   },
+   {
+    "short": "QUE",
+    "result": "R64"
+   },
+   {
+    "short": "AKL",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "carabelli",
+  "atp_id": "U182",
+  "name": "Camilo Ugo Carabelli",
+  "country": "Argentina",
+  "flag": "🇦🇷",
+  "atp_rank": 76,
+  "seed": null,
+  "age": 27,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "silver",
+  "price": 6,
+  "hard_pct": 25,
+  "clay_pct": 50,
+  "grass_pct": 35,
+  "ytd_wins": 6,
+  "ytd_losses": 11,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R64"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R64"
+   },
+   {
+    "short": "MIA",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R64"
+   },
+   {
+    "short": "ROM",
+    "result": "R128"
+   },
+   {
+    "short": "HAM",
+    "result": "QF"
+   },
+   {
+    "short": "BRI",
+    "result": "R128"
+   },
+   {
+    "short": "AKL",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "choinski",
+  "atp_id": "CH12",
+  "name": "Jan Choinski",
+  "country": "Great Britain",
+  "flag": "🇬🇧",
+  "atp_rank": 77,
+  "seed": null,
+  "age": 30,
+  "hand": "R",
+  "style": "Grass-court mover",
+  "tier": "silver",
+  "price": 8,
+  "hard_pct": 54,
+  "clay_pct": 25,
+  "grass_pct": 71,
+  "ytd_wins": 7,
+  "ytd_losses": 6,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "WIM",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "EAS",
+    "result": "QF"
+   },
+   {
+    "short": "BAD",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "royer",
+  "atp_id": "R0EB",
+  "name": "Valentin Royer",
+  "country": "France",
+  "flag": "🇫🇷",
+  "atp_rank": 78,
+  "seed": null,
+  "age": 25,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "silver",
+  "price": 5,
+  "hard_pct": 14,
+  "clay_pct": 25,
+  "grass_pct": 23,
+  "ytd_wins": 3,
+  "ytd_losses": 10,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R64"
+   },
+   {
+    "short": "WIM",
+    "result": "R64"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "MIA",
+    "result": "R128"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "ROM",
+    "result": "R128"
+   },
+   {
+    "short": "DUB",
+    "result": "R128"
+   },
+   {
+    "short": "AKL",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "faria",
+  "atp_id": "F0F2",
+  "name": "Jaime Faria",
+  "country": "Portugal",
+  "flag": "🇵🇹",
+  "atp_rank": 79,
+  "seed": null,
+  "age": 23,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "silver",
+  "price": 6,
+  "hard_pct": 25,
+  "clay_pct": 63,
+  "grass_pct": 50,
+  "ytd_wins": 7,
+  "ytd_losses": 7,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R64"
+   },
+   {
+    "short": "RG",
+    "result": "R32"
+   },
+   {
+    "short": "WIM",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "cilic",
+  "atp_id": "C977",
+  "name": "Marin Cilic",
+  "country": "Croatia",
+  "flag": "🇭🇷",
+  "atp_rank": 80,
+  "seed": null,
+  "age": 38,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "silver",
+  "price": 7,
+  "hard_pct": 56,
+  "clay_pct": 40,
+  "grass_pct": 40,
+  "ytd_wins": 9,
+  "ytd_losses": 10,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R32"
+   },
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "MIA",
+    "result": "R32"
+   },
+   {
+    "short": "MAD",
+    "result": "R64"
+   },
+   {
+    "short": "ROM",
+    "result": "R64"
+   },
+   {
+    "short": "QUE",
+    "result": "R128"
+   },
+   {
+    "short": "HER",
+    "result": "QF"
+   },
+   {
+    "short": "MTL",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "bellucci",
+  "atp_id": "B0GG",
+  "name": "Mattia Bellucci",
+  "country": "Italy",
+  "flag": "🇮🇹",
+  "atp_rank": 81,
+  "seed": null,
+  "age": 25,
+  "hand": "L",
+  "style": "Left-handed Clay-court grinder",
+  "tier": "silver",
+  "price": 6,
+  "hard_pct": 33,
+  "clay_pct": 40,
+  "grass_pct": 33,
+  "ytd_wins": 5,
+  "ytd_losses": 10,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "MIA",
+    "result": "R128"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "ROM",
+    "result": "R32"
+   },
+   {
+    "short": "BRI",
+    "result": "R128"
+   },
+   {
+    "short": "EAS",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "fucsovics",
+  "atp_id": "F724",
+  "name": "Marton Fucsovics",
+  "country": "Hungary",
+  "flag": "🇭🇺",
+  "atp_rank": 82,
+  "seed": null,
+  "age": 34,
+  "hand": "R",
+  "style": "Grass-court mover",
+  "tier": "silver",
+  "price": 6,
+  "hard_pct": 45,
+  "clay_pct": 40,
+  "grass_pct": 50,
+  "ytd_wins": 8,
+  "ytd_losses": 12,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R64"
+   },
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R32"
+   },
+   {
+    "short": "IW",
+    "result": "R32"
+   },
+   {
+    "short": "MIA",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "ROM",
+    "result": "R128"
+   },
+   {
+    "short": "QUE",
+    "result": "R128"
+   },
+   {
+    "short": "BRI",
+    "result": "R128"
+   },
+   {
+    "short": "ADL",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "svajda",
+  "atp_id": "S0K7",
+  "name": "Zachary Svajda",
+  "country": "United States",
+  "flag": "🇺🇸",
+  "atp_rank": 84,
+  "seed": null,
+  "age": 24,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "silver",
+  "price": 7,
+  "hard_pct": 50,
+  "clay_pct": 57,
+  "grass_pct": 50,
+  "ytd_wins": 11,
+  "ytd_losses": 10,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R16"
+   },
+   {
+    "short": "WIM",
+    "result": "R32"
+   },
+   {
+    "short": "IW",
+    "result": "R64"
+   },
+   {
+    "short": "MIA",
+    "result": "R128"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "ROM",
+    "result": "R64"
+   },
+   {
+    "short": "QUE",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "duckworth",
+  "atp_id": "D994",
+  "name": "James Duckworth",
+  "country": "Australia",
+  "flag": "🇦🇺",
+  "atp_rank": 86,
+  "seed": null,
+  "age": 35,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "silver",
+  "price": 6,
+  "hard_pct": 40,
+  "clay_pct": 38,
+  "grass_pct": 25,
+  "ytd_wins": 6,
+  "ytd_losses": 10,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R64"
+   },
+   {
+    "short": "RG",
+    "result": "R64"
+   },
+   {
+    "short": "WIM",
+    "result": "R64"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "MIA",
+    "result": "R128"
+   },
+   {
+    "short": "QUE",
+    "result": "R128"
+   },
+   {
+    "short": "BRI",
+    "result": "R128"
+   },
+   {
+    "short": "ADL",
+    "result": "R128"
+   },
+   {
+    "short": "EAS",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "sonego",
+  "atp_id": "SU87",
+  "name": "Lorenzo Sonego",
+  "country": "Italy",
+  "flag": "🇮🇹",
+  "atp_rank": 88,
+  "seed": null,
+  "age": 31,
+  "hand": "R",
+  "style": "Grass-court mover",
+  "tier": "silver",
+  "price": 6,
+  "hard_pct": 40,
+  "clay_pct": 25,
+  "grass_pct": 40,
+  "ytd_wins": 4,
+  "ytd_losses": 6,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R64"
+   },
+   {
+    "short": "RG",
+    "result": "R64"
+   },
+   {
+    "short": "WIM",
+    "result": "R32"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "ROM",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "shimabukuro",
+  "atp_id": "SY67",
+  "name": "Sho Shimabukuro",
+  "country": "Japan",
+  "flag": "🇯🇵",
+  "atp_rank": 90,
+  "seed": null,
+  "age": 29,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "silver",
+  "price": 7,
+  "hard_pct": 57,
+  "clay_pct": 50,
+  "grass_pct": 50,
+  "ytd_wins": 4,
+  "ytd_losses": 4,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "trungelliti",
+  "atp_id": "TA29",
+  "name": "Marco Trungelliti",
+  "country": "Argentina",
+  "flag": "🇦🇷",
+  "atp_rank": 91,
+  "seed": null,
+  "age": 36,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "silver",
+  "price": 5,
+  "hard_pct": 27,
+  "clay_pct": 40,
+  "grass_pct": 25,
+  "ytd_wins": 3,
+  "ytd_losses": 8,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "RG",
+    "result": "R64"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "ROM",
+    "result": "R128"
+   },
+   {
+    "short": "DUB",
+    "result": "R128"
+   },
+   {
+    "short": "EAS",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "wong",
+  "atp_id": "W0BH",
+  "name": "Coleman Wong",
+  "country": "Hong Kong",
+  "flag": "🇭🇰",
+  "atp_rank": 93,
+  "seed": null,
+  "age": 22,
+  "hand": "R",
+  "style": "Grass-court mover",
+  "tier": "silver",
+  "price": 6,
+  "hard_pct": 20,
+  "clay_pct": 20,
+  "grass_pct": 20,
+  "ytd_wins": 1,
+  "ytd_losses": 4,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "HER",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "hijikata",
+  "atp_id": "H0BH",
+  "name": "Rinky Hijikata",
+  "country": "Australia",
+  "flag": "🇦🇺",
+  "atp_rank": 95,
+  "seed": null,
+  "age": 25,
+  "hand": "R",
+  "style": "Grass-court mover",
+  "tier": "silver",
+  "price": 8,
+  "hard_pct": 65,
+  "clay_pct": 33,
+  "grass_pct": 67,
+  "ytd_wins": 17,
+  "ytd_losses": 12,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R64"
+   },
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R16"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "HAM",
+    "result": "R128"
+   },
+   {
+    "short": "QUE",
+    "result": "QF"
+   },
+   {
+    "short": "BRI",
+    "result": "R64"
+   },
+   {
+    "short": "ADL",
+    "result": "R64"
+   },
+   {
+    "short": "MTL",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "kovacevic",
+  "atp_id": "K0AZ",
+  "name": "Aleksandar Kovacevic",
+  "country": "United States",
+  "flag": "🇺🇸",
+  "atp_rank": 96,
+  "seed": null,
+  "age": 28,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "silver",
+  "price": 6,
+  "hard_pct": 45,
+  "clay_pct": 44,
+  "grass_pct": 20,
+  "ytd_wins": 10,
+  "ytd_losses": 15,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R32"
+   },
+   {
+    "short": "MIA",
+    "result": "R128"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "ROM",
+    "result": "R64"
+   },
+   {
+    "short": "HAM",
+    "result": "SF"
+   },
+   {
+    "short": "QUE",
+    "result": "R128"
+   },
+   {
+    "short": "BRI",
+    "result": "SF"
+   }
+  ]
+ },
+ {
+  "id": "walton",
+  "atp_id": "W09E",
+  "name": "Adam Walton",
+  "country": "Australia",
+  "flag": "🇦🇺",
+  "atp_rank": 98,
+  "seed": null,
+  "age": 27,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "silver",
+  "price": 6,
+  "hard_pct": 50,
+  "clay_pct": 50,
+  "grass_pct": 44,
+  "ytd_wins": 8,
+  "ytd_losses": 10,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R64"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R64"
+   },
+   {
+    "short": "MIA",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R64"
+   },
+   {
+    "short": "QUE",
+    "result": "R128"
+   },
+   {
+    "short": "BRI",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "prizmic",
+  "atp_id": "P0HW",
+  "name": "Dino Prizmic",
+  "country": "Croatia",
+  "flag": "🇭🇷",
+  "atp_rank": 103,
+  "seed": null,
+  "age": 21,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "silver",
+  "price": 8,
+  "hard_pct": 60,
+  "clay_pct": 77,
+  "grass_pct": 67,
+  "ytd_wins": 14,
+  "ytd_losses": 7,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R64"
+   },
+   {
+    "short": "WIM",
+    "result": "R64"
+   },
+   {
+    "short": "IW",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R32"
+   },
+   {
+    "short": "ROM",
+    "result": "R16"
+   },
+   {
+    "short": "QUE",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "jong",
+  "atp_id": "D0C1",
+  "name": "Jesper de Jong",
+  "country": "Netherlands",
+  "flag": "🇳🇱",
+  "atp_rank": 106,
+  "seed": null,
+  "age": 26,
+  "hand": "R",
+  "style": "Clay-court grinder",
+  "tier": "silver",
+  "price": 6,
+  "hard_pct": 47,
+  "clay_pct": 60,
+  "grass_pct": 47,
+  "ytd_wins": 7,
+  "ytd_losses": 8,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R16"
+   },
+   {
+    "short": "WIM",
+    "result": "R64"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "ROM",
+    "result": "R128"
+   },
+   {
+    "short": "DUB",
+    "result": "R128"
+   },
+   {
+    "short": "ADL",
+    "result": "R128"
+   },
+   {
+    "short": "BAD",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "droguet",
+  "atp_id": "D0DW",
+  "name": "Titouan Droguet",
+  "country": "France",
+  "flag": "🇫🇷",
+  "atp_rank": 115,
+  "seed": null,
+  "age": 25,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "silver",
+  "price": 7,
+  "hard_pct": 75,
+  "clay_pct": 40,
+  "grass_pct": 50,
+  "ytd_wins": 5,
+  "ytd_losses": 5,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R128"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R32"
+   }
+  ]
+ },
+ {
+  "id": "zheng",
+  "atp_id": "Z0BZ",
+  "name": "Michael Zheng",
+  "country": "United States",
+  "flag": "🇺🇸",
+  "atp_rank": 121,
+  "seed": null,
+  "age": null,
+  "hand": "R",
+  "style": "Grass-court mover",
+  "tier": "silver",
+  "price": 5,
+  "hard_pct": 40,
+  "clay_pct": 44,
+  "grass_pct": 44,
+  "ytd_wins": 4,
+  "ytd_losses": 5,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R64"
+   },
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R32"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "connell",
+  "atp_id": "O483",
+  "name": "Christopher O'Connell",
+  "country": "Australia",
+  "flag": "🇦🇺",
+  "atp_rank": 127,
+  "seed": null,
+  "age": 32,
+  "hand": "R",
+  "style": "Hard-court baseliner",
+  "tier": "silver",
+  "price": 5,
+  "hard_pct": 46,
+  "clay_pct": 40,
+  "grass_pct": 40,
+  "ytd_wins": 6,
+  "ytd_losses": 9,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "MIA",
+    "result": "R128"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "ROM",
+    "result": "R128"
+   },
+   {
+    "short": "DUB",
+    "result": "R128"
+   },
+   {
+    "short": "ADL",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "jacquet",
+  "atp_id": "J0AZ",
+  "name": "Kyrian Jacquet",
+  "country": "France",
+  "flag": "🇫🇷",
+  "atp_rank": 134,
+  "seed": null,
+  "age": 25,
+  "hand": "R",
+  "style": "Grass-court mover",
+  "tier": "silver",
+  "price": 5,
+  "hard_pct": 33,
+  "clay_pct": 33,
+  "grass_pct": 33,
+  "ytd_wins": 2,
+  "ytd_losses": 4,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "RG",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R64"
+   },
+   {
+    "short": "MTL",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "mejia",
+  "atp_id": "M0AW",
+  "name": "Nicolas Mejia",
+  "country": "Colombia",
+  "flag": "🇨🇴",
+  "atp_rank": 136,
+  "seed": null,
+  "age": 26,
+  "hand": "R",
+  "style": "Grass-court mover",
+  "tier": "silver",
+  "price": 5,
+  "hard_pct": 40,
+  "clay_pct": 43,
+  "grass_pct": 43,
+  "ytd_wins": 3,
+  "ytd_losses": 4,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "WIM",
+    "result": "R64"
+   },
+   {
+    "short": "IW",
+    "result": "R128"
+   },
+   {
+    "short": "MIA",
+    "result": "R128"
+   },
+   {
+    "short": "MTL",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "dimitrov",
+  "atp_id": "D875",
+  "name": "Grigor Dimitrov",
+  "country": "Bulgaria",
+  "flag": "🇧🇬",
+  "atp_rank": 142,
+  "seed": null,
+  "age": 35,
+  "hand": "R",
+  "style": "Grass-court threat",
+  "tier": "silver",
+  "price": 5,
+  "hard_pct": 33,
+  "clay_pct": 46,
+  "grass_pct": 75,
+  "ytd_wins": 6,
+  "ytd_losses": 7,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "AO",
+    "result": "R128"
+   },
+   {
+    "short": "WIM",
+    "result": "R16"
+   },
+   {
+    "short": "IW",
+    "result": "R64"
+   },
+   {
+    "short": "MIA",
+    "result": "R128"
+   },
+   {
+    "short": "MAD",
+    "result": "R128"
+   },
+   {
+    "short": "BRI",
+    "result": "R64"
+   },
+   {
+    "short": "BAD",
+    "result": "R64"
+   }
+  ]
+ },
+ {
+  "id": "draper",
+  "atp_id": "D0CO",
+  "name": "Jack Draper",
+  "country": "Great Britain",
+  "flag": "🇬🇧",
+  "atp_rank": 147,
+  "seed": null,
+  "age": 25,
+  "hand": "L",
+  "style": "Left-handed Grass-court threat",
+  "tier": "silver",
+  "price": 6,
+  "hard_pct": 50,
+  "clay_pct": 58,
+  "grass_pct": 75,
+  "ytd_wins": 7,
+  "ytd_losses": 5,
+  "ytd_titles": 0,
+  "year_results": [
+   {
+    "short": "IW",
+    "result": "QF"
+   },
+   {
+    "short": "MIA",
+    "result": "R64"
+   },
+   {
+    "short": "DUB",
+    "result": "R64"
+   },
+   {
+    "short": "EAS",
+    "result": "SF"
+   },
+   {
+    "short": "MTL",
+    "result": "R128"
+   }
+  ]
+ },
+ {
+  "id": "lajal",
+  "atp_id": "L0GH",
+  "name": "Mark Lajal",
+  "country": "Estonia",
+  "flag": "🇪🇪",
+  "atp_rank": 150,
+  "seed": null,
+  "age": 23,
+  "hand": "R",
+  "style": "Grass-court mover",
+  "tier": "silver",
+  "price": 5,
+  "hard_pct": 50,
+  "clay_pct": 57,
+  "grass_pct": 57,
+  "ytd_wins": 4,
+  "ytd_losses": 3,
+  "ytd_titles": 0,
+  "year_results": []
+ },
+ {
+  "id": "shang",
+  "atp_id": "S0RE",
+  "name": "Juncheng Shang",
+  "country": "China",
+  "flag": "🇨🇳",
+  "atp_rank": 270,
+  "seed": null,
+  "age": 21,
+  "hand": "L",
+  "style": "Left-handed Grass-court mover",
+  "tier": "silver",
+  "price": 4,
+  "hard_pct": 43,
+  "clay_pct": 43,
+  "grass_pct": 43,
+  "ytd_wins": 6,
+  "ytd_losses": 8,
+  "ytd_titles": 0,
+  "year_results": []
+ },
+ {
+  "id": "monfils",
+  "atp_id": null,
+  "name": "Gaël Monfils",
+  "country": "France",
+  "flag": "🇫🇷",
+  "atp_rank": 327,
+  "seed": null,
+  "age": 39,
+  "hand": "R",
+  "style": "Grass-court mover",
+  "tier": "silver",
+  "price": 4,
+  "hard_pct": 50,
+  "clay_pct": 50,
+  "grass_pct": 50,
+  "ytd_wins": 0,
+  "ytd_losses": 0,
+  "ytd_titles": 0,
+  "year_results": []
+ },
+ {
+  "id": "kokkinakis",
+  "atp_id": null,
+  "name": "Thanasi Kokkinakis",
+  "country": "Australia",
+  "flag": "🇦🇺",
+  "atp_rank": 443,
+  "seed": null,
+  "age": 30,
+  "hand": "R",
+  "style": "Grass-court mover",
+  "tier": "silver",
+  "price": 4,
+  "hard_pct": 50,
+  "clay_pct": 50,
+  "grass_pct": 50,
+  "ytd_wins": 0,
+  "ytd_losses": 0,
+  "ytd_titles": 0,
+  "year_results": []
+ },
+ {
+  "id": "wolf",
+  "atp_id": null,
+  "name": "J.J. Wolf",
+  "country": "United States",
+  "flag": "🇺🇸",
+  "atp_rank": 688,
+  "seed": null,
+  "age": 27,
+  "hand": "R",
+  "style": "Grass-court mover",
+  "tier": "silver",
+  "price": 4,
+  "hard_pct": 50,
+  "clay_pct": 50,
+  "grass_pct": 50,
+  "ytd_wins": 0,
+  "ytd_losses": 0,
+  "ytd_titles": 0,
+  "year_results": []
+ }
+]
