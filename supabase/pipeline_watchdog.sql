@@ -37,7 +37,9 @@ declare
   v_tid        text := public.active_tournament_id();
   v_webhook    text;
   v_ingest_age interval;
+  v_ingest_ok  boolean;
   v_score_age  interval;
+  v_score_ok   boolean;
   v_alerts     text[] := '{}';
   v_last_alert timestamptz;
   v_text       text;
@@ -45,17 +47,38 @@ begin
   select decrypted_secret into v_webhook from vault.decrypted_secrets where name = 'gsgm_alert_webhook';
   if v_webhook is null or v_webhook = '' then return; end if;   -- no webhook configured → nothing to do
 
-  -- Ingest freshness (the cron runs every 5 min; >20 min stale = 4 missed runs = a real failure).
-  select now() - last_run_at into v_ingest_age from public.ingest_health where tournament_id = v_tid;
+  -- ── FRESHNESS IS NOT ENOUGH: check `ok` TOO ────────────────────────────────────────────────────
+  -- This watchdog originally alerted only on staleness, and that left the exact hole it was built
+  -- to close. ingest-draw's catch block upserts ingest_health with `ok: false` AND a fresh
+  -- `last_run_at` on every failure (functions/ingest-draw/index.ts, the catch at the bottom) — the
+  -- table is written on EVERY run, success and failure alike. So a feed failing on all 288 runs a
+  -- day kept a perfectly fresh heartbeat, v_ingest_age stayed ~5 minutes forever, and the alert
+  -- never fired. Meanwhile recompute-score succeeds happily against an unchanging matches table, so
+  -- scoring looked healthy too. Results stop, the leaderboard freezes, nothing says a word: the
+  -- exact ~12h silent-freeze class this file exists to prevent.
+  --
+  -- A heartbeat that keeps ticking while the thing it monitors is dead is worse than no heartbeat,
+  -- because it is read as proof of health. Alert if the feed is stale OR reporting failure.
+
+  -- Ingest (the cron runs every 5 min; >20 min stale = 4 missed runs = a real failure).
+  select now() - last_run_at, ok into v_ingest_age, v_ingest_ok
+    from public.ingest_health where tournament_id = v_tid;
   if v_ingest_age is null or v_ingest_age > interval '20 minutes' then
     v_alerts := array_append(v_alerts, '• INGEST stale — last ran ' || coalesce(v_ingest_age::text, 'never') || ' ago');
+  elsif v_ingest_ok is not true then
+    v_alerts := array_append(v_alerts, '• INGEST FAILING — running on time but reporting an error: '
+      || coalesce((select left(error, 200) from public.ingest_health where tournament_id = v_tid), 'no message'));
   end if;
 
-  -- Scoring freshness (skip gracefully if the edge fn heartbeat hasn't populated the table yet).
+  -- Scoring (skip gracefully if the edge fn heartbeat hasn't populated the table yet).
   begin
-    select now() - last_run_at into v_score_age from public.scoring_health where tournament_id = v_tid;
+    select now() - last_run_at, ok into v_score_age, v_score_ok
+      from public.scoring_health where tournament_id = v_tid;
     if v_score_age is null or v_score_age > interval '20 minutes' then
       v_alerts := array_append(v_alerts, '• SCORING stale — last ran ' || coalesce(v_score_age::text, 'never') || ' ago');
+    elsif v_score_ok is not true then
+      v_alerts := array_append(v_alerts, '• SCORING FAILING — running on time but reporting an error: '
+        || coalesce((select left(error, 200) from public.scoring_health where tournament_id = v_tid), 'no message'));
     end if;
   exception when undefined_table then null;
   end;

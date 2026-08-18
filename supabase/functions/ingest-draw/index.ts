@@ -197,8 +197,15 @@ function parseFullDraw(
   // tests exercise, with a single-section fixture.)
   //
   // NB this cannot catch a bracket inserted EARLIER while the total stays 8 — nothing stateless can.
-  // It catches the case actually reported. Failing loudly writes ok:false to ingest_health and trips
-  // the watchdog, while buildMatchRows' never-regress merge preserves every result already stored.
+  // It catches the case actually reported. Failing loudly writes ok:false to ingest_health, while
+  // buildMatchRows' never-regress merge preserves every result already stored.
+  //
+  // This comment used to claim the throw also "trips the watchdog". It did not. pipeline_watchdog()
+  // compared last_run_at against now() and never read ok — and the catch block stamps a FRESH
+  // last_run_at on failure, so a permanently-throwing ingest kept a perfectly healthy heartbeat and
+  // silenced the alarm indefinitely. Fixed 2026-08-18 in pipeline_watchdog.sql, which now alerts on
+  // stale OR not-ok. Worth stating plainly, because the guard's whole safety argument rests on the
+  // failure being noticed.
   if (sections.length > 8) {
     throw new Error(`Draw shape unexpected: ${sections.length} section brackets, expected at most 8. Refusing to parse rather than risk renumbering slots.`);
   }
