@@ -13,8 +13,18 @@ const raw = (f: string): Promise<string> =>
 
 // Assertions about ABSENCE must ignore comments: both files deliberately DESCRIBE the old hardcoded
 // fallbacks in their comments, so a naive match would find the very strings the tests forbid.
+//
+// LINE-ENDING SENSITIVE, and it bit. This was `l.replace(/\/\/.*$/, '')` after splitting on '\n'
+// alone, which leaves a trailing '\r' on every line of a CRLF checkout. JS treats '\r' as a line
+// terminator, so '.' will not cross it and '$' (no /m/) only matches the true end of the string —
+// the pattern therefore matched NOTHING and no comment was stripped. On this Windows repo that made
+// the test pass or fail purely on how git last wrote the file: it passed on a working tree written
+// with LF and failed minutes later, on identical code, after a branch checkout converted it to CRLF.
+// A flaky test in the deploy gate is worse than a broken one — it blocks real deploys and teaches
+// you to rerun until it goes green. Split on /\r?\n/ and drop the '$' anchor: no anchor is needed,
+// since a comment runs to the end of its line by definition.
 const codeOnly = (src: string): string =>
-  src.split('\n').map(l => l.replace(/\/\/.*$/, '')).join('\n');
+  src.split(/\r?\n/).map(l => l.replace(/\/\/.*/, '')).join('\n');
 
 describe('ingest-draw — config-driven, never guessing', () => {
   it('carries a registry rather than one baked-in tournament', async () => {
