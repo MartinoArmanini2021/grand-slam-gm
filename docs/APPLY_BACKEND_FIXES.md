@@ -18,10 +18,24 @@ goes wrong you want managers idle rather than mid-draft.
 
 **You need:** the Supabase SQL editor, and a terminal in `C:\Users\marti\tennis-fantasy`.
 
-To copy any file to your clipboard, in the **terminal**:
+Steps 1, 2 and 3 are SQL files you paste into the Supabase SQL editor. To put one on your clipboard,
+run its command in the **terminal** — copy each at the step that needs it, not all up front. No
+output means it worked; then paste into the editor with Ctrl+V.
 
 ```
-Get-Content C:\Users\marti\tennis-fantasy\<file> -Raw | Set-Clipboard
+Get-Content C:\Users\marti\tennis-fantasy\supabase\player_stats_scope.sql -Raw | Set-Clipboard
+```
+```
+Get-Content C:\Users\marti\tennis-fantasy\supabase\seed_cincinnati_player_stats.sql -Raw | Set-Clipboard
+```
+```
+Get-Content C:\Users\marti\tennis-fantasy\supabase\save_entry_rpc.sql -Raw | Set-Clipboard
+```
+
+And, only if you ever need the undo in step 3's row of the rollback table:
+
+```
+Get-Content C:\Users\marti\tennis-fantasy\supabase\rollback_save_entry_pre_1_3.sql -Raw | Set-Clipboard
 ```
 
 **What is actually in the player table.** It holds **109 rows, but Cincinnati has only 96 players.**
