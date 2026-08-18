@@ -120,7 +120,11 @@ Deno.serve(async (req) => {
     const matches: MatchRow[] = (matchRows ?? []).map(m => ({ round: m.round, p1: m.p1_id, p2: m.p2_id, winner: m.winner_id }));
     const playedRounds = ROUND_ORDER.filter(r => matches.some(m => m.round === r && m.winner));
 
-    const { data: rankRows, error: rErr } = await db.from('player_stats').select('id, ranking');
+    // SCOPED to this tournament (player_stats is keyed (tournament_id, id) since fix 1.3). Reading it
+    // unscoped is what let a newly-seeded field silently rewrite a finished event's scores: ranking
+    // drives the upset multiplier, so every past result moved the moment the next field loaded.
+    const { data: rankRows, error: rErr } = await db.from('player_stats')
+      .select('id, ranking').eq('tournament_id', tournamentId);
     if (rErr) throw rErr;
     const rankById: Record<string, number> = Object.fromEntries((rankRows ?? []).map(r => [r.id, r.ranking]));
 

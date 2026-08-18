@@ -57,11 +57,17 @@ for (const c of clashes) {
   const o = seen.get(c.id);
   console.log(`    ✗ ${c.id}: ${o.from} has rank ${o.ranking} $${o.price} ${o.tier} — this event says ${c.ranking} $${c.price} ${c.tier}`);
 }
+// NOT an error since fix 1.3. player_stats is keyed (tournament_id, id), so each event owns its own
+// rows: a differing rank or price just means the player moved between tournaments, which is exactly
+// what scoping exists to record. Reported for eyeballing. It used to exit 1 because, with one shared
+// table, a clash would have silently rewritten a finished event's scores.
 if (clashes.length) {
-  console.error('\n  ✗ seeds disagree — they share one player_stats table. Resolve before shipping.\n');
-  process.exitCode = 1;
-} else {
-  const body = rows.map(r => `  ('${r.id}', ${r.ranking}, ${r.price}, '${r.tier}')`).join(',\n');
+  console.log(`
+  note: ${clashes.length} player(s) differ from an earlier seed — expected; each event keeps its own row.
+`);
+}
+{
+  const body = rows.map(r => `  ('${id}', '${r.id}', ${r.ranking}, ${r.price}, '${r.tier}')`).join(',\n');
   const sql = `-- ── ${ev.label} — player_stats seed for server-side validation + scoring ────────────────
 -- WHY ALL FOUR COLUMNS: save_entry validates the TIER QUOTA off player_stats.tier and the BUDGET off
 -- .price, and recompute-score reads .ranking for the upset multiplier. A row carrying only \`ranking\`
@@ -78,9 +84,9 @@ if (clashes.length) {
 --
 -- Regenerate with:  node scripts/gen-seed.mjs ${id}
 
-insert into public.player_stats (id, ranking, price, tier) values
+insert into public.player_stats (tournament_id, id, ranking, price, tier) values
 ${body}
-on conflict (id) do update set ranking = excluded.ranking, price = excluded.price, tier = excluded.tier;
+on conflict (tournament_id, id) do update set ranking = excluded.ranking, price = excluded.price, tier = excluded.tier;
 
 -- Verify: every entrant has a COMPLETE row (a NULL price or tier is the bug described above).
 -- select count(*) filter (where price is not null and tier is not null) as complete,

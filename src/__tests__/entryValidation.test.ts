@@ -158,7 +158,7 @@ describe('validateCaptainLock — no retroactive picks (F1(2))', () => {
 describe('player_stats seeds ↔ PLAYERS parity', () => {
   const seeded = new Map<string, { ranking: number; price: number; tier: string }>();
   for (const sql of [saveEntrySql, cincinnatiSeedSql]) {
-    for (const m of sql.matchAll(/\(\s*'([a-z0-9_]+)',\s*(\d+),\s*(\d+),\s*'(\w+)'\s*\)/g)) {
+    for (const m of sql.matchAll(/\(\s*'[a-z0-9_]+',\s*'([a-z0-9_]+)',\s*(\d+),\s*(\d+),\s*'(\w+)'\s*\)/g)) {
       seeded.set(m[1], { ranking: Number(m[2]), price: Number(m[3]), tier: m[4] });
     }
   }

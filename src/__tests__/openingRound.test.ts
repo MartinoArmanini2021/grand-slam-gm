@@ -166,6 +166,6 @@ describe('repairing an opening-round casualty is free of the transfer cap', () =
   it('the SQL mirrors "free = a known player with no matches rows" (keep save_entry_rpc.sql in sync)', async () => {
     const sql = (await import('../../supabase/save_entry_rpc.sql?raw')).default;
     expect(sql).toMatch(/m\.p1_id = t->>'out' or m\.p2_id = t->>'out'/);        // keyed on who went out
-    expect(sql).toMatch(/not exists \(select 1 from public\.player_stats ps where ps\.id = t->>'out'\)/); // unknown → counts
+    expect(sql).toMatch(/not exists \(select 1 from public\.player_stats ps where ps\.id = t->>'out' and ps\.tournament_id = p_tournament\)/); // unknown → counts
   });
 });

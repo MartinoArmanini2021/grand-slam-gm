@@ -36,7 +36,8 @@
 alter table public.player_stats add column if not exists price int;
 alter table public.player_stats add column if not exists tier  text;
 
-insert into public.player_stats (id, ranking, price, tier) values
+insert into public.player_stats (tournament_id, id, ranking, price, tier)
+select 'cincinnati_2026', * from (values
   ('zverev', 3, 50, 'Platinum'),
   ('augeraliassime', 4, 34, 'Platinum'),
   ('shelton', 6, 31, 'Platinum'),
@@ -114,7 +115,8 @@ insert into public.player_stats (id, ranking, price, tier) values
   ('merida', 40, 12, 'Silver'),
   ('popyrin', 104, 4, 'Silver'),
   ('droguet', 115, 7, 'Silver')
-on conflict (id) do update set ranking = excluded.ranking, price = excluded.price, tier = excluded.tier;
+) as v(id, ranking, price, tier)
+on conflict (tournament_id, id) do update set ranking = excluded.ranking, price = excluded.price, tier = excluded.tier;
 
 -- 2) The single validated write path. SECURITY DEFINER (runs as the table owner, bypassing
 --    RLS) but self-checks auth.uid(), so a caller can only ever write their OWN entry. It
@@ -199,7 +201,11 @@ begin
     and jsonb_array_length(coalesce(v_existing.state->'transfers', '[]'::jsonb)) > 0;
 
   -- (b) every id is a real, known player
-  if exists (select 1 from unnest(v_squad) sid where not exists (select 1 from public.player_stats ps where ps.id = sid)) then
+  -- SCOPED: a player is only 'known' for the tournament being saved (player_stats is keyed
+  -- (tournament_id, id) since fix 1.3), so a squad can never be validated against another
+  -- event's prices, tiers or rankings.
+  if exists (select 1 from unnest(v_squad) sid where not exists (
+      select 1 from public.player_stats ps where ps.id = sid and ps.tournament_id = p_tournament)) then
     raise exception 'Squad contains an unknown player';
   end if;
 
@@ -211,7 +217,7 @@ begin
     count(*) filter (where ps.tier = 'Gold'),
     count(*) filter (where ps.tier = 'Silver')
     into v_plat, v_gold, v_silv
-    from unnest(v_squad) sid join public.player_stats ps on ps.id = sid;
+    from unnest(v_squad) sid join public.player_stats ps on ps.id = sid and ps.tournament_id = p_tournament;
   if (not v_locked) and (v_plat > 2 or v_gold > 3 or v_silv > 5) then
     raise exception 'Too many in a tier (Platinum %/2, Gold %/3, Silver %/5)', v_plat, v_gold, v_silv;
   end if;
@@ -228,7 +234,7 @@ begin
   --     not, for the whole draft window. v_stored_has_transfers comes from the row we just locked,
   --     which only this RPC can write, so a client cannot influence it. Keep it that way.
   if not v_stored_has_transfers then
-    select coalesce(sum(ps.price), 0) into v_total from unnest(v_squad) sid join public.player_stats ps on ps.id = sid;
+    select coalesce(sum(ps.price), 0) into v_total from unnest(v_squad) sid join public.player_stats ps on ps.id = sid and ps.tournament_id = p_tournament;
     if v_total > 150 then raise exception 'Squad costs $%M, over the $150M budget', v_total; end if;
   end if;
 
@@ -251,7 +257,7 @@ begin
   --      transfersUsed() in src/data/tournament.ts (openingRoundExit).
   select count(*) into v_tr_count
     from jsonb_array_elements(coalesce(p_state->'transfers', '[]'::jsonb)) t
-   where not exists (select 1 from public.player_stats ps where ps.id = t->>'out')   -- unknown id → never free
+   where not exists (select 1 from public.player_stats ps where ps.id = t->>'out' and ps.tournament_id = p_tournament)   -- unknown id → never free
       or exists (select 1 from public.matches m
                   where m.tournament_id = p_tournament
                     and (m.p1_id = t->>'out' or m.p2_id = t->>'out'));
@@ -261,7 +267,7 @@ begin
   -- (d3) apply the transfer cap now that the stored entry is loaded (see d2).
   select count(*) into v_prior_tr
     from jsonb_array_elements(case when v_found then coalesce(v_existing.state->'transfers', '[]'::jsonb) else '[]'::jsonb end) t
-   where not exists (select 1 from public.player_stats ps where ps.id = t->>'out')   -- unknown id → never free
+   where not exists (select 1 from public.player_stats ps where ps.id = t->>'out' and ps.tournament_id = p_tournament)   -- unknown id → never free
       or exists (select 1 from public.matches m
                   where m.tournament_id = p_tournament
                     and (m.p1_id = t->>'out' or m.p2_id = t->>'out'));

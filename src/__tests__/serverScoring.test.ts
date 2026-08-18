@@ -73,7 +73,7 @@ describe('edge function stays in sync with the canonical scoring curve', () => {
     // field has a seeded rank somewhere, and that it agrees with the client.
     const seed: Record<string, number> = {};
     for (const src of [seedSrc, cincinnatiSeedSrc]) {
-      for (const m of src.matchAll(/\(\s*'([a-z0-9]+)',\s*(\d+)\s*[,)]/g)) seed[m[1]] = Number(m[2]);
+      for (const m of src.matchAll(/\(\s*'[a-z0-9_]+',\s*'([a-z0-9]+)',\s*(\d+)\s*[,)]/g)) seed[m[1]] = Number(m[2]);
     }
     const unseeded = PLAYERS.filter(p => seed[p.id] === undefined).map(p => `${p.name} (${p.id})`);
     expect(unseeded, 'players with no seeded rank').toEqual([]);
