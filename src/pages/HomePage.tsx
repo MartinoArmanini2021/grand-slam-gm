@@ -5,13 +5,14 @@ import { useLiveStore } from '../store/liveStore';
 import { ROUNDS, tournamentStarted, liveScore, liveBudget, liveRoundStatus } from '../data/tournament';
 import { isSquadValid, SQUAD_SIZE } from '../data/squadRules';
 import { fmtScore } from '../data/format';
-import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
+import { TOURNAMENT, SURFACE, IS_READ_ONLY } from '../data/tournamentConfig';
 import { onActivate } from '../hooks';
 import { useLeagueBoard, useMyLeagues } from '../data/leagueBoard';
 import SquadCourt from '../components/SquadCourt';
 import NextMove from '../components/NextMove';
 import TournamentWelcome from '../components/TournamentWelcome';
 import TournamentSwitcher from '../components/TournamentSwitcher';
+import TournamentComplete from '../components/TournamentComplete';
 import ScoringPendingNote from '../components/ScoringPendingNote';
 import type { GamePhase } from '../types';
 
@@ -69,6 +70,11 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-3 pt-3 pb-6 fade-in">
 
+      {/* A finished event opens with its result, not with the live-tournament furniture. Read-only
+          mode alone left this screen looking broken rather than over — controls silently absent,
+          nothing saying why. This is the "why". */}
+      {IS_READ_ONLY && <TournamentComplete />}
+
       {/* ── Header: title + meta (left) · your stats (top-right) ── */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
         <div className="min-w-0">
@@ -95,10 +101,17 @@ export default function HomePage({ welcome = false, onWelcomeClose }: { welcome?
         </div>
       </div>
 
-      {/* ── Your next move — the always-present, phase-aware coach ── */}
-      <div className="mb-4">
-        <NextMove hasPrivateLeague={myLeagues.length > 0} onPickLeaders={() => courtRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })} />
-      </div>
+      {/* ── Your next move — the always-present, phase-aware coach ──
+          Suppressed on a finished event: NextMove has its own "Tournament over" state, so leaving
+          it in would put TWO cards on the same screen both announcing the end and both offering the
+          same two links. The card above absorbs those links and adds what NextMove has no notion of
+          — the champion, and the way back to the live tournament. Its finished branch still earns
+          its keep for an event that has played out but is not yet marked completed. */}
+      {!IS_READ_ONLY && (
+        <div className="mb-4">
+          <NextMove hasPrivateLeague={myLeagues.length > 0} onPickLeaders={() => courtRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })} />
+        </div>
+      )}
 
       {/* ── Court (full width, matching the other page elements) ── */}
       <div ref={courtRef}>
