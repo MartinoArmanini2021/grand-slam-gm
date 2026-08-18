@@ -6,6 +6,7 @@ import {
   tournamentStarted, isEliminated, cashInOpen, liveBudget, playerRefund, transfersUsed,
 } from '../data/tournament';
 import { ACTIVE_TOURNAMENT_ID, OPENING_ROUND, IS_READ_ONLY } from '../data/tournamentConfig';
+import { HARNESS_OPEN_DRAFT } from '../dev/uxHarness';
 import { track } from '../data/analytics';
 import { toast } from './toastStore';
 import { findPlayer, PLAYERS } from '../data/players';
@@ -204,7 +205,7 @@ export const useGameStore = create<GameStore>()(
         // refused by save_entry's P6 freeze, ~900px down the page. The app sold a draft it could
         // not accept. Two of the four Cincinnati managers who scored nothing fit that shape,
         // though it could not be proven (entries has no created_at — see docs/ux_evidence.md).
-        if (tournamentStarted()) return;
+        if (tournamentStarted() && !HARNESS_OPEN_DRAFT) return;
         const { myTeam, budget, phase, captain, viceCaptain } = get();
         if (phase !== 'draft') return; // squad is locked after the draft — use transfers
         if (myTeam.length >= SQUAD_SIZE) return;

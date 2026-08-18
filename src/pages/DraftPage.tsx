@@ -16,6 +16,7 @@ import PlayerPickerModal from '../components/PlayerPickerModal';
 import SquadLockedModal from '../components/SquadLockedModal';
 import Countdown, { useCountdown } from '../components/Countdown';
 import SquadProgress from '../components/SquadProgress';
+import { HARNESS_OPEN_DRAFT } from '../dev/uxHarness';
 import { onActivate } from '../hooks';
 import { toast } from '../store/toastStore';
 import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
@@ -55,7 +56,7 @@ export default function DraftPage() {
   const locked = phase !== 'draft';       // squad is locked after the draft…
   const live = locked;                     // …and once locked, the Market IS the transfer desk
   const windowOpen = transferWindowOpen(); // results-derived: actually closes for the Final
-  const draftClosed = tournamentStarted(); // P6: no locking once the tournament has a result
+  const draftClosed = tournamentStarted() && !HARNESS_OPEN_DRAFT; // P6: no locking once the tournament has a result
   // Market deadline: the transfer/cash-in/captain window is open for the round captains are
   // being set for (liveLeaderRound — the earliest round with no result yet). Its scheduled
   // start is when everything locks. useCountdown runs every render (target may be undefined).

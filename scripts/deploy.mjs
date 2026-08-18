@@ -56,7 +56,10 @@ try { run('npm test'); }
 catch { console.error('\n✗ Tests failed — NOT deploying. Fix the regression before shipping.'); process.exit(1); }
 
 // 3) Build — abort the whole deploy if it fails.
-try { run('npm run build'); }
+// A named-branch preview builds in that branch's Vite mode, so .env.<branch> applies. This is how
+// the ux-revamp preview gets VITE_UX_HARNESS=1 (which makes its draft-time screens reachable) while
+// production, built with no mode, strips the harness entirely.
+try { run(NAMED ? `npm run build -- --mode ${NAMED}` : 'npm run build'); }
 catch { console.error('\n✗ Build failed — NOT deploying. dist was cleaned, so nothing stale can ship.'); process.exit(1); }
 
 // 4) Confirm the build produced a bundle, and capture its hashed name as our marker.

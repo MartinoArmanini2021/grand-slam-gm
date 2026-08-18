@@ -28,8 +28,14 @@ export type Scenario =
 const byTier = (tier: 'Platinum' | 'Gold' | 'Silver') =>
   PLAYERS.filter(p => (p.ranking <= 10 ? 'Platinum' : p.ranking <= 30 ? 'Gold' : 'Silver') === tier);
 
+// Enabled in dev, AND in a build explicitly made with VITE_UX_HARNESS=1 (the ux-revamp preview).
+// NOT in production: that build sets neither, so HARNESS is null and every branch below is dead.
+// This exists because the first revamp deploy was unreviewable - every change was draft-time and
+// Cincinnati draft closed on 15 August, so none of it could be reached from the live app.
+const ENABLED = import.meta.env.DEV || import.meta.env.VITE_UX_HARNESS === '1';
+
 export const HARNESS: Scenario | null = (() => {
-  if (!import.meta.env.DEV) return null;
+  if (!ENABLED) return null;
   try {
     const v = new URL(window.location.href).searchParams.get('ux');
     return (v as Scenario) || null;
@@ -38,13 +44,13 @@ export const HARNESS: Scenario | null = (() => {
 
 // A fake signed-in user, for RENDERING ONLY. No token: every network call remains anonymous.
 export const harnessUser = () =>
-  import.meta.env.DEV && HARNESS
+  ENABLED && HARNESS
     ? { id: '00000000-0000-4000-8000-00000000dev0', email: 'ux-harness@localhost' }
     : null;
 
 // Seeds the game store for a scenario. Called once at boot, before the first render.
 export function applyHarness(setGame: (s: Record<string, unknown>) => void): void {
-  if (!import.meta.env.DEV || !HARNESS) return;
+  if (!ENABLED || !HARNESS) return;
 
   const plat = byTier('Platinum');
   const gold = byTier('Gold');
@@ -87,3 +93,10 @@ export function applyHarness(setGame: (s: Record<string, unknown>) => void): voi
       break;
   }
 }
+
+// Scenarios that depict an OPEN draft. Cincinnati has results, so tournamentStarted() is true and
+// the draft-time UI is unreachable on the live event — which made the whole revamp invisible. This
+// lets those screens be SEEN without touching the persisted live results (which are real, and which
+// the feed would refill anyway). Read only where draftClosed is computed.
+export const HARNESS_OPEN_DRAFT: boolean =
+  ENABLED && (HARNESS === 'empty' || HARNESS === 'partial' || HARNESS === 'stuck' || HARNESS === 'complete');

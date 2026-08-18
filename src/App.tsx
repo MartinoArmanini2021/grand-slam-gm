@@ -60,8 +60,11 @@ export default function App() {
   const [welcome, setWelcome] = useState(false); // show the celebratory Home overlay right after joining
   const { ready, user: authUser } = useAuth();
   // DEV-ONLY (see src/dev/uxHarness.ts): ?ux=<scenario> renders signed-in screens for the UX audit.
-  // import.meta.env.DEV is substituted at build time, so this is dead code in production.
-  const user = authUser ?? (import.meta.env.DEV ? harnessUser() : null);
+  // The gate lives in uxHarness (dev OR a build made with VITE_UX_HARNESS=1). It must NOT be
+  // re-tested as import.meta.env.DEV here: that is exactly what silently disabled the harness in
+  // the first ux-revamp preview, so every screen the revamp changed was unreachable and the whole
+  // deploy looked identical to production.
+  const user = authUser ?? harnessUser();
   const tabs = TABS; // Match Admin is disabled until player roles & permissions are defined
 
   // Onboarding gate: has this player joined the ACTIVE tournament yet? A fresh
@@ -142,7 +145,7 @@ export default function App() {
   }
   if (!user) return <AuthScreen />;
   // The harness never has a cloud entry to wait for, so skip the hydrate hold.
-  const harnessOn = import.meta.env.DEV && !!HARNESS;
+  const harnessOn = !!HARNESS;   // HARNESS is already null unless the harness build gate is on
 
   // Signed-in: hold briefly until CloudSync reports whether a cloud entry exists, so a
   // returning player is never flashed the join gate (which would offer a fresh start).
