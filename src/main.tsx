@@ -9,8 +9,13 @@ import App from './App.tsx'
 import { AuthProvider } from './auth/AuthProvider'
 import ErrorBoundary from './components/ErrorBoundary'
 import { initAnalytics } from './data/analytics'
+import { applyHarness } from './dev/uxHarness'
+import { useGameStore } from './store/gameStore'
 
 void initAnalytics() // no-op unless VITE_POSTHOG_KEY is set
+
+// DEV-ONLY: seed the stores for ?ux=<scenario> before the first render (no-op in production).
+applyHarness(s => useGameStore.setState(s as never))
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

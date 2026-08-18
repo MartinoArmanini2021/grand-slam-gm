@@ -15,6 +15,7 @@ import TransferHelpModal from '../components/TransferHelpModal';
 import PlayerPickerModal from '../components/PlayerPickerModal';
 import SquadLockedModal from '../components/SquadLockedModal';
 import Countdown, { useCountdown } from '../components/Countdown';
+import SquadProgress from '../components/SquadProgress';
 import { onActivate } from '../hooks';
 import { toast } from '../store/toastStore';
 import { TOURNAMENT, SURFACE } from '../data/tournamentConfig';
@@ -191,8 +192,9 @@ export default function DraftPage() {
         )}
         {phase === 'draft' && (
           <div className="max-w-xl">
+            <SquadProgress onSell={(id) => removePlayer(id)} />
             <Countdown target={TOURNAMENT.schedule?.[TOURNAMENT.rounds[0]]}
-              title="Draft closes when the first round starts" note="Lock your squad before then." />
+              title="Draft closes when the first round starts" note="Save your squad before then — you can change it as often as you like until it does." />
           </div>
         )}
         {/* Live market deadline: how long you have to cash in, buy & set your captain before
@@ -669,16 +671,36 @@ export default function DraftPage() {
                 Draft closed — the tournament has started
               </div>
             ) : (
-              <button
-                onClick={() => { finalizeDraft(); setShowLocked(true); }}
-                disabled={!valid}
-                className="w-full py-3 rounded-xl font-bold text-sm transition-transform active:scale-[0.99]"
-                style={{ background: valid ? 'var(--blue)' : 'rgba(10,27,51,0.05)', color: valid ? '#fff' : 'var(--ink-3)', cursor: valid ? 'pointer' : 'not-allowed' }}
-              >
-                {valid ? 'Lock Squad →'
-                  : myTeam.length < TEAM_SIZE ? `Pick ${TEAM_SIZE - myTeam.length} more`
-                  : `Need ${shortfall.map(s => `${s.missing} ${s.tier}`).join(', ')}`}
-              </button>
+              // 3.4 — "Save my squad", not "Lock Squad".
+              //
+              // A real manager (88f692fa) built a complete, legal squad — 10 players, exactly
+              // 2/3/5, all $150M spent, a captain chosen, 23 separate saves — and scored ZERO,
+              // because they never pressed this button. "Lock" is both scarier and less accurate
+              // than what happens: the server only freezes anything once a match has a RESULT
+              // (save_entry gate f2, `if v_started then`). Until the first ball is struck this is
+              // completely reversible, and the old label said the opposite.
+              //
+              // Finality now lives in the countdown directly beneath, where it is true, rather
+              // than in a verb that frightens people out of finishing.
+              <>
+                <button
+                  onClick={() => { finalizeDraft(); setShowLocked(true); }}
+                  disabled={!valid}
+                  className="w-full py-3 rounded-xl font-bold text-sm transition-transform active:scale-[0.99]"
+                  style={{ background: valid ? 'var(--green)' : 'rgba(10,27,51,0.05)', color: valid ? '#fff' : 'var(--ink-3)', cursor: valid ? 'pointer' : 'not-allowed' }}
+                >
+                  {valid ? 'Save my squad'
+                    : myTeam.length < TEAM_SIZE ? `Pick ${TEAM_SIZE - myTeam.length} more`
+                    : `Need ${shortfall.map(s => `${s.missing} ${s.tier}`).join(', ')}`}
+                </button>
+                {valid && (
+                  <p className="text-[11px] text-center mt-2 leading-relaxed" style={{ color: 'var(--ink-3)' }}>
+                    You can change your squad and captains as often as you like until the first
+                    round starts.
+                  </p>
+                )}
+              </>
+
             )}
             {!locked && !valid && myTeam.length > 0 && (
               <p className="text-[11px] text-center mt-2" style={{ color: 'var(--ink-3)' }}>

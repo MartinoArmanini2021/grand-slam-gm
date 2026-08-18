@@ -28,6 +28,7 @@ import { useProfile, markTournamentJoined } from './store/profileStore';
 import { TOURNAMENT, IS_READ_ONLY } from './data/tournamentConfig';
 import { joinLeague } from './data/cloud';
 import { toast } from './store/toastStore';
+import { HARNESS, harnessUser } from './dev/uxHarness';
 
 const NAVY = 'var(--ink)';
 
@@ -57,7 +58,10 @@ export default function App() {
   const [showRules, setShowRules] = useState(() => !seenRules());
   const [showProfile, setShowProfile] = useState(false);
   const [welcome, setWelcome] = useState(false); // show the celebratory Home overlay right after joining
-  const { ready, user } = useAuth();
+  const { ready, user: authUser } = useAuth();
+  // DEV-ONLY (see src/dev/uxHarness.ts): ?ux=<scenario> renders signed-in screens for the UX audit.
+  // import.meta.env.DEV is substituted at build time, so this is dead code in production.
+  const user = authUser ?? (import.meta.env.DEV ? harnessUser() : null);
   const tabs = TABS; // Match Admin is disabled until player roles & permissions are defined
 
   // Onboarding gate: has this player joined the ACTIVE tournament yet? A fresh
@@ -137,17 +141,19 @@ export default function App() {
     );
   }
   if (!user) return <AuthScreen />;
+  // The harness never has a cloud entry to wait for, so skip the hydrate hold.
+  const harnessOn = import.meta.env.DEV && !!HARNESS;
 
   // Signed-in: hold briefly until CloudSync reports whether a cloud entry exists, so a
   // returning player is never flashed the join gate (which would offer a fresh start).
-  const awaitingCloud = !joined && !entryHydrated && !entryLoadFailed;
+  const awaitingCloud = !harnessOn && !joined && !entryHydrated && !entryLoadFailed;
   // Never show the gate if we couldn't confirm the cloud state — its reset could wipe a
   // squad we failed to load; a reload re-checks.
   // Never gate a FINISHED tournament behind "join". Joining means drafting a squad, and there is
   // nothing to draft — worse, JoinTournament's flow calls resetGame(), so the one screen offered to
   // someone browsing a past event would wipe their local state for it. Someone who never played
   // Montréal should simply see how it went.
-  const showJoinGate = !joined && !awaitingCloud && !entryLoadFailed && !IS_READ_ONLY;
+  const showJoinGate = !harnessOn && !joined && !awaitingCloud && !entryLoadFailed && !IS_READ_ONLY;
 
   return (
     <>
