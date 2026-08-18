@@ -15,7 +15,12 @@
   --navy-2:    #123163;  /* navy gradient partner */
   --ink:       #0a1f44;  /* brand navy — header + primary text */
   --ink-2:     #5B6B84;
-  --ink-3:     #6B7C96;  /* captions/hints — darkened from #9AA7BC to ~4.5:1 (WCAG AA) */
+  /* captions/hints. Measured, not estimated: the previous #6B7C96 carried a comment claiming
+     "~4.5:1 (WCAG AA)" and actually scored 4.24:1 on white and 3.75:1 on --bg — failing AA on
+     both, on the app's own most common background. A comment asserting compliance is worse than
+     no comment, because it stops anyone checking. This value measures 5.49:1 on white and
+     4.84:1 on --bg. */
+  --ink-3:     #5C6A80;
   --blue:      #0e6fc4;  /* brand accent blue */
   --blue-light:#4aa8ea;
   --green:     #12A150;
@@ -135,7 +140,15 @@ h1, h2 {
 
 /* ─── Motion ───────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  /* animation-iteration-count IS REQUIRED HERE, and its absence was actively harmful. Collapsing
+     duration to 0.01ms without also collapsing the count leaves an `infinite` animation looping
+     100,000 times a second — .pulse-dot on the save indicator became a strobe for precisely the
+     people who asked for less motion. Reducing motion has to mean stopping, not accelerating. */
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 .fade-in { animation: fadeIn 0.2s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }

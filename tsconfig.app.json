@@ -4,7 +4,14 @@
     "target": "es2023",
     "lib": ["ES2023", "DOM"],
     "module": "esnext",
-    "types": ["vite/client"],
+    // "node" is here for the TESTS under src/__tests__, which run in Node and need to read source
+    // files from disk. It was added when accessibility.test.ts had to read src/index.css: Vitest
+    // stubs CSS imports, so `import css from '../index.css?raw'` returns an EMPTY STRING and every
+    // assertion against it passes regardless of what the stylesheet says. A contrast test that
+    // cannot fail is worse than none.
+    // This only makes Node's types VISIBLE. App code importing a Node builtin would still break the
+    // browser build, so the guard that matters is unaffected.
+    "types": ["vite/client", "node"],
     "allowArbitraryExtensions": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
