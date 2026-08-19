@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useGameStore, substitutionCandidates } from '../store/gameStore';
 import { findPlayer } from '../data/players';
-import { getPlayerExit, isEliminated, liveBudget, playerRefund, transferWindowOpen, liveLeaderRound } from '../data/tournament';
+import { getPlayerExit, isEliminated, liveBudget, playerRefund, transferWindowOpen, liveLeaderRound, liveStartedRound, leaderOfRecord } from '../data/tournament';
 import { lastName, round1 } from '../data/format';
 import { SURFACE, TOURNAMENT } from '../data/tournamentConfig';
 import { SQUAD_SIZE } from '../data/squadRules';
@@ -24,7 +24,7 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
   onTeamClick?: () => void; // makes the team label a link (e.g. to your team page)
   fluid?: boolean;         // fill the container width instead of the 860px cap
 } = {}) {
-  const { myTeam, captain, viceCaptain, initialSquad, transfers, cashedIn, phase, openPlayer, removePlayer, replacePlayer, setCaptain, setViceCaptain, benchLeader } = useGameStore();
+  const { myTeam, captain, viceCaptain, captainHistory, viceCaptainHistory, initialSquad, transfers, cashedIn, phase, openPlayer, removePlayer, replacePlayer, setCaptain, setViceCaptain, benchLeader } = useGameStore();
   const budget = liveBudget(initialSquad, transfers, myTeam, cashedIn); // live money: refunds are credited on cash-in
   // Replacing an eliminated player cashes them in, so its refund is spendable on the replacement.
   const budgetFor = (id: string) => round1(budget + playerRefund(id));
@@ -43,9 +43,34 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
   // (a rival court shows their committed leaders, passed in as props).
   const leaderRound = liveLeaderRound();
   const leadersLocked = phase === 'pre_round' && !leaderRound; // every round underway → nothing left to set
-  const cap = captainId ?? (squad ? undefined : captain ?? undefined);
-  const vice = viceCaptainId ?? (squad ? undefined : viceCaptain ?? undefined);
-  const isOwnTeam = !readOnly && !squad; // your own court (home / your team page)
+
+  // ── THE COURT MUST SHOW WHAT SCORES, NOT WHAT WE WISH SCORED ────────────────────────────────
+  // This used to read `captain` straight from the store, and that was a lie the app told managers.
+  // pickLeaders() silently reassigns state.captain whenever the current one is eliminated — it
+  // picks the best-ranked survivor — but it does NOT write to captainHistory, and captainHistory is
+  // the only thing recompute-score reads. So a manager whose captain went out saw a shiny new
+  // "Captain ×2" badge on somebody who was earning them nothing.
+  //
+  // It happened for real: Agass captained Fonseca in the R32, Fonseca lost, the store promoted
+  // Cobolli on screen, and the R16 scored with NO captain at all. Their app showed Cobolli ×2 and
+  // paid him ×1 — which is exactly how you lose a manager's trust in the scoreboard.
+  //
+  // Once the tournament is live, the on-court armband is therefore the LEADER OF RECORD for the
+  // round being played. During the draft nothing has been committed yet, so the store value is the
+  // truth. `capOfRecord` may be undefined (never set, or set to someone since knocked out) — the
+  // banner below says so rather than quietly promoting a replacement.
+  const isOwnTeam0 = !readOnly && !squad;
+  const roundForLeaders = leaderRound ?? liveStartedRound();
+  const liveArmband = phase !== 'draft' && !!roundForLeaders;
+  const capOfRecord = roundForLeaders ? leaderOfRecord(captainHistory, roundForLeaders) : undefined;
+  const viceOfRecord = roundForLeaders ? leaderOfRecord(viceCaptainHistory, roundForLeaders) : undefined;
+  const cap = captainId ?? (squad ? undefined : (liveArmband ? capOfRecord : captain ?? undefined));
+  const vice = viceCaptainId ?? (squad ? undefined : (liveArmband ? viceOfRecord : viceCaptain ?? undefined));
+  // Your armband is earning nothing this round: either it was never committed, or the player you
+  // committed is out. Both are recoverable — for the NEXT round — but only if you are told.
+  const capDead = isOwnTeam0 && liveArmband && (!capOfRecord || isEliminated(capOfRecord));
+  const viceDead = isOwnTeam0 && liveArmband && (!viceOfRecord || isEliminated(viceOfRecord));
+  const isOwnTeam = isOwnTeam0; // your own court (home / your team page)
   const canEdit = isOwnTeam && phase === 'draft';
   const canCaptain = isOwnTeam && (phase === 'draft' || (phase === 'pre_round' && !!leaderRound));
   useEscapeToClose(() => { setManageId(null); setSubFor(null); setAssignRole(null); }, !!(manageId || subFor || assignRole));
@@ -228,10 +253,31 @@ export default function SquadCourt({ squad, captainId, viceCaptainId, readOnly, 
 
         {/* Captain lock: once this round has a result the captain is frozen (matches the
             server), so we say so rather than leave the picker silently inert. */}
-        {leadersLocked && (
+        {leadersLocked && !capDead && !viceDead && (
           <div className="absolute inset-x-0 top-3 flex items-center justify-center pointer-events-none">
             <div className="px-3 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(10,31,68,0.78)', color: '#fff' }}>
               🔒 Captains locked — every round underway
+            </div>
+          </div>
+        )}
+
+        {/* YOUR ARMBAND IS EARNING NOTHING, AND YOU DESERVE TO KNOW.
+            An armband is committed per round and carries forward until changed. If the player you
+            committed is knocked out, that multiplier is simply gone for every round after — and the
+            app used to hide this by promoting a survivor on screen while the scorer kept the
+            original. A manager saw "Captain ×2" and was paid ×1. Say it plainly instead. */}
+        {(capDead || viceDead) && (
+          <div className="absolute inset-x-0 top-3 flex items-center justify-center px-3 pointer-events-none">
+            <div className="px-3 py-1.5 rounded-xl text-[11px] font-semibold text-center max-w-[92%]"
+                 style={{ background: 'rgba(229,71,43,0.94)', color: '#fff', boxShadow: '0 2px 10px rgba(0,0,0,0.28)' }}>
+              {capDead && viceDead
+                ? 'Your captain and vice are out — no multiplier is being applied.'
+                : capDead
+                  ? `No captain this round${capOfRecord ? ` — ${lastName(findPlayer(capOfRecord)?.name ?? capOfRecord)} is out` : ''}. Nobody is scoring ×2.`
+                  : `No vice this round${viceOfRecord ? ` — ${lastName(findPlayer(viceOfRecord)?.name ?? viceOfRecord)} is out` : ''}. Nobody is scoring ×1.5.`}
+              {leaderRound
+                ? <div className="font-normal mt-0.5 opacity-95">Pick a replacement below for the {leaderRound}.</div>
+                : <div className="font-normal mt-0.5 opacity-95">You can set a new one when the next round opens.</div>}
             </div>
           </div>
         )}
