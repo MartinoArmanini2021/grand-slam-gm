@@ -60,6 +60,17 @@ declare
   -- touched, cash-in-and-buy is allowed to shrink the squad (<10) and drift off 2/3/5 (any tier).
   v_touched boolean := jsonb_array_length(coalesce(p_state->'transfers', '[]'::jsonb)) > 0
                     or jsonb_array_length(coalesce(p_state->'cashedIn', '[]'::jsonb)) > 0;
+  -- THE SCORING SQUAD. recompute-score scores EXCLUSIVELY off state.initialSquad and explicitly
+  -- never falls back to myTeam ("INTEGRITY (P3)"). Until 2026-08-19 this array was validated
+  -- NOWHERE: every gate below read v_squad, built from myTeam, while the insert stored p_state
+  -- verbatim. So a caller could send a perfectly legal 10-player myTeam through the front door and
+  -- attach an initialSquad naming all 96 entrants — no size cap, no budget, no tier quota, not even
+  -- a check the ids were real — and that squad owned the winner of every match in every round.
+  -- Measured against this game's own scoring model: ~328 points versus ~86 for the best legal
+  -- squad, about 3.8x. Fixing v_touched alone would have achieved nothing, because v_touched gates
+  -- myTeam, and myTeam is not what scores.
+  v_init text[]; v_init_size int; v_init_distinct int; v_init_total int;
+  v_init_plat int; v_init_gold int; v_init_silv int;
   v_size int; v_distinct int; v_total int;
   v_tr_count int; v_prior_tr int;   -- transfer cap (d2/d3)
   v_plat int; v_gold int; v_silv int;
@@ -110,6 +121,51 @@ begin
   if v_distinct <> v_size then raise exception 'Squad has duplicate players'; end if;
   if v_size > 10 then raise exception 'Squad can''t exceed 10 players (got %)', v_size; end if;
   if v_locked and not v_touched and v_size <> 10 then raise exception 'Your squad must be exactly 10 players to lock (got %)', v_size; end if;
+
+  -- ── (a2) THE SCORING SQUAD, held to the SAME rules as the visible one ────────────────────────
+  -- initialSquad is what recompute-score actually scores, and it was previously accepted verbatim
+  -- from the client. Everything below is the identical rule set applied to v_squad, so an entry
+  -- can never score off a squad that would have been illegal to draft.
+  --
+  -- Deliberately NOT gated on v_locked or v_touched: those flags are themselves derived from the
+  -- client payload, and hanging the only defence of the scoring field on an attacker-chosen string
+  -- is how this hole existed in the first place. initialSquad is either absent (still drafting) or
+  -- a complete, legal, affordable ten. There is no third legitimate state.
+  --
+  -- These rules are STRUCTURAL — size, duplicates, known ids, tier quota, price — so they need no
+  -- results data and cannot false-reject because the feed is a few minutes behind the client.
+  v_init := array(select jsonb_array_elements_text(coalesce(p_state->'initialSquad', '[]'::jsonb)));
+  v_init_size := coalesce(array_length(v_init, 1), 0);
+  if v_init_size > 0 then
+    v_init_distinct := (select count(distinct x) from unnest(v_init) x);
+    if v_init_distinct <> v_init_size then
+      raise exception 'Your drafted squad has duplicate players';
+    end if;
+    if v_init_size <> 10 then
+      raise exception 'Your drafted squad must be exactly 10 players (got %)', v_init_size;
+    end if;
+    if exists (select 1 from unnest(v_init) sid where not exists (
+        select 1 from public.player_stats ps where ps.id = sid and ps.tournament_id = p_tournament)) then
+      raise exception 'Your drafted squad contains an unknown player';
+    end if;
+    select
+      count(*) filter (where ps.tier = 'Platinum'),
+      count(*) filter (where ps.tier = 'Gold'),
+      count(*) filter (where ps.tier = 'Silver')
+      into v_init_plat, v_init_gold, v_init_silv
+      from unnest(v_init) sid join public.player_stats ps
+        on ps.id = sid and ps.tournament_id = p_tournament;
+    if v_init_plat <> 2 or v_init_gold <> 3 or v_init_silv <> 5 then
+      raise exception 'Your drafted squad must be exactly 2 Platinum, 3 Gold, 5 Silver (got %/%/%)',
+        v_init_plat, v_init_gold, v_init_silv;
+    end if;
+    select coalesce(sum(ps.price), 0) into v_init_total
+      from unnest(v_init) sid join public.player_stats ps
+        on ps.id = sid and ps.tournament_id = p_tournament;
+    if v_init_total > 150 then
+      raise exception 'Your drafted squad costs $%M, over the $150M budget', v_init_total;
+    end if;
+  end if;
 
   -- LOCK + LOAD THE STORED ENTRY FIRST. This used to sit further down, after validation, which is
   -- what made the budget bypass possible: with no server-side copy to consult, gate (d) fell back to
