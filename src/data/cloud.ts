@@ -317,8 +317,11 @@ export async function fetchLeaderboard(
 //   { ok:false, conflict }    — another tab/device wrote first; caller re-fetches + converges
 //   { ok:false, invalid:msg } — server rejected the squad/lineup (illegal or retroactive)
 //   { ok:false }              — a transient/other failure
+// `userId` is intentionally unused now that guardedSave is gone: save_entry derives the user from
+// auth.uid() server-side and would ignore a client-supplied id anyway. Kept in the signature so the
+// three call sites don't need touching, and prefixed to say so rather than being silently dropped.
 export async function saveEntry(
-  userId: string, leagueId: string, tournamentId: string, e: EntryWrite, baseRev = 0,
+  _userId: string, leagueId: string, tournamentId: string, e: EntryWrite, baseRev = 0,
 ): Promise<{ ok: boolean; rev: number; conflict?: boolean; invalid?: string }> {
   if (!supabase) return { ok: false, rev: baseRev };
   // READ-ONLY BACKSTOP. A finished tournament is never writable. Callers are expected to check
@@ -337,7 +340,11 @@ export async function saveEntry(
   });
   if (!rpc.error) return { ok: true, rev: Number(rpc.data) };
   if (rpc.error.code === '40001') return { ok: false, rev: baseRev, conflict: true };      // rev conflict
-  if (rpcMissing(rpc.error)) return guardedSave(userId, leagueId, tournamentId, e, baseRev); // pre-migration
+  // save_entry missing entirely: a broken deploy, not something to route around silently.
+  if (rpcMissing(rpc.error)) {
+    console.error('[cloud] save_entry RPC is missing — the database is not migrated. Refusing to write unvalidated.');
+    return { ok: false, rev: baseRev, invalid: 'Saving is temporarily unavailable. Your changes are still here — please try again shortly.' };
+  }
   console.warn('[cloud] save_entry rejected:', rpc.error.message);
   return { ok: false, rev: baseRev, invalid: rpc.error.message };                          // validation reject
 }
@@ -346,42 +353,10 @@ function rpcMissing(e: { code?: string; message?: string }): boolean {
   return e.code === 'PGRST202' || /save_entry.*does not exist|could not find the function/i.test(e.message ?? '');
 }
 
-// Pre-migration fallback (the save_entry RPC isn't applied yet): the F2 client-side guarded
-// write — optimistic-concurrency UPDATE on the rev the caller last read, else insert. Keeps
-// deploys safe in the window before save_entry_rpc.sql runs; the RPC supersedes it after.
-async function guardedSave(
-  userId: string, leagueId: string, tournamentId: string, e: EntryWrite, baseRev: number,
-): Promise<{ ok: boolean; rev: number; conflict?: boolean }> {
-  if (!supabase) return { ok: false, rev: baseRev };
-  const base = {
-    squad: e.squad, captain_history: e.captainHistory, phase: e.phase,
-    current_round_index: e.currentRoundIndex, budget: e.budget, state: e.state,
-    updated_at: new Date().toISOString(),
-  };
-  // Pre-migration fallback: no `rev` column yet → plain upsert (old last-writer-wins).
-  const legacyUpsert = async (): Promise<{ ok: boolean; rev: number }> => {
-    const { error } = await supabase!.from('entries')
-      .upsert({ user_id: userId, league_id: leagueId, tournament_id: tournamentId, ...base }, { onConflict: 'user_id,league_id,tournament_id' });
-    if (error) console.warn('[cloud] saveEntry (legacy) failed:', error.message);
-    return { ok: !error, rev: baseRev };
-  };
-
-  // 1) Guarded UPDATE: succeeds only if rev is unchanged since we read it.
-  const { data: upd, error: uErr } = await supabase.from('entries')
-    .update({ ...base, rev: baseRev + 1 })
-    .eq('user_id', userId).eq('league_id', leagueId).eq('tournament_id', tournamentId).eq('rev', baseRev)
-    .select('rev').maybeSingle();
-  if (uErr && revColumnMissing(uErr)) return legacyUpsert();
-  if (uErr) { console.warn('[cloud] saveEntry update:', uErr.message); return { ok: false, rev: baseRev }; }
-  if (upd) return { ok: true, rev: (upd.rev as number) };
-  // 2) No row updated → the entry doesn't exist yet (first save → insert) OR rev moved on.
-  const { data: ins, error: iErr } = await supabase.from('entries')
-    .insert({ user_id: userId, league_id: leagueId, tournament_id: tournamentId, ...base, rev: 1 })
-    .select('rev').maybeSingle();
-  if (iErr && revColumnMissing(iErr)) return legacyUpsert();
-  if (!iErr && ins) return { ok: true, rev: (ins.rev as number) };
-  // A unique-violation on insert means the row EXISTS but rev didn't match → real conflict.
-  if (iErr && iErr.code === '23505') { console.warn('[cloud] saveEntry: concurrent write conflict'); return { ok: false, rev: baseRev, conflict: true }; }
-  console.warn('[cloud] saveEntry failed:', iErr?.message);
-  return { ok: false, rev: baseRev };
-}
+// The pre-migration guardedSave fallback lived here and is deliberately gone (2026-08-19).
+// It wrote to public.entries DIRECTLY, bypassing every server-side rule: squad size, the 2/3/5
+// quota, the $150M cap, the transfer limit, and both anti-cheat freezes. It could only ever run
+// if save_entry were missing — and since insert/update on entries are revoked from anon AND
+// authenticated, it would now just fail with 42501 anyway. So it was dead code that read as a
+// working safety net: the most dangerous kind. If save_entry is ever genuinely absent, the right
+// answer is to fail loudly and fix the deploy, not to quietly write an unvalidated squad.

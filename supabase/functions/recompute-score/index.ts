@@ -35,7 +35,9 @@ const upsetMultiplier = (w: number, l: number | undefined) =>
   (l == null || w <= l) ? 1 : 1 + (w - l) / ((w - l) + UPSET_HALF);
 const winPoints = (base: number, w: number, l: number | undefined) => Math.round(base * upsetMultiplier(w, l));
 
-interface MatchRow { round: string; p1: string; p2: string; winner: string | null }
+// slot is fetched purely so the corrupt-draw error can NAME the offending slots. An alert that
+// says which rows disagree is actionable; one that says 'something is wrong' is not.
+interface MatchRow { round: string; slot: number; p1: string; p2: string; winner: string | null }
 interface EntryState {
   initialSquad?: string[];
   myTeam?: string[]; // current (live) squad — NOT used for scoring (P3)
@@ -74,7 +76,21 @@ function scoreEntry(state: EntryState, matches: MatchRow[], rankById: Record<str
     const base = ROUND_POINTS[round] ?? 0;
     const rm = matches.filter(m => m.round === round);
     for (const id of squad) {
-      const m = rm.find(x => x.p1 === id || x.p2 === id);
+      // ASSERT, don't pick. A player appears in at most ONE match per round; two would mean the
+      // results table is corrupt — a slot-renumbering bug, or a double-write from a half-published
+      // draw, both of which this project has actually had. `find()` silently scored whichever came
+      // first and reported success, so a corrupt draw produced confident, wrong numbers with
+      // nothing in any log. Failing here instead stops the run, leaves scoring_health stale, and
+      // the watchdog alerts within 20 minutes. A frozen leaderboard is recoverable; a quietly
+      // wrong one is not, because nobody knows to look.
+      const found = rm.filter(x => x.p1 === id || x.p2 === id);
+      if (found.length > 1) {
+        throw new Error(
+          `Corrupt draw: ${id} appears in ${found.length} ${round} matches (slots ` +
+          `${found.map(x => x.slot ?? '?').join(', ')}). Refusing to score rather than guess which is real.`,
+        );
+      }
+      const m = found[0];
       if (!m || m.winner !== id) continue;
       const opp = m.p1 === id ? m.p2 : m.p1;
       const pts = winPoints(base, rank(id), rankById[opp]); // raw opp rank → undefined = no upset
@@ -115,9 +131,9 @@ Deno.serve(async (req) => {
 
     // Results the server holds → the rounds that are actually "done".
     const { data: matchRows, error: mErr } = await db
-      .from('matches').select('round, p1_id, p2_id, winner_id').eq('tournament_id', tournamentId);
+      .from('matches').select('round, slot, p1_id, p2_id, winner_id').eq('tournament_id', tournamentId);
     if (mErr) throw mErr;
-    const matches: MatchRow[] = (matchRows ?? []).map(m => ({ round: m.round, p1: m.p1_id, p2: m.p2_id, winner: m.winner_id }));
+    const matches: MatchRow[] = (matchRows ?? []).map(m => ({ round: m.round, slot: m.slot, p1: m.p1_id, p2: m.p2_id, winner: m.winner_id }));
     const playedRounds = ROUND_ORDER.filter(r => matches.some(m => m.round === r && m.winner));
 
     // SCOPED to this tournament (player_stats is keyed (tournament_id, id) since fix 1.3). Reading it
