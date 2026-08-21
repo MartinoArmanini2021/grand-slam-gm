@@ -3,7 +3,7 @@ import { useGameStore } from '../store/gameStore';
 import { useProfile } from '../store/profileStore';
 import { useLeagueBoard } from '../data/leagueBoard';
 import { getPlayer } from '../data/players';
-import { ROUNDS, playerRoundPoints, playedScoredRounds, liveScore, getPlayerExit, isInLiveDraw, tournamentStarted } from '../data/tournament';
+import { ROUNDS, playerRoundPoints, playedScoredRounds, liveScore, getPlayerExit, isInLiveDraw, tournamentStarted, leaderOfRecord } from '../data/tournament';
 import { lastName, fmtScore } from '../data/format';
 import SquadCourt from '../components/SquadCourt';
 import PlayerAvatar from '../components/PlayerAvatar';
@@ -195,8 +195,15 @@ function PointsByRound({ initialSquad, transfers, captainHistory, viceCaptainHis
   const everOnSquad = [...new Set([...initialSquad, ...transfers.map(t => t.in)])];
   const rows = everOnSquad
     .map(id => {
-      const cells = rounds.map(r => (squads.get(r)!.has(id) ? playerRoundPoints(id, r, captainHistory, viceCaptainHistory) : null));
-      const total = cells.reduce<number>((sum, c) => sum + (c ?? 0), 0);
+      // The armband is committed PER ROUND, so it must be shown per round. Reading it from the same
+      // leaderOfRecord() the scorer uses means the badge can never disagree with the number beside it.
+      const cells = rounds.map(r => {
+        if (!squads.get(r)!.has(id)) return null;
+        const role = leaderOfRecord(captainHistory, r) === id ? 'C'
+          : leaderOfRecord(viceCaptainHistory, r) === id ? 'V' : null;
+        return { pts: playerRoundPoints(id, r, captainHistory, viceCaptainHistory), role };
+      });
+      const total = cells.reduce<number>((sum, c) => sum + (c?.pts ?? 0), 0);
       const exit = getPlayerExit(id); // the scored round they lost in (null = not out in R64+)
       // A drafted player who lost the OPENING round (before R64) never enters the scored draw.
       const openingOut = !exit && tournamentStarted() && !isInLiveDraw(id);
@@ -214,6 +221,8 @@ function PointsByRound({ initialSquad, transfers, captainHistory, viceCaptainHis
         <div className="flex items-center gap-2.5 text-[10px]" style={{ color: 'var(--ink-3)' }}>
           <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--green)' }} />still in</span>
           <span className="flex items-center gap-1"><span className="text-[8px] font-extrabold uppercase px-1 rounded" style={{ background: 'rgba(229,71,43,0.12)', color: 'var(--ember)' }}>out</span>eliminated</span>
+          <span className="flex items-center gap-1"><span className="text-[8px] font-extrabold px-[3px] py-[2px] rounded" style={{ background: 'var(--blue)', color: '#fff' }}>C</span>×2 that round</span>
+          <span className="flex items-center gap-1"><span className="text-[8px] font-extrabold px-[3px] py-[2px] rounded" style={{ background: 'rgba(10,27,51,0.10)', color: 'var(--ink-2)' }}>V</span>×1.5 that round</span>
         </div>
       </div>
       {rounds.length === 0 ? (
@@ -256,8 +265,21 @@ function PointsByRound({ initialSquad, transfers, captainHistory, viceCaptainHis
                       </div>
                     </td>
                     {cells.map((c, i) => (
-                      <td key={i} className="text-center px-2 py-1.5 font-num text-xs" style={{ color: c ? 'var(--ink)' : 'var(--ink-3)', fontWeight: c ? 700 : 400 }}>
-                        {c == null ? '·' : c === 0 ? '–' : fmtScore(c)}
+                      <td key={i} className="text-center px-2 py-1.5 font-num text-xs" style={{ color: c?.pts ? 'var(--ink)' : 'var(--ink-3)', fontWeight: c?.pts ? 700 : 400 }}>
+                        {c == null ? '·' : (
+                          <span className="inline-flex items-center gap-0.5">
+                            {c.pts === 0 ? '–' : fmtScore(c.pts)}
+                            {c.role && (
+                              <span
+                                className="text-[8px] font-extrabold leading-none px-[3px] py-[2px] rounded"
+                                style={c.role === 'C'
+                                  ? { background: 'var(--blue)', color: '#fff' }
+                                  : { background: 'rgba(10,27,51,0.10)', color: 'var(--ink-2)' }}
+                                title={c.role === 'C' ? 'Captain this round — points doubled' : 'Vice this round — points ×1.5'}
+                              >{c.role}</span>
+                            )}
+                          </span>
+                        )}
                       </td>
                     ))}
                     <td className="text-right px-3 py-1.5 font-num text-sm font-extrabold" style={{ color: 'var(--blue)' }}>{fmtScore(total)}</td>

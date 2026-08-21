@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { GamePhase, RoundId, RoundScore, BudgetReturn, Transfer } from '../types';
 import {
-  ROUNDS, getMatchesForRound, isPlayerOut, isUnpickable, BUDGET_RETURN_RATES, winPoints, transferWindowOpen, roundPlayable, roundStarted, liveStartedRound, liveLeaderRound,
+  ROUNDS, getMatchesForRound, isPlayerOut, isUnpickable, BUDGET_RETURN_RATES, winPoints, transferWindowOpen, roundPlayable, roundStarted, liveStartedRound, liveLeaderRound, leaderOfRecord,
   tournamentStarted, isEliminated, cashInOpen, liveBudget, playerRefund, transfersUsed,
 } from '../data/tournament';
 import { ACTIVE_TOURNAMENT_ID, OPENING_ROUND, IS_READ_ONLY } from '../data/tournamentConfig';
@@ -12,7 +12,7 @@ import { toast } from './toastStore';
 import { findPlayer, PLAYERS } from '../data/players';
 import { SQUAD_SIZE, STARTING_BUDGET, isTierFull, MAX_TRANSFERS } from '../data/squadRules';
 import { getTier } from '../data/tiers';
-import { round1 } from '../data/format';
+import { round1, lastName } from '../data/format';
 
 const CAPTAIN_MULTIPLIER = 2;   // captain doubles their round points
 const VICE_MULTIPLIER = 1.5;    // vice-captain earns 1.5× their round points
@@ -50,10 +50,32 @@ function warnLeaderLocked(roundIndex: number) {
   toast(`🔒 ${label} is underway — captain & vice lock at the round's first match.`, 'warn');
 }
 
+// Confirm an armband change by naming the ROUND IT FIRST COUNTS FOR.
+//
+// An armband commits per round and freezes at that round's first result. So a pick made while a
+// round is underway lands on the NEXT open round, not the one being played. The app used to accept
+// it silently: the manager saw their new pick on the court, the round in play scored with the old
+// one, and the two never reconciled on screen.
+//
+// That is exactly what happened to Agass. Their vice went R64 Cobolli, R32 Mensik, then QF Cobolli
+// — with NO R16 entry, because the R16 was already under way when they changed it. The R16 scored
+// with Mensik while their screen showed Cobolli, and the same player appeared to score differently
+// to two managers for no visible reason.
+function confirmLeader(role: 'Captain' | 'Vice', playerId: string, roundId: RoundId) {
+  const name = findPlayer(playerId)?.name;
+  const label = ROUNDS.find(r => r.id === roundId)?.label ?? roundId;
+  toast(`${role}: ${name ? lastName(name) : playerId} — counts from the ${label}`, 'good');
+}
+
+// SLOT-SCOPED (P1b). `changed` carries ONLY the armbands the manager actually moved. A slot absent
+// from it is left exactly as it was — not rewritten, not cleared, not re-stamped for this round.
+//
+// It used to take both slots unconditionally, which is how a player nobody picked ended up scoring.
+// Changing your captain also passed whatever happened to be sitting in state.viceCaptain — often a
+// value pickLeaders had auto-assigned — and committed it as a deliberate choice.
 function recordLeaders(
   roundId: RoundId | undefined,
-  captain: string | null,
-  viceCaptain: string | null,
+  changed: { captain?: string | null; vice?: string | null },
   captainHistory: { round: RoundId; playerId: string }[],
   viceCaptainHistory: { round: RoundId; playerId: string }[],
 ) {
@@ -62,7 +84,10 @@ function recordLeaders(
     const rest = hist.filter(c => c.round !== roundId);
     return playerId ? [...rest, { round: roundId, playerId }] : rest;
   };
-  return { captainHistory: upsert(captainHistory, captain), viceCaptainHistory: upsert(viceCaptainHistory, viceCaptain) };
+  return {
+    captainHistory: 'captain' in changed ? upsert(captainHistory, changed.captain ?? null) : captainHistory,
+    viceCaptainHistory: 'vice' in changed ? upsert(viceCaptainHistory, changed.vice ?? null) : viceCaptainHistory,
+  };
 }
 
 // Make ANY restored state safe to run — used by every hydration path (localStorage
@@ -254,7 +279,11 @@ export const useGameStore = create<GameStore>()(
         if (isEliminated(id)) { toast('That player is out — captain someone still in the draw.', 'warn'); return; }
         const round = liveLeaderRound();
         if (!round) { warnLeaderLocked(ROUNDS.length - 1); return; } // every round has started — nothing to set
-        set({ captain: id, viceCaptain: newVice, ...recordLeaders(round, id, newVice, captainHistory, viceCaptainHistory) });
+        // Promoting your own vice is the ONLY case where this also moves the vice slot; any other
+        // captain change must leave the vice history completely alone.
+        const swapped = id === viceCaptain;
+        set({ captain: id, viceCaptain: newVice, ...recordLeaders(round, swapped ? { captain: id, vice: newVice } : { captain: id }, captainHistory, viceCaptainHistory) });
+        confirmLeader('Captain', id, round);
       },
 
       setViceCaptain: (id) => {
@@ -268,7 +297,9 @@ export const useGameStore = create<GameStore>()(
         if (isEliminated(id)) { toast('That player is out — pick a vice still in the draw.', 'warn'); return; }
         const round = liveLeaderRound();
         if (!round) { warnLeaderLocked(ROUNDS.length - 1); return; }
-        set({ viceCaptain: id, captain: newCap, ...recordLeaders(round, newCap, id, captainHistory, viceCaptainHistory) });
+        const swapped = id === captain;
+        set({ viceCaptain: id, captain: newCap, ...recordLeaders(round, swapped ? { captain: newCap, vice: id } : { vice: id }, captainHistory, viceCaptainHistory) });
+        confirmLeader('Vice', id, round);
       },
 
       // Send a captain/vice back to the bench, leaving the slot BLANK (no auto-fill)
@@ -284,7 +315,7 @@ export const useGameStore = create<GameStore>()(
         if (phase === 'draft') { set({ captain: newCap, viceCaptain: newVice }); return; }
         const round = liveLeaderRound();
         if (!round) { warnLeaderLocked(ROUNDS.length - 1); return; }
-        set({ captain: newCap, viceCaptain: newVice, ...recordLeaders(round, newCap, newVice, captainHistory, viceCaptainHistory) });
+        set({ captain: newCap, viceCaptain: newVice, ...recordLeaders(round, id === captain ? { captain: null } : { vice: null }, captainHistory, viceCaptainHistory) });
       },
 
       // Re-field two on-court leaders after a state restore (cloud / localStorage),
@@ -322,7 +353,7 @@ export const useGameStore = create<GameStore>()(
         // can (a no-op only when every round has started).
         set({
           phase: 'pre_round', ...leaders, initialSquad: [...myTeam],
-          ...recordLeaders(liveLeaderRound() ?? ROUNDS[0].id, leaders.captain, leaders.viceCaptain, captainHistory, viceCaptainHistory),
+          ...recordLeaders(liveLeaderRound() ?? ROUNDS[0].id, { captain: leaders.captain, vice: leaders.viceCaptain }, captainHistory, viceCaptainHistory),
         });
         track('squad_locked', { size: myTeam.length, spend: STARTING_BUDGET - get().budget });
       },
@@ -465,8 +496,16 @@ export const useGameStore = create<GameStore>()(
         // round was still open (recordLeaders). Empty if the manager only arrived after the
         // round already had results → no multiplier here, matching the server's strict lock.
         // We score off this, NOT the transient captain field, so local == authoritative board.
-        const roundCap = captainHistory.find(c => c.round === round.id)?.playerId ?? null;
-        const roundVice = viceCaptainHistory.find(c => c.round === round.id)?.playerId ?? null;
+        //
+        // CARRY-FORWARD, via the same leaderOfRecord() the server scorer uses. This used to be a
+        // .find() on an EXACT round match, which silently disagreed with the server for any round
+        // the manager didn't re-pick in: the server carried the last committed armband forward and
+        // doubled it, the client scored it ×1. The two only ever agreed because continueToNextRound
+        // was stamping a fresh (auto-picked) entry every single round — so one bug was hiding the
+        // other. With that stamping removed, an exact-match lookup would show every manager a local
+        // score lower than the leaderboard's.
+        const roundCap = leaderOfRecord(captainHistory, round.id) ?? null;
+        const roundVice = leaderOfRecord(viceCaptainHistory, round.id) ?? null;
 
         // Calculate points
         let roundPoints = 0;
@@ -509,15 +548,20 @@ export const useGameStore = create<GameStore>()(
 
         // captainHistory/viceCaptainHistory are NOT written here — the captain-of-record was
         // already committed during pre_round (recordLeaders), before this round had results.
-        // Clearing captain/vice readies the next round's fresh pick.
+        //
+        // THE ARMBANDS ARE NOT CLEARED. This used to set captain: null, viceCaptain: null to "ready
+        // the next round's fresh pick" — a mental model the game does not actually use. An armband
+        // carries forward until the manager changes it, so wiping it every round left an empty slot
+        // that continueToNextRound then filled by RANK and committed as a deliberate choice. Those
+        // three steps together are how a player nobody picked ended up scoring ×1.5 for a real
+        // manager. Keeping the pick in place is both the correct rule and what removes the need for
+        // the app to ever guess.
         set({
           myScore: myScore + roundPoints,
           roundScores: [...roundScores, { round: round.id, points: roundPoints, captainBonus, viceBonus }],
           budgetReturns: [...budgetReturns, ...newReturns],
           budget: round1(get().budget + totalReturn),
           currentRoundIndex: currentRoundIndex + 1,
-          captain: null,
-          viceCaptain: null,
           phase: isLastRound ? 'finished' : 'round_complete',
         });
         track('round_played', { round: round.id, points: roundPoints, finished: isLastRound });
@@ -527,19 +571,26 @@ export const useGameStore = create<GameStore>()(
       // so it can only advance from round_complete (never re-open a finished game).
       continueToNextRound: () => {
         if (IS_READ_ONLY) return;                 // finished tournament: nothing may change
-        const { phase, myTeam, currentRoundIndex, captainHistory, viceCaptainHistory } = get();
+        const { phase, myTeam, currentRoundIndex, captain, viceCaptain } = get();
         if (phase !== 'round_complete') return;
-        // Re-field two leaders by default (best-ranked still-alive members) so a
-        // manager who doesn't touch the captaincy still gets ×2 / ×1.5 each round.
+        // CARRY THE MANAGER'S OWN ARMBANDS FORWARD. This used to call
+        //     pickLeaders(myTeam, null, null, revealed)
+        // — passing null, null DISCARDED the manager's captain and vice, replaced them with the two
+        // highest-ranked survivors, and then COMMITTED that to captainHistory/viceCaptainHistory as
+        // if it were a deliberate pick. Tapping "next round" silently rewrote who scored ×2 and ×1.5.
+        //
+        // That is how Mensik became manager "Agass"'s Round-of-32 vice, a player they never chose:
+        // he was the highest-ranked survivor after their captain Shelton was transferred out. It
+        // carried into the Round of 16 and cost them Cobolli's ×1.5 — so the same Cobolli win that
+        // paid another manager 7.5 paid them 5, for a reason that existed nowhere in the UI.
+        //
+        // Passing the CURRENT leaders keeps a valid pick and only fills a slot the draw has emptied.
+        // Nothing is recorded here: leaderOfRecord already carries the last committed pick forward
+        // into every later round, so a manager who never touches the captaincy keeps their ×2 / ×1.5
+        // automatically. A write here could only ever overwrite a real choice with a guess.
         const revealed = ROUNDS.slice(0, currentRoundIndex).map(r => r.id);
-        const leaders = pickLeaders(myTeam, null, null, revealed);
-        // Commit this round's default captain-of-record while it's still open. If the
-        // round already has a result (a manager returning late), it's a no-op → no
-        // multiplier this round, exactly as the server would enforce.
-        set({
-          phase: 'pre_round', ...leaders,
-          ...recordLeaders(ROUNDS[currentRoundIndex]?.id, leaders.captain, leaders.viceCaptain, captainHistory, viceCaptainHistory),
-        });
+        const leaders = pickLeaders(myTeam, captain, viceCaptain, revealed);
+        set({ phase: 'pre_round', ...leaders });
       },
 
       setActiveTab: (tab) => set({ activeTab: tab }),

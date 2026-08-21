@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useGameStore } from '../store/gameStore';
-import { ROUNDS, getMatchesForRound, winPoints, liveScore } from '../data/tournament';
+import { ROUNDS, getMatchesForRound, winPoints, liveScore, leaderOfRecord } from '../data/tournament';
 import { PLAYERS } from '../data/players';
 import { scoreEntry, type ScoreCtx, type EntryState } from '../scoring/serverEngine';
 import { loadSampleTournament, loadSampleThrough, revealThrough, roles } from './fixtures/sampleDraw';
@@ -234,23 +234,37 @@ describe('P1: captain-of-record survives the server lock (no doomed edit)', () =
     expect(serverRejects(stored, oldIncoming, ['R64'])).toMatch(/Cannot change your R64 captain/);
   });
 
-  it('a captain not committed before its round has results earns no multiplier (mid-tournament)', () => {
+  it('a late captain CHANGE is refused, and the previous pick carries forward (mid-tournament)', () => {
     // Strict fairness twin of P3: you can't pick a captain for a round whose result you can
     // already see. (Locking late is closed by P6; here the manager locked in time but returned
-    // to set the R32 captain only after R32 had already resolved.)
+    // to change the R32 captain only after R32 had already resolved.)
+    //
+    // What they DON'T lose is the captain they already committed. The rule is carry-forward: an
+    // armband stays in force until changed, so the R64 pick is still the R32 captain and still
+    // doubles. This is not a nicety — it is what the SERVER does, and the client must agree with
+    // the leaderboard. Live proof from cincinnati_2026: manager "Buzzi2" has a vice history of
+    // exactly [{R64, cobolli}] and production paid Cobolli ×1.5 in the R32 AND the R16.
+    //
+    // This test previously asserted captainBonus === 0, which only held because the client scored
+    // the armband with an exact-round .find() while the server carried it forward — so the app
+    // showed a lower score than the board it was compared against.
     store().addPlayer(roles.champion);
     store().addPlayer(roles.runnerUp);
     store().finalizeDraft();                          // locked before any result — R64 captain recorded
     revealThrough('R64'); store().playNextRound();    // R64 played (captain applies)
-    revealThrough('R32');                             // R32 resolves BEFORE the manager sets its captain
-    store().continueToNextRound();                    // recordLeaders is a no-op (R32 has a result)
+    revealThrough('R32');                             // R32 resolves BEFORE the manager touches it
+    store().continueToNextRound();                    // records nothing — R32 already has a result
     expect(store().captainHistory.find(c => c.round === 'R32')).toBeUndefined();
-    store().setCaptain(roles.champion);               // refused — R32 is frozen
+    store().setCaptain(roles.runnerUp);               // a real CHANGE — refused, R32 is frozen
     expect(store().captainHistory.find(c => c.round === 'R32')).toBeUndefined();
+    expect(leaderOfRecord(store().captainHistory, 'R32')).toBe(roles.champion); // the R64 pick stands
 
-    store().playNextRound();                          // scores R32 WITHOUT a captain
+    store().playNextRound();                          // scores R32 with the carried-forward captain
     const r32 = store().roundScores.find(rs => rs.round === 'R32');
-    expect(r32?.captainBonus).toBe(0);                // no multiplier — they missed the window
+    expect(r32?.captainBonus).toBeGreaterThan(0);     // the committed captain still doubles
+    // …and the number the app shows equals the number the server would compute. That equality is
+    // the whole point: a manager must never see a different score from the leaderboard.
+    expect(scoreEntry(stateFromStore(), buildCtx())).toBe(store().myScore);
   });
 });
 

@@ -67,3 +67,54 @@ describe('gameStore — pickLeaders never writes history', () => {
     expect(store).toMatch(/if \(!roundId \|\| roundStarted\(roundId\)\) return \{ captainHistory, viceCaptainHistory \};/);
   });
 });
+
+// ── The armband must be shown PER ROUND, because it IS per round ─────────────────────────────────
+//
+// THE SECOND BUG, from production on 2026-08-20. Two managers, same player, same round, different
+// points — and no way to tell why:
+//
+//   Buzzi2  vice history: [R64 cobolli]                        → R16 vice = cobolli → 5 × 1.5 = 7.5
+//   Agass   vice history: [R64 cobolli, R32 mensik, QF cobolli] → R16 vice = MENSIK  → 5 × 1.0 = 5
+//
+// Agass moved the vice armband to Mensik in the R32 and only brought it back to Cobolli at the QF.
+// Both numbers are right. But the Points-by-round table printed a bare "7.5" and a bare "5", and
+// both managers' courts showed "Cobolli · Vice" — the CURRENT pick — so the table looked like the
+// same player being paid two different rates for the same win.
+//
+// An armband is committed per round and carried forward until changed. A single current-armband
+// badge cannot express that, and implies the pick applied to every round. So each round's cell
+// carries its own marker, resolved through the same leaderOfRecord() the scorer uses.
+describe('TeamPage — Points by round shows which armband applied in each round', () => {
+  const page = readFileSync(fileURLToPath(new URL('../pages/TeamPage.tsx', import.meta.url)), 'utf8');
+
+  it('resolves each cell\'s armband from the committed history, per round', () => {
+    expect(page).toMatch(/leaderOfRecord\(captainHistory, r\) === id \? 'C'/);
+    expect(page).toMatch(/leaderOfRecord\(viceCaptainHistory, r\) === id \? 'V'/);
+  });
+
+  // Same source as the number in the cell → the badge can never contradict the points beside it.
+  it('reads the armband from tournament.ts, not from the store\'s current pick', () => {
+    expect(page).toMatch(/import \{[^}]*leaderOfRecord[^}]*\} from '\.\.\/data\/tournament'/s);
+    const rows = page.slice(page.indexOf('const cells = rounds.map'), page.indexOf('const total = cells'));
+    expect(rows).not.toMatch(/\bcaptain\b(?!History)/);
+    expect(rows).not.toMatch(/\bviceCaptain\b(?!History)/);
+  });
+
+  it('explains the multipliers in the legend', () => {
+    expect(page).toMatch(/×2 that round/);
+    expect(page).toMatch(/×1\.5 that round/);
+  });
+});
+
+// Setting an armband while a round is UNDER WAY applies it to the next round, not the one being
+// played — that is what produced Agass's QF-dated Cobolli entry and the missing R16 one. The app
+// accepted the change silently, so the manager had every reason to believe it counted immediately.
+describe('gameStore — an armband change names the round it first counts for', () => {
+  const store = readFileSync(fileURLToPath(new URL('../store/gameStore.ts', import.meta.url)), 'utf8');
+
+  it('confirms captain and vice changes with the round label', () => {
+    expect(store).toMatch(/counts from the \$\{label\}/);
+    expect(store).toMatch(/confirmLeader\('Captain', id, round\)/);
+    expect(store).toMatch(/confirmLeader\('Vice', id, round\)/);
+  });
+});
