@@ -6,6 +6,16 @@
  *   circular-ready PNG. The face is the REAL player; only bg + framing change.
  *
  *   node scripts/photo-avatars.mjs [--only id1,id2]
+ *
+ * ⚠️ @imgly/background-removal-node is NOT installed by default. Install it on demand:
+ *
+ *   npm i --no-save @imgly/background-removal-node
+ *
+ * It was removed from devDependencies on 2026-08-21. It pulls a large native/ML tree
+ * (onnxruntime-node, sharp, lodash, zod) into every `npm install` and accounted for 8 of the
+ * project's 12 npm-audit advisories — all for a script that runs by hand, at most once a
+ * tournament, and whose output (public/avatars) was never committed. `--no-save` keeps it out
+ * of package.json so the cost stays with the person regenerating avatars.
  */
 import { removeBackground } from '@imgly/background-removal-node';
 import Jimp from 'jimp';
