@@ -69,7 +69,11 @@ if (ENTRIES.length === 0) {
 
 // ── ENGINE A — live, transcribed from supabase/functions/recompute-score/index.ts ────────────────
 const A_ORDER = ['R128','R64','R32','R16','QF','SF','F'];
-const A_POINTS = { R128:1, R64:1, R32:2, R16:5, QF:10, SF:20, F:40 };
+// Job 13: engine A (the deployed scorer) selects its curve per tournament. Engine B (the Lovable
+// client) stays on the legacy curve until its cutover deploy — update B when that ships.
+const A_LEGACY  = { R128:1, R96:0, R64:1, R32:2, R16:5, QF:10, SF:20, F:40 };
+const A_FORMAT2 = { R128:1, R96:0, R64:2, R32:3, R16:5, QF:8, SF:13, F:20 };
+const A_POINTS = ['montreal_2026', 'cincinnati_2026'].includes(TOURNAMENT) ? A_LEGACY : A_FORMAT2;
 const A_upset = (w, l) => (l == null || w <= l) ? 1 : 1 + (w - l) / ((w - l) + 30);
 // THE KEY LINE: base x upset is rounded to a WHOLE NUMBER first; the captain/vice multiplier is
 // applied afterwards. That ordering is what makes half-points exist (vice x1.5 of an odd number).

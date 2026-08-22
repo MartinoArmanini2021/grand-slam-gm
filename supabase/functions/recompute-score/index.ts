@@ -18,10 +18,22 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { assertServiceRole } from '../_shared/serviceGuard.ts';
 
-// Base points per round — the one canonical curve (a Masters final = a Slam final).
-const ROUND_POINTS: Record<string, number> = {
-  R128: 1, R64: 1, R32: 2, R16: 5, QF: 10, SF: 20, F: 40,
+// Base points per round — PER TOURNAMENT since Job 13 (adopted 2026-08-22).
+//
+// Events played under the old curve are pinned to it FOREVER: a manual rescore of an
+// archived tournament must reproduce the history its managers actually lived. Everything
+// else (the US Open onward) scores on Format 2 — the "early-fat" curve chosen from
+// docs/FORMAT_OPTIONS.md because ~70% of all points used to arrive QF-onward, making the
+// first week ceremonial. Format 2 cuts that to ~54% while keeping the Final the biggest
+// single prize. Extended to a Slam with R128 = 1 (Martino's call, 2026-08-22).
+const LEGACY_POINTS: Record<string, number> = {
+  R128: 1, R96: 0, R64: 1, R32: 2, R16: 5, QF: 10, SF: 20, F: 40,
 };
+const FORMAT2_POINTS: Record<string, number> = {
+  R128: 1, R96: 0, R64: 2, R32: 3, R16: 5, QF: 8, SF: 13, F: 20,
+};
+const LEGACY_TOURNAMENTS = new Set(['montreal_2026', 'cincinnati_2026']);
+const curveFor = (tid: string) => (LEGACY_TOURNAMENTS.has(tid) ? LEGACY_POINTS : FORMAT2_POINTS);
 const ROUND_ORDER = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'];
 const CAPTAIN_MULTIPLIER = 2;
 const VICE_MULTIPLIER = 1.5;
@@ -59,7 +71,7 @@ function leaderOfRecord(history: { round: string; playerId: string }[] | undefin
   return best?.playerId;
 }
 
-function scoreEntry(state: EntryState, matches: MatchRow[], rankById: Record<string, number>, playedRounds: string[]): number {
+function scoreEntry(state: EntryState, matches: MatchRow[], rankById: Record<string, number>, playedRounds: string[], points: Record<string, number>): number {
   const idx = (r: string) => ROUND_ORDER.indexOf(r);
   const rank = (id: string) => rankById[id] ?? 40;
   // INTEGRITY (P3): score ONLY off the frozen initialSquad snapshot; a never-locked entry
@@ -73,7 +85,7 @@ function scoreEntry(state: EntryState, matches: MatchRow[], rankById: Record<str
     for (const t of state.transfers ?? []) if (idx(t.round) < ri) squad = squad.map(id => (id === t.out ? t.in : id));
     const captain = leaderOfRecord(state.captainHistory, round);
     const vice = leaderOfRecord(state.viceCaptainHistory, round);
-    const base = ROUND_POINTS[round] ?? 0;
+    const base = points[round] ?? 0;
     const rm = matches.filter(m => m.round === round);
     for (const id of squad) {
       // ASSERT, don't pick. A player appears in at most ONE match per round; two would mean the
@@ -164,7 +176,7 @@ Deno.serve(async (req) => {
     // the serial loop would never finish inside the cron window at 100k+ entries.
     const scores = entries.map(e => ({
       user_id: e.user_id,
-      score: scoreEntry((e.state ?? {}) as EntryState, matches, rankById, playedRounds),
+      score: scoreEntry((e.state ?? {}) as EntryState, matches, rankById, playedRounds, curveFor(tournamentId!)),
     }));
     let updated = 0;
     const CHUNK = 5000;

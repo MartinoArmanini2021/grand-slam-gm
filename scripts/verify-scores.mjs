@@ -47,7 +47,11 @@ const api = async (path) => {
 // thing it checks can only ever prove the code equals itself. This agreeing with the deployed
 // scorer is evidence; the same function called twice is not.
 const ROUND_ORDER = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'];
-const ROUND_POINTS = { R128: 1, R64: 1, R32: 2, R16: 5, QF: 10, SF: 20, F: 40 };
+// Per-tournament curves, mirroring the deployed scorer (Job 13): legacy events pinned forever,
+// Format 2 (early-fat, R128=1 Slam extension) from the US Open onward.
+const LEGACY_POINTS  = { R128: 1, R96: 0, R64: 1, R32: 2, R16: 5, QF: 10, SF: 20, F: 40 };
+const FORMAT2_POINTS = { R128: 1, R96: 0, R64: 2, R32: 3, R16: 5, QF: 8, SF: 13, F: 20 };
+const ROUND_POINTS = ['montreal_2026', 'cincinnati_2026'].includes(TOURNAMENT) ? LEGACY_POINTS : FORMAT2_POINTS;
 const idx = r => ROUND_ORDER.indexOf(r);
 const upset = (w, l) => (l == null || w <= l) ? 1 : 1 + (w - l) / ((w - l) + 30);
 const winPoints = (base, w, l) => Math.round(base * upset(w, l));
