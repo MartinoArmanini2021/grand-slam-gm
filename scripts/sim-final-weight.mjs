@@ -34,6 +34,8 @@ const VARIANTS = [
   { key: 'E · flatter 1·2·4·7·12·20',     points: { R64: 1, R32: 2, R16: 4, QF: 7,  SF: 12, F: 20 }, bonus: 0 },
   { key: 'F · linear  1·2·3·5·8·13',      points: { R64: 1, R32: 2, R16: 3, QF: 5,  SF: 8,  F: 13 }, bonus: 0 },
   { key: 'G · steeper 1·3·7·15·32·70',    points: { R64: 1, R32: 3, R16: 7, QF: 15, SF: 32, F: 70 }, bonus: 0 },
+  // FORMAT_OPTIONS.md (17 Aug) Format 2 — "early-fat", built to fix the dead first week:
+  { key: 'H · early-fat 2·3·5·8·13·20',   points: { R64: 2, R32: 3, R16: 5, QF: 8, SF: 13, F: 20 }, bonus: 0 },
 ];
 
 // ── field + bracket (verbatim from sim-balance.mjs) ─────────────────────────────────────────────
@@ -177,7 +179,7 @@ const managers = Array.from({ length: N_MANAGERS }, (_, i) => ({
 }));
 
 const agg = VARIANTS.map(() => ({
-  flips: 0, champOwnerWins: 0, finalShare: 0, margins: [], preLeaderHadLead: 0,
+  flips: 0, champOwnerWins: 0, finalShare: 0, margins: [], preLeaderHadLead: 0, latePct: 0,
 }));
 
 for (let run = 0; run < N_RUNS; run++) {
@@ -195,6 +197,10 @@ for (let run = 0; run < N_RUNS; run++) {
     const owns = histories[winner].some(r => r.includes(sim.champion));
     if (owns) agg[vi].champOwnerWins++;
     agg[vi].finalShare += res[winner].perRound.F / res[winner].total;
+    // Share of ALL league points earned from the QF onward — the "is week one worth playing" metric
+    let late = 0, all = 0;
+    for (const r of res) { late += r.perRound.QF + r.perRound.SF + r.perRound.F; all += r.total; }
+    agg[vi].latePct += all ? late / all : 0;
     const sorted = [...totals].sort((a, b) => b - a);
     agg[vi].margins.push(sorted[0] - (sorted[1] ?? 0));
   });
@@ -203,13 +209,13 @@ for (let run = 0; run < N_RUNS; run++) {
 const pct = (n) => (100 * n / N_RUNS).toFixed(1) + '%';
 const mean = (a) => a.reduce((x, y) => x + y, 0) / a.length;
 console.log(`\n  Final-weight sweep — ${N_MANAGERS} managers · ${N_RUNS} tournaments · identical draws per variant\n`);
-console.log('  variant                        final flips league   winner holds champ   final share of winner   1st–2nd margin');
+console.log('  variant                            final flips league   QF-onward share   final share of winner   1st–2nd margin');
 console.log('  ' + '-'.repeat(112));
 for (let i = 0; i < VARIANTS.length; i++) {
   const a = agg[i];
   console.log('  ' + VARIANTS[i].key.padEnd(34)
     + pct(a.flips).padStart(12) + '        '
-    + pct(a.champOwnerWins).padStart(12) + '          '
+    + ((100 * a.latePct / N_RUNS).toFixed(1) + '%').padStart(10) + '          '
     + ((100 * a.finalShare / N_RUNS).toFixed(1) + '%').padStart(12) + '            '
     + mean(a.margins).toFixed(1).padStart(8));
 }
