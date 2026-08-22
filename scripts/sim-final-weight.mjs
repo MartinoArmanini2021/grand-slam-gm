@@ -26,10 +26,14 @@ const winPoints = (base, w, l) => Math.round(base * upsetMult(w, l));
 // The four designs on trial. `bonus` = flat points per finalist HELD (both finalists), no
 // armband multiplier and no upset — a reward for the run, not another lottery ticket.
 const VARIANTS = [
-  { key: 'A · today (F=40)',           F: 40, bonus: 0 },
-  { key: 'B · big final (F=60)',       F: 60, bonus: 0 },
-  { key: 'C · small final (F=30)',     F: 30, bonus: 0 },
-  { key: 'D · F=40 + finalist +10',    F: 40, bonus: 10 },
+  { key: 'A · today   1·2·5·10·20·40',   F: 40, bonus: 0 },
+  { key: 'B · big F    …·20·60',          F: 60, bonus: 0 },
+  { key: 'C · small F  …·20·30',          F: 30, bonus: 0 },
+  { key: 'D · today + finalist +10',      F: 40, bonus: 10 },
+  // The three curves from the 2026-08-14 investigation, verbatim:
+  { key: 'E · flatter 1·2·4·7·12·20',     points: { R64: 1, R32: 2, R16: 4, QF: 7,  SF: 12, F: 20 }, bonus: 0 },
+  { key: 'F · linear  1·2·3·5·8·13',      points: { R64: 1, R32: 2, R16: 3, QF: 5,  SF: 8,  F: 13 }, bonus: 0 },
+  { key: 'G · steeper 1·3·7·15·32·70',    points: { R64: 1, R32: 3, R16: 7, QF: 15, SF: 32, F: 70 }, bonus: 0 },
 ];
 
 // ── field + bracket (verbatim from sim-balance.mjs) ─────────────────────────────────────────────
@@ -135,9 +139,9 @@ function rosterHistory(squad, sim) {
   return byRound;
 }
 
-function scoreVariant(byRound, sim, { F, bonus }) {
+function scoreVariant(byRound, sim, { F, bonus, points: full }) {
   const { matches, exit } = sim;
-  const points = { ...BASE_POINTS, F };
+  const points = full ?? { ...BASE_POINTS, F };
   const perRound = {};
   let total = 0;
   for (let ri = 0; ri < ROUNDS.length; ri++) {
@@ -203,7 +207,7 @@ console.log('  variant                        final flips league   winner holds 
 console.log('  ' + '-'.repeat(112));
 for (let i = 0; i < VARIANTS.length; i++) {
   const a = agg[i];
-  console.log('  ' + VARIANTS[i].key.padEnd(30)
+  console.log('  ' + VARIANTS[i].key.padEnd(34)
     + pct(a.flips).padStart(12) + '        '
     + pct(a.champOwnerWins).padStart(12) + '          '
     + ((100 * a.finalShare / N_RUNS).toFixed(1) + '%').padStart(12) + '            '
