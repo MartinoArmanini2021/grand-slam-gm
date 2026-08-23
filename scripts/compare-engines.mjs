@@ -27,7 +27,6 @@ const env = Object.fromEntries(
     .split(/\r?\n/).filter(l => l.includes('=') && !l.trim().startsWith('#'))
     .map(l => [l.slice(0, l.indexOf('=')).trim(), l.slice(l.indexOf('=') + 1).trim()]),
 );
-const TOURNAMENT = process.argv.slice(2).find(a => !a.startsWith('--')) ?? 'cincinnati_2026';
 const api = async (path) => {
   const res = await fetch(`${env.VITE_SUPABASE_URL}/rest/v1/${path}`, {
     headers: { apikey: env.VITE_SUPABASE_ANON_KEY, Authorization: `Bearer ${env.VITE_SUPABASE_ANON_KEY}` },
@@ -36,10 +35,43 @@ const api = async (path) => {
   return res.json();
 };
 
+// Same two rules as verify-scores.mjs: no hardcoded tournament default (an unnamed run checks
+// whatever the server says is ACTIVE), and board_entries is paged past PostgREST's response cap
+// so the diff never silently compares a fraction of the field.
+const rpc = async (fn) => {
+  const res = await fetch(`${env.VITE_SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: {
+      apikey: env.VITE_SUPABASE_ANON_KEY, Authorization: `Bearer ${env.VITE_SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: '{}',
+  });
+  if (!res.ok) throw new Error(`rpc/${fn} → ${res.status} ${await res.text()}`);
+  return res.json();
+};
+const paged = async (path, page = 1000) => {
+  const rows = [];
+  for (let from = 0; ; from += page) {
+    const res = await fetch(`${env.VITE_SUPABASE_URL}/rest/v1/${path}`, {
+      headers: {
+        apikey: env.VITE_SUPABASE_ANON_KEY, Authorization: `Bearer ${env.VITE_SUPABASE_ANON_KEY}`,
+        Range: `${from}-${from + page - 1}`,
+      },
+    });
+    if (!res.ok) throw new Error(`${path} → ${res.status} ${await res.text()}`);
+    const batch = await res.json();
+    rows.push(...batch);
+    if (batch.length < page) return rows;
+  }
+};
+const TOURNAMENT = process.argv.slice(2).find(a => !a.startsWith('--')) ?? await rpc('get_active_tournament');
+if (!TOURNAMENT) throw new Error('No tournament: pass one explicitly or set app_config.active_tournament_id.');
+
 const [matchRows, statRows, boardRows] = await Promise.all([
   api(`matches?tournament_id=eq.${TOURNAMENT}&select=round,slot,p1_id,p2_id,winner_id`),
   api(`player_stats?tournament_id=eq.${TOURNAMENT}&select=id,ranking`),
-  api(`board_entries?tournament_id=eq.${TOURNAMENT}&select=user_id,score,state`),
+  paged(`board_entries?tournament_id=eq.${TOURNAMENT}&select=user_id,score,state&order=user_id.asc`),
 ]);
 
 const MATCHES = matchRows.map(m => ({

@@ -31,7 +31,6 @@ const KEY = env.VITE_SUPABASE_ANON_KEY;
 // the script cheerfully reports "0 entries · no discrepancies" — a pass that proves nothing, which
 // is the single worst outcome for a verification tool.
 const args = process.argv.slice(2).filter(a => !a.startsWith('--'));
-const TOURNAMENT = args[0] ?? 'cincinnati_2026';
 const DETAIL = process.argv.includes('--detail');
 
 const api = async (path) => {
@@ -41,6 +40,37 @@ const api = async (path) => {
   if (!res.ok) throw new Error(`${path} → ${res.status} ${await res.text()}`);
   return res.json();
 };
+
+// board_entries grows with the player base and PostgREST caps a single response (db-max-rows,
+// default ~1000) — a bare select would silently verify only the first page and report success.
+// Page until a short page ends it; the explicit order keeps page boundaries stable.
+const paged = async (path, page = 1000) => {
+  const rows = [];
+  for (let from = 0; ; from += page) {
+    const res = await fetch(`${URL_}/rest/v1/${path}`, {
+      headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, Range: `${from}-${from + page - 1}` },
+    });
+    if (!res.ok) throw new Error(`${path} → ${res.status} ${await res.text()}`);
+    const batch = await res.json();
+    rows.push(...batch);
+    if (batch.length < page) return rows;
+  }
+};
+
+// No hardcoded default. An unnamed run resolves whatever the server says is ACTIVE — the same
+// rule recompute-score follows ("NO HARDCODED FALLBACK"): a checker pinned to yesterday's event
+// silently verifies the wrong tournament and reads as reassurance.
+const rpc = async (fn) => {
+  const res = await fetch(`${URL_}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
+    body: '{}',
+  });
+  if (!res.ok) throw new Error(`rpc/${fn} → ${res.status} ${await res.text()}`);
+  return res.json();
+};
+const TOURNAMENT = args[0] ?? await rpc('get_active_tournament');
+if (!TOURNAMENT) throw new Error('No tournament: pass one explicitly or set app_config.active_tournament_id.');
 
 // ── the engine, transcribed from supabase/functions/recompute-score ─────────────────────────────
 // Deliberately re-implemented rather than imported: a check that shares its implementation with the
@@ -69,7 +99,7 @@ const leaderOfRecord = (history, round) => {
 const [matches, stats, board] = await Promise.all([
   api(`matches?tournament_id=eq.${TOURNAMENT}&select=round,slot,p1_id,p2_id,winner_id`),
   api(`player_stats?tournament_id=eq.${TOURNAMENT}&select=id,ranking`),
-  api(`board_entries?tournament_id=eq.${TOURNAMENT}&select=user_id,score,state`),
+  paged(`board_entries?tournament_id=eq.${TOURNAMENT}&select=user_id,score,state&order=user_id.asc`),
 ]);
 
 const rank = Object.fromEntries(stats.map(p => [p.id, p.ranking]));
