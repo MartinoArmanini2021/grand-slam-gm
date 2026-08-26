@@ -150,7 +150,13 @@ function engineA(entry, matches, ranks) {
 
 // ── ENGINE B — the Lovable rebuild, transcribed from its src/lib/game/engine.ts ──────────────────
 const B_ORDER = ['R128','R96','R64','R32','R16','QF','SF','F'];
-const B_POINTS = { R128:1, R96:0, R64:1, R32:2, R16:5, QF:10, SF:20, F:40 };
+// Job 13, client half (shipped 2026-08-26): the Lovable engine now selects its curve PER
+// TOURNAMENT exactly as the deployed scorer does — curveFor(tid), legacy events pinned forever.
+// So engine B reads the same map engine A does. If these two ever diverge again, that divergence
+// IS the finding this script exists to surface — do not paper over it by sharing one constant.
+const B_LEGACY  = { R128:1, R96:0, R64:1, R32:2, R16:5, QF:10, SF:20, F:40 };
+const B_FORMAT2 = { R128:1, R96:0, R64:2, R32:3, R16:5, QF:8, SF:13, F:20 };
+const B_POINTS = ['montreal_2026', 'cincinnati_2026'].includes(TOURNAMENT) ? B_LEGACY : B_FORMAT2;
 const B_idx = r => { const i = B_ORDER.indexOf(r); return i <= 1 ? 0 : i - 1; };
 const B_round2 = n => Math.round(n * 100) / 100;
 const B_upset = (w, l) => { if (!w || !l) return 1; const gap = w - l; return gap <= 0 ? 1 : 1 + gap / (gap + 30); };
