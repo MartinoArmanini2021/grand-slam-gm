@@ -1,0 +1,1218 @@
+{
+  "tournament_id": "montreal_2026",
+  "taken_at": "2026-08-26T09:38:30.890Z",
+  "complete": true,
+  "champion": "shelton",
+  "counts": {
+    "matches": 63,
+    "decided": 63,
+    "entries": 8,
+    "scored": 8,
+    "players": 0
+  },
+  "standings": [
+    {
+      "rank": 1,
+      "user_id": "96f09bf4-1502-4e1e-8749-4a0c6a8fb0c4",
+      "manager": "🎾 The Boncias",
+      "score": 199.5
+    },
+    {
+      "rank": 2,
+      "user_id": "0f7892be-a038-494c-ab5a-e4484c221ec7",
+      "manager": "🐺 Buzzi2",
+      "score": 186
+    },
+    {
+      "rank": 3,
+      "user_id": "51face7f-b380-4537-bb14-db16443f97a2",
+      "manager": "🎾 Elearma's Squad",
+      "score": 165.5
+    },
+    {
+      "rank": 4,
+      "user_id": "45576f33-e1ca-47ea-94a4-3d0deb771ba7",
+      "manager": "🦁 Los juliettas",
+      "score": 148
+    },
+    {
+      "rank": 5,
+      "user_id": "e3a43da2-d991-4594-b991-1fae551b4199",
+      "manager": "🐐 Agass",
+      "score": 127
+    },
+    {
+      "rank": 6,
+      "user_id": "49b012ea-3c50-4fcd-a18b-59122e2b9db3",
+      "manager": "🎾 Gatsby’s Men",
+      "score": 39
+    },
+    {
+      "rank": 7,
+      "user_id": "47409344-9ef0-4e0d-8856-bff9dfc81806",
+      "manager": "🐐 Padel >Tenis",
+      "score": 10
+    },
+    {
+      "rank": 8,
+      "user_id": "524e264f-c7eb-4b03-9200-183dd0cfd647",
+      "manager": "🎾 TommysTeam",
+      "score": 2
+    }
+  ],
+  "matches": [
+    {
+      "round": "F",
+      "slot": 0,
+      "p1_id": "shelton",
+      "p2_id": "nakashima",
+      "winner_id": "shelton",
+      "score_line": null
+    },
+    {
+      "round": "QF",
+      "slot": 0,
+      "p1_id": "merida",
+      "p2_id": "tien",
+      "winner_id": "tien",
+      "score_line": null
+    },
+    {
+      "round": "QF",
+      "slot": 1,
+      "p1_id": "mensik",
+      "p2_id": "shelton",
+      "winner_id": "shelton",
+      "score_line": null
+    },
+    {
+      "round": "QF",
+      "slot": 2,
+      "p1_id": "jodar",
+      "p2_id": "fils",
+      "winner_id": "jodar",
+      "score_line": null
+    },
+    {
+      "round": "QF",
+      "slot": 3,
+      "p1_id": "darderi",
+      "p2_id": "nakashima",
+      "winner_id": "nakashima",
+      "score_line": null
+    },
+    {
+      "round": "R16",
+      "slot": 0,
+      "p1_id": "griekspoor",
+      "p2_id": "merida",
+      "winner_id": "merida",
+      "score_line": null
+    },
+    {
+      "round": "R16",
+      "slot": 1,
+      "p1_id": "tien",
+      "p2_id": "tirante",
+      "winner_id": "tien",
+      "score_line": null
+    },
+    {
+      "round": "R16",
+      "slot": 2,
+      "p1_id": "zandschulp",
+      "p2_id": "mensik",
+      "winner_id": "mensik",
+      "score_line": null
+    },
+    {
+      "round": "R16",
+      "slot": 3,
+      "p1_id": "fonseca",
+      "p2_id": "shelton",
+      "winner_id": "shelton",
+      "score_line": null
+    },
+    {
+      "round": "R16",
+      "slot": 4,
+      "p1_id": "lehecka",
+      "p2_id": "jodar",
+      "winner_id": "jodar",
+      "score_line": null
+    },
+    {
+      "round": "R16",
+      "slot": 5,
+      "p1_id": "fils",
+      "p2_id": "norrie",
+      "winner_id": "fils",
+      "score_line": null
+    },
+    {
+      "round": "R16",
+      "slot": 6,
+      "p1_id": "borges",
+      "p2_id": "darderi",
+      "winner_id": "darderi",
+      "score_line": null
+    },
+    {
+      "round": "R16",
+      "slot": 7,
+      "p1_id": "rinderknech",
+      "p2_id": "nakashima",
+      "winner_id": "nakashima",
+      "score_line": null
+    },
+    {
+      "round": "R32",
+      "slot": 0,
+      "p1_id": "griekspoor",
+      "p2_id": "arnaldi",
+      "winner_id": "griekspoor",
+      "score_line": null
+    },
+    {
+      "round": "R32",
+      "slot": 1,
+      "p1_id": "merida",
+      "p2_id": "michelsen",
+      "winner_id": "merida",
+      "score_line": null
+    },
+    {
+      "round": "R32",
+      "slot": 2,
+      "p1_id": "tien",
+      "p2_id": "paul",
+      "winner_id": "tien",
+      "score_line": null
+    },
+    {
+      "round": "R32",
+      "slot": 3,
+      "p1_id": "popyrin",
+      "p2_id": "tirante",
+      "winner_id": "tirante",
+      "score_line": null
+    },
+    {
+      "round": "R32",
+      "slot": 4,
+      "p1_id": "zandschulp",
+      "p2_id": "hurkacz",
+      "winner_id": "zandschulp",
+      "score_line": null
+    },
+    {
+      "round": "R32",
+      "slot": 5,
+      "p1_id": "atmane",
+      "p2_id": "mensik",
+      "winner_id": "mensik",
+      "score_line": null
+    },
+    {
+      "round": "R32",
+      "slot": 6,
+      "p1_id": "ruud",
+      "p2_id": "fonseca",
+      "winner_id": "fonseca",
+      "score_line": null
+    },
+    {
+      "round": "R32",
+      "slot": 7,
+      "p1_id": "bergs",
+      "p2_id": "shelton",
+      "winner_id": "shelton",
+      "score_line": null
+    },
+    {
+      "round": "R32",
+      "slot": 8,
+      "p1_id": "lehecka",
+      "p2_id": "blockx",
+      "winner_id": "lehecka",
+      "score_line": null
+    },
+    {
+      "round": "R32",
+      "slot": 9,
+      "p1_id": "jodar",
+      "p2_id": "musetti",
+      "winner_id": "jodar",
+      "score_line": null
+    },
+    {
+      "round": "R32",
+      "slot": 10,
+      "p1_id": "navone",
+      "p2_id": "fils",
+      "winner_id": "fils",
+      "score_line": null
+    },
+    {
+      "round": "R32",
+      "slot": 11,
+      "p1_id": "norrie",
+      "p2_id": "deminaur",
+      "winner_id": "norrie",
+      "score_line": null
+    },
+    {
+      "round": "R32",
+      "slot": 12,
+      "p1_id": "hanfmann",
+      "p2_id": "borges",
+      "winner_id": "borges",
+      "score_line": null
+    },
+    {
+      "round": "R32",
+      "slot": 13,
+      "p1_id": "darderi",
+      "p2_id": "shang",
+      "winner_id": "darderi",
+      "score_line": null
+    },
+    {
+      "round": "R32",
+      "slot": 14,
+      "p1_id": "tiafoe",
+      "p2_id": "rinderknech",
+      "winner_id": "rinderknech",
+      "score_line": null
+    },
+    {
+      "round": "R32",
+      "slot": 15,
+      "p1_id": "nakashima",
+      "p2_id": "droguet",
+      "winner_id": "nakashima",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 0,
+      "p1_id": "zverev",
+      "p2_id": "griekspoor",
+      "winner_id": "griekspoor",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 1,
+      "p1_id": "marozsan",
+      "p2_id": "arnaldi",
+      "winner_id": "arnaldi",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 2,
+      "p1_id": "humbert",
+      "p2_id": "merida",
+      "winner_id": "merida",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 3,
+      "p1_id": "michelsen",
+      "p2_id": "franciscocerundolo",
+      "winner_id": "michelsen",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 4,
+      "p1_id": "tien",
+      "p2_id": "x_gael_monfils",
+      "winner_id": "tien",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 5,
+      "p1_id": "royer",
+      "p2_id": "paul",
+      "winner_id": "paul",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 6,
+      "p1_id": "collignon",
+      "p2_id": "popyrin",
+      "winner_id": "popyrin",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 7,
+      "p1_id": "tirante",
+      "p2_id": "fritz",
+      "winner_id": "tirante",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 8,
+      "p1_id": "medvedev",
+      "p2_id": "zandschulp",
+      "winner_id": "zandschulp",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 9,
+      "p1_id": "hurkacz",
+      "p2_id": "tabilo",
+      "winner_id": "hurkacz",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 10,
+      "p1_id": "khachanov",
+      "p2_id": "atmane",
+      "winner_id": "atmane",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 11,
+      "p1_id": "x_jacob_fearnley",
+      "p2_id": "mensik",
+      "winner_id": "mensik",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 12,
+      "p1_id": "ruud",
+      "p2_id": "cerundolo",
+      "winner_id": "ruud",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 13,
+      "p1_id": "x_stefanos_tsitsipas",
+      "p2_id": "fonseca",
+      "winner_id": "fonseca",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 14,
+      "p1_id": "bergs",
+      "p2_id": "baez",
+      "winner_id": "bergs",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 15,
+      "p1_id": "x_jenson_brooksby",
+      "p2_id": "shelton",
+      "winner_id": "shelton",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 16,
+      "p1_id": "lehecka",
+      "p2_id": "kopriva",
+      "winner_id": "lehecka",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 17,
+      "p1_id": "munar",
+      "p2_id": "blockx",
+      "winner_id": "blockx",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 18,
+      "p1_id": "jodar",
+      "p2_id": "moutet",
+      "winner_id": "jodar",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 19,
+      "p1_id": "x_nicolas_mejia",
+      "p2_id": "musetti",
+      "winner_id": "musetti",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 20,
+      "p1_id": "vacherot",
+      "p2_id": "navone",
+      "winner_id": "navone",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 21,
+      "p1_id": "svajda",
+      "p2_id": "fils",
+      "winner_id": "fils",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 22,
+      "p1_id": "buse",
+      "p2_id": "norrie",
+      "winner_id": "norrie",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 23,
+      "p1_id": "duckworth",
+      "p2_id": "deminaur",
+      "winner_id": "deminaur",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 24,
+      "p1_id": "cobolli",
+      "p2_id": "hanfmann",
+      "winner_id": "hanfmann",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 25,
+      "p1_id": "borges",
+      "p2_id": "etcheverry",
+      "winner_id": "borges",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 26,
+      "p1_id": "darderi",
+      "p2_id": "diallo",
+      "winner_id": "darderi",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 27,
+      "p1_id": "shang",
+      "p2_id": "rublev",
+      "winner_id": "shang",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 28,
+      "p1_id": "tiafoe",
+      "p2_id": "cilic",
+      "winner_id": "tiafoe",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 29,
+      "p1_id": "kecmanovic",
+      "p2_id": "rinderknech",
+      "winner_id": "rinderknech",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 30,
+      "p1_id": "nakashima",
+      "p2_id": "altmaier",
+      "winner_id": "nakashima",
+      "score_line": null
+    },
+    {
+      "round": "R64",
+      "slot": 31,
+      "p1_id": "droguet",
+      "p2_id": "x_jaime_faria",
+      "winner_id": "droguet",
+      "score_line": null
+    },
+    {
+      "round": "SF",
+      "slot": 0,
+      "p1_id": "tien",
+      "p2_id": "shelton",
+      "winner_id": "shelton",
+      "score_line": null
+    },
+    {
+      "round": "SF",
+      "slot": 1,
+      "p1_id": "jodar",
+      "p2_id": "nakashima",
+      "winner_id": "nakashima",
+      "score_line": null
+    }
+  ],
+  "player_stats": [],
+  "entries": [
+    {
+      "user_id": "0f7892be-a038-494c-ab5a-e4484c221ec7",
+      "score": 186,
+      "state": {
+        "phase": "pre_round",
+        "budget": 7.6,
+        "myTeam": [
+          "tien",
+          "jodar",
+          "shelton"
+        ],
+        "captain": "shelton",
+        "myScore": 0,
+        "cashedIn": [
+          "munar",
+          "cilic",
+          "medvedev",
+          "vacherot",
+          "davidovichfokina",
+          "struff",
+          "burruchaga",
+          "shapovalov",
+          "deminaur",
+          "musetti",
+          "tiafoe",
+          "arnaldi",
+          "fonseca",
+          "darderi"
+        ],
+        "transfers": [
+          {
+            "in": "arnaldi",
+            "out": "munar",
+            "round": "R64"
+          },
+          {
+            "in": "fonseca",
+            "out": "cilic",
+            "round": "R64"
+          },
+          {
+            "in": "musetti",
+            "out": "medvedev",
+            "round": "R64"
+          },
+          {
+            "in": "tien",
+            "out": "vacherot",
+            "round": "R32"
+          },
+          {
+            "in": "jodar",
+            "out": "davidovichfokina",
+            "round": "R32"
+          },
+          {
+            "in": "shelton",
+            "out": "struff",
+            "round": "R16"
+          },
+          {
+            "in": "darderi",
+            "out": "burruchaga",
+            "round": "R16"
+          }
+        ],
+        "roundScores": [],
+        "viceCaptain": "tien",
+        "initialSquad": [
+          "munar",
+          "deminaur",
+          "burruchaga",
+          "medvedev",
+          "shapovalov",
+          "davidovichfokina",
+          "struff",
+          "cilic",
+          "vacherot",
+          "tiafoe"
+        ],
+        "budgetReturns": [],
+        "captainHistory": [
+          {
+            "round": "R64",
+            "playerId": "cilic"
+          },
+          {
+            "round": "R16",
+            "playerId": "fonseca"
+          },
+          {
+            "round": "QF",
+            "playerId": "shelton"
+          }
+        ],
+        "currentRoundIndex": 0,
+        "viceCaptainHistory": [
+          {
+            "round": "R64",
+            "playerId": "deminaur"
+          },
+          {
+            "round": "R16",
+            "playerId": "tien"
+          },
+          {
+            "round": "QF",
+            "playerId": "tien"
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "45576f33-e1ca-47ea-94a4-3d0deb771ba7",
+      "score": 148,
+      "state": {
+        "phase": "pre_round",
+        "budget": 10.4,
+        "myTeam": [
+          "fils",
+          "jodar",
+          "shelton",
+          "tien",
+          "darderi",
+          "nakashima"
+        ],
+        "captain": "tien",
+        "myScore": 0,
+        "cashedIn": [
+          "augeraliassime",
+          "fritz",
+          "ruud",
+          "berrettini",
+          "munar",
+          "busta",
+          "carabelli",
+          "royer"
+        ],
+        "transfers": [
+          {
+            "in": "shelton",
+            "out": "augeraliassime",
+            "round": "R16"
+          },
+          {
+            "in": "tien",
+            "out": "fritz",
+            "round": "R16"
+          },
+          {
+            "in": "darderi",
+            "out": "ruud",
+            "round": "R16"
+          },
+          {
+            "in": "nakashima",
+            "out": "berrettini",
+            "round": "R16"
+          }
+        ],
+        "roundScores": [],
+        "viceCaptain": "jodar",
+        "initialSquad": [
+          "fritz",
+          "augeraliassime",
+          "ruud",
+          "fils",
+          "jodar",
+          "berrettini",
+          "munar",
+          "carabelli",
+          "busta",
+          "royer"
+        ],
+        "budgetReturns": [],
+        "captainHistory": [
+          {
+            "round": "R64",
+            "playerId": "fritz"
+          },
+          {
+            "round": "SF",
+            "playerId": "tien"
+          }
+        ],
+        "currentRoundIndex": 0,
+        "viceCaptainHistory": [
+          {
+            "round": "R64",
+            "playerId": "augeraliassime"
+          },
+          {
+            "round": "SF",
+            "playerId": "jodar"
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "47409344-9ef0-4e0d-8856-bff9dfc81806",
+      "score": 10,
+      "state": {
+        "phase": "pre_round",
+        "budget": 0,
+        "myTeam": [
+          "michelsen",
+          "baez",
+          "rublev",
+          "arnaldi",
+          "augeraliassime",
+          "davidovichfokina",
+          "kovacevic",
+          "diallo",
+          "fritz",
+          "darderi"
+        ],
+        "captain": "davidovichfokina",
+        "myScore": 0,
+        "transfers": [],
+        "roundScores": [],
+        "viceCaptain": "baez",
+        "initialSquad": [
+          "michelsen",
+          "baez",
+          "rublev",
+          "arnaldi",
+          "augeraliassime",
+          "davidovichfokina",
+          "kovacevic",
+          "diallo",
+          "fritz",
+          "darderi"
+        ],
+        "budgetReturns": [],
+        "captainHistory": [
+          {
+            "round": "R64",
+            "playerId": "davidovichfokina"
+          }
+        ],
+        "currentRoundIndex": 0,
+        "viceCaptainHistory": [
+          {
+            "round": "R64",
+            "playerId": "baez"
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "49b012ea-3c50-4fcd-a18b-59122e2b9db3",
+      "score": 39,
+      "state": {
+        "phase": "pre_round",
+        "budget": 0,
+        "myTeam": [
+          "fritz",
+          "jodar",
+          "zverev",
+          "paul",
+          "hurkacz",
+          "fils",
+          "shang",
+          "royer",
+          "shapovalov",
+          "altmaier"
+        ],
+        "captain": "zverev",
+        "myScore": 0,
+        "transfers": [],
+        "roundScores": [],
+        "viceCaptain": "fils",
+        "initialSquad": [
+          "fritz",
+          "jodar",
+          "zverev",
+          "paul",
+          "hurkacz",
+          "fils",
+          "shang",
+          "royer",
+          "shapovalov",
+          "altmaier"
+        ],
+        "budgetReturns": [],
+        "captainHistory": [
+          {
+            "round": "R64",
+            "playerId": "zverev"
+          }
+        ],
+        "currentRoundIndex": 0,
+        "viceCaptainHistory": [
+          {
+            "round": "R64",
+            "playerId": "fils"
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "51face7f-b380-4537-bb14-db16443f97a2",
+      "score": 165.5,
+      "state": {
+        "phase": "pre_round",
+        "budget": 0.6,
+        "myTeam": [
+          "shelton",
+          "fils",
+          "griekspoor",
+          "merida",
+          "tirante"
+        ],
+        "captain": "shelton",
+        "myScore": 0,
+        "cashedIn": [
+          "zverev",
+          "cobolli",
+          "tiafoe",
+          "paul",
+          "royer",
+          "arnaldi",
+          "davidovichfokina",
+          "diallo",
+          "duckworth",
+          "kovacevic"
+        ],
+        "transfers": [
+          {
+            "in": "shelton",
+            "out": "zverev",
+            "round": "R32"
+          },
+          {
+            "in": "fils",
+            "out": "cobolli",
+            "round": "R32"
+          },
+          {
+            "in": "griekspoor",
+            "out": "tiafoe",
+            "round": "R32"
+          },
+          {
+            "in": "merida",
+            "out": "paul",
+            "round": "R32"
+          },
+          {
+            "in": "tirante",
+            "out": "royer",
+            "round": "R32"
+          }
+        ],
+        "roundScores": [],
+        "viceCaptain": "fils",
+        "initialSquad": [
+          "zverev",
+          "cobolli",
+          "davidovichfokina",
+          "arnaldi",
+          "tiafoe",
+          "kovacevic",
+          "diallo",
+          "duckworth",
+          "royer",
+          "paul"
+        ],
+        "budgetReturns": [],
+        "captainHistory": [
+          {
+            "round": "R64",
+            "playerId": "zverev"
+          },
+          {
+            "round": "R16",
+            "playerId": "shelton"
+          }
+        ],
+        "currentRoundIndex": 0,
+        "viceCaptainHistory": [
+          {
+            "round": "R64",
+            "playerId": "cobolli"
+          },
+          {
+            "round": "R16",
+            "playerId": "fils"
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "524e264f-c7eb-4b03-9200-183dd0cfd647",
+      "score": 2,
+      "state": {
+        "phase": "pre_round",
+        "budget": 0,
+        "myTeam": [
+          "augeraliassime",
+          "cobolli",
+          "khachanov",
+          "berrettini",
+          "struff",
+          "baez",
+          "tiafoe",
+          "paul",
+          "vacherot",
+          "shapovalov"
+        ],
+        "captain": "augeraliassime",
+        "myScore": 0,
+        "transfers": [],
+        "roundScores": [],
+        "viceCaptain": "cobolli",
+        "initialSquad": [
+          "augeraliassime",
+          "cobolli",
+          "khachanov",
+          "berrettini",
+          "struff",
+          "baez",
+          "tiafoe",
+          "paul",
+          "vacherot",
+          "shapovalov"
+        ],
+        "budgetReturns": [],
+        "captainHistory": [
+          {
+            "round": "R64",
+            "playerId": "augeraliassime"
+          }
+        ],
+        "currentRoundIndex": 0,
+        "viceCaptainHistory": [
+          {
+            "round": "R64",
+            "playerId": "cobolli"
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "96f09bf4-1502-4e1e-8749-4a0c6a8fb0c4",
+      "score": 199.5,
+      "state": {
+        "phase": "pre_round",
+        "budget": 22.4,
+        "myTeam": [
+          "jodar",
+          "tien",
+          "nakashima",
+          "shelton"
+        ],
+        "captain": "jodar",
+        "myScore": 0,
+        "cashedIn": [
+          "diallo",
+          "medvedev",
+          "fritz",
+          "mensik",
+          "paul",
+          "michelsen",
+          "atmane",
+          "zandschulp",
+          "hurkacz"
+        ],
+        "transfers": [
+          {
+            "in": "tien",
+            "out": "diallo",
+            "round": "R64"
+          },
+          {
+            "in": "nakashima",
+            "out": "medvedev",
+            "round": "R64"
+          },
+          {
+            "in": "shelton",
+            "out": "fritz",
+            "round": "QF"
+          }
+        ],
+        "roundScores": [],
+        "viceCaptain": "shelton",
+        "initialSquad": [
+          "michelsen",
+          "paul",
+          "mensik",
+          "hurkacz",
+          "zandschulp",
+          "atmane",
+          "jodar",
+          "medvedev",
+          "fritz",
+          "diallo"
+        ],
+        "budgetReturns": [],
+        "captainHistory": [
+          {
+            "round": "R64",
+            "playerId": "mensik"
+          },
+          {
+            "round": "SF",
+            "playerId": "jodar"
+          }
+        ],
+        "currentRoundIndex": 0,
+        "viceCaptainHistory": [
+          {
+            "round": "R64",
+            "playerId": "michelsen"
+          },
+          {
+            "round": "SF",
+            "playerId": "shelton"
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "e3a43da2-d991-4594-b991-1fae551b4199",
+      "score": 127,
+      "state": {
+        "phase": "pre_round",
+        "budget": 18.6,
+        "myTeam": [
+          "jodar",
+          "tien",
+          "nakashima"
+        ],
+        "captain": "nakashima",
+        "myScore": 15.5,
+        "cashedIn": [
+          "fritz",
+          "burruchaga",
+          "landaluce",
+          "deminaur",
+          "arnaldi",
+          "hanfmann",
+          "hurkacz",
+          "shang",
+          "fonseca",
+          "mensik",
+          "darderi",
+          "fils"
+        ],
+        "transfers": [
+          {
+            "in": "arnaldi",
+            "out": "fritz",
+            "round": "R64"
+          },
+          {
+            "in": "hanfmann",
+            "out": "burruchaga",
+            "round": "R64"
+          },
+          {
+            "in": "tien",
+            "out": "landaluce",
+            "round": "R32"
+          },
+          {
+            "in": "nakashima",
+            "out": "deminaur",
+            "round": "R32"
+          },
+          {
+            "in": "darderi",
+            "out": "arnaldi",
+            "round": "R16"
+          }
+        ],
+        "roundScores": [
+          {
+            "round": "R64",
+            "points": 15.5,
+            "viceBonus": 0.5,
+            "captainBonus": 0
+          }
+        ],
+        "viceCaptain": "jodar",
+        "initialSquad": [
+          "fils",
+          "jodar",
+          "deminaur",
+          "fritz",
+          "fonseca",
+          "mensik",
+          "landaluce",
+          "hurkacz",
+          "burruchaga",
+          "shang"
+        ],
+        "budgetReturns": [],
+        "captainHistory": [
+          {
+            "round": "R64",
+            "playerId": "landaluce"
+          },
+          {
+            "round": "R32",
+            "playerId": "jodar"
+          },
+          {
+            "round": "R16",
+            "playerId": "fils"
+          },
+          {
+            "round": "QF",
+            "playerId": "tien"
+          },
+          {
+            "round": "F",
+            "playerId": "nakashima"
+          }
+        ],
+        "currentRoundIndex": 1,
+        "viceCaptainHistory": [
+          {
+            "round": "R64",
+            "playerId": "fonseca"
+          },
+          {
+            "round": "R32",
+            "playerId": "mensik"
+          },
+          {
+            "round": "R16",
+            "playerId": "mensik"
+          },
+          {
+            "round": "QF",
+            "playerId": "darderi"
+          },
+          {
+            "round": "F",
+            "playerId": "jodar"
+          }
+        ]
+      }
+    }
+  ]
+}
