@@ -4,6 +4,12 @@
 //   node scripts/build-2026-stats.mjs --dry      # aggregate + report, write nothing
 //   node scripts/build-2026-stats.mjs --only=slams   # majors only (quick test)
 //
+// CALENDAR CHECK (2026-08-26): four events were RENAMED for 2026 — Open Sud de France →
+// Open Occitanie, Stuttgart Open → BOSS Open, Hong Kong Open → ATP Hong Kong Tennis Open,
+// Austrian Open → Generali Open Kitzbühel — and two, Córdoba and Open 13 Provence, were not
+// held at all and are removed. Source: the "2026 ATP Tour" calendar article, which lists every
+// tournament and links its draw. Check there first before hunting for a title.
+//
 // PAGE SHAPE (learned 2026-08-26): ATP 250/500 events — and Monte-Carlo — keep only a summary on
 // the season article; the DRAW lives on a "– Singles" sub-article, which is why a whole season
 // of titles silently resolved to nothing. Those sub-article titles are listed FIRST in the alt
@@ -38,16 +44,14 @@ const H = 'hard', C = 'clay', G = 'grass';
 const EVENTS = [
   // — January hard —
   { t: '2026 Brisbane International', s: H },                              // ✓
-  { t: '2026 Hong Kong Open', s: H, alt: ['2026 Bank of Communications Hong Kong Open'] },
+  { t: '2026 ATP Hong Kong Tennis Open', s: H, alt: ['2026 Hong Kong Open', '2026 Bank of Communications Hong Kong Open'] },
   { t: '2026 Adelaide International', s: H },                              // ✓
   { t: '2026 ASB Classic', s: H },                                        // ✓
   { t: '2026 Australian Open', s: H, slam: true },                        // ✓
   // — Feb indoor/hard + Latin-America clay + Gulf hard —
-  { t: '2026 Open Sud de France', s: H }, { t: '2026 Dallas Open', s: H },
-  { t: '2026 Córdoba Open', s: C, alt: ['2026 Cordoba Open'] },
+  { t: '2026 Open Occitanie', s: H, alt: ['2026 Open Sud de France'] }, { t: '2026 Dallas Open', s: H },
   { t: '2026 ABN AMRO Open', s: H, alt: ['2026 Rotterdam Open', '2026 ABN AMRO World Tennis Tournament'] },
-  { t: '2026 Argentina Open', s: C, alt: ['2026 Argentina Open (tennis)'] }, { t: '2026 Delray Beach Open', s: H },
-  { t: '2026 Open 13 Provence', s: H, alt: ['2026 Open 13'] }, { t: '2026 Rio Open', s: C },
+  { t: '2026 Argentina Open', s: C, alt: ['2026 Argentina Open (tennis)'] }, { t: '2026 Delray Beach Open', s: H }, { t: '2026 Rio Open', s: C },
   { t: '2026 Qatar ExxonMobil Open', s: H, alt: ['2026 Qatar Open', '2026 Doha Open'] }, { t: '2026 Chile Open', s: C },
   { t: '2026 Dubai Tennis Championships', s: H },                         // ✓
   { t: '2026 Mexican Open', s: H, alt: ['2026 Abierto Mexicano Telcel'] },
@@ -65,7 +69,7 @@ const EVENTS = [
   { t: '2026 Geneva Open', s: C }, { t: '2026 Hamburg Open', s: C },      // Hamburg ✓
   { t: '2026 French Open', s: C, slam: true },                           // ✓
   // — June/July grass —
-  { t: '2026 Stuttgart Open', s: G, alt: ['2026 Boss Open'] },
+  { t: '2026 BOSS Open', s: G, alt: ['2026 Stuttgart Open', '2026 Boss Open'] },
   { t: '2026 Libéma Open', s: G, alt: ['2026 Libema Open', '2026 ’s-Hertogenbosch Open'] }, // ✓
   { t: "2026 Queen's Club Championships", s: G, alt: ['2026 Cinch Championships'] }, // ✓
   { t: '2026 Terra Wortmann Open', s: G, alt: ['2026 Halle Open'] },     // Halle
@@ -77,7 +81,7 @@ const EVENTS = [
   { t: '2026 Swiss Open Gstaad', s: C, alt: ['2026 Swiss Open'] },
   { t: '2026 Croatia Open Umag', s: C, alt: ['2026 Croatia Open'] },
   { t: '2026 Los Cabos Open', s: H, alt: ['2026 Mifel Tennis Open', '2026 Abierto de Tenis Mifel'] },
-  { t: '2026 Austrian Open', s: C, alt: ['2026 Generali Open'] },
+  { t: '2026 Generali Open Kitzbühel', s: C, alt: ['2026 Austrian Open', '2026 Generali Open'] },
   { t: '2026 Mubadala Citi DC Open', s: H, alt: ['2026 Washington Open', '2026 Citi Open'] }, // ✓ (Washington)
   // — August hard: the Masters immediately before Cincinnati. Montréal is the single most
   //   relevant form input for a Cincinnati field (same surface, same players, days earlier),
