@@ -78,6 +78,10 @@ const EVENTS = [
   //   relevant form input for a Cincinnati field (same surface, same players, days earlier),
   //   so it MUST be counted — it was missing while the list stopped at "before Montréal".
   { t: '2026 National Bank Open', s: H, alt: ['2026 Canadian Open (tennis)', '2026 Rogers Cup'] },
+  // Cincinnati, finished 2026-08-24 - the LAST event before the US Open and the single most
+  // relevant form input for a US Open field: same surface, same players, days earlier. Fils won
+  // it. Missing it would price the US Open on form that stops a fortnight short.
+  { t: '2026 Cincinnati Open', s: H, alt: ['2026 Western & Southern Open', '2026 Cincinnati Masters'] },
 ];
 
 const pickEvents = () => ONLY === 'slams' ? EVENTS.filter((e) => e.slam) : EVENTS;
@@ -86,7 +90,7 @@ const pickEvents = () => ONLY === 'slams' ? EVENTS.filter((e) => e.slam) : EVENT
 const SHORT = {
   '2026 Australian Open': 'AO', '2026 French Open': 'RG', '2026 Wimbledon Championships': 'WIM',
   '2026 BNP Paribas Open': 'IW', '2026 Miami Open': 'MIA', '2026 Mutua Madrid Open': 'MAD', '2026 Italian Open': 'ROM',
-  '2026 Monte-Carlo Masters': 'MC', '2026 Dubai Tennis Championships': 'DUB', '2026 Brisbane International': 'BRI',
+  '2026 Monte-Carlo Masters': 'MC', '2026 Cincinnati Open': 'CIN', '2026 Dubai Tennis Championships': 'DUB', '2026 Brisbane International': 'BRI',
   '2026 Adelaide International': 'ADL', '2026 ASB Classic': 'AKL', '2026 Hamburg Open': 'HAM',
   "2026 Queen's Club Championships": 'QUE', '2026 Libéma Open': 'HER', '2026 Eastbourne Open': 'EAS',
   // NB: Båstad is BAD and Washington is WDC — NOT 'BAS'/'DC'. Those two codes already mean

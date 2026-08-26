@@ -14,7 +14,7 @@
 // Then rebuild the dependent artefacts:
 //   node scripts/build-field.mjs cincinnati_2026 && node scripts/gen-seed.mjs cincinnati_2026
 //
-// SOURCE: livetennis.io/rankings/atp-rankings (PIF ATP Rankings, singles), read 2026-08-14.
+// SOURCE: livetennis.io/rankings/atp-rankings (PIF ATP Rankings, singles), read 2026-08-26, published 2026-08-24 (post-Cincinnati).
 // Only the top 100 is covered — that is 83 of the 96 Cincinnati entrants, i.e. every seed and every
 // player whose tier/price could realistically move. Players outside it keep their existing rank and
 // are listed in the report, never silently altered.
@@ -22,31 +22,31 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const DRY = process.argv.includes('--dry');
-const AS_OF = '2026-08-14';
+const AS_OF = '2026-08-24';
 
 // rank → name, exactly as published. Name matching below is accent- and word-order-insensitive,
 // because this source writes some names surname-first ("Martin Etcheverry Tomas").
 const RANKINGS = [
-  'Jannik Sinner', 'Carlos Alcaraz', 'Alexander Zverev', 'Felix Auger-Aliassime', 'Novak Djokovic',
-  'Ben Shelton', 'Daniil Medvedev', 'Alex De Minaur', 'Taylor Fritz', 'Flavio Cobolli',
-  'Rafael Jodar', 'Learner Tien', 'Alexander Bublik', 'Jiri Lehecka', 'Lorenzo Musetti',
-  'Jakub Mensik', 'Casper Ruud', 'Andrey Rublev', 'Valentin Vacherot', 'Luciano Darderi',
-  'Arthur Fils', 'Brandon Nakashima', 'Frances Tiafoe', 'Tommy Paul', 'Francisco Cerundolo',
-  'Joao Fonseca', 'Alejandro Davidovich Fokina', 'Arthur Rinderknech', 'Alejandro Tabilo', 'Ugo Humbert',
-  'Martin Etcheverry Tomas', 'Alexander Blockx', 'Zizou Bergs', 'Matteo Arnaldi', 'Cameron Norrie',
-  'Ignacio Buse', 'Arthur Fery', 'Raphael Collignon', 'Karen Khachanov', 'Daniel Merida Aguilar',
-  'Alex Michelsen', 'Matteo Berrettini', 'Jan-Lennard Struff', 'Mariano Navone', 'Terence Atmane',
-  'Jaume Munar', 'Nuno Borges', 'Denis Shapovalov', 'Stefanos Tsitsipas', 'Agustin Tirante Thiago',
-  'Manuel Cerundolo Juan', 'Adrian Mannarino', 'Sebastian Baez', 'Luca van Assche', 'Yannick Hanfmann',
-  'Tallon Griekspoor', 'Quentin Halys', 'Ethan Quinn', 'Botic Van De Zandschulp', 'Corentin Moutet',
-  'Andres Burruchaga Roman', 'Tomas Machac', 'Fabian Marozsan', 'Sebastian Korda', 'Daniel Altmaier',
-  'Miomir Kecmanovic', 'Martin Landaluce', 'Kamil Majchrzak', 'Hubert Hurkacz', 'Daniel Vallejo Adolfo',
-  'Vit Kopriva', 'Pablo Carreno-Busta', 'Hamad Medjedovic', 'Jenson Brooksby', 'Alex Molcan',
-  'Camilo Ugo Carabelli', 'Jan Choinski', 'Valentin Royer', 'Jaime Faria', 'Marin Cilic',
-  'Mattia Bellucci', 'Marton Fucsovics', 'Marcos Giron', 'Zachary Svajda', 'Arthur Gea',
-  'James Duckworth', 'Facundo Diaz Acosta', 'Lorenzo Sonego', 'Alexander Shevchenko', 'Sho Shimabukuro',
-  'Marco Trungelliti', 'Giovanni Mpetshi Perricard', 'Coleman Wong Chak Lam', 'Martin Damm', 'Rinky Hijikata',
-  'Aleksandar Kovacevic', 'Hugo Gaston', 'Adam Walton', 'Aleksandar Vukic', 'Benjamin Bonzi',
+  'Jannik Sinner', 'Alexander Zverev', 'Carlos Alcaraz', 'Felix Auger-Aliassime', 'Novak Djokovic',
+  'Flavio Cobolli', 'Alex De Minaur', 'Daniil Medvedev', 'Ben Shelton', 'Taylor Fritz',
+  'Arthur Fils', 'Frances Tiafoe', 'Rafael Jodar', 'Lorenzo Musetti', 'Learner Tien',
+  'Alexander Bublik', 'Brandon Nakashima', 'Jakub Mensik', 'Jiri Lehecka', 'Casper Ruud',
+  'Tommy Paul', 'Luciano Darderi', 'Valentin Vacherot', 'Andrey Rublev', 'Francisco Cerundolo',
+  'Joao Fonseca', 'Alejandro Davidovich Fokina', 'Alejandro Tabilo', 'Arthur Rinderknech', 'Ugo Humbert',
+  'Martin Etcheverry Tomas', 'Alexander Blockx', 'Cameron Norrie', 'Matteo Arnaldi', 'Zizou Bergs',
+  'Ignacio Buse', 'Arthur Fery', 'Raphael Collignon', 'Daniel Merida Aguilar', 'Luca van Assche',
+  'Nuno Borges', 'Agustin Tirante Thiago', 'Matteo Berrettini', 'Jan-Lennard Struff', 'Alex Michelsen',
+  'Hubert Hurkacz', 'Denis Shapovalov', 'Mariano Navone', 'Karen Khachanov', 'Sebastian Baez',
+  'Manuel Cerundolo Juan', 'Quentin Halys', 'Stefanos Tsitsipas', 'Yannick Hanfmann', 'Jaume Munar',
+  'Tallon Griekspoor', 'Daniel Altmaier', 'Tomas Machac', 'Andres Burruchaga Roman', 'Ethan Quinn',
+  'Daniel Vallejo Adolfo', 'Corentin Moutet', 'Fabian Marozsan', 'Miomir Kecmanovic', 'Martin Landaluce',
+  'Pablo Carreno-Busta', 'Adrian Mannarino', 'Sebastian Korda', 'Vit Kopriva', 'Jaime Faria',
+  'Botic Van De Zandschulp', 'Kamil Majchrzak', 'Jenson Brooksby', 'Valentin Royer', 'Jan Choinski',
+  'Camilo Ugo Carabelli', 'Marcos Giron', 'Hamad Medjedovic', 'James Duckworth', 'Zachary Svajda',
+  'Marin Cilic', 'Facundo Diaz Acosta', 'Marco Trungelliti', 'Alex Molcan', 'Rinky Hijikata',
+  'Arthur Gea', 'Sho Shimabukuro', 'Hugo Gaston', 'Aleksandar Kovacevic', 'Terence Atmane',
+  'Lorenzo Sonego', 'Martin Damm', 'Adam Walton', 'Coleman Wong Chak Lam', 'Aleksandar Vukic',
+  'Mattia Bellucci', 'Alexander Shevchenko', 'Roman Safiullin', 'Jesper De Jong', 'Jacob Fearnley',
 ];
 
 // Source spellings that differ from the pool's by more than accents/word order, so neither the
