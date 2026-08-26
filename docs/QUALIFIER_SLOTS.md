@@ -63,3 +63,26 @@ manager actually wanted to make, so it is a deadline, not a fallback.
 5. Update each `qualifier_N` row: name and ranking. **Not price.**
 6. Re-run `ingest-draw` so the match rows carry `qualifier_N` rather than an unresolved id.
 7. Re-run `reconcile-field.mjs` — it must report zero missing and zero phantom.
+
+## How the app decides a slot is still open — Job 31, shipped 2026-08-26
+
+**Detect by NAME, never by id.** `isOpenSlot()` in `src/lib/game/players.ts` (Lovable) tests
+`/^qualifier(\s+\d+)?$/i` against the player's *name*.
+
+The instinct is to check `id.startsWith('qualifier_')`. That is wrong and would be a silent,
+permanent bug: the id never changes, so every filled slot would keep rendering as unknown for the
+whole tournament — no ranking, no stats, no highlights, a dashed "?" crest on a real player who is
+winning matches. The rename IS the signal that qualifying is done, so the name is the only honest
+thing to key off.
+
+What that one predicate drives:
+
+| screen | open slot | once renamed |
+|--------|-----------|--------------|
+| `surname()` | returns the whole label — otherwise "Qualifier 3" shortens to **"3"** in the market, on the court and in the bracket | normal surname |
+| avatar | dashed tier ring, "?", no headshot fetched | photo chain as usual |
+| market row | "Name announced after qualifying", rank column "—", no YouTube button | full season line |
+| player page | "Qualifying slot", bio explains the bet, price-breakdown / surface / season blocks hidden (all computed from zeros — they would invent a ×0.60 multiplier and three empty 0% bars) | every block renders |
+| How to Play | extra rule, gated on `field.some(isOpenSlot)` | rule disappears by itself |
+
+Display only — no scoring, pricing, save or server logic touched.
