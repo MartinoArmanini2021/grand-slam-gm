@@ -1,0 +1,7 @@
+# Job 30 — the old Cloudflare Pages app is retired.
+#
+# 302, not 301: a permanent redirect gets cached hard by browsers, and this must stay one
+# deploy away from reversible (`npm run deploy` republishes the real app). The old build
+# still scores on the LEGACY points curve, so from the US Open onward it would show every
+# visitor wrong totals — that, not tidiness, is why it had to go.
+/*    https://grand-slam-gm.lovable.app/:splat    302
