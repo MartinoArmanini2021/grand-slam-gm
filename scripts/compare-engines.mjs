@@ -105,7 +105,14 @@ const A_ORDER = ['R128','R64','R32','R16','QF','SF','F'];
 // client) stays on the legacy curve until its cutover deploy — update B when that ships.
 const A_LEGACY  = { R128:1, R96:0, R64:1, R32:2, R16:5, QF:10, SF:20, F:40 };
 const A_FORMAT2 = { R128:1, R96:0, R64:2, R32:3, R16:5, QF:8, SF:13, F:20 };
-const A_POINTS = ['montreal_2026', 'cincinnati_2026'].includes(TOURNAMENT) ? A_LEGACY : A_FORMAT2;
+// --format2 / --legacy force BOTH engines onto one curve, ignoring the pinning. The US Open will
+// be the first Format 2 event, so until its draw exists there is no Format 2 data to check parity
+// against — but a curve is just a lookup table, and the rest of the maths (upsets, rounding order,
+// carry-forward, transfers) is shared. Re-scoring a REAL completed draw under the new curve
+// exercises that whole path with realistic data years before the event happens.
+const FORCE = process.argv.includes('--format2') ? 'f2' : process.argv.includes('--legacy') ? 'lg' : null;
+const A_POINTS = FORCE === 'f2' ? A_FORMAT2 : FORCE === 'lg' ? A_LEGACY
+  : ['montreal_2026', 'cincinnati_2026'].includes(TOURNAMENT) ? A_LEGACY : A_FORMAT2;
 const A_upset = (w, l) => (l == null || w <= l) ? 1 : 1 + (w - l) / ((w - l) + 30);
 // THE KEY LINE: base x upset is rounded to a WHOLE NUMBER first; the captain/vice multiplier is
 // applied afterwards. That ordering is what makes half-points exist (vice x1.5 of an odd number).
@@ -156,7 +163,8 @@ const B_ORDER = ['R128','R96','R64','R32','R16','QF','SF','F'];
 // IS the finding this script exists to surface — do not paper over it by sharing one constant.
 const B_LEGACY  = { R128:1, R96:0, R64:1, R32:2, R16:5, QF:10, SF:20, F:40 };
 const B_FORMAT2 = { R128:1, R96:0, R64:2, R32:3, R16:5, QF:8, SF:13, F:20 };
-const B_POINTS = ['montreal_2026', 'cincinnati_2026'].includes(TOURNAMENT) ? B_LEGACY : B_FORMAT2;
+const B_POINTS = FORCE === 'f2' ? B_FORMAT2 : FORCE === 'lg' ? B_LEGACY
+  : ['montreal_2026', 'cincinnati_2026'].includes(TOURNAMENT) ? B_LEGACY : B_FORMAT2;
 const B_idx = r => { const i = B_ORDER.indexOf(r); return i <= 1 ? 0 : i - 1; };
 const B_round2 = n => Math.round(n * 100) / 100;
 const B_upset = (w, l) => { if (!w || !l) return 1; const gap = w - l; return gap <= 0 ? 1 : 1 + gap / (gap + 30); };
