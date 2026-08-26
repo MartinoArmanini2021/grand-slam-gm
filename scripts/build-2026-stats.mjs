@@ -4,6 +4,11 @@
 //   node scripts/build-2026-stats.mjs --dry      # aggregate + report, write nothing
 //   node scripts/build-2026-stats.mjs --only=slams   # majors only (quick test)
 //
+// PAGE SHAPE (learned 2026-08-26): ATP 250/500 events — and Monte-Carlo — keep only a summary on
+// the season article; the DRAW lives on a "– Singles" sub-article, which is why a whole season
+// of titles silently resolved to nothing. Those sub-article titles are listed FIRST in the alt
+// arrays below. To find more: scripts/find-event-pages.mjs.
+//
 // WHY: as of mid-2026 no free STRUCTURED dataset has 2026 match data (Sackmann's repo
 // was removed; TML-Database stalled at mid-Jan; UTS at end-2024). But Wikipedia's
 // tournament pages ARE current and community-maintained. Each draw encodes the winner
@@ -141,11 +146,17 @@ async function fetchWikitext(title) {
 // Returns { wikitext } | { missing:true } (all variants 404) | { throttled:true }.
 async function fetchEvent(e) {
   let sawThrottle = false;
+  // Wikipedia does not name these pages consistently. Slams and the big Masters use
+  // "<event> – Men's singles"; ATP 250/500 events and Monte-Carlo use "<event> – Singles";
+  // a few season articles carry the draw inline. Try all three before calling an event missing —
+  // assuming ONE convention is what left a whole season silently unread.
   for (const stem of [e.t, ...(e.alt || [])]) {
-    const r = await fetchWikitext(`${stem} – Men's singles`);
-    if (r === null) { sawThrottle = true; continue; }
-    if (r.wikitext) return { wikitext: r.wikitext };
-    // r.missing → try next variant
+    for (const title of [`${stem} – Men's singles`, `${stem} – Singles`, stem]) {
+      const r = await fetchWikitext(title);
+      if (r === null) { sawThrottle = true; continue; }
+      if (r.wikitext) return { wikitext: r.wikitext };
+      // r.missing → try the next shape
+    }
   }
   return sawThrottle ? { throttled: true } : { missing: true };
 }
@@ -226,6 +237,10 @@ async function main() {
   const events = pickEvents();
   console.log(`Aggregating 2026 YTD form from ${events.length} Wikipedia event pages…\n`);
 
+  // Below this many matches a surface record says more about scheduling than about the player, so
+  // the overall season stands in. Four is deliberately low: it keeps a real clay specialist's clay
+  // number while refusing to price anyone off a single result.
+  const MIN_SURFACE = 4;
   const stat = new Map(); // key -> {w,l,titles,surf:{hard,clay,grass:{w,l}}}
   const blank = () => ({ w: 0, l: 0, titles: 0, surf: { hard: { w: 0, l: 0 }, clay: { w: 0, l: 0 }, grass: { w: 0, l: 0 } } });
   const bump = (name, won, surf) => {
@@ -272,8 +287,25 @@ async function main() {
   const pct = (w, l) => (w + l ? Math.round((100 * w) / (w + l)) : null);
   const surfacePct = (st) => {
     const overall = pct(st.w, st.l);
-    const one = (k) => { const { w, l } = st.surf[k]; return w + l >= 4 ? pct(w, l) : overall; };
+    const thinSeason = st.w + st.l < MIN_SURFACE;
+    const one = (k) => {
+      const { w, l } = st.surf[k];
+      if (w + l >= MIN_SURFACE) return pct(w, l);        // his own record on this surface
+      if (thinSeason) return 50;                          // nothing is known — stay neutral
+      return overall;                                     // his season stands in for the surface
+    };
     return { hard: one('hard'), clay: one('clay'), grass: one('grass') };
+  };
+  // The evidence behind each percentage: the wins-losses actually played on that surface, and
+  // whether the figure is that surface's own record or the overall season standing in for it.
+  // Without this the pool cannot tell "76% on hard, 13-4" from "76% season, two hard matches".
+  const surfaceRecord = (st) => {
+    const out = {};
+    for (const k of ['hard', 'clay', 'grass']) {
+      const { w, l } = st.surf[k];
+      out[k] = { w, l, real: w + l >= MIN_SURFACE };
+    }
+    return out;
   };
   let enriched = 0; const noData = [];
   const out = pool.map((p) => {
@@ -292,7 +324,7 @@ async function main() {
       .sort((a, b) => LEVEL_RANK[a.lvl] - LEVEL_RANK[b.lvl])
       .slice(0, 10)
       .map(({ tournament, surface, short, result }) => ({ tournament, surface, short, result }));
-    return { ...base, surface: surfacePct(st), ytd: { wins: st.w, losses: st.l, titles: st.titles }, statsYear: 2026, results2026: rs };
+    return { ...base, surface: surfacePct(st), surfaceRecord: surfaceRecord(st), ytd: { wins: st.w, losses: st.l, titles: st.titles }, statsYear: 2026, results2026: rs };
   });
 
   console.log(`\n── report ──────────────────────────────────────────`);
