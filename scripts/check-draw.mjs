@@ -45,7 +45,12 @@ const strip = (s) => s
 
 const filled = slots.filter((s) => strip(s) !== '');
 const quals = slots.filter((s) => /qualifier/i.test(s));
-const ready = slots.length >= 32 && filled.length >= slots.length * 0.5;
+// A draw is COMPLETE or it is useless. The original bar was 50%, which called a
+// half-typed page "published" at 65/128 on 2026-08-27 — and a field built from that
+// would have been missing sixty-three players with nothing to flag it. Wikipedia fills
+// a Slam draw in one long sitting, so allow only a couple of stragglers.
+const empty = slots.length - filled.length;
+const ready = slots.length >= 32 && empty <= 2;
 
 console.log(`\n  ${TITLE}`);
 console.log(`    bracket templates : ${brackets}`);
