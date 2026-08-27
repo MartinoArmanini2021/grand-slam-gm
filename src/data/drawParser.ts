@@ -28,11 +28,11 @@ const matchKey = (round: RoundId, slot: number): string => `${round}_${slot}`;
 const FOLD: Record<string, string> = { 'ø': 'o', 'æ': 'ae', 'œ': 'oe', 'ł': 'l', 'đ': 'd', 'ð': 'd', 'þ': 'th', 'ß': 'ss', 'ı': 'i' };
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
   .replace(/[øæœłđðþßı]/g, (c) => FOLD[c] ?? c)
-  .replace(/[-s]+/g, ' ').trim();
+  .replace(/[-\s]+/g, ' ').trim();
 // Wikipedia disambiguates some articles: "[[Alex de Minaur (tennis)|…]]",
 // "[[Taylor Fritz (tennis player)|…]]". The parenthetical isn't part of the name and must
 // be dropped before matching the roster, or the drafted player silently never scores.
-const stripDisambig = (s: string) => s.replace(/\s*\((?:tennis|tennis player|[^)]*)\)\s*$/i, '').trim();
+export const stripDisambig = (s: string) => s.replace(/\s*\((?:tennis|tennis player|[^)]*)\)\s*$/i, '').trim();
 
 // Strip Wikipedia team markup to a bare player name: "{{flagicon|ITA}} [[Jannik Sinner]]"
 // → "Jannik Sinner"; "[[Name (tennis)|Name]]" → "Name".
@@ -58,8 +58,20 @@ export function teamTarget(raw: string): string {
 // the name — scoring tolerates unknown ids, so parsing never breaks. Accents (via norm)
 // and "(tennis)" disambiguators (via stripDisambig) are handled so a drafted player always
 // resolves to their real id. This is the ONE identity used everywhere, client and server.
+// Wikipedia sometimes spells a player differently from the tour's own listing — a
+// transliteration ("Alexander" vs "Aleksandr" Shevchenko) or a plain typo: the 2026 US Open
+// draw slot says "Francis Tiafoe" while the seed list on the SAME page says Frances, who is
+// seed 11. Neither accent-folding nor word-sorting can bridge those, and the failure is
+// silent — the player resolves to a synthetic id and is simply absent from the field.
+// Keyed by the normalised WIKIPEDIA spelling, valued by the normalised ROSTER spelling.
+const ALIAS: Record<string, string> = {
+  'alexander shevchenko': 'aleksandr shevchenko',
+  'francis tiafoe': 'frances tiafoe',
+};
+
 export function buildResolver(roster: { id: string; name: string }[]): (raw: string) => string {
   const byName = new Map(roster.map(p => [norm(p.name), p.id]));
+  const viaAlias = (n: string) => byName.get(ALIAS[n] ?? "");
   // Word-order-insensitive fallback: Wikipedia writes some names family-name-first
   // ("Shang Juncheng") while the roster has given-name-first ("Juncheng Shang"). Sorting the
   // name words makes the two match. It's only a FALLBACK (an exact match always wins), and the
@@ -70,6 +82,7 @@ export function buildResolver(roster: { id: string; name: string }[]): (raw: str
     const stripped = stripDisambig(teamTarget(raw));
     return byName.get(norm(teamTarget(raw)))
       ?? byName.get(norm(stripped))
+      ?? viaAlias(norm(stripped))
       ?? bySorted.get(sortWords(norm(stripped)))
       ?? `x_${norm(stripped).replace(/\s+/g, '_')}`;
   };

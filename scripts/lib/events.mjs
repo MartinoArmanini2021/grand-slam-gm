@@ -36,7 +36,26 @@ export const EVENTS = {
     seed: 'supabase/seed_usopen_player_stats.sql',
     label: 'US Open 2026',
     surface: 'hard',
-    manual: [],
+    // Real main-draw entrants outside the top-300 stats pool. Rankings are the ones the
+    // tournament itself published on the draw page where it gave one (Misolic entered on a
+    // protected ranking of 101; Kokkinakis's PR is 84 but his actual rank is far lower, so we
+    // keep the real one for consistency with Cincinnati). The three WILDCARDS below are given
+    // NOMINAL ranks: Wikipedia lists no number for them, and rather than invent precision we
+    // use a value comfortably outside the top 300, which is what floors their price and puts
+    // them in the bottom tier. It is not a claim about their real ATP position — and it does
+    // feed the upset multiplier, so if one of them goes on a run, revisit it BEFORE the first
+    // ball, never after ([[lesson-stale-rankings]]).
+    manual: [
+      { id: 'misolic',    name: 'Filip Misolic',      country: 'Austria',       flag: '🇦🇹', age: 25,   hand: 'R', ranking: 101 },
+      { id: 'monfils',    name: 'Gaël Monfils',       country: 'France',        flag: '🇫🇷', age: 39,   hand: 'R', ranking: 327 },
+      { id: 'kokkinakis', name: 'Thanasi Kokkinakis', country: 'Australia',     flag: '🇦🇺', age: 30,   hand: 'R', ranking: 443 },
+      // This page writes him "J. J. Wolf" with spaces; Cincinnati's writes "J.J. Wolf".
+      // The name must match the wikilink target of THIS event's page, not the player's
+      // canonical spelling — which is why the two entries differ.
+      { id: 'wolf',       name: 'J. J. Wolf',         country: 'United States', flag: '🇺🇸', age: 27,   hand: 'R', ranking: 688 },
+      { id: 'gorzny',     name: 'Sebastian Gorzny',   country: 'United States', flag: '🇺🇸', age: null, hand: 'R', ranking: 500 },
+      { id: 'kennedy',    name: 'Jack Kennedy',       country: 'United States', flag: '🇺🇸', age: null, hand: 'R', ranking: 500 },
+    ],
   },
 };
 

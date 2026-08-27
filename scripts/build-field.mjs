@@ -13,7 +13,7 @@
 // gained 13 players between the first build and cutover, all of whom would have been undraftable.
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { buildResolver, splitBrackets, teamTarget } from '../src/data/drawParser.ts';
+import { buildResolver, splitBrackets, teamTarget, stripDisambig } from '../src/data/drawParser.ts';
 import { getEvent, expandManual } from './lib/events.mjs';
 import { tierOf, fetchDraw, norm } from './lib/pricing.mjs';
 
@@ -69,7 +69,7 @@ for (const b of sections) {
     if (!raw || !/\[\[/.test(raw)) continue;    // empty cell / bye / unfilled qualifier slot
     const pid = resolve(raw);
     if (pid === 'tbd') continue;
-    if (pid.startsWith('x_')) { unmatched.add(norm(teamTarget(raw))); continue; }
+    if (pid.startsWith('x_')) { unmatched.add(norm(stripDisambig(teamTarget(raw)))); continue; }  // strip "(tennis)" or a manual entry can never match
     if (!found.has(pid)) found.set(pid, raw);
   }
 }

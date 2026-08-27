@@ -57,7 +57,7 @@ const matchKey = (round: RoundId, slot: number): string => `${round}_${slot}`;
 const FOLD: Record<string, string> = { 'ø': 'o', 'æ': 'ae', 'œ': 'oe', 'ł': 'l', 'đ': 'd', 'ð': 'd', 'þ': 'th', 'ß': 'ss', 'ı': 'i' };
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
   .replace(/[øæœłđðþßı]/g, (c) => FOLD[c] ?? c)
-  .replace(/[-s]+/g, ' ').trim();
+  .replace(/[-\s]+/g, ' ').trim();
 const stripDisambig = (s: string) => s.replace(/\s*\((?:tennis|tennis player|[^)]*)\)\s*$/i, '').trim();
 
 function cleanTeam(raw: string): string {
@@ -72,14 +72,27 @@ function teamTarget(raw: string): string {
   const m = raw.match(/\[\[([^\]|]+)/);
   return m ? m[1].trim() : cleanTeam(raw);
 }
+// Wikipedia sometimes spells a player differently from the tour's own listing — a
+// transliteration ("Alexander" vs "Aleksandr" Shevchenko) or a plain typo: the 2026 US Open
+// draw slot says "Francis Tiafoe" while the seed list on the SAME page says Frances, who is
+// seed 11. Neither accent-folding nor word-sorting can bridge those, and the failure is
+// silent — the player resolves to a synthetic id and is simply absent from the field.
+// Keyed by the normalised WIKIPEDIA spelling, valued by the normalised ROSTER spelling.
+const ALIAS: Record<string, string> = {
+  'alexander shevchenko': 'aleksandr shevchenko',
+  'francis tiafoe': 'frances tiafoe',
+};
+
 function buildResolver(roster: { id: string; name: string }[]): (raw: string) => string {
   const byName = new Map(roster.map((p) => [norm(p.name), p.id]));
+  const viaAlias = (n: string) => byName.get(ALIAS[n] ?? "");
   const sortWords = (s: string) => s.split(' ').filter(Boolean).sort().join(' ');
   const bySorted = new Map(roster.map((p) => [sortWords(norm(p.name)), p.id]));
   return (raw: string) => {
     const stripped = stripDisambig(teamTarget(raw));
     return byName.get(norm(teamTarget(raw)))
       ?? byName.get(norm(stripped))
+      ?? viaAlias(norm(stripped))
       ?? bySorted.get(sortWords(norm(stripped)))
       ?? `x_${norm(stripped).replace(/\s+/g, '_')}`;
   };
