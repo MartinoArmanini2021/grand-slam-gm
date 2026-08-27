@@ -55,4 +55,7 @@ console.log(`    empty             : ${slots.length - filled.length}`);
 console.log(`    marked "Qualifier": ${quals.length}   ← how many placeholders Job 8 must create`);
 if (filled.length) console.log(`    sample            : ${filled.slice(0, 3).map(strip).join(' · ')}`);
 console.log(`\n    ${ready ? '✅  DRAW IS PUBLISHED — Job 8 can start' : '⏳  still a skeleton — the draw is not out'}\n`);
-process.exit(ready ? 0 : 3);
+// Set the code and let the event loop drain. process.exit() here races Node's teardown of the
+// still-closing fetch handle and dies with a libuv assertion (exit 127 on Windows), which would
+// have made this watch unreadable to the scheduled task that depends on it.
+process.exitCode = ready ? 0 : 3;
