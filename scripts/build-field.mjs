@@ -81,6 +81,10 @@ const fromPool = [...found.keys()].map(pid => {
   return {
     id: p.id, name: p.name, country: p.country, flag: p.flag,
     age: p.age ?? null, hand: p.hand ?? 'R',
+    // The ATP player code is what fetches the official headshot. Without it every player
+    // renders as initials — the pool calls it `atpId`, the app's Player shape `atp_id`.
+    atpId: p.atpId ?? null,
+    photoUrl: p.photoUrl ?? null,
     ranking: p.rank, seed: seedById.get(pid) ?? null,
     surface: { hard: surface.hard ?? 50, clay: surface.clay ?? 50, grass: surface.grass ?? 50 },
     ytd: p.ytd ?? { wins: 0, losses: 0, titles: 0 },

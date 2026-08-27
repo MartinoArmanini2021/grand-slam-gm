@@ -19,6 +19,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import montrealField from '../../../src/data/montreal2026Field.json' with { type: 'json' };
 import cincinnatiField from '../../../src/data/cincinnati2026Field.json' with { type: 'json' };
+import usopenField from '../../../src/data/usopen2026Field.json' with { type: 'json' };
 
 // ── auth guard (inlined from supabase/functions/_shared/serviceGuard.ts) ──
 function decodeJwtRole(token: string): string | null {
@@ -310,6 +311,14 @@ const TOURNAMENTS: Record<string, { page: string; rounds: readonly string[]; ros
     page: "2026 Cincinnati Open – Men's singles",
     rounds: ['R64', 'R32', 'R16', 'QF', 'SF', 'F'],
     roster: cincinnatiField as { id: string; name: string }[],
+  },
+  // A SLAM, so SEVEN rounds and R128 IS scored — the Masters above have 96-player draws
+  // where the seeds get a bye and the unscored opening round never reaches `matches` at all.
+  // Getting this list wrong is silent: a round missing here is simply never ingested.
+  usopen_2026: {
+    page: "2026 US Open – Men's singles",
+    rounds: ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'],
+    roster: usopenField as { id: string; name: string }[],
   },
 };
 // NO DEFAULT, deliberately. A hardcoded fallback here meant a bodyless invoke silently ingested

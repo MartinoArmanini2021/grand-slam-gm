@@ -46,7 +46,12 @@ export const EVENTS = {
     // feed the upset multiplier, so if one of them goes on a run, revisit it BEFORE the first
     // ball, never after ([[lesson-stale-rankings]]).
     manual: [
-      { id: 'misolic',    name: 'Filip Misolic',      country: 'Austria',       flag: '🇦🇹', age: 25,   hand: 'R', ranking: 101 },
+      // The draw page lists Misolic under PROTECTED RANKING at 101 — but a protected ranking is
+      // exactly what a player uses when his ACTUAL rank has fallen too far to enter directly, and
+      // he is absent from the top-300 pool for that reason. Using 101 priced him at $7M and, worse,
+      // would have shrunk his upset multiplier as though he were a top-100 player. Nominal, like
+      // the wildcards below.
+      { id: 'misolic',    name: 'Filip Misolic',      country: 'Austria',       flag: '🇦🇹', age: 25,   hand: 'R', ranking: 350 },
       { id: 'monfils',    name: 'Gaël Monfils',       country: 'France',        flag: '🇫🇷', age: 39,   hand: 'R', ranking: 327 },
       { id: 'kokkinakis', name: 'Thanasi Kokkinakis', country: 'Australia',     flag: '🇦🇺', age: 30,   hand: 'R', ranking: 443 },
       // This page writes him "J. J. Wolf" with spaces; Cincinnati's writes "J.J. Wolf".
