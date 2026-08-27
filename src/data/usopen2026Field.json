@@ -1,0 +1,6213 @@
+[
+  {
+    "id": "zverev",
+    "name": "Alexander Zverev",
+    "country": "Germany",
+    "flag": "🇩🇪",
+    "age": 29,
+    "hand": "R",
+    "ranking": 2,
+    "seed": 1,
+    "surface": {
+      "hard": 73,
+      "clay": 83,
+      "grass": 82
+    },
+    "ytd": {
+      "wins": 45,
+      "losses": 12,
+      "titles": 1
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "SF"
+      },
+      {
+        "short": "RG",
+        "result": "W"
+      },
+      {
+        "short": "WIM",
+        "result": "F"
+      },
+      {
+        "short": "IW",
+        "result": "SF"
+      },
+      {
+        "short": "MIA",
+        "result": "SF"
+      },
+      {
+        "short": "MC",
+        "result": "SF"
+      },
+      {
+        "short": "MAD",
+        "result": "F"
+      },
+      {
+        "short": "ROM",
+        "result": "R16"
+      },
+      {
+        "short": "HAL",
+        "result": "SF"
+      },
+      {
+        "short": "MO",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "alcaraz",
+    "name": "Carlos Alcaraz",
+    "country": "Spain",
+    "flag": "🇪🇸",
+    "age": 23,
+    "hand": "R",
+    "ranking": 3,
+    "seed": 2,
+    "surface": {
+      "hard": 89,
+      "clay": 71,
+      "grass": 85
+    },
+    "ytd": {
+      "wins": 22,
+      "losses": 4,
+      "titles": 2
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "W"
+      },
+      {
+        "short": "IW",
+        "result": "SF"
+      },
+      {
+        "short": "MIA",
+        "result": "R32"
+      },
+      {
+        "short": "MC",
+        "result": "F"
+      },
+      {
+        "short": "DOH",
+        "result": "W"
+      },
+      {
+        "short": "BCN",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "augeraliassime",
+    "name": "Felix Auger-Aliassime",
+    "country": "Canada",
+    "flag": "🇨🇦",
+    "age": 26,
+    "hand": "R",
+    "ranking": 4,
+    "seed": 3,
+    "surface": {
+      "hard": 73,
+      "clay": 62,
+      "grass": 70
+    },
+    "ytd": {
+      "wins": 31,
+      "losses": 14,
+      "titles": 1
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "QF"
+      },
+      {
+        "short": "WIM",
+        "result": "QF"
+      },
+      {
+        "short": "IW",
+        "result": "R16"
+      },
+      {
+        "short": "MIA",
+        "result": "R32"
+      },
+      {
+        "short": "MC",
+        "result": "QF"
+      },
+      {
+        "short": "MAD",
+        "result": "R32"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "ROT",
+        "result": "F"
+      },
+      {
+        "short": "DUB",
+        "result": "SF"
+      }
+    ]
+  },
+  {
+    "id": "djokovic",
+    "name": "Novak Djokovic",
+    "country": "Serbia",
+    "flag": "🇷🇸",
+    "age": 39,
+    "hand": "R",
+    "ranking": 5,
+    "seed": 4,
+    "surface": {
+      "hard": 73,
+      "clay": 50,
+      "grass": 83
+    },
+    "ytd": {
+      "wins": 15,
+      "losses": 6,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "F"
+      },
+      {
+        "short": "RG",
+        "result": "R32"
+      },
+      {
+        "short": "WIM",
+        "result": "SF"
+      },
+      {
+        "short": "IW",
+        "result": "R16"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "CIN",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "cobolli",
+    "name": "Flavio Cobolli",
+    "country": "Italy",
+    "flag": "🇮🇹",
+    "age": 24,
+    "hand": "R",
+    "ranking": 6,
+    "seed": 5,
+    "surface": {
+      "hard": 60,
+      "clay": 68,
+      "grass": 67
+    },
+    "ytd": {
+      "wins": 31,
+      "losses": 17,
+      "titles": 1
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "F"
+      },
+      {
+        "short": "WIM",
+        "result": "QF"
+      },
+      {
+        "short": "IW",
+        "result": "R32"
+      },
+      {
+        "short": "MIA",
+        "result": "R64"
+      },
+      {
+        "short": "MC",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "QF"
+      },
+      {
+        "short": "ROM",
+        "result": "R32"
+      },
+      {
+        "short": "HAM",
+        "result": "R128"
+      },
+      {
+        "short": "HAL",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "deminaur",
+    "name": "Alex de Minaur",
+    "country": "Australia",
+    "flag": "🇦🇺",
+    "age": 27,
+    "hand": "R",
+    "ranking": 7,
+    "seed": 6,
+    "surface": {
+      "hard": 68,
+      "clay": 57,
+      "grass": 73
+    },
+    "ytd": {
+      "wins": 29,
+      "losses": 15,
+      "titles": 1
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "QF"
+      },
+      {
+        "short": "RG",
+        "result": "R32"
+      },
+      {
+        "short": "WIM",
+        "result": "R16"
+      },
+      {
+        "short": "IW",
+        "result": "R32"
+      },
+      {
+        "short": "MIA",
+        "result": "R64"
+      },
+      {
+        "short": "MC",
+        "result": "QF"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "ROT",
+        "result": "W"
+      },
+      {
+        "short": "BCN",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "medvedev",
+    "name": "Daniil Medvedev",
+    "country": "Russia",
+    "flag": "🇷🇺",
+    "age": 30,
+    "hand": "R",
+    "ranking": 8,
+    "seed": 7,
+    "surface": {
+      "hard": 75,
+      "clay": 60,
+      "grass": 67
+    },
+    "ytd": {
+      "wins": 33,
+      "losses": 14,
+      "titles": 2
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R16"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R32"
+      },
+      {
+        "short": "IW",
+        "result": "F"
+      },
+      {
+        "short": "MIA",
+        "result": "R32"
+      },
+      {
+        "short": "MC",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "R16"
+      },
+      {
+        "short": "ROM",
+        "result": "SF"
+      },
+      {
+        "short": "ROT",
+        "result": "R128"
+      },
+      {
+        "short": "DOH",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "shelton",
+    "name": "Ben Shelton",
+    "country": "United States",
+    "flag": "🇺🇸",
+    "age": 24,
+    "hand": "L",
+    "ranking": 9,
+    "seed": 8,
+    "surface": {
+      "hard": 77,
+      "clay": 62,
+      "grass": 75
+    },
+    "ytd": {
+      "wins": 31,
+      "losses": 12,
+      "titles": 4
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "QF"
+      },
+      {
+        "short": "RG",
+        "result": "R64"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R32"
+      },
+      {
+        "short": "MIA",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "HAM",
+        "result": "R64"
+      },
+      {
+        "short": "HAL",
+        "result": "QF"
+      },
+      {
+        "short": "AKL",
+        "result": "QF"
+      }
+    ]
+  },
+  {
+    "id": "fritz",
+    "name": "Taylor Fritz",
+    "country": "United States",
+    "flag": "🇺🇸",
+    "age": 29,
+    "hand": "R",
+    "ranking": 10,
+    "seed": 9,
+    "surface": {
+      "hard": 67,
+      "clay": 68,
+      "grass": 79
+    },
+    "ytd": {
+      "wins": 25,
+      "losses": 12,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R16"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "QF"
+      },
+      {
+        "short": "IW",
+        "result": "R32"
+      },
+      {
+        "short": "MIA",
+        "result": "R16"
+      },
+      {
+        "short": "HAL",
+        "result": "F"
+      },
+      {
+        "short": "DO",
+        "result": "F"
+      },
+      {
+        "short": "DBO",
+        "result": "QF"
+      },
+      {
+        "short": "GO",
+        "result": "R64"
+      },
+      {
+        "short": "BO",
+        "result": "F"
+      }
+    ]
+  },
+  {
+    "id": "fils",
+    "name": "Arthur Fils",
+    "country": "France",
+    "flag": "🇫🇷",
+    "age": 22,
+    "hand": "R",
+    "ranking": 11,
+    "seed": 10,
+    "surface": {
+      "hard": 79,
+      "clay": 82,
+      "grass": 78
+    },
+    "ytd": {
+      "wins": 32,
+      "losses": 9,
+      "titles": 2
+    },
+    "yearResults": [
+      {
+        "short": "WIM",
+        "result": "R64"
+      },
+      {
+        "short": "IW",
+        "result": "QF"
+      },
+      {
+        "short": "MIA",
+        "result": "SF"
+      },
+      {
+        "short": "MAD",
+        "result": "SF"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "ROT",
+        "result": "R128"
+      },
+      {
+        "short": "DOH",
+        "result": "F"
+      },
+      {
+        "short": "BCN",
+        "result": "W"
+      },
+      {
+        "short": "OO",
+        "result": "QF"
+      },
+      {
+        "short": "MTL",
+        "result": "QF"
+      }
+    ]
+  },
+  {
+    "id": "tiafoe",
+    "name": "Frances Tiafoe",
+    "country": "United States",
+    "flag": "🇺🇸",
+    "age": 29,
+    "hand": "R",
+    "ranking": 12,
+    "seed": 11,
+    "surface": {
+      "hard": 70,
+      "clay": 64,
+      "grass": 82
+    },
+    "ytd": {
+      "wins": 37,
+      "losses": 15,
+      "titles": 1
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R32"
+      },
+      {
+        "short": "RG",
+        "result": "R16"
+      },
+      {
+        "short": "WIM",
+        "result": "R32"
+      },
+      {
+        "short": "IW",
+        "result": "R16"
+      },
+      {
+        "short": "MIA",
+        "result": "QF"
+      },
+      {
+        "short": "ROM",
+        "result": "R32"
+      },
+      {
+        "short": "HAM",
+        "result": "R64"
+      },
+      {
+        "short": "HAL",
+        "result": "W"
+      },
+      {
+        "short": "BRI",
+        "result": "R64"
+      },
+      {
+        "short": "DO",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "jodar",
+    "name": "Rafael Jodar",
+    "country": "Spain",
+    "flag": "🇪🇸",
+    "age": 20,
+    "hand": "R",
+    "ranking": 13,
+    "seed": 12,
+    "surface": {
+      "hard": 65,
+      "clay": 83,
+      "grass": 73
+    },
+    "ytd": {
+      "wins": 36,
+      "losses": 13,
+      "titles": 1
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R64"
+      },
+      {
+        "short": "RG",
+        "result": "QF"
+      },
+      {
+        "short": "WIM",
+        "result": "R32"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R32"
+      },
+      {
+        "short": "MAD",
+        "result": "QF"
+      },
+      {
+        "short": "ROM",
+        "result": "QF"
+      },
+      {
+        "short": "BCN",
+        "result": "SF"
+      },
+      {
+        "short": "DO",
+        "result": "R128"
+      },
+      {
+        "short": "DBO",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "musetti",
+    "name": "Lorenzo Musetti",
+    "country": "Italy",
+    "flag": "🇮🇹",
+    "age": 24,
+    "hand": "R",
+    "ranking": 14,
+    "seed": 13,
+    "surface": {
+      "hard": 69,
+      "clay": 60,
+      "grass": 65
+    },
+    "ytd": {
+      "wins": 17,
+      "losses": 9,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "QF"
+      },
+      {
+        "short": "IW",
+        "result": "R64"
+      },
+      {
+        "short": "MC",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "R16"
+      },
+      {
+        "short": "ROM",
+        "result": "R16"
+      },
+      {
+        "short": "BCN",
+        "result": "QF"
+      },
+      {
+        "short": "AHK",
+        "result": "F"
+      },
+      {
+        "short": "MTL",
+        "result": "R32"
+      },
+      {
+        "short": "CIN",
+        "result": "QF"
+      }
+    ]
+  },
+  {
+    "id": "tien",
+    "name": "Learner Tien",
+    "country": "United States",
+    "flag": "🇺🇸",
+    "age": 21,
+    "hand": "L",
+    "ranking": 15,
+    "seed": 14,
+    "surface": {
+      "hard": 65,
+      "clay": 69,
+      "grass": 50
+    },
+    "ytd": {
+      "wins": 26,
+      "losses": 14,
+      "titles": 1
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "QF"
+      },
+      {
+        "short": "RG",
+        "result": "R32"
+      },
+      {
+        "short": "WIM",
+        "result": "R64"
+      },
+      {
+        "short": "IW",
+        "result": "QF"
+      },
+      {
+        "short": "MIA",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R16"
+      },
+      {
+        "short": "HAL",
+        "result": "R64"
+      },
+      {
+        "short": "BRI",
+        "result": "R64"
+      },
+      {
+        "short": "DO",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "bublik",
+    "name": "Alexander Bublik",
+    "country": "Kazakhstan",
+    "flag": "🇰🇿",
+    "age": 29,
+    "hand": "R",
+    "ranking": 16,
+    "seed": 15,
+    "surface": {
+      "hard": 71,
+      "clay": 50,
+      "grass": 63
+    },
+    "ytd": {
+      "wins": 25,
+      "losses": 16,
+      "titles": 1
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R16"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R16"
+      },
+      {
+        "short": "IW",
+        "result": "R32"
+      },
+      {
+        "short": "MIA",
+        "result": "R64"
+      },
+      {
+        "short": "MC",
+        "result": "QF"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R32"
+      },
+      {
+        "short": "ROT",
+        "result": "SF"
+      },
+      {
+        "short": "DUB",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "nakashima",
+    "name": "Brandon Nakashima",
+    "country": "United States",
+    "flag": "🇺🇸",
+    "age": 25,
+    "hand": "R",
+    "ranking": 17,
+    "seed": 16,
+    "surface": {
+      "hard": 68,
+      "clay": 50,
+      "grass": 67
+    },
+    "ytd": {
+      "wins": 28,
+      "losses": 16,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R32"
+      },
+      {
+        "short": "WIM",
+        "result": "R64"
+      },
+      {
+        "short": "IW",
+        "result": "R32"
+      },
+      {
+        "short": "MIA",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R32"
+      },
+      {
+        "short": "BCN",
+        "result": "R64"
+      },
+      {
+        "short": "QUE",
+        "result": "SF"
+      },
+      {
+        "short": "BRI",
+        "result": "F"
+      }
+    ]
+  },
+  {
+    "id": "mensik",
+    "name": "Jakub Mensik",
+    "country": "Czechia",
+    "flag": "🇨🇿",
+    "age": 21,
+    "hand": "R",
+    "ranking": 18,
+    "seed": 17,
+    "surface": {
+      "hard": 73,
+      "clay": 67,
+      "grass": 68
+    },
+    "ytd": {
+      "wins": 28,
+      "losses": 13,
+      "titles": 1
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R16"
+      },
+      {
+        "short": "RG",
+        "result": "SF"
+      },
+      {
+        "short": "WIM",
+        "result": "R64"
+      },
+      {
+        "short": "IW",
+        "result": "R32"
+      },
+      {
+        "short": "MIA",
+        "result": "R32"
+      },
+      {
+        "short": "MAD",
+        "result": "R16"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "DOH",
+        "result": "SF"
+      },
+      {
+        "short": "DUB",
+        "result": "QF"
+      },
+      {
+        "short": "HAM",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "lehecka",
+    "name": "Jiri Lehecka",
+    "country": "Czechia",
+    "flag": "🇨🇿",
+    "age": 25,
+    "hand": "R",
+    "ranking": 19,
+    "seed": 18,
+    "surface": {
+      "hard": 59,
+      "clay": 60,
+      "grass": 67
+    },
+    "ytd": {
+      "wins": 25,
+      "losses": 16,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R16"
+      },
+      {
+        "short": "IW",
+        "result": "R64"
+      },
+      {
+        "short": "MIA",
+        "result": "F"
+      },
+      {
+        "short": "MC",
+        "result": "R32"
+      },
+      {
+        "short": "MAD",
+        "result": "QF"
+      },
+      {
+        "short": "ROM",
+        "result": "R32"
+      },
+      {
+        "short": "DOH",
+        "result": "QF"
+      },
+      {
+        "short": "DUB",
+        "result": "QF"
+      }
+    ]
+  },
+  {
+    "id": "ruud",
+    "name": "Casper Ruud",
+    "country": "Norway",
+    "flag": "🇳🇴",
+    "age": 28,
+    "hand": "R",
+    "ranking": 20,
+    "seed": 19,
+    "surface": {
+      "hard": 47,
+      "clay": 74,
+      "grass": 62
+    },
+    "ytd": {
+      "wins": 24,
+      "losses": 15,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R16"
+      },
+      {
+        "short": "RG",
+        "result": "R16"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R16"
+      },
+      {
+        "short": "MIA",
+        "result": "R64"
+      },
+      {
+        "short": "MC",
+        "result": "R32"
+      },
+      {
+        "short": "MAD",
+        "result": "QF"
+      },
+      {
+        "short": "ROM",
+        "result": "F"
+      },
+      {
+        "short": "AKL",
+        "result": "R64"
+      },
+      {
+        "short": "DBO",
+        "result": "QF"
+      }
+    ]
+  },
+  {
+    "id": "paul",
+    "name": "Tommy Paul",
+    "country": "United States",
+    "flag": "🇺🇸",
+    "age": 29,
+    "hand": "R",
+    "ranking": 21,
+    "seed": 20,
+    "surface": {
+      "hard": 67,
+      "clay": 73,
+      "grass": 75
+    },
+    "ytd": {
+      "wins": 35,
+      "losses": 15,
+      "titles": 1
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R16"
+      },
+      {
+        "short": "RG",
+        "result": "R32"
+      },
+      {
+        "short": "WIM",
+        "result": "R32"
+      },
+      {
+        "short": "IW",
+        "result": "R32"
+      },
+      {
+        "short": "MIA",
+        "result": "QF"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R32"
+      },
+      {
+        "short": "HAM",
+        "result": "F"
+      },
+      {
+        "short": "QUE",
+        "result": "F"
+      },
+      {
+        "short": "BRI",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "darderi",
+    "name": "Luciano Darderi",
+    "country": "Italy",
+    "flag": "🇮🇹",
+    "age": 24,
+    "hand": "R",
+    "ranking": 22,
+    "seed": 21,
+    "surface": {
+      "hard": 50,
+      "clay": 69,
+      "grass": 61
+    },
+    "ytd": {
+      "wins": 30,
+      "losses": 19,
+      "titles": 1
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R16"
+      },
+      {
+        "short": "RG",
+        "result": "R64"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R64"
+      },
+      {
+        "short": "MIA",
+        "result": "R64"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R32"
+      },
+      {
+        "short": "ROM",
+        "result": "SF"
+      },
+      {
+        "short": "RIO",
+        "result": "R128"
+      },
+      {
+        "short": "HAM",
+        "result": "QF"
+      }
+    ]
+  },
+  {
+    "id": "vacherot",
+    "name": "Valentin Vacherot",
+    "country": "Monaco",
+    "flag": "🇲🇨",
+    "age": 28,
+    "hand": "R",
+    "ranking": 23,
+    "seed": 22,
+    "surface": {
+      "hard": 50,
+      "clay": 55,
+      "grass": 52
+    },
+    "ytd": {
+      "wins": 15,
+      "losses": 14,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R32"
+      },
+      {
+        "short": "RG",
+        "result": "R64"
+      },
+      {
+        "short": "IW",
+        "result": "R32"
+      },
+      {
+        "short": "MIA",
+        "result": "R16"
+      },
+      {
+        "short": "MC",
+        "result": "SF"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "BRI",
+        "result": "R128"
+      },
+      {
+        "short": "ADL",
+        "result": "QF"
+      },
+      {
+        "short": "DBO",
+        "result": "R128"
+      },
+      {
+        "short": "MO",
+        "result": "QF"
+      }
+    ]
+  },
+  {
+    "id": "rublev",
+    "name": "Andrey Rublev",
+    "country": "Russia",
+    "flag": "🇷🇺",
+    "age": 29,
+    "hand": "R",
+    "ranking": 24,
+    "seed": 23,
+    "surface": {
+      "hard": 58,
+      "clay": 75,
+      "grass": 63
+    },
+    "ytd": {
+      "wins": 26,
+      "losses": 15,
+      "titles": 1
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R32"
+      },
+      {
+        "short": "RG",
+        "result": "R16"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R64"
+      },
+      {
+        "short": "MIA",
+        "result": "R64"
+      },
+      {
+        "short": "MC",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "QF"
+      },
+      {
+        "short": "DOH",
+        "result": "SF"
+      },
+      {
+        "short": "DUB",
+        "result": "SF"
+      }
+    ]
+  },
+  {
+    "id": "franciscocerundolo",
+    "name": "Francisco Cerundolo",
+    "country": "Argentina",
+    "flag": "🇦🇷",
+    "age": 28,
+    "hand": "R",
+    "ranking": 25,
+    "seed": 24,
+    "surface": {
+      "hard": 53,
+      "clay": 65,
+      "grass": 83
+    },
+    "ytd": {
+      "wins": 28,
+      "losses": 16,
+      "titles": 2
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R16"
+      },
+      {
+        "short": "RG",
+        "result": "R32"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R32"
+      },
+      {
+        "short": "MIA",
+        "result": "QF"
+      },
+      {
+        "short": "MC",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "R16"
+      },
+      {
+        "short": "ROM",
+        "result": "R32"
+      },
+      {
+        "short": "RIO",
+        "result": "R64"
+      },
+      {
+        "short": "HAM",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "tabilo",
+    "name": "Alejandro Tabilo",
+    "country": "Chile",
+    "flag": "🇨🇱",
+    "age": 29,
+    "hand": "L",
+    "ranking": 28,
+    "seed": 25,
+    "surface": {
+      "hard": 50,
+      "clay": 64,
+      "grass": 55
+    },
+    "ytd": {
+      "wins": 23,
+      "losses": 19,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R16"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R64"
+      },
+      {
+        "short": "MIA",
+        "result": "R32"
+      },
+      {
+        "short": "MC",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "RIO",
+        "result": "F"
+      },
+      {
+        "short": "QUE",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "rinderknech",
+    "name": "Arthur Rinderknech",
+    "country": "France",
+    "flag": "🇫🇷",
+    "age": 31,
+    "hand": "R",
+    "ranking": 29,
+    "seed": 26,
+    "surface": {
+      "hard": 38,
+      "clay": 50,
+      "grass": 40
+    },
+    "ytd": {
+      "wins": 14,
+      "losses": 18,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R64"
+      },
+      {
+        "short": "WIM",
+        "result": "R32"
+      },
+      {
+        "short": "IW",
+        "result": "R32"
+      },
+      {
+        "short": "MIA",
+        "result": "R64"
+      },
+      {
+        "short": "MC",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "R32"
+      },
+      {
+        "short": "ROT",
+        "result": "R128"
+      },
+      {
+        "short": "DOH",
+        "result": "R128"
+      },
+      {
+        "short": "DUB",
+        "result": "QF"
+      }
+    ]
+  },
+  {
+    "id": "etcheverry",
+    "name": "Tomas Martin Etcheverry",
+    "country": "Argentina",
+    "flag": "🇦🇷",
+    "age": 27,
+    "hand": "R",
+    "ranking": 31,
+    "seed": 27,
+    "surface": {
+      "hard": 42,
+      "clay": 64,
+      "grass": 53
+    },
+    "ytd": {
+      "wins": 23,
+      "losses": 20,
+      "titles": 1
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R32"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R64"
+      },
+      {
+        "short": "MIA",
+        "result": "R16"
+      },
+      {
+        "short": "MC",
+        "result": "R32"
+      },
+      {
+        "short": "MAD",
+        "result": "R16"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "RIO",
+        "result": "W"
+      },
+      {
+        "short": "BCN",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "blockx",
+    "name": "Alexander Blockx",
+    "country": "Belgium",
+    "flag": "🇧🇪",
+    "age": 21,
+    "hand": "R",
+    "ranking": 32,
+    "seed": 28,
+    "surface": {
+      "hard": 38,
+      "clay": 68,
+      "grass": 57
+    },
+    "ytd": {
+      "wins": 16,
+      "losses": 12,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R64"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MC",
+        "result": "R32"
+      },
+      {
+        "short": "MAD",
+        "result": "SF"
+      },
+      {
+        "short": "ROM",
+        "result": "R32"
+      },
+      {
+        "short": "BO",
+        "result": "R64"
+      },
+      {
+        "short": "COU",
+        "result": "R128"
+      },
+      {
+        "short": "MTL",
+        "result": "R32"
+      }
+    ]
+  },
+  {
+    "id": "norrie",
+    "name": "Cameron Norrie",
+    "country": "Great Britain",
+    "flag": "🇬🇧",
+    "age": 31,
+    "hand": "L",
+    "ranking": 33,
+    "seed": 29,
+    "surface": {
+      "hard": 60,
+      "clay": 45,
+      "grass": 53
+    },
+    "ytd": {
+      "wins": 20,
+      "losses": 18,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R32"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "QF"
+      },
+      {
+        "short": "MIA",
+        "result": "R64"
+      },
+      {
+        "short": "MC",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "R16"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "ROT",
+        "result": "R64"
+      },
+      {
+        "short": "BCN",
+        "result": "QF"
+      }
+    ]
+  },
+  {
+    "id": "arnaldi",
+    "name": "Matteo Arnaldi",
+    "country": "Italy",
+    "flag": "🇮🇹",
+    "age": 25,
+    "hand": "R",
+    "ranking": 34,
+    "seed": 30,
+    "surface": {
+      "hard": 25,
+      "clay": 56,
+      "grass": 50
+    },
+    "ytd": {
+      "wins": 13,
+      "losses": 15,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "SF"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R128"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R32"
+      },
+      {
+        "short": "BCN",
+        "result": "R128"
+      },
+      {
+        "short": "EAS",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "bergs",
+    "name": "Zizou Bergs",
+    "country": "Belgium",
+    "flag": "🇧🇪",
+    "age": 27,
+    "hand": "R",
+    "ranking": 35,
+    "seed": 31,
+    "surface": {
+      "hard": 33,
+      "clay": 38,
+      "grass": 70
+    },
+    "ytd": {
+      "wins": 14,
+      "losses": 16,
+      "titles": 1
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R32"
+      },
+      {
+        "short": "IW",
+        "result": "R64"
+      },
+      {
+        "short": "MIA",
+        "result": "R64"
+      },
+      {
+        "short": "MC",
+        "result": "R32"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "ROT",
+        "result": "R128"
+      },
+      {
+        "short": "DOH",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "buse",
+    "name": "Ignacio Buse",
+    "country": "Peru",
+    "flag": "🇵🇪",
+    "age": 22,
+    "hand": "R",
+    "ranking": 36,
+    "seed": 32,
+    "surface": {
+      "hard": 43,
+      "clay": 59,
+      "grass": 50
+    },
+    "ytd": {
+      "wins": 22,
+      "losses": 18,
+      "titles": 1
+    },
+    "yearResults": [
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R64"
+      },
+      {
+        "short": "MIA",
+        "result": "R128"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "RIO",
+        "result": "SF"
+      },
+      {
+        "short": "BCN",
+        "result": "R128"
+      },
+      {
+        "short": "HAM",
+        "result": "W"
+      },
+      {
+        "short": "QUE",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "fery",
+    "name": "Arthur Fery",
+    "country": "Great Britain",
+    "flag": "🇬🇧",
+    "age": 24,
+    "hand": "R",
+    "ranking": 37,
+    "seed": null,
+    "surface": {
+      "hard": 57,
+      "clay": 63,
+      "grass": 73
+    },
+    "ytd": {
+      "wins": 12,
+      "losses": 7,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R64"
+      },
+      {
+        "short": "WIM",
+        "result": "SF"
+      },
+      {
+        "short": "MIA",
+        "result": "R128"
+      },
+      {
+        "short": "QUE",
+        "result": "QF"
+      },
+      {
+        "short": "BO",
+        "result": "R128"
+      },
+      {
+        "short": "EAS",
+        "result": "R64"
+      },
+      {
+        "short": "CIN",
+        "result": "R32"
+      }
+    ]
+  },
+  {
+    "id": "collignon",
+    "name": "Raphael Collignon",
+    "country": "Belgium",
+    "flag": "🇧🇪",
+    "age": 25,
+    "hand": "R",
+    "ranking": 38,
+    "seed": null,
+    "surface": {
+      "hard": 46,
+      "clay": 64,
+      "grass": 57
+    },
+    "ytd": {
+      "wins": 17,
+      "losses": 14,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R32"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R32"
+      },
+      {
+        "short": "HAL",
+        "result": "QF"
+      },
+      {
+        "short": "BRI",
+        "result": "QF"
+      },
+      {
+        "short": "ADL",
+        "result": "R128"
+      },
+      {
+        "short": "GO",
+        "result": "R64"
+      },
+      {
+        "short": "EAS",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "merida",
+    "name": "Daniel Merida",
+    "country": "Spain",
+    "flag": "🇪🇸",
+    "age": null,
+    "hand": "R",
+    "ranking": 39,
+    "seed": null,
+    "surface": {
+      "hard": 69,
+      "clay": 73,
+      "grass": 68
+    },
+    "ytd": {
+      "wins": 21,
+      "losses": 10,
+      "titles": 1
+    },
+    "yearResults": [
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R64"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R32"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "QUE",
+        "result": "R128"
+      },
+      {
+        "short": "COU",
+        "result": "W"
+      },
+      {
+        "short": "MTL",
+        "result": "QF"
+      },
+      {
+        "short": "CIN",
+        "result": "R32"
+      }
+    ]
+  },
+  {
+    "id": "assche",
+    "name": "Luca Van Assche",
+    "country": "France",
+    "flag": "🇫🇷",
+    "age": 22,
+    "hand": "R",
+    "ranking": 40,
+    "seed": null,
+    "surface": {
+      "hard": 29,
+      "clay": 40,
+      "grass": 33
+    },
+    "ytd": {
+      "wins": 6,
+      "losses": 12,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "RG",
+        "result": "R64"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "HAM",
+        "result": "R128"
+      },
+      {
+        "short": "AHK",
+        "result": "R128"
+      },
+      {
+        "short": "GPH",
+        "result": "QF"
+      },
+      {
+        "short": "COU",
+        "result": "R64"
+      },
+      {
+        "short": "MTL",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "borges",
+    "name": "Nuno Borges",
+    "country": "Portugal",
+    "flag": "🇵🇹",
+    "age": 29,
+    "hand": "R",
+    "ranking": 41,
+    "seed": null,
+    "surface": {
+      "hard": 57,
+      "clay": 54,
+      "grass": 56
+    },
+    "ytd": {
+      "wins": 24,
+      "losses": 19,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R32"
+      },
+      {
+        "short": "RG",
+        "result": "R32"
+      },
+      {
+        "short": "WIM",
+        "result": "R64"
+      },
+      {
+        "short": "IW",
+        "result": "R64"
+      },
+      {
+        "short": "MIA",
+        "result": "R128"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "BCN",
+        "result": "QF"
+      },
+      {
+        "short": "HAL",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "tirante",
+    "name": "Thiago Agustin Tirante",
+    "country": "Argentina",
+    "flag": "🇦🇷",
+    "age": 25,
+    "hand": "R",
+    "ranking": 42,
+    "seed": null,
+    "surface": {
+      "hard": 61,
+      "clay": 65,
+      "grass": 61
+    },
+    "ytd": {
+      "wins": 27,
+      "losses": 17,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R64"
+      },
+      {
+        "short": "RG",
+        "result": "R32"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "R32"
+      },
+      {
+        "short": "ROM",
+        "result": "R16"
+      },
+      {
+        "short": "RIO",
+        "result": "QF"
+      },
+      {
+        "short": "CO",
+        "result": "R64"
+      },
+      {
+        "short": "UMC",
+        "result": "SF"
+      },
+      {
+        "short": "GO",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "berrettini",
+    "name": "Matteo Berrettini",
+    "country": "Italy",
+    "flag": "🇮🇹",
+    "age": 30,
+    "hand": "R",
+    "ranking": 43,
+    "seed": null,
+    "surface": {
+      "hard": 50,
+      "clay": 53,
+      "grass": 54
+    },
+    "ytd": {
+      "wins": 15,
+      "losses": 13,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "RG",
+        "result": "QF"
+      },
+      {
+        "short": "WIM",
+        "result": "R32"
+      },
+      {
+        "short": "IW",
+        "result": "R64"
+      },
+      {
+        "short": "MIA",
+        "result": "R32"
+      },
+      {
+        "short": "MC",
+        "result": "R32"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "RIO",
+        "result": "QF"
+      },
+      {
+        "short": "AO",
+        "result": "R64"
+      },
+      {
+        "short": "CO",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "struff",
+    "name": "Jan Lennard Struff",
+    "country": "Germany",
+    "flag": "🇩🇪",
+    "age": 36,
+    "hand": "R",
+    "ranking": 44,
+    "seed": null,
+    "surface": {
+      "hard": 33,
+      "clay": 40,
+      "grass": 67
+    },
+    "ytd": {
+      "wins": 15,
+      "losses": 19,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R64"
+      },
+      {
+        "short": "WIM",
+        "result": "QF"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R128"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "ROT",
+        "result": "R64"
+      },
+      {
+        "short": "DUB",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "michelsen",
+    "name": "Alex Michelsen",
+    "country": "United States",
+    "flag": "🇺🇸",
+    "age": 22,
+    "hand": "R",
+    "ranking": 45,
+    "seed": null,
+    "surface": {
+      "hard": 63,
+      "clay": 50,
+      "grass": 57
+    },
+    "ytd": {
+      "wins": 21,
+      "losses": 16,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R32"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R16"
+      },
+      {
+        "short": "MIA",
+        "result": "R16"
+      },
+      {
+        "short": "MAD",
+        "result": "R32"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "BRI",
+        "result": "SF"
+      },
+      {
+        "short": "AKL",
+        "result": "R64"
+      },
+      {
+        "short": "DO",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "hurkacz",
+    "name": "Hubert Hurkacz",
+    "country": "Poland",
+    "flag": "🇵🇱",
+    "age": 29,
+    "hand": "R",
+    "ranking": 46,
+    "seed": null,
+    "surface": {
+      "hard": 33,
+      "clay": 50,
+      "grass": 57
+    },
+    "ytd": {
+      "wins": 12,
+      "losses": 15,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R64"
+      },
+      {
+        "short": "RG",
+        "result": "R64"
+      },
+      {
+        "short": "WIM",
+        "result": "R16"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R128"
+      },
+      {
+        "short": "MC",
+        "result": "R32"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "ROT",
+        "result": "R128"
+      },
+      {
+        "short": "DUB",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "shapovalov",
+    "name": "Denis Shapovalov",
+    "country": "Canada",
+    "flag": "🇨🇦",
+    "age": 27,
+    "hand": "L",
+    "ranking": 47,
+    "seed": null,
+    "surface": {
+      "hard": 55,
+      "clay": 29,
+      "grass": 25
+    },
+    "ytd": {
+      "wins": 14,
+      "losses": 17,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R64"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R32"
+      },
+      {
+        "short": "MIA",
+        "result": "R128"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "DUB",
+        "result": "R128"
+      },
+      {
+        "short": "QUE",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "navone",
+    "name": "Mariano Navone",
+    "country": "Argentina",
+    "flag": "🇦🇷",
+    "age": 25,
+    "hand": "R",
+    "ranking": 48,
+    "seed": null,
+    "surface": {
+      "hard": 36,
+      "clay": 55,
+      "grass": 46
+    },
+    "ytd": {
+      "wins": 16,
+      "losses": 19,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R64"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R32"
+      },
+      {
+        "short": "RIO",
+        "result": "R128"
+      },
+      {
+        "short": "BCN",
+        "result": "R128"
+      },
+      {
+        "short": "AHK",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "khachanov",
+    "name": "Karen Khachanov",
+    "country": "Russia",
+    "flag": "🇷🇺",
+    "age": 30,
+    "hand": "R",
+    "ranking": 49,
+    "seed": null,
+    "surface": {
+      "hard": 41,
+      "clay": 54,
+      "grass": 50
+    },
+    "ytd": {
+      "wins": 16,
+      "losses": 18,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R32"
+      },
+      {
+        "short": "RG",
+        "result": "R32"
+      },
+      {
+        "short": "WIM",
+        "result": "R32"
+      },
+      {
+        "short": "IW",
+        "result": "R64"
+      },
+      {
+        "short": "MIA",
+        "result": "R32"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R32"
+      },
+      {
+        "short": "ROM",
+        "result": "QF"
+      },
+      {
+        "short": "ROT",
+        "result": "R64"
+      },
+      {
+        "short": "DOH",
+        "result": "QF"
+      }
+    ]
+  },
+  {
+    "id": "baez",
+    "name": "Sebastian Baez",
+    "country": "Argentina",
+    "flag": "🇦🇷",
+    "age": 26,
+    "hand": "R",
+    "ranking": 50,
+    "seed": null,
+    "surface": {
+      "hard": 60,
+      "clay": 48,
+      "grass": 51
+    },
+    "ytd": {
+      "wins": 19,
+      "losses": 18,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R64"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R32"
+      },
+      {
+        "short": "MIA",
+        "result": "R128"
+      },
+      {
+        "short": "MC",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "RIO",
+        "result": "R128"
+      },
+      {
+        "short": "BCN",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "cerundolo",
+    "name": "Juan Manuel Cerundolo",
+    "country": "Argentina",
+    "flag": "🇦🇷",
+    "age": 25,
+    "hand": "L",
+    "ranking": 51,
+    "seed": null,
+    "surface": {
+      "hard": 50,
+      "clay": 56,
+      "grass": 50
+    },
+    "ytd": {
+      "wins": 21,
+      "losses": 18,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R16"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R64"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "RIO",
+        "result": "QF"
+      },
+      {
+        "short": "BCN",
+        "result": "R128"
+      },
+      {
+        "short": "AO",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "halys",
+    "name": "Quentin Halys",
+    "country": "France",
+    "flag": "🇫🇷",
+    "age": 30,
+    "hand": "R",
+    "ranking": 52,
+    "seed": null,
+    "surface": {
+      "hard": 63,
+      "clay": 63,
+      "grass": 33
+    },
+    "ytd": {
+      "wins": 29,
+      "losses": 20,
+      "titles": 1
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R64"
+      },
+      {
+        "short": "RG",
+        "result": "R32"
+      },
+      {
+        "short": "WIM",
+        "result": "R64"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R16"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROT",
+        "result": "R64"
+      },
+      {
+        "short": "DOH",
+        "result": "R64"
+      },
+      {
+        "short": "DUB",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "tsitsipas",
+    "name": "Stefanos Tsitsipas",
+    "country": "Greece",
+    "flag": "🇬🇷",
+    "age": 28,
+    "hand": "R",
+    "ranking": 53,
+    "seed": null,
+    "surface": {
+      "hard": 47,
+      "clay": 63,
+      "grass": 53
+    },
+    "ytd": {
+      "wins": 19,
+      "losses": 17,
+      "titles": 1
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R64"
+      },
+      {
+        "short": "RG",
+        "result": "R64"
+      },
+      {
+        "short": "WIM",
+        "result": "R64"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R32"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R16"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "ROT",
+        "result": "R64"
+      },
+      {
+        "short": "DOH",
+        "result": "QF"
+      }
+    ]
+  },
+  {
+    "id": "hanfmann",
+    "name": "Yannick Hanfmann",
+    "country": "Germany",
+    "flag": "🇩🇪",
+    "age": 35,
+    "hand": "R",
+    "ranking": 54,
+    "seed": null,
+    "surface": {
+      "hard": 55,
+      "clay": 58,
+      "grass": 50
+    },
+    "ytd": {
+      "wins": 24,
+      "losses": 19,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R64"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R64"
+      },
+      {
+        "short": "MIA",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "RIO",
+        "result": "R64"
+      },
+      {
+        "short": "HAM",
+        "result": "R64"
+      },
+      {
+        "short": "HAL",
+        "result": "R64"
+      },
+      {
+        "short": "BRI",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "munar",
+    "name": "Jaume Munar",
+    "country": "Spain",
+    "flag": "🇪🇸",
+    "age": 29,
+    "hand": "R",
+    "ranking": 55,
+    "seed": null,
+    "surface": {
+      "hard": 60,
+      "clay": 33,
+      "grass": 40
+    },
+    "ytd": {
+      "wins": 11,
+      "losses": 13,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R64"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R32"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "ROT",
+        "result": "QF"
+      },
+      {
+        "short": "BCN",
+        "result": "R128"
+      },
+      {
+        "short": "ADL",
+        "result": "QF"
+      },
+      {
+        "short": "GO",
+        "result": "QF"
+      },
+      {
+        "short": "HER",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "griekspoor",
+    "name": "Tallon Griekspoor",
+    "country": "Netherlands",
+    "flag": "🇳🇱",
+    "age": 30,
+    "hand": "R",
+    "ranking": 56,
+    "seed": null,
+    "surface": {
+      "hard": 63,
+      "clay": 14,
+      "grass": 25
+    },
+    "ytd": {
+      "wins": 12,
+      "losses": 15,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R32"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "ROT",
+        "result": "QF"
+      },
+      {
+        "short": "DUB",
+        "result": "F"
+      },
+      {
+        "short": "HAL",
+        "result": "R128"
+      },
+      {
+        "short": "ADL",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "altmaier",
+    "name": "Daniel Altmaier",
+    "country": "Germany",
+    "flag": "🇩🇪",
+    "age": 28,
+    "hand": "R",
+    "ranking": 57,
+    "seed": null,
+    "surface": {
+      "hard": 20,
+      "clay": 38,
+      "grass": 50
+    },
+    "ytd": {
+      "wins": 12,
+      "losses": 22,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R128"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "RIO",
+        "result": "R128"
+      },
+      {
+        "short": "HAM",
+        "result": "QF"
+      }
+    ]
+  },
+  {
+    "id": "machac",
+    "name": "Tomas Machac",
+    "country": "Czechia",
+    "flag": "🇨🇿",
+    "age": 26,
+    "hand": "R",
+    "ranking": 58,
+    "seed": null,
+    "surface": {
+      "hard": 57,
+      "clay": 54,
+      "grass": 56
+    },
+    "ytd": {
+      "wins": 15,
+      "losses": 12,
+      "titles": 1
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R32"
+      },
+      {
+        "short": "RG",
+        "result": "R64"
+      },
+      {
+        "short": "MIA",
+        "result": "R64"
+      },
+      {
+        "short": "MC",
+        "result": "R32"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "DOH",
+        "result": "R128"
+      },
+      {
+        "short": "BCN",
+        "result": "QF"
+      },
+      {
+        "short": "BRI",
+        "result": "R128"
+      },
+      {
+        "short": "ADL",
+        "result": "W"
+      }
+    ]
+  },
+  {
+    "id": "burruchaga",
+    "name": "Roman Andres Burruchaga",
+    "country": "Argentina",
+    "flag": "🇦🇷",
+    "age": 25,
+    "hand": "R",
+    "ranking": 59,
+    "seed": null,
+    "surface": {
+      "hard": 20,
+      "clay": 56,
+      "grass": 44
+    },
+    "ytd": {
+      "wins": 11,
+      "losses": 14,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "RG",
+        "result": "R64"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "RIO",
+        "result": "R64"
+      },
+      {
+        "short": "HAM",
+        "result": "R128"
+      },
+      {
+        "short": "AO",
+        "result": "R64"
+      },
+      {
+        "short": "CO",
+        "result": "R128"
+      },
+      {
+        "short": "UMC",
+        "result": "F"
+      },
+      {
+        "short": "EAS",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "vallejo",
+    "name": "Adolfo Daniel Vallejo",
+    "country": "Paraguay",
+    "flag": "🇵🇾",
+    "age": 22,
+    "hand": "R",
+    "ranking": 61,
+    "seed": null,
+    "surface": {
+      "hard": 50,
+      "clay": 33,
+      "grass": 33
+    },
+    "ytd": {
+      "wins": 2,
+      "losses": 4,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "BAD",
+        "result": "SF"
+      },
+      {
+        "short": "MTL",
+        "result": "R128"
+      },
+      {
+        "short": "CIN",
+        "result": "R32"
+      }
+    ]
+  },
+  {
+    "id": "moutet",
+    "name": "Corentin Moutet",
+    "country": "France",
+    "flag": "🇫🇷",
+    "age": 27,
+    "hand": "L",
+    "ranking": 62,
+    "seed": null,
+    "surface": {
+      "hard": 36,
+      "clay": 30,
+      "grass": 20
+    },
+    "ytd": {
+      "wins": 8,
+      "losses": 18,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R32"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R64"
+      },
+      {
+        "short": "MIA",
+        "result": "R32"
+      },
+      {
+        "short": "MC",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "BCN",
+        "result": "R64"
+      },
+      {
+        "short": "HAM",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "marozsan",
+    "name": "Fabian Marozsan",
+    "country": "Hungary",
+    "flag": "🇭🇺",
+    "age": 27,
+    "hand": "R",
+    "ranking": 63,
+    "seed": null,
+    "surface": {
+      "hard": 44,
+      "clay": 38,
+      "grass": 56
+    },
+    "ytd": {
+      "wins": 15,
+      "losses": 18,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R32"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R64"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R128"
+      },
+      {
+        "short": "MC",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "DOH",
+        "result": "R64"
+      },
+      {
+        "short": "DUB",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "kecmanovic",
+    "name": "Miomir Kecmanovic",
+    "country": "Serbia",
+    "flag": "🇷🇸",
+    "age": 27,
+    "hand": "R",
+    "ranking": 64,
+    "seed": null,
+    "surface": {
+      "hard": 45,
+      "clay": 30,
+      "grass": 40
+    },
+    "ytd": {
+      "wins": 14,
+      "losses": 21,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R64"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R64"
+      },
+      {
+        "short": "MIA",
+        "result": "R128"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "HAL",
+        "result": "R128"
+      },
+      {
+        "short": "AHK",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "landaluce",
+    "name": "Martin Landaluce",
+    "country": "Spain",
+    "flag": "🇪🇸",
+    "age": 21,
+    "hand": "R",
+    "ranking": 65,
+    "seed": null,
+    "surface": {
+      "hard": 56,
+      "clay": 55,
+      "grass": 43
+    },
+    "ytd": {
+      "wins": 18,
+      "losses": 16,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "RG",
+        "result": "R32"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "QF"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "QF"
+      },
+      {
+        "short": "BCN",
+        "result": "R128"
+      },
+      {
+        "short": "HAL",
+        "result": "R128"
+      },
+      {
+        "short": "BRI",
+        "result": "R128"
+      },
+      {
+        "short": "OO",
+        "result": "R128"
+      },
+      {
+        "short": "BO",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "busta",
+    "name": "Pablo Carreno Busta",
+    "country": "Spain",
+    "flag": "🇪🇸",
+    "age": 35,
+    "hand": "R",
+    "ranking": 66,
+    "seed": null,
+    "surface": {
+      "hard": 50,
+      "clay": 58,
+      "grass": 53
+    },
+    "ytd": {
+      "wins": 17,
+      "losses": 15,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R16"
+      },
+      {
+        "short": "WIM",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "ROT",
+        "result": "R128"
+      },
+      {
+        "short": "DOH",
+        "result": "R128"
+      },
+      {
+        "short": "DUB",
+        "result": "R64"
+      },
+      {
+        "short": "BCN",
+        "result": "R128"
+      },
+      {
+        "short": "BRI",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "mannarino",
+    "name": "Adrian Mannarino",
+    "country": "France",
+    "flag": "🇫🇷",
+    "age": 38,
+    "hand": "L",
+    "ranking": 67,
+    "seed": null,
+    "surface": {
+      "hard": 38,
+      "clay": 0,
+      "grass": 56
+    },
+    "ytd": {
+      "wins": 11,
+      "losses": 20,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R64"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R64"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "BCN",
+        "result": "R128"
+      },
+      {
+        "short": "QUE",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "kopriva",
+    "name": "Vit Kopriva",
+    "country": "Czechia",
+    "flag": "🇨🇿",
+    "age": 29,
+    "hand": "R",
+    "ranking": 69,
+    "seed": null,
+    "surface": {
+      "hard": 45,
+      "clay": 52,
+      "grass": 40
+    },
+    "ytd": {
+      "wins": 20,
+      "losses": 21,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R64"
+      },
+      {
+        "short": "RG",
+        "result": "R64"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R64"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R16"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "RIO",
+        "result": "SF"
+      },
+      {
+        "short": "HAM",
+        "result": "R128"
+      },
+      {
+        "short": "HAL",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "faria",
+    "name": "Jaime Faria",
+    "country": "Portugal",
+    "flag": "🇵🇹",
+    "age": 23,
+    "hand": "R",
+    "ranking": 70,
+    "seed": null,
+    "surface": {
+      "hard": 60,
+      "clay": 60,
+      "grass": 59
+    },
+    "ytd": {
+      "wins": 16,
+      "losses": 11,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R64"
+      },
+      {
+        "short": "RG",
+        "result": "R32"
+      },
+      {
+        "short": "WIM",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "RIO",
+        "result": "QF"
+      },
+      {
+        "short": "SOG",
+        "result": "R64"
+      },
+      {
+        "short": "MTL",
+        "result": "R64"
+      },
+      {
+        "short": "CIN",
+        "result": "R16"
+      }
+    ]
+  },
+  {
+    "id": "zandschulp",
+    "name": "Botic van de Zandschulp",
+    "country": "Netherlands",
+    "flag": "🇳🇱",
+    "age": 31,
+    "hand": "R",
+    "ranking": 71,
+    "seed": null,
+    "surface": {
+      "hard": 53,
+      "clay": 50,
+      "grass": 40
+    },
+    "ytd": {
+      "wins": 16,
+      "losses": 16,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R32"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R64"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R32"
+      },
+      {
+        "short": "ROT",
+        "result": "QF"
+      },
+      {
+        "short": "DUB",
+        "result": "R128"
+      },
+      {
+        "short": "QUE",
+        "result": "R64"
+      },
+      {
+        "short": "AHK",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "majchrzak",
+    "name": "Kamil Majchrzak",
+    "country": "Poland",
+    "flag": "🇵🇱",
+    "age": 31,
+    "hand": "R",
+    "ranking": 72,
+    "seed": null,
+    "surface": {
+      "hard": 44,
+      "clay": 25,
+      "grass": 75
+    },
+    "ytd": {
+      "wins": 14,
+      "losses": 14,
+      "titles": 1
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R64"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R64"
+      },
+      {
+        "short": "IW",
+        "result": "R64"
+      },
+      {
+        "short": "MIA",
+        "result": "R32"
+      },
+      {
+        "short": "DOH",
+        "result": "R128"
+      },
+      {
+        "short": "DUB",
+        "result": "R128"
+      },
+      {
+        "short": "HAM",
+        "result": "R128"
+      },
+      {
+        "short": "QUE",
+        "result": "R128"
+      },
+      {
+        "short": "BRI",
+        "result": "QF"
+      }
+    ]
+  },
+  {
+    "id": "brooksby",
+    "name": "Jenson Brooksby",
+    "country": "United States",
+    "flag": "🇺🇸",
+    "age": 26,
+    "hand": "R",
+    "ranking": 73,
+    "seed": null,
+    "surface": {
+      "hard": 41,
+      "clay": 0,
+      "grass": 50
+    },
+    "ytd": {
+      "wins": 11,
+      "losses": 19,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R32"
+      },
+      {
+        "short": "IW",
+        "result": "R64"
+      },
+      {
+        "short": "MIA",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "DOH",
+        "result": "R128"
+      },
+      {
+        "short": "DUB",
+        "result": "QF"
+      },
+      {
+        "short": "QUE",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "royer",
+    "name": "Valentin Royer",
+    "country": "France",
+    "flag": "🇫🇷",
+    "age": 25,
+    "hand": "R",
+    "ranking": 74,
+    "seed": null,
+    "surface": {
+      "hard": 15,
+      "clay": 17,
+      "grass": 18
+    },
+    "ytd": {
+      "wins": 4,
+      "losses": 18,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R64"
+      },
+      {
+        "short": "WIM",
+        "result": "R64"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "ROT",
+        "result": "R128"
+      },
+      {
+        "short": "DOH",
+        "result": "R64"
+      },
+      {
+        "short": "DUB",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "choinski",
+    "name": "Jan Choinski",
+    "country": "Great Britain",
+    "flag": "🇬🇧",
+    "age": 30,
+    "hand": "R",
+    "ranking": 75,
+    "seed": null,
+    "surface": {
+      "hard": 38,
+      "clay": 17,
+      "grass": 71
+    },
+    "ytd": {
+      "wins": 9,
+      "losses": 12,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "WIM",
+        "result": "R64"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROT",
+        "result": "R128"
+      },
+      {
+        "short": "DOH",
+        "result": "R128"
+      },
+      {
+        "short": "OO",
+        "result": "R128"
+      },
+      {
+        "short": "BO",
+        "result": "R128"
+      },
+      {
+        "short": "EAS",
+        "result": "QF"
+      },
+      {
+        "short": "BAD",
+        "result": "R128"
+      },
+      {
+        "short": "CIN",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "carabelli",
+    "name": "Camilo Ugo Carabelli",
+    "country": "Argentina",
+    "flag": "🇦🇷",
+    "age": 27,
+    "hand": "R",
+    "ranking": 76,
+    "seed": null,
+    "surface": {
+      "hard": 22,
+      "clay": 55,
+      "grass": 44
+    },
+    "ytd": {
+      "wins": 14,
+      "losses": 18,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R64"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R64"
+      },
+      {
+        "short": "MIA",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "RIO",
+        "result": "R128"
+      },
+      {
+        "short": "BCN",
+        "result": "R64"
+      },
+      {
+        "short": "HAM",
+        "result": "QF"
+      }
+    ]
+  },
+  {
+    "id": "giron",
+    "name": "Marcos Giron",
+    "country": "United States",
+    "flag": "🇺🇸",
+    "age": 33,
+    "hand": "R",
+    "ranking": 77,
+    "seed": null,
+    "surface": {
+      "hard": 50,
+      "clay": 17,
+      "grass": 45
+    },
+    "ytd": {
+      "wins": 15,
+      "losses": 20,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R32"
+      },
+      {
+        "short": "IW",
+        "result": "R64"
+      },
+      {
+        "short": "MIA",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "HAM",
+        "result": "R128"
+      },
+      {
+        "short": "QUE",
+        "result": "R128"
+      },
+      {
+        "short": "AHK",
+        "result": "SF"
+      }
+    ]
+  },
+  {
+    "id": "medjedovic",
+    "name": "Hamad Medjedovic",
+    "country": "Serbia",
+    "flag": "🇷🇸",
+    "age": 23,
+    "hand": "R",
+    "ranking": 78,
+    "seed": null,
+    "surface": {
+      "hard": 46,
+      "clay": 69,
+      "grass": 55
+    },
+    "ytd": {
+      "wins": 16,
+      "losses": 13,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R64"
+      },
+      {
+        "short": "RG",
+        "result": "R64"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R16"
+      },
+      {
+        "short": "ROT",
+        "result": "R64"
+      },
+      {
+        "short": "BCN",
+        "result": "SF"
+      },
+      {
+        "short": "QUE",
+        "result": "R64"
+      },
+      {
+        "short": "AKL",
+        "result": "R64"
+      },
+      {
+        "short": "OO",
+        "result": "R128"
+      },
+      {
+        "short": "GPH",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "duckworth",
+    "name": "James Duckworth",
+    "country": "Australia",
+    "flag": "🇦🇺",
+    "age": 35,
+    "hand": "R",
+    "ranking": 79,
+    "seed": null,
+    "surface": {
+      "hard": 38,
+      "clay": 40,
+      "grass": 33
+    },
+    "ytd": {
+      "wins": 10,
+      "losses": 17,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R64"
+      },
+      {
+        "short": "RG",
+        "result": "R64"
+      },
+      {
+        "short": "WIM",
+        "result": "R64"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R128"
+      },
+      {
+        "short": "QUE",
+        "result": "R128"
+      },
+      {
+        "short": "BRI",
+        "result": "R128"
+      },
+      {
+        "short": "ADL",
+        "result": "R128"
+      },
+      {
+        "short": "DO",
+        "result": "R128"
+      },
+      {
+        "short": "MO",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "svajda",
+    "name": "Zachary Svajda",
+    "country": "United States",
+    "flag": "🇺🇸",
+    "age": 24,
+    "hand": "R",
+    "ranking": 80,
+    "seed": null,
+    "surface": {
+      "hard": 53,
+      "clay": 44,
+      "grass": 50
+    },
+    "ytd": {
+      "wins": 17,
+      "losses": 17,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R16"
+      },
+      {
+        "short": "WIM",
+        "result": "R32"
+      },
+      {
+        "short": "IW",
+        "result": "R64"
+      },
+      {
+        "short": "MIA",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "QUE",
+        "result": "R128"
+      },
+      {
+        "short": "DO",
+        "result": "R128"
+      },
+      {
+        "short": "DBO",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "cilic",
+    "name": "Marin Cilic",
+    "country": "Croatia",
+    "flag": "🇭🇷",
+    "age": 38,
+    "hand": "R",
+    "ranking": 81,
+    "seed": null,
+    "surface": {
+      "hard": 53,
+      "clay": 38,
+      "grass": 40
+    },
+    "ytd": {
+      "wins": 14,
+      "losses": 16,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R32"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R32"
+      },
+      {
+        "short": "MC",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "QUE",
+        "result": "R128"
+      },
+      {
+        "short": "AHK",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "acosta",
+    "name": "Facundo Diaz Acosta",
+    "country": "Argentina",
+    "flag": "🇦🇷",
+    "age": 26,
+    "hand": "L",
+    "ranking": 82,
+    "seed": null,
+    "surface": {
+      "hard": 33,
+      "clay": 33,
+      "grass": 33
+    },
+    "ytd": {
+      "wins": 2,
+      "losses": 4,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "RG",
+        "result": "R64"
+      },
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "BAD",
+        "result": "R128"
+      },
+      {
+        "short": "GOK",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "trungelliti",
+    "name": "Marco Trungelliti",
+    "country": "Argentina",
+    "flag": "🇦🇷",
+    "age": 36,
+    "hand": "R",
+    "ranking": 83,
+    "seed": null,
+    "surface": {
+      "hard": 43,
+      "clay": 55,
+      "grass": 25
+    },
+    "ytd": {
+      "wins": 15,
+      "losses": 16,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "RG",
+        "result": "R64"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "DOH",
+        "result": "R128"
+      },
+      {
+        "short": "DUB",
+        "result": "R128"
+      },
+      {
+        "short": "BCN",
+        "result": "R128"
+      },
+      {
+        "short": "GPH",
+        "result": "F"
+      },
+      {
+        "short": "GO",
+        "result": "R128"
+      },
+      {
+        "short": "EAS",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "molcan",
+    "name": "Alex Molcan",
+    "country": "Slovakia",
+    "flag": "🇸🇰",
+    "age": 29,
+    "hand": "L",
+    "ranking": 84,
+    "seed": null,
+    "surface": {
+      "hard": 72,
+      "clay": 77,
+      "grass": 60
+    },
+    "ytd": {
+      "wins": 13,
+      "losses": 5,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "WIM",
+        "result": "R64"
+      },
+      {
+        "short": "BO",
+        "result": "SF"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "COU",
+        "result": "SF"
+      },
+      {
+        "short": "GOK",
+        "result": "QF"
+      }
+    ]
+  },
+  {
+    "id": "hijikata",
+    "name": "Rinky Hijikata",
+    "country": "Australia",
+    "flag": "🇦🇺",
+    "age": 25,
+    "hand": "R",
+    "ranking": 85,
+    "seed": null,
+    "surface": {
+      "hard": 59,
+      "clay": 38,
+      "grass": 63
+    },
+    "ytd": {
+      "wins": 24,
+      "losses": 19,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R64"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R16"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "HAM",
+        "result": "R128"
+      },
+      {
+        "short": "QUE",
+        "result": "QF"
+      },
+      {
+        "short": "BRI",
+        "result": "R64"
+      },
+      {
+        "short": "ADL",
+        "result": "R64"
+      },
+      {
+        "short": "DBO",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "shimabukuro",
+    "name": "Sho Shimabukuro",
+    "country": "Japan",
+    "flag": "🇯🇵",
+    "age": 29,
+    "hand": "R",
+    "ranking": 87,
+    "seed": null,
+    "surface": {
+      "hard": 53,
+      "clay": 56,
+      "grass": 63
+    },
+    "ytd": {
+      "wins": 15,
+      "losses": 12,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "HAL",
+        "result": "R64"
+      },
+      {
+        "short": "DO",
+        "result": "R128"
+      },
+      {
+        "short": "DBO",
+        "result": "R128"
+      },
+      {
+        "short": "MO",
+        "result": "R64"
+      },
+      {
+        "short": "BO",
+        "result": "QF"
+      },
+      {
+        "short": "LCO",
+        "result": "R128"
+      },
+      {
+        "short": "MTL",
+        "result": "R128"
+      },
+      {
+        "short": "CIN",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "kovacevic",
+    "name": "Aleksandar Kovacevic",
+    "country": "United States",
+    "flag": "🇺🇸",
+    "age": 28,
+    "hand": "R",
+    "ranking": 89,
+    "seed": null,
+    "surface": {
+      "hard": 43,
+      "clay": 40,
+      "grass": 17
+    },
+    "ytd": {
+      "wins": 14,
+      "losses": 23,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R32"
+      },
+      {
+        "short": "MIA",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "HAM",
+        "result": "SF"
+      },
+      {
+        "short": "QUE",
+        "result": "R128"
+      },
+      {
+        "short": "BRI",
+        "result": "SF"
+      }
+    ]
+  },
+  {
+    "id": "atmane",
+    "name": "Terence Atmane",
+    "country": "France",
+    "flag": "🇫🇷",
+    "age": 25,
+    "hand": "L",
+    "ranking": 90,
+    "seed": null,
+    "surface": {
+      "hard": 52,
+      "clay": 40,
+      "grass": 20
+    },
+    "ytd": {
+      "wins": 16,
+      "losses": 20,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R16"
+      },
+      {
+        "short": "MC",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "R32"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "BCN",
+        "result": "R128"
+      },
+      {
+        "short": "HAM",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "sonego",
+    "name": "Lorenzo Sonego",
+    "country": "Italy",
+    "flag": "🇮🇹",
+    "age": 31,
+    "hand": "R",
+    "ranking": 91,
+    "seed": null,
+    "surface": {
+      "hard": 43,
+      "clay": 33,
+      "grass": 50
+    },
+    "ytd": {
+      "wins": 10,
+      "losses": 14,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R64"
+      },
+      {
+        "short": "RG",
+        "result": "R64"
+      },
+      {
+        "short": "WIM",
+        "result": "R32"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "BCN",
+        "result": "R64"
+      },
+      {
+        "short": "HAL",
+        "result": "R128"
+      },
+      {
+        "short": "AHK",
+        "result": "R64"
+      },
+      {
+        "short": "GO",
+        "result": "R128"
+      },
+      {
+        "short": "MC",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "damm",
+    "name": "Martin Damm",
+    "country": "United States",
+    "flag": "🇺🇸",
+    "age": 23,
+    "hand": "L",
+    "ranking": 92,
+    "seed": null,
+    "surface": {
+      "hard": 54,
+      "clay": 50,
+      "grass": 67
+    },
+    "ytd": {
+      "wins": 16,
+      "losses": 12,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R64"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "QUE",
+        "result": "R128"
+      },
+      {
+        "short": "OO",
+        "result": "SF"
+      },
+      {
+        "short": "UMC",
+        "result": "R128"
+      },
+      {
+        "short": "HER",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "walton",
+    "name": "Adam Walton",
+    "country": "Australia",
+    "flag": "🇦🇺",
+    "age": 27,
+    "hand": "R",
+    "ranking": 93,
+    "seed": null,
+    "surface": {
+      "hard": 45,
+      "clay": 40,
+      "grass": 50
+    },
+    "ytd": {
+      "wins": 15,
+      "losses": 18,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R64"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R64"
+      },
+      {
+        "short": "MIA",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "QUE",
+        "result": "R128"
+      },
+      {
+        "short": "BRI",
+        "result": "R128"
+      },
+      {
+        "short": "DO",
+        "result": "R128"
+      },
+      {
+        "short": "DBO",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "vukic",
+    "name": "Aleksandar Vukic",
+    "country": "Australia",
+    "flag": "🇦🇺",
+    "age": 30,
+    "hand": "R",
+    "ranking": 95,
+    "seed": null,
+    "surface": {
+      "hard": 44,
+      "clay": 14,
+      "grass": 50
+    },
+    "ytd": {
+      "wins": 12,
+      "losses": 19,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R64"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "DOH",
+        "result": "R128"
+      },
+      {
+        "short": "DUB",
+        "result": "R128"
+      },
+      {
+        "short": "BCN",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "bellucci",
+    "name": "Mattia Bellucci",
+    "country": "Italy",
+    "flag": "🇮🇹",
+    "age": 25,
+    "hand": "L",
+    "ranking": 96,
+    "seed": null,
+    "surface": {
+      "hard": 38,
+      "clay": 43,
+      "grass": 63
+    },
+    "ytd": {
+      "wins": 14,
+      "losses": 17,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R32"
+      },
+      {
+        "short": "HAL",
+        "result": "R64"
+      },
+      {
+        "short": "BRI",
+        "result": "R128"
+      },
+      {
+        "short": "DO",
+        "result": "R128"
+      },
+      {
+        "short": "DBO",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "shevchenko",
+    "name": "Aleksandr Shevchenko",
+    "country": "Kazakhstan",
+    "flag": "🇰🇿",
+    "age": null,
+    "hand": "R",
+    "ranking": 97,
+    "seed": null,
+    "surface": {
+      "hard": 50,
+      "clay": 50,
+      "grass": 50
+    },
+    "ytd": {
+      "wins": 0,
+      "losses": 0,
+      "titles": 0
+    },
+    "yearResults": []
+  },
+  {
+    "id": "safiullin",
+    "name": "Roman Safiullin",
+    "country": "Russia",
+    "flag": "🇷🇺",
+    "age": 29,
+    "hand": "R",
+    "ranking": 98,
+    "seed": null,
+    "surface": {
+      "hard": 50,
+      "clay": 50,
+      "grass": 57
+    },
+    "ytd": {
+      "wins": 4,
+      "losses": 4,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R16"
+      },
+      {
+        "short": "BO",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "jong",
+    "name": "Jesper de Jong",
+    "country": "Netherlands",
+    "flag": "🇳🇱",
+    "age": 26,
+    "hand": "R",
+    "ranking": 99,
+    "seed": null,
+    "surface": {
+      "hard": 0,
+      "clay": 50,
+      "grass": 35
+    },
+    "ytd": {
+      "wins": 8,
+      "losses": 15,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R16"
+      },
+      {
+        "short": "WIM",
+        "result": "R64"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "ROT",
+        "result": "R128"
+      },
+      {
+        "short": "DOH",
+        "result": "R128"
+      },
+      {
+        "short": "DUB",
+        "result": "R128"
+      },
+      {
+        "short": "AHK",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "fucsovics",
+    "name": "Marton Fucsovics",
+    "country": "Hungary",
+    "flag": "🇭🇺",
+    "age": 34,
+    "hand": "R",
+    "ranking": 101,
+    "seed": null,
+    "surface": {
+      "hard": 40,
+      "clay": 0,
+      "grass": 50
+    },
+    "ytd": {
+      "wins": 9,
+      "losses": 16,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R64"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R32"
+      },
+      {
+        "short": "IW",
+        "result": "R32"
+      },
+      {
+        "short": "MIA",
+        "result": "R64"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "ROT",
+        "result": "R128"
+      },
+      {
+        "short": "DOH",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "misolic",
+    "name": "Filip Misolic",
+    "country": "Austria",
+    "flag": "🇦🇹",
+    "age": 25,
+    "hand": "R",
+    "ranking": 101,
+    "seed": null,
+    "surface": {
+      "hard": 50,
+      "clay": 50,
+      "grass": 50
+    },
+    "ytd": {
+      "wins": 0,
+      "losses": 0,
+      "titles": 0
+    },
+    "yearResults": []
+  },
+  {
+    "id": "perricard",
+    "name": "Giovanni Mpetshi Perricard",
+    "country": "France",
+    "flag": "🇫🇷",
+    "age": 23,
+    "hand": "R",
+    "ranking": 102,
+    "seed": null,
+    "surface": {
+      "hard": 39,
+      "clay": 25,
+      "grass": 57
+    },
+    "ytd": {
+      "wins": 12,
+      "losses": 17,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "ROT",
+        "result": "R128"
+      },
+      {
+        "short": "DOH",
+        "result": "R128"
+      },
+      {
+        "short": "DUB",
+        "result": "R64"
+      },
+      {
+        "short": "QUE",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "bonzi",
+    "name": "Benjamin Bonzi",
+    "country": "France",
+    "flag": "🇫🇷",
+    "age": 30,
+    "hand": "R",
+    "ranking": 103,
+    "seed": null,
+    "surface": {
+      "hard": 42,
+      "clay": 38,
+      "grass": 67
+    },
+    "ytd": {
+      "wins": 12,
+      "losses": 14,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R64"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "BCN",
+        "result": "R128"
+      },
+      {
+        "short": "BRI",
+        "result": "R128"
+      },
+      {
+        "short": "ADL",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "dzumhur",
+    "name": "Damir Dzumhur",
+    "country": "Bosnia & Herzegovina",
+    "flag": "🇧🇦",
+    "age": 34,
+    "hand": "R",
+    "ranking": 105,
+    "seed": null,
+    "surface": {
+      "hard": 25,
+      "clay": 47,
+      "grass": 50
+    },
+    "ytd": {
+      "wins": 12,
+      "losses": 17,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R64"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R64"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R64"
+      },
+      {
+        "short": "ROM",
+        "result": "R64"
+      },
+      {
+        "short": "RIO",
+        "result": "R64"
+      },
+      {
+        "short": "AHK",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "prizmic",
+    "name": "Dino Prizmic",
+    "country": "Croatia",
+    "flag": "🇭🇷",
+    "age": 21,
+    "hand": "R",
+    "ranking": 106,
+    "seed": null,
+    "surface": {
+      "hard": 50,
+      "clay": 73,
+      "grass": 65
+    },
+    "ytd": {
+      "wins": 20,
+      "losses": 11,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R64"
+      },
+      {
+        "short": "WIM",
+        "result": "R64"
+      },
+      {
+        "short": "IW",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "R32"
+      },
+      {
+        "short": "ROM",
+        "result": "R16"
+      },
+      {
+        "short": "RIO",
+        "result": "R128"
+      },
+      {
+        "short": "QUE",
+        "result": "R128"
+      },
+      {
+        "short": "CO",
+        "result": "R64"
+      },
+      {
+        "short": "COU",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "comesana",
+    "name": "Francisco Comesana",
+    "country": "Argentina",
+    "flag": "🇦🇷",
+    "age": 26,
+    "hand": "R",
+    "ranking": 109,
+    "seed": null,
+    "surface": {
+      "hard": 25,
+      "clay": 56,
+      "grass": 46
+    },
+    "ytd": {
+      "wins": 12,
+      "losses": 14,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R64"
+      },
+      {
+        "short": "RG",
+        "result": "R32"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R128"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R128"
+      },
+      {
+        "short": "RIO",
+        "result": "R128"
+      },
+      {
+        "short": "AHK",
+        "result": "R128"
+      },
+      {
+        "short": "AKL",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "popyrin",
+    "name": "Alexei Popyrin",
+    "country": "Australia",
+    "flag": "🇦🇺",
+    "age": 27,
+    "hand": "R",
+    "ranking": 110,
+    "seed": null,
+    "surface": {
+      "hard": 33,
+      "clay": 50,
+      "grass": 37
+    },
+    "ytd": {
+      "wins": 11,
+      "losses": 19,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R128"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "ROM",
+        "result": "R32"
+      },
+      {
+        "short": "ROT",
+        "result": "R128"
+      },
+      {
+        "short": "DOH",
+        "result": "R64"
+      }
+    ]
+  },
+  {
+    "id": "wu",
+    "name": "Yibing Wu",
+    "country": "China",
+    "flag": "🇨🇳",
+    "age": 27,
+    "hand": "R",
+    "ranking": 111,
+    "seed": null,
+    "surface": {
+      "hard": 50,
+      "clay": 50,
+      "grass": 50
+    },
+    "ytd": {
+      "wins": 5,
+      "losses": 5,
+      "titles": 0
+    },
+    "yearResults": []
+  },
+  {
+    "id": "wawrinka",
+    "name": "Stan Wawrinka",
+    "country": "Switzerland",
+    "flag": "🇨🇭",
+    "age": 41,
+    "hand": "R",
+    "ranking": 120,
+    "seed": null,
+    "surface": {
+      "hard": 56,
+      "clay": 17,
+      "grass": 38
+    },
+    "ytd": {
+      "wins": 6,
+      "losses": 10,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R32"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "MC",
+        "result": "R128"
+      },
+      {
+        "short": "ROT",
+        "result": "R64"
+      },
+      {
+        "short": "DUB",
+        "result": "R64"
+      },
+      {
+        "short": "BCN",
+        "result": "R128"
+      },
+      {
+        "short": "OO",
+        "result": "R64"
+      },
+      {
+        "short": "SOG",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "zheng",
+    "name": "Michael Zheng",
+    "country": "United States",
+    "flag": "🇺🇸",
+    "age": null,
+    "hand": "R",
+    "ranking": 122,
+    "seed": null,
+    "surface": {
+      "hard": 54,
+      "clay": 53,
+      "grass": 53
+    },
+    "ytd": {
+      "wins": 9,
+      "losses": 8,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R64"
+      },
+      {
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "short": "WIM",
+        "result": "R32"
+      },
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "DO",
+        "result": "R128"
+      },
+      {
+        "short": "LCO",
+        "result": "R64"
+      },
+      {
+        "short": "MTL",
+        "result": "R128"
+      },
+      {
+        "short": "CIN",
+        "result": "R32"
+      }
+    ]
+  },
+  {
+    "id": "sweeny",
+    "name": "Dane Sweeny",
+    "country": "Australia",
+    "flag": "🇦🇺",
+    "age": null,
+    "hand": "R",
+    "ranking": 123,
+    "seed": null,
+    "surface": {
+      "hard": 33,
+      "clay": 30,
+      "grass": 30
+    },
+    "ytd": {
+      "wins": 3,
+      "losses": 7,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R64"
+      },
+      {
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R128"
+      },
+      {
+        "short": "BRI",
+        "result": "R128"
+      },
+      {
+        "short": "CIN",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "taberner",
+    "name": "Carlos Taberner",
+    "country": "Spain",
+    "flag": "🇪🇸",
+    "age": 29,
+    "hand": "R",
+    "ranking": 202,
+    "seed": null,
+    "surface": {
+      "hard": 50,
+      "clay": 50,
+      "grass": 50
+    },
+    "ytd": {
+      "wins": 0,
+      "losses": 2,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "short": "ADL",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "blanch",
+    "name": "Darwin Blanch",
+    "country": "United States",
+    "flag": "🇺🇸",
+    "age": 19,
+    "hand": "L",
+    "ranking": 225,
+    "seed": null,
+    "surface": {
+      "hard": 20,
+      "clay": 25,
+      "grass": 25
+    },
+    "ytd": {
+      "wins": 2,
+      "losses": 6,
+      "titles": 0
+    },
+    "yearResults": [
+      {
+        "short": "IW",
+        "result": "R128"
+      },
+      {
+        "short": "MIA",
+        "result": "R64"
+      },
+      {
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "short": "LCO",
+        "result": "R128"
+      },
+      {
+        "short": "CIN",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "shang",
+    "name": "Juncheng Shang",
+    "country": "China",
+    "flag": "🇨🇳",
+    "age": 21,
+    "hand": "L",
+    "ranking": 270,
+    "seed": null,
+    "surface": {
+      "hard": 43,
+      "clay": 43,
+      "grass": 43
+    },
+    "ytd": {
+      "wins": 6,
+      "losses": 8,
+      "titles": 0
+    },
+    "yearResults": []
+  },
+  {
+    "id": "monfils",
+    "name": "Gaël Monfils",
+    "country": "France",
+    "flag": "🇫🇷",
+    "age": 39,
+    "hand": "R",
+    "ranking": 327,
+    "seed": null,
+    "surface": {
+      "hard": 50,
+      "clay": 50,
+      "grass": 50
+    },
+    "ytd": {
+      "wins": 0,
+      "losses": 0,
+      "titles": 0
+    },
+    "yearResults": []
+  },
+  {
+    "id": "kokkinakis",
+    "name": "Thanasi Kokkinakis",
+    "country": "Australia",
+    "flag": "🇦🇺",
+    "age": 30,
+    "hand": "R",
+    "ranking": 443,
+    "seed": null,
+    "surface": {
+      "hard": 50,
+      "clay": 50,
+      "grass": 50
+    },
+    "ytd": {
+      "wins": 0,
+      "losses": 0,
+      "titles": 0
+    },
+    "yearResults": []
+  },
+  {
+    "id": "gorzny",
+    "name": "Sebastian Gorzny",
+    "country": "United States",
+    "flag": "🇺🇸",
+    "age": null,
+    "hand": "R",
+    "ranking": 500,
+    "seed": null,
+    "surface": {
+      "hard": 50,
+      "clay": 50,
+      "grass": 50
+    },
+    "ytd": {
+      "wins": 0,
+      "losses": 0,
+      "titles": 0
+    },
+    "yearResults": []
+  },
+  {
+    "id": "kennedy",
+    "name": "Jack Kennedy",
+    "country": "United States",
+    "flag": "🇺🇸",
+    "age": null,
+    "hand": "R",
+    "ranking": 500,
+    "seed": null,
+    "surface": {
+      "hard": 50,
+      "clay": 50,
+      "grass": 50
+    },
+    "ytd": {
+      "wins": 0,
+      "losses": 0,
+      "titles": 0
+    },
+    "yearResults": []
+  },
+  {
+    "id": "wolf",
+    "name": "J. J. Wolf",
+    "country": "United States",
+    "flag": "🇺🇸",
+    "age": 27,
+    "hand": "R",
+    "ranking": 688,
+    "seed": null,
+    "surface": {
+      "hard": 50,
+      "clay": 50,
+      "grass": 50
+    },
+    "ytd": {
+      "wins": 0,
+      "losses": 0,
+      "titles": 0
+    },
+    "yearResults": []
+  }
+]
