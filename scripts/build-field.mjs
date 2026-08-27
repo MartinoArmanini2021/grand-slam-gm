@@ -18,23 +18,41 @@ import { getEvent, expandManual } from './lib/events.mjs';
 import { tierOf, fetchDraw, norm } from './lib/pricing.mjs';
 
 const [id, ...flags] = process.argv.slice(2);
-if (!id) { console.error('usage: node scripts/build-field.mjs <event-id> [--dry]'); process.exit(2); }
-const DRY = flags.includes('--dry');
+if (!id) { console.error('usage: node scripts/build-field.mjs <event-id> [--dry] [--page="<wiki title>"]'); process.exit(2); }
 const ev = getEvent(id);
+
+// --page rehearses the builder against a DIFFERENT draw than the event's own — the point being to
+// run the whole pipeline against a season whose answer is already known (last year's completed
+// Slam) before trusting it on a draw published minutes ago.
+//
+// It FORCES --dry. A field built from the wrong year would look perfectly well-formed and quietly
+// replace the real one, and nothing downstream would catch it: reconcile-field would be comparing
+// that same wrong page against itself.
+const pageFlag = flags.find(f => f.startsWith('--page='));
+const page = pageFlag ? pageFlag.slice('--page='.length).replace(/^["']|["']$/g, '') : ev.page;
+const DRY = flags.includes('--dry') || !!pageFlag;
+if (pageFlag && !flags.includes('--dry')) {
+  console.log(`\n  --page given → forcing --dry (never write ${ev.field} from a draw that isn't ${ev.page})`);
+}
 
 const root = new URL('../', import.meta.url);
 const pool = JSON.parse(readFileSync(new URL('src/data/atp300.json', root), 'utf8'));
 const resolve = buildResolver(pool);            // pool rows are { id, name, … } → resolves a wiki cell
 const poolById = new Map(pool.map(p => [p.id, p]));
 
-const wikitext = await fetchDraw(ev.page);
+const wikitext = await fetchDraw(page);
 
 // ── 1) Seeds: pool id → seed number, from the ==Seeds== list ─────────────────────────────────────
-//     Lines look like:  {{seeds|1|1}} '''{{flagicon|GER}} [[Alexander Zverev]]'''
+//     A seed line is bold while the player is ALIVE and loses its bold once he goes out:
+//         alive:  {{seeds|1|1}} '''{{flagicon|GER}} [[Alexander Zverev]]'''
+//         out:    {{seeds|1|1}} {{flagicon|ITA}} [[Jannik Sinner]] ''(final)''
+//     So the apostrophes must be OPTIONAL (`'*`). Requiring them read 32 seeds off a freshly
+//     published draw and exactly ONE off a finished one — and this script is meant to be re-run
+//     late, when most seeds are out. Caught rehearsing against the 2025 draw, 2026-08-27.
 const seedById = new Map();
 const seedsStart = wikitext.search(/==\s*Seeds\s*==/i);
 const seedsBlock = seedsStart >= 0 ? wikitext.slice(seedsStart, seedsStart + 4000) : '';
-for (const m of seedsBlock.matchAll(/\{\{seeds\|(\d+)\|[^}]*\}\}\s*'''?\s*(\{\{flagicon\|[^}]*\}\}\s*\[\[[^\]]+\]\])/g)) {
+for (const m of seedsBlock.matchAll(/\{\{seeds\|(\d+)\|[^}]*\}\}\s*'*\s*(\{\{flagicon\|[^}]*\}\}\s*\[\[[^\]]+\]\])/g)) {
   const pid = resolve(m[2]);
   if (pid && !pid.startsWith('x_') && pid !== 'tbd') seedById.set(pid, Number(m[1]));
 }
@@ -75,7 +93,7 @@ const field = [...fromPool, ...manualIn].sort((a, b) => (a.seed ?? 999) - (b.see
 const stillMissing = [...unmatched].filter(n => !(ev.manual ?? []).some(m => norm(m.name) === n));
 
 console.log(`\n  event:            ${id} — ${ev.label}`);
-console.log(`  draw page:        ${ev.page}`);
+console.log(`  draw page:        ${page}${pageFlag ? "   ← REHEARSAL, not this event's own page" : ""}`);
 console.log(`  seeds parsed:     ${seedById.size}`);
 console.log(`  draftable field:  ${field.length}  (${field.filter(p => p.seed != null).length} seeded, ${manualIn.length} hand-entered)`);
 console.log(`  NOT covered:      ${stillMissing.length}  (in the draw, in neither the pool nor EVENTS.manual)`);
