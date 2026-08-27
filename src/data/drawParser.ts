@@ -20,7 +20,15 @@ const matchKey = (round: RoundId, slot: number): string => `${round}_${slot}`;
 // Fold accents (NFD strip), case, AND hyphen/space differences — Wikipedia writes
 // "Jan-Lennard Struff" while a roster may have "Jan Lennard Struff"; without this the
 // drafted player resolves to a synthetic id and silently never scores.
-const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[-\s]+/g, ' ').trim();
+// Latin letters NFD does NOT decompose — they are distinct code points, not letter+accent.
+// "Vít Kopřiva" folds fine (í, ř are combining pairs); "Elmer Møller" does NOT, because ø is its
+// own letter. A miss here is SILENT: the player resolves to a synthetic x_ id, so he is
+// undraftable — and if the two copies of this function ever disagree, client and server disagree
+// on identity. Caught rehearsing the 2025 US Open draw, 2026-08-27.
+const FOLD: Record<string, string> = { 'ø': 'o', 'æ': 'ae', 'œ': 'oe', 'ł': 'l', 'đ': 'd', 'ð': 'd', 'þ': 'th', 'ß': 'ss', 'ı': 'i' };
+const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+  .replace(/[øæœłđðþßı]/g, (c) => FOLD[c] ?? c)
+  .replace(/[-s]+/g, ' ').trim();
 // Wikipedia disambiguates some articles: "[[Alex de Minaur (tennis)|…]]",
 // "[[Taylor Fritz (tennis player)|…]]". The parenthetical isn't part of the name and must
 // be dropped before matching the roster, or the drafted player silently never scores.

@@ -49,7 +49,15 @@ interface MatchScore { p1: string[]; p2: string[] }
 type LiveScores = Record<string, MatchScore>;
 
 const matchKey = (round: RoundId, slot: number): string => `${round}_${slot}`;
-const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[-\s]+/g, ' ').trim();
+// Latin letters NFD does NOT decompose — they are distinct code points, not letter+accent.
+// "Vít Kopřiva" folds fine (í, ř are combining pairs); "Elmer Møller" does NOT, because ø is its
+// own letter. A miss here is SILENT: the player resolves to a synthetic x_ id, so he is
+// undraftable — and if the two copies of this function ever disagree, client and server disagree
+// on identity. Caught rehearsing the 2025 US Open draw, 2026-08-27.
+const FOLD: Record<string, string> = { 'ø': 'o', 'æ': 'ae', 'œ': 'oe', 'ł': 'l', 'đ': 'd', 'ð': 'd', 'þ': 'th', 'ß': 'ss', 'ı': 'i' };
+const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+  .replace(/[øæœłđðþßı]/g, (c) => FOLD[c] ?? c)
+  .replace(/[-s]+/g, ' ').trim();
 const stripDisambig = (s: string) => s.replace(/\s*\((?:tennis|tennis player|[^)]*)\)\s*$/i, '').trim();
 
 function cleanTeam(raw: string): string {
