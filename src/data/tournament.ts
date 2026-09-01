@@ -1,6 +1,6 @@
 import type { Match, RoundId, TournamentResult } from '../types';
 import { findPlayer, PLAYERS } from './players';
-import { TOURNAMENT, ROUND_META, ROUND_ORDER, OPENING_ROUND } from './tournamentConfig';
+import { TOURNAMENT, ROUND_META, ROUND_ORDER, ROUND_POINTS, OPENING_ROUND } from './tournamentConfig';
 import { useLiveStore } from '../store/liveStore';
 import { liveMatches, liveExit, roundComplete } from './liveResults';
 import { STARTING_BUDGET } from './squadRules';
@@ -9,10 +9,11 @@ import { round1 } from './format';
 // Tournament identity + per-surface theming now live in ./tournamentConfig.
 
 // The active tournament's rounds, in order — derived from which rounds it plays
-// (TOURNAMENT.rounds) and the shared, one-curve-per-round-name metadata. Adding a
-// tournament with a different round count (a Masters draw) needs no change here.
+// (TOURNAMENT.rounds), the shared round labels (ROUND_META), and this tournament's own
+// pinned scoring curve (ROUND_POINTS — legacy vs Format 2, see tournamentConfig.ts). Adding
+// a tournament with a different round count (a Masters draw) needs no change here.
 export const ROUNDS: { id: RoundId; label: string; short: string; points: number }[] =
-  TOURNAMENT.rounds.map(id => ({ id, ...ROUND_META[id] }));
+  TOURNAMENT.rounds.map(id => ({ id, ...ROUND_META[id], points: ROUND_POINTS[id] }));
 
 // ── The live tournament's results ────────────────────────────────────────────
 // The app is LIVE-only: the draw's pairings and each result arrive over time (from

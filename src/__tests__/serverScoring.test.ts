@@ -4,7 +4,7 @@ import { ROUNDS, getMatchesForRound, winPoints, liveScore, leaderOfRecord } from
 import { PLAYERS } from '../data/players';
 import { scoreEntry, type ScoreCtx, type EntryState } from '../scoring/serverEngine';
 import { loadSampleTournament, loadSampleThrough, revealThrough, roles } from './fixtures/sampleDraw';
-import { ROUND_META, ROUND_ORDER } from '../data/tournamentConfig';
+import { ROUND_ORDER, SCORING_CURVES, curveIdFor, TOURNAMENTS } from '../data/tournamentConfig';
 import type { RoundId } from '../types';
 import edgeSrc from '../../supabase/functions/recompute-score/index.ts?raw';
 import seedSrc from '../../supabase/server_scoring.sql?raw';
@@ -46,22 +46,41 @@ const play = (round: RoundId, cap: string, vice?: string) => {
   store().playNextRound();
 };
 
-// The Deno edge function hard-copies the round-points curve + order (it can't import
-// app code). This reads that file as text and asserts the copy hasn't drifted from the
-// canonical config — so a future rebalance can't silently desync the authoritative score.
-describe('edge function stays in sync with the canonical scoring curve', () => {
-  it('recompute-score ROUND_POINTS + ROUND_ORDER match ROUND_META', () => {
-    const pointsBlock = edgeSrc.match(/ROUND_POINTS[^{]*\{([^}]*)\}/);
-    expect(pointsBlock, 'ROUND_POINTS block found in edge fn').toBeTruthy();
-    const edgePoints = Object.fromEntries(
-      [...pointsBlock![1].matchAll(/(\w+):\s*(\d+)/g)].map(m => [m[1], Number(m[2])]),
-    );
-    for (const [round, meta] of Object.entries(ROUND_META)) {
-      expect(edgePoints[round], `edge base points for ${round}`).toBe(meta.points);
+// The Deno edge function hard-copies the round-points curves, their order, and WHICH events are
+// pinned to which curve (it can't import app code). This reads that file as text and asserts the
+// copy hasn't drifted from the canonical client config (tournamentConfig.ts) — so a future
+// rebalance, or a newly-added tournament, can't silently desync the authoritative score from what
+// the client displays/projects.
+describe('edge function stays in sync with the canonical scoring curves', () => {
+  it('recompute-score LEGACY_POINTS/FORMAT2_POINTS + ROUND_ORDER match SCORING_CURVES', () => {
+    const parseBlock = (block: string) =>
+      Object.fromEntries([...block.matchAll(/(\w+):\s*(\d+)/g)].map(m => [m[1], Number(m[2])]));
+
+    const legacyBlock = edgeSrc.match(/LEGACY_POINTS[^{]*\{([^}]*)\}/);
+    expect(legacyBlock, 'LEGACY_POINTS block found in edge fn').toBeTruthy();
+    const edgeLegacy = parseBlock(legacyBlock![1]);
+    for (const [round, points] of Object.entries(SCORING_CURVES.legacy)) {
+      expect(edgeLegacy[round], `edge legacy points for ${round}`).toBe(points);
     }
+
+    const format2Block = edgeSrc.match(/FORMAT2_POINTS[^{]*\{([^}]*)\}/);
+    expect(format2Block, 'FORMAT2_POINTS block found in edge fn').toBeTruthy();
+    const edgeFormat2 = parseBlock(format2Block![1]);
+    for (const [round, points] of Object.entries(SCORING_CURVES.format2)) {
+      expect(edgeFormat2[round], `edge format2 points for ${round}`).toBe(points);
+    }
+
     const orderBlock = edgeSrc.match(/ROUND_ORDER\s*=\s*\[([^\]]*)\]/);
     const edgeOrder = [...orderBlock![1].matchAll(/'(\w+)'/g)].map(m => m[1]);
     expect(edgeOrder).toEqual(ROUND_ORDER);
+  });
+
+  it('recompute-score LEGACY_TOURNAMENTS matches which events the client pins to the legacy curve', () => {
+    const setBlock = edgeSrc.match(/LEGACY_TOURNAMENTS\s*=\s*new Set\(\[([^\]]*)\]\)/);
+    expect(setBlock, 'LEGACY_TOURNAMENTS set found in edge fn').toBeTruthy();
+    const edgeLegacyIds = [...setBlock![1].matchAll(/'([a-z0-9_]+)'/g)].map(m => m[1]).sort();
+    const clientLegacyIds = Object.keys(TOURNAMENTS).filter(id => curveIdFor(id) === 'legacy').sort();
+    expect(edgeLegacyIds).toEqual(clientLegacyIds);
   });
 
   it('player_stats seed ranks match PLAYERS exactly (client ↔ server rank parity)', () => {
