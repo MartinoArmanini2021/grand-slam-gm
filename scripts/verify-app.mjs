@@ -9,6 +9,16 @@
 //
 // Exit 0 = all green. Exit 1 = a correctness problem (details printed). Exit 2 = couldn't run
 // (network/source). Designed to be run by the nightly agent AND by hand anytime.
+//
+// KNOWN FAILURE MODE (flagged 2026-09-01): in a sandboxed Claude Code cloud environment, this
+// script needs outbound HTTPS to en.wikipedia.org and to the Supabase project host
+// (mrdmlfumdsxufifjulbt.supabase.co). If the environment's egress policy doesn't allow those two
+// hosts, both fetches fail with a 403 on the CONNECT tunnel and this script exits 2 with
+// `Unexpected token 'H', "Host not i"... is not valid JSON` — that is an environment/network-policy
+// block, NOT evidence the live results feed is broken. Confirm with `curl -v` to the two hosts above
+// (a 403 CONNECT means policy, not the app) before treating an exit-2 here as a live-data bug. Fix by
+// allowlisting both hosts in the environment's network policy (see
+// https://code.claude.com/docs/en/claude-code-on-the-web) — nothing in this repo can work around it.
 
 import { readFileSync } from 'node:fs';
 import { buildResolver, splitBrackets, parseFullDraw, buildMatchRows } from '../src/data/drawParser.ts';
