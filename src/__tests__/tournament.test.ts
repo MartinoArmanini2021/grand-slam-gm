@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ROUNDS, TRANSFER_LOCK_INDEX, getMatchesForRound, getPlayerExit, isPlayerOut, getOpponentId, upsetMultiplier } from '../data/tournament';
 import { getPlayer, PLAYERS } from '../data/players';
-import { TOURNAMENT, ROUND_META, ROUND_ORDER } from '../data/tournamentConfig';
+import { TOURNAMENT, ROUND_META, ROUND_ORDER, SCORING_CURVES, curveIdFor } from '../data/tournamentConfig';
 import { sampleMatches, loadSampleTournament, roles } from './fixtures/sampleDraw';
 
 // The live engine scores whatever draw+results are in the live store. These tests load
@@ -66,9 +66,10 @@ describe('config-driven round structure', () => {
     expect(ROUNDS.map(r => r.id)).toEqual(TOURNAMENT.rounds);
   });
 
-  it('every round’s points come from the one shared curve (ROUND_META)', () => {
+  it('every round’s points come from the tournament’s pinned scoring curve, labels from ROUND_META', () => {
+    const curve = SCORING_CURVES[curveIdFor(TOURNAMENT.id)];
     for (const r of ROUNDS) {
-      expect(r.points).toBe(ROUND_META[r.id].points);
+      expect(r.points).toBe(curve[r.id]);
       expect(r.label).toBe(ROUND_META[r.id].label);
     }
   });
