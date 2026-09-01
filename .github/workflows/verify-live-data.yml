@@ -1,0 +1,35 @@
+name: Verify live data flow
+
+# Scheduled equivalent of `npm run verify:app` (see scripts/verify-app.mjs) — a three-way
+# Wikipedia = parser = Supabase check of the LIVE tournament's results feed. It needs real
+# outbound internet to en.wikipedia.org and the Supabase REST API; a sandboxed chat-agent session
+# may not have that (flagged 2026-09-01), but a GitHub-hosted runner does — the `boundary` job in
+# ci.yml already proves that by hitting the same live Supabase project — so this runs here instead
+# of depending on any particular agent environment's network policy.
+#
+# No secrets needed: verify-app.mjs reads Wikipedia (public) and Supabase via the public,
+# RLS-guarded anon key it already carries in source (read-only, safe to embed — the same key the
+# browser ships), and resolves WHICH tournament to check from app_config.active_tournament_id.
+#
+# Exit 0 = all green. Exit 1 = a real correctness problem (see the failed step's own FAIL output —
+# a wrong/missing/stale result, or a recorded winner not one of that match's two players). Exit 2 =
+# couldn't run (network/source/unresolved tournament) — on a GitHub-hosted runner this itself is a
+# signal worth investigating, since these runners normally have full internet access.
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # every 15 min — inside the 20-min ingest freshness window the script checks
+  workflow_dispatch:         # allow a manual run from the Actions tab
+
+concurrency:
+  group: verify-live-data
+  cancel-in-progress: true
+
+jobs:
+  verify-app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npm run verify:app
