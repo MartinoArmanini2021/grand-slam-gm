@@ -82,6 +82,7 @@ function teamTarget(raw: string): string {
 const ALIAS: Record<string, string> = {
   'alexander shevchenko': 'aleksandr shevchenko',
   'francis tiafoe': 'frances tiafoe',
+  'daniel vallejo': 'adolfo daniel vallejo',
 };
 
 function buildResolver(roster: { id: string; name: string }[]): (raw: string) => string {
@@ -334,6 +335,47 @@ const CORS = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...CORS } });
 
+// ── transient-failure shield for the REST hop ──────────────────────────────────────────
+// On the free-tier box the FIRST call of a cold run sometimes takes 5–15 s while PostgREST opens a
+// fresh DB connection, and the gateway answers 504 "Gateway Timeout" (seen 2026-09-11, ~50% of runs
+// through the US Open SF day). The very next call always succeeded — so the run used to die on a
+// hiccup that a second attempt would have cleared. Every call this function makes is idempotent
+// (selects, onConflict upserts, keyed deletes), so retrying a 502/503/504 or a network error is safe.
+const pathOf = (input: RequestInfo | URL): string => {
+  try { return new URL(input instanceof Request ? input.url : String(input)).pathname; } catch { return '?'; }
+};
+const RETRY_STATUS = new Set([502, 503, 504]);
+const REST_ATTEMPTS = 3;
+const retryingFetch: typeof fetch = async (input, init) => {
+  let lastRes: Response | undefined;
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= REST_ATTEMPTS; attempt++) {
+    if (attempt > 1) await new Promise((r) => setTimeout(r, 1500 * (attempt - 1)));
+    try {
+      const res = await fetch(input, init);
+      if (!RETRY_STATUS.has(res.status)) return res;
+      lastRes = res;
+      console.warn(`rest ${res.status} on attempt ${attempt}/${REST_ATTEMPTS}: ${pathOf(input)}`);
+      await res.body?.cancel().catch(() => {});
+    } catch (e) {
+      lastErr = e;
+      console.warn(`rest network error on attempt ${attempt}/${REST_ATTEMPTS}:`, e);
+    }
+  }
+  if (lastRes) return lastRes;
+  throw lastErr;
+};
+const restClient = () =>
+  createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { global: { fetch: retryingFetch } });
+// A PostgREST error is a plain object, not an Error, so String(err) used to log "[object Object]"
+// (the watchdog alert then said nothing useful). Prefer .message, else the JSON.
+const errorText = (err: unknown): string => {
+  if (err instanceof Error) return err.message;
+  const m = (err as { message?: unknown } | null)?.message;
+  if (typeof m === 'string' && m) return m;
+  try { return JSON.stringify(err); } catch { return String(err); }
+};
+
 type Override = { round: string; slot: number; winnerId: string };
 
 Deno.serve(async (req) => {
@@ -342,7 +384,7 @@ Deno.serve(async (req) => {
   if (denied) return denied;
   let tournamentId = '(none supplied)';
   try {
-    const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    const db = restClient();
 
     let body: { page?: string; tournamentId?: string; overrides?: Override[]; clearOverrides?: { round: string; slot: number }[] } = {};
     try { body = await req.json(); } catch { /* cron/no-body invoke */ }
@@ -443,10 +485,10 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error('ingest-draw error:', err);
     try {
-      const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+      const db = restClient();
       await db.from('ingest_health').upsert({
         tournament_id: tournamentId, last_run_at: new Date().toISOString(), ok: false,
-        error: String(err instanceof Error ? err.message : err).slice(0, 500),
+        error: errorText(err).slice(0, 500),
       }, { onConflict: 'tournament_id' });
     } catch { /* best-effort */ }
     return json({ ok: false, error: 'internal error' }, 500);

@@ -67,6 +67,7 @@ export function teamTarget(raw: string): string {
 const ALIAS: Record<string, string> = {
   'alexander shevchenko': 'aleksandr shevchenko',
   'francis tiafoe': 'frances tiafoe',
+  'daniel vallejo': 'adolfo daniel vallejo',
 };
 
 export function buildResolver(roster: { id: string; name: string }[]): (raw: string) => string {

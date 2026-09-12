@@ -112,22 +112,61 @@ function scoreEntry(state: EntryState, matches: MatchRow[], rankById: Record<str
   return total;
 }
 
+// ── transient-failure shield for the REST hop ──────────────────────────────────────────
+// Same shield as ingest-draw (kept inline: each function bundles alone). On the free-tier box the
+// FIRST call of a cold run sometimes takes 5–15 s while PostgREST opens a fresh DB connection and
+// the gateway answers 504 (2026-09-11: ~50% of runs failed on it through the US Open SF day, and
+// because this function wrote no scoring_health on error, the 3-minute cadence never went stale
+// enough for the watchdog to notice). Everything here is idempotent — selects and the set-based
+// apply_entry_scores RPC — so retrying a 502/503/504 or a network error is safe.
+const RETRY_STATUS = new Set([502, 503, 504]);
+const REST_ATTEMPTS = 3;
+const pathOf = (input: RequestInfo | URL): string => {
+  try { return new URL(input instanceof Request ? input.url : String(input)).pathname; } catch { return '?'; }
+};
+const retryingFetch: typeof fetch = async (input, init) => {
+  let lastRes: Response | undefined;
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= REST_ATTEMPTS; attempt++) {
+    if (attempt > 1) await new Promise((r) => setTimeout(r, 1500 * (attempt - 1)));
+    try {
+      const res = await fetch(input, init);
+      if (!RETRY_STATUS.has(res.status)) return res;
+      lastRes = res;
+      console.warn(`rest ${res.status} on attempt ${attempt}/${REST_ATTEMPTS}: ${pathOf(input)}`);
+      await res.body?.cancel().catch(() => {});
+    } catch (e) {
+      lastErr = e;
+      console.warn(`rest network error on attempt ${attempt}/${REST_ATTEMPTS}:`, e);
+    }
+  }
+  if (lastRes) return lastRes;
+  throw lastErr;
+};
+// A PostgREST error is a plain object, not an Error — String(err) gives "[object Object]".
+const errorText = (err: unknown): string => {
+  if (err instanceof Error) return err.message;
+  const m = (err as { message?: unknown } | null)?.message;
+  if (typeof m === 'string' && m) return m;
+  try { return JSON.stringify(err); } catch { return String(err); }
+};
+
 Deno.serve(async (req) => {
   // B1: only the cron/service-role may invoke this — reject anon/user JWTs (the public anon
   // key is a valid JWT and would otherwise let any visitor trigger a rescore = DoS).
   const denied = assertServiceRole(req);
   if (denied) return denied;
+  let tournamentId: string | undefined;
   try {
     const url = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const db = createClient(url, serviceKey);
+    const db = createClient(url, serviceKey, { global: { fetch: retryingFetch } });
 
     // Which tournament to score. The cron posts it explicitly (from public.app_config, the single
     // source of truth). If a bodyless manual invoke omits it, fall back to app_config too — so this
     // default can never drift from the crons. The hardcoded fallback guards a missing config row.
     // (Scoring only reads matches/entries by tournament_id — no field/page coupling — so it's always
     // safe to score whatever the config says.)
-    let tournamentId: string | undefined;
     try { const b = await req.json(); tournamentId = b?.tournamentId; } catch { /* no body */ }
     if (!tournamentId) {
       const { data: cfg } = await db.from('app_config').select('value').eq('key', 'active_tournament_id').maybeSingle();
@@ -201,6 +240,16 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error('recompute-score error:', err); // B6: log detail server-side, don't leak it
+    // Record the failure where the watchdog looks. Before this, an erroring scorer left the OLD
+    // heartbeat in place and only a >20-min stall would alert — intermittent failures were invisible.
+    if (tournamentId) {
+      try {
+        const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { global: { fetch: retryingFetch } });
+        await db.from('scoring_health').upsert(
+          { tournament_id: tournamentId, last_run_at: new Date().toISOString(), ok: false, error: errorText(err).slice(0, 500) },
+          { onConflict: 'tournament_id' });
+      } catch { /* best-effort */ }
+    }
     return new Response(JSON.stringify({ ok: false, error: 'internal error' }), {
       status: 500, headers: { 'Content-Type': 'application/json' },
     });
