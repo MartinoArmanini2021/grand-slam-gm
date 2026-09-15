@@ -1,0 +1,4080 @@
+{
+  "tournament_id": "usopen_2026",
+  "taken_at": "2026-09-15T22:04:44.686Z",
+  "complete": true,
+  "champion": "zverev",
+  "counts": {
+    "matches": 127,
+    "decided": 127,
+    "entries": 22,
+    "scored": 22,
+    "players": 131
+  },
+  "standings": [
+    {
+      "rank": 1,
+      "user_id": "524e264f-c7eb-4b03-9200-183dd0cfd647",
+      "manager": "🎯 Bakers & Brewers",
+      "score": 180.5
+    },
+    {
+      "rank": 2,
+      "user_id": "60ab1ac4-01d0-4c40-bb1d-a145f59231a8",
+      "manager": "⚡ Fabio Fogna",
+      "score": 168.5
+    },
+    {
+      "rank": 3,
+      "user_id": "e3a43da2-d991-4594-b991-1fae551b4199",
+      "manager": "🐐 Agass",
+      "score": 160
+    },
+    {
+      "rank": 4,
+      "user_id": "088650a5-44e4-4caf-a5be-d83641e930ab",
+      "manager": "🦈 Brianzoli",
+      "score": 143
+    },
+    {
+      "rank": 5,
+      "user_id": "0f7892be-a038-494c-ab5a-e4484c221ec7",
+      "manager": "🐺 Buzzo",
+      "score": 132.5
+    },
+    {
+      "rank": 6,
+      "user_id": "45576f33-e1ca-47ea-94a4-3d0deb771ba7",
+      "manager": "🦁 Los juliettas",
+      "score": 118
+    },
+    {
+      "rank": 7,
+      "user_id": "5cb18666-0dda-4234-96eb-bf04ec5630fd",
+      "manager": "🎾 Fragomen",
+      "score": 114.5
+    },
+    {
+      "rank": 8,
+      "user_id": "74cecbd2-3cfb-4783-a10f-9799e779a925",
+      "manager": "🎾 Stef",
+      "score": 114.5
+    },
+    {
+      "rank": 9,
+      "user_id": "60825ad8-913d-48cd-ae61-097734bcad5a",
+      "manager": "🐉 The Hammers",
+      "score": 112
+    },
+    {
+      "rank": 10,
+      "user_id": "51face7f-b380-4537-bb14-db16443f97a2",
+      "manager": "🎾 Ele's Squad",
+      "score": 102
+    },
+    {
+      "rank": 11,
+      "user_id": "968fcd21-4c89-4332-9552-b7af8f6242cf",
+      "manager": "🐐 Creyzer's Slices",
+      "score": 101.5
+    },
+    {
+      "rank": 12,
+      "user_id": "f42aa3ef-f4d6-4f94-a648-b314f62b16bb",
+      "manager": "🐺 Gallen8rs",
+      "score": 100
+    },
+    {
+      "rank": 13,
+      "user_id": "c2758667-faa7-4805-a66d-ef848abdcdce",
+      "manager": "🐐 Anti Sanchez",
+      "score": 89
+    },
+    {
+      "rank": 14,
+      "user_id": "867c8f11-e5fd-499b-806a-e7c8c5edec4e",
+      "manager": "🚀 Sánchez-Vicario juniors",
+      "score": 86.5
+    },
+    {
+      "rank": 15,
+      "user_id": "32828145-58a2-404e-bf7e-d82bb179fb24",
+      "manager": "🎾 Tornarem",
+      "score": 68.5
+    },
+    {
+      "rank": 16,
+      "user_id": "80310994-fa96-4e98-9edd-69e169911701",
+      "manager": "🎾 Sanchez-Vicario",
+      "score": 67.5
+    },
+    {
+      "rank": 17,
+      "user_id": "4a198920-33d2-480a-80ea-653ec9356996",
+      "manager": "🦅 CONDORS",
+      "score": 64.5
+    },
+    {
+      "rank": 18,
+      "user_id": "96f09bf4-1502-4e1e-8749-4a0c6a8fb0c4",
+      "manager": "🎾 The Boncias",
+      "score": 58
+    },
+    {
+      "rank": 19,
+      "user_id": "b89e4522-2da0-4edd-8a70-0d4e82e024d3",
+      "manager": "🦅 Axelo’",
+      "score": 40.5
+    },
+    {
+      "rank": 20,
+      "user_id": "bffed740-cd03-4182-8ed8-c7e8eeb7509d",
+      "manager": "🦅 Pigos",
+      "score": 17.5
+    },
+    {
+      "rank": 21,
+      "user_id": "2ed9095d-47bc-449c-a715-53d1725418fa",
+      "manager": "🔥 Arreplegats",
+      "score": 12.5
+    },
+    {
+      "rank": 22,
+      "user_id": "49b012ea-3c50-4fcd-a18b-59122e2b9db3",
+      "manager": "🎾 Gatsby’s Men",
+      "score": 11
+    }
+  ],
+  "matches": [
+    {
+      "round": "F",
+      "slot": 0,
+      "p1_id": "zverev",
+      "p2_id": "shelton",
+      "winner_id": "zverev",
+      "score_line": "6-3 7-6 5-7 6-2"
+    },
+    {
+      "round": "QF",
+      "slot": 0,
+      "p1_id": "zverev",
+      "p2_id": "zandschulp",
+      "winner_id": "zverev",
+      "score_line": "6-2 7-5 6-1"
+    },
+    {
+      "round": "QF",
+      "slot": 1,
+      "p1_id": "khachanov",
+      "p2_id": "blockx",
+      "winner_id": "khachanov",
+      "score_line": "6-2 7-5 3-2"
+    },
+    {
+      "round": "QF",
+      "slot": 2,
+      "p1_id": "tiafoe",
+      "p2_id": "michelsen",
+      "winner_id": "tiafoe",
+      "score_line": "5-7 3-6 7-5 6-3 7-6"
+    },
+    {
+      "round": "QF",
+      "slot": 3,
+      "p1_id": "shelton",
+      "p2_id": "alcaraz",
+      "winner_id": "shelton",
+      "score_line": "6-7 6-1 6-3 1-6 7-6"
+    },
+    {
+      "round": "R128",
+      "slot": 0,
+      "p1_id": "zverev",
+      "p2_id": "sonego",
+      "winner_id": "zverev",
+      "score_line": "6-4 3-6 6-7 7-5 6-4"
+    },
+    {
+      "round": "R128",
+      "slot": 1,
+      "p1_id": "halys",
+      "p2_id": "acosta",
+      "winner_id": "halys",
+      "score_line": "6-4 7-5 6-7 6-1"
+    },
+    {
+      "round": "R128",
+      "slot": 2,
+      "p1_id": "dimitrov",
+      "p2_id": "popyrin",
+      "winner_id": "popyrin",
+      "score_line": "3-6 6-3 6-2 6-4"
+    },
+    {
+      "round": "R128",
+      "slot": 3,
+      "p1_id": "hanfmann",
+      "p2_id": "tabilo",
+      "winner_id": "tabilo",
+      "score_line": "6-3 6-2 6-7 6-3"
+    },
+    {
+      "round": "R128",
+      "slot": 4,
+      "p1_id": "darderi",
+      "p2_id": "wendelken",
+      "winner_id": "darderi",
+      "score_line": "6-2 3-6 6-2 7-5"
+    },
+    {
+      "round": "R128",
+      "slot": 5,
+      "p1_id": "svrcina",
+      "p2_id": "royer",
+      "winner_id": "svrcina",
+      "score_line": "6-4 6-3 5-7 5-7 6-2"
+    },
+    {
+      "round": "R128",
+      "slot": 6,
+      "p1_id": "sweeny",
+      "p2_id": "moutet",
+      "winner_id": "sweeny",
+      "score_line": "7-6 6-4 3-0"
+    },
+    {
+      "round": "R128",
+      "slot": 7,
+      "p1_id": "fery",
+      "p2_id": "musetti",
+      "winner_id": "musetti",
+      "score_line": "6-3 6-3 7-5"
+    },
+    {
+      "round": "R128",
+      "slot": 8,
+      "p1_id": "jodar",
+      "p2_id": "x_bu_yunchaokete",
+      "winner_id": "x_bu_yunchaokete",
+      "score_line": "6-2 6-1 6-1"
+    },
+    {
+      "round": "R128",
+      "slot": 9,
+      "p1_id": "marozsan",
+      "p2_id": "zheng",
+      "winner_id": "zheng",
+      "score_line": "6-4 6-4 6-2"
+    },
+    {
+      "round": "R128",
+      "slot": 10,
+      "p1_id": "svajda",
+      "p2_id": "altmaier",
+      "winner_id": "svajda",
+      "score_line": "6-3 6-1 6-7 6-2"
+    },
+    {
+      "round": "R128",
+      "slot": 11,
+      "p1_id": "cerundolo",
+      "p2_id": "gea",
+      "winner_id": "gea",
+      "score_line": "6-3 2-6 3-6 6-3 6-1"
+    },
+    {
+      "round": "R128",
+      "slot": 12,
+      "p1_id": "bergs",
+      "p2_id": "taberner",
+      "winner_id": "bergs",
+      "score_line": "6-3 3-6 6-2 6-2"
+    },
+    {
+      "round": "R128",
+      "slot": 13,
+      "p1_id": "jong",
+      "p2_id": "passaro",
+      "winner_id": "jong",
+      "score_line": "2-6 6-2 4-6 6-3 6-2"
+    },
+    {
+      "round": "R128",
+      "slot": 14,
+      "p1_id": "choinski",
+      "p2_id": "zandschulp",
+      "winner_id": "zandschulp",
+      "score_line": "6-3 6-1 7-6"
+    },
+    {
+      "round": "R128",
+      "slot": 15,
+      "p1_id": "guerrieri",
+      "p2_id": "deminaur",
+      "winner_id": "deminaur",
+      "score_line": "6-2 6-2 6-4"
+    },
+    {
+      "round": "R128",
+      "slot": 16,
+      "p1_id": "augeraliassime",
+      "p2_id": "hijikata",
+      "winner_id": "augeraliassime",
+      "score_line": "7-5 4-6 6-3 7-5"
+    },
+    {
+      "round": "R128",
+      "slot": 17,
+      "p1_id": "burruchaga",
+      "p2_id": "khachanov",
+      "winner_id": "khachanov",
+      "score_line": "6-3 6-0 6-1"
+    },
+    {
+      "round": "R128",
+      "slot": 18,
+      "p1_id": "molcan",
+      "p2_id": "bonzi",
+      "winner_id": "bonzi",
+      "score_line": "6-4 3-6 6-3 6-2"
+    },
+    {
+      "round": "R128",
+      "slot": 19,
+      "p1_id": "giron",
+      "p2_id": "buse",
+      "winner_id": "buse",
+      "score_line": "3-6 6-3 6-3 6-7 6-1"
+    },
+    {
+      "round": "R128",
+      "slot": 20,
+      "p1_id": "mensik",
+      "p2_id": "mochizuki",
+      "winner_id": "mensik",
+      "score_line": "6-1 6-4 7-5"
+    },
+    {
+      "round": "R128",
+      "slot": 21,
+      "p1_id": "rodionov",
+      "p2_id": "perricard",
+      "winner_id": "rodionov",
+      "score_line": "7-6 6-0 7-6"
+    },
+    {
+      "round": "R128",
+      "slot": 22,
+      "p1_id": "vallejo",
+      "p2_id": "monfils",
+      "winner_id": "monfils",
+      "score_line": "2-6 6-1 6-2 6-0"
+    },
+    {
+      "round": "R128",
+      "slot": 23,
+      "p1_id": "borges",
+      "p2_id": "tien",
+      "winner_id": "tien",
+      "score_line": "6-4 6-1 6-2"
+    },
+    {
+      "round": "R128",
+      "slot": 24,
+      "p1_id": "fritz",
+      "p2_id": "blanch",
+      "winner_id": "fritz",
+      "score_line": "6-3 6-2 6-4"
+    },
+    {
+      "round": "R128",
+      "slot": 25,
+      "p1_id": "bellucci",
+      "p2_id": "piros",
+      "winner_id": "bellucci",
+      "score_line": "6-4 6-2 6-0"
+    },
+    {
+      "round": "R128",
+      "slot": 26,
+      "p1_id": "carabelli",
+      "p2_id": "struff",
+      "winner_id": "struff",
+      "score_line": "6-4 6-3 6-3"
+    },
+    {
+      "round": "R128",
+      "slot": 27,
+      "p1_id": "misolic",
+      "p2_id": "franciscocerundolo",
+      "winner_id": "franciscocerundolo",
+      "score_line": "6-4 6-3 7-5"
+    },
+    {
+      "round": "R128",
+      "slot": 28,
+      "p1_id": "blockx",
+      "p2_id": "vera",
+      "winner_id": "blockx",
+      "score_line": "6-3 6-4 6-2"
+    },
+    {
+      "round": "R128",
+      "slot": 29,
+      "p1_id": "shang",
+      "p2_id": "trungelliti",
+      "winner_id": "trungelliti",
+      "score_line": "0-6 7-6 1-6 6-3 6-4"
+    },
+    {
+      "round": "R128",
+      "slot": 30,
+      "p1_id": "basavareddy",
+      "p2_id": "schoolkate",
+      "winner_id": "schoolkate",
+      "score_line": "7-6 3-6 6-3 6-4"
+    },
+    {
+      "round": "R128",
+      "slot": 31,
+      "p1_id": "comesana",
+      "p2_id": "cobolli",
+      "winner_id": "cobolli",
+      "score_line": "3-6 2-6 6-3 6-4 6-4"
+    },
+    {
+      "round": "R128",
+      "slot": 32,
+      "p1_id": "medvedev",
+      "p2_id": "gaston",
+      "winner_id": "medvedev",
+      "score_line": "6-4 6-2 6-4"
+    },
+    {
+      "round": "R128",
+      "slot": 33,
+      "p1_id": "gorzny",
+      "p2_id": "collignon",
+      "winner_id": "gorzny",
+      "score_line": "3-6 6-3 3-6 6-3 7-6"
+    },
+    {
+      "round": "R128",
+      "slot": 34,
+      "p1_id": "munar",
+      "p2_id": "atmane",
+      "winner_id": "munar",
+      "score_line": "6-7 3-6 6-1 7-6 7-5"
+    },
+    {
+      "round": "R128",
+      "slot": 35,
+      "p1_id": "shimabukuro",
+      "p2_id": "rinderknech",
+      "winner_id": "rinderknech",
+      "score_line": "6-7 6-2 7-6 6-2"
+    },
+    {
+      "round": "R128",
+      "slot": 36,
+      "p1_id": "vacherot",
+      "p2_id": "kovacevic",
+      "winner_id": "vacherot",
+      "score_line": "6-2 6-3 7-5"
+    },
+    {
+      "round": "R128",
+      "slot": 37,
+      "p1_id": "majchrzak",
+      "p2_id": "medjedovic",
+      "winner_id": "majchrzak",
+      "score_line": "6-3 6-3 6-3"
+    },
+    {
+      "round": "R128",
+      "slot": 38,
+      "p1_id": "vukic",
+      "p2_id": "sakamoto",
+      "winner_id": "sakamoto",
+      "score_line": "6-4 6-7 6-4 3-6 6-4"
+    },
+    {
+      "round": "R128",
+      "slot": 39,
+      "p1_id": "damm",
+      "p2_id": "tiafoe",
+      "winner_id": "tiafoe",
+      "score_line": "6-4 4-6 3-6 6-3 6-4"
+    },
+    {
+      "round": "R128",
+      "slot": 40,
+      "p1_id": "nakashima",
+      "p2_id": "baez",
+      "winner_id": "nakashima",
+      "score_line": "6-2 6-1 6-0"
+    },
+    {
+      "round": "R128",
+      "slot": 41,
+      "p1_id": "michelsen",
+      "p2_id": "cina",
+      "winner_id": "michelsen",
+      "score_line": "6-4 6-1 6-0"
+    },
+    {
+      "round": "R128",
+      "slot": 42,
+      "p1_id": "merida",
+      "p2_id": "fucsovics",
+      "winner_id": "merida",
+      "score_line": "6-4 6-4 6-2"
+    },
+    {
+      "round": "R128",
+      "slot": 43,
+      "p1_id": "x_otto_virtanen",
+      "p2_id": "rublev",
+      "winner_id": "rublev",
+      "score_line": "6-7 6-7 6-0 6-2 7-6"
+    },
+    {
+      "round": "R128",
+      "slot": 44,
+      "p1_id": "etcheverry",
+      "p2_id": "kopriva",
+      "winner_id": "etcheverry",
+      "score_line": "6-3 6-4 6-0"
+    },
+    {
+      "round": "R128",
+      "slot": 45,
+      "p1_id": "landaluce",
+      "p2_id": "fearnley",
+      "winner_id": "fearnley",
+      "score_line": "4-6 6-2 4-6 7-5 6-3"
+    },
+    {
+      "round": "R128",
+      "slot": 46,
+      "p1_id": "berrettini",
+      "p2_id": "wawrinka",
+      "winner_id": "berrettini",
+      "score_line": "7-6 7-6 6-0"
+    },
+    {
+      "round": "R128",
+      "slot": 47,
+      "p1_id": "navone",
+      "p2_id": "djokovic",
+      "winner_id": "navone",
+      "score_line": "7-6 5-7 4-6 6-2 6-1"
+    },
+    {
+      "round": "R128",
+      "slot": 48,
+      "p1_id": "shelton",
+      "p2_id": "griekspoor",
+      "winner_id": "shelton",
+      "score_line": "1-6 6-1 7-6 6-2"
+    },
+    {
+      "round": "R128",
+      "slot": 49,
+      "p1_id": "dzumhur",
+      "p2_id": "hurkacz",
+      "winner_id": "hurkacz",
+      "score_line": "6-4 4-6 6-1 6-1"
+    },
+    {
+      "round": "R128",
+      "slot": 50,
+      "p1_id": "kecmanovic",
+      "p2_id": "shapovalov",
+      "winner_id": "shapovalov",
+      "score_line": "6-4 4-6 6-4 6-1"
+    },
+    {
+      "round": "R128",
+      "slot": 51,
+      "p1_id": "assche",
+      "p2_id": "norrie",
+      "winner_id": "assche",
+      "score_line": "6-7 6-2 6-2 6-3"
+    },
+    {
+      "round": "R128",
+      "slot": 52,
+      "p1_id": "lehecka",
+      "p2_id": "busta",
+      "winner_id": "lehecka",
+      "score_line": "6-1 7-6 4-6 6-2"
+    },
+    {
+      "round": "R128",
+      "slot": 53,
+      "p1_id": "samuel",
+      "p2_id": "machac",
+      "winner_id": "samuel",
+      "score_line": "6-2 6-3 6-2"
+    },
+    {
+      "round": "R128",
+      "slot": 54,
+      "p1_id": "lloydharris",
+      "p2_id": "kennedy",
+      "winner_id": "lloydharris",
+      "score_line": "6-4 6-2 6-2"
+    },
+    {
+      "round": "R128",
+      "slot": 55,
+      "p1_id": "tsitsipas",
+      "p2_id": "fils",
+      "winner_id": "tsitsipas",
+      "score_line": "4-6 7-6 6-1 6-4"
+    },
+    {
+      "round": "R128",
+      "slot": 56,
+      "p1_id": "bublik",
+      "p2_id": "wolf",
+      "winner_id": "bublik",
+      "score_line": "6-4 6-2 3-6 6-1"
+    },
+    {
+      "round": "R128",
+      "slot": 57,
+      "p1_id": "tirante",
+      "p2_id": "mannarino",
+      "winner_id": "mannarino",
+      "score_line": "4-6 3-6 6-3 6-3 6-3"
+    },
+    {
+      "round": "R128",
+      "slot": 58,
+      "p1_id": "prizmic",
+      "p2_id": "shevchenko",
+      "winner_id": "prizmic",
+      "score_line": "2-6 6-3 6-3 5-7 7-5"
+    },
+    {
+      "round": "R128",
+      "slot": 59,
+      "p1_id": "wong",
+      "p2_id": "paul",
+      "winner_id": "paul",
+      "score_line": "6-7 6-1 6-3 6-3"
+    },
+    {
+      "round": "R128",
+      "slot": 60,
+      "p1_id": "arnaldi",
+      "p2_id": "duckworth",
+      "winner_id": "duckworth",
+      "score_line": "5-7 6-3 6-2 7-6"
+    },
+    {
+      "round": "R128",
+      "slot": 61,
+      "p1_id": "wu",
+      "p2_id": "walton",
+      "winner_id": "wu",
+      "score_line": "7-6 6-2 7-5"
+    },
+    {
+      "round": "R128",
+      "slot": 62,
+      "p1_id": "faria",
+      "p2_id": "brooksby",
+      "winner_id": "faria",
+      "score_line": "6-3 7-6 4-6 1-6 6-2"
+    },
+    {
+      "round": "R128",
+      "slot": 63,
+      "p1_id": "safiullin",
+      "p2_id": "alcaraz",
+      "winner_id": "alcaraz",
+      "score_line": "6-4 6-4 6-4"
+    },
+    {
+      "round": "R16",
+      "slot": 0,
+      "p1_id": "zverev",
+      "p2_id": "darderi",
+      "winner_id": "zverev",
+      "score_line": "6-2 6-2 7-6"
+    },
+    {
+      "round": "R16",
+      "slot": 1,
+      "p1_id": "gea",
+      "p2_id": "zandschulp",
+      "winner_id": "zandschulp",
+      "score_line": "3-6 6-7 7-6 7-6 6-4"
+    },
+    {
+      "round": "R16",
+      "slot": 2,
+      "p1_id": "khachanov",
+      "p2_id": "tien",
+      "winner_id": "khachanov",
+      "score_line": "7-5 4-6 6-7 6-1 6-4"
+    },
+    {
+      "round": "R16",
+      "slot": 3,
+      "p1_id": "franciscocerundolo",
+      "p2_id": "blockx",
+      "winner_id": "blockx",
+      "score_line": "6-3 4-6 7-5 7-5"
+    },
+    {
+      "round": "R16",
+      "slot": 4,
+      "p1_id": "medvedev",
+      "p2_id": "tiafoe",
+      "winner_id": "tiafoe",
+      "score_line": "7-6 6-4 7-6"
+    },
+    {
+      "round": "R16",
+      "slot": 5,
+      "p1_id": "michelsen",
+      "p2_id": "etcheverry",
+      "winner_id": "michelsen",
+      "score_line": "7-6 6-4 6-4"
+    },
+    {
+      "round": "R16",
+      "slot": 6,
+      "p1_id": "shelton",
+      "p2_id": "tsitsipas",
+      "winner_id": "shelton",
+      "score_line": "6-2 6-3 6-4"
+    },
+    {
+      "round": "R16",
+      "slot": 7,
+      "p1_id": "paul",
+      "p2_id": "alcaraz",
+      "winner_id": "alcaraz",
+      "score_line": "6-4 6-3 6-4"
+    },
+    {
+      "round": "R32",
+      "slot": 0,
+      "p1_id": "zverev",
+      "p2_id": "tabilo",
+      "winner_id": "zverev",
+      "score_line": "6-2 7-6 6-2"
+    },
+    {
+      "round": "R32",
+      "slot": 1,
+      "p1_id": "darderi",
+      "p2_id": "sweeny",
+      "winner_id": "darderi",
+      "score_line": "6-4 6-3 6-3"
+    },
+    {
+      "round": "R32",
+      "slot": 2,
+      "p1_id": "zheng",
+      "p2_id": "gea",
+      "winner_id": "gea",
+      "score_line": "7-6 3-6 4-6 6-3 6-2"
+    },
+    {
+      "round": "R32",
+      "slot": 3,
+      "p1_id": "bergs",
+      "p2_id": "zandschulp",
+      "winner_id": "zandschulp",
+      "score_line": "3-6 7-6 4-6 7-6 6-3"
+    },
+    {
+      "round": "R32",
+      "slot": 4,
+      "p1_id": "khachanov",
+      "p2_id": "bonzi",
+      "winner_id": "khachanov",
+      "score_line": "6-3 6-2 6-4"
+    },
+    {
+      "round": "R32",
+      "slot": 5,
+      "p1_id": "mensik",
+      "p2_id": "tien",
+      "winner_id": "tien",
+      "score_line": "6-3 1-6 6-7 6-3 6-4"
+    },
+    {
+      "round": "R32",
+      "slot": 6,
+      "p1_id": "fritz",
+      "p2_id": "franciscocerundolo",
+      "winner_id": "franciscocerundolo",
+      "score_line": "3-6 4-6 6-3 6-4 6-4"
+    },
+    {
+      "round": "R32",
+      "slot": 7,
+      "p1_id": "blockx",
+      "p2_id": "cobolli",
+      "winner_id": "blockx",
+      "score_line": "6-7 6-3 6-0 6-3"
+    },
+    {
+      "round": "R32",
+      "slot": 8,
+      "p1_id": "medvedev",
+      "p2_id": "rinderknech",
+      "winner_id": "medvedev",
+      "score_line": "6-4 6-4 6-4"
+    },
+    {
+      "round": "R32",
+      "slot": 9,
+      "p1_id": "vacherot",
+      "p2_id": "tiafoe",
+      "winner_id": "tiafoe",
+      "score_line": "6-4 6-2 6-4"
+    },
+    {
+      "round": "R32",
+      "slot": 10,
+      "p1_id": "michelsen",
+      "p2_id": "merida",
+      "winner_id": "michelsen",
+      "score_line": "7-6 6-4 6-3"
+    },
+    {
+      "round": "R32",
+      "slot": 11,
+      "p1_id": "etcheverry",
+      "p2_id": "navone",
+      "winner_id": "etcheverry",
+      "score_line": "6-4 6-4 6-3"
+    },
+    {
+      "round": "R32",
+      "slot": 12,
+      "p1_id": "shelton",
+      "p2_id": "shapovalov",
+      "winner_id": "shelton",
+      "score_line": "7-6 6-7 6-3 6-4"
+    },
+    {
+      "round": "R32",
+      "slot": 13,
+      "p1_id": "lehecka",
+      "p2_id": "tsitsipas",
+      "winner_id": "tsitsipas",
+      "score_line": "2-6 6-1 7-6 6-1"
+    },
+    {
+      "round": "R32",
+      "slot": 14,
+      "p1_id": "bublik",
+      "p2_id": "paul",
+      "winner_id": "paul",
+      "score_line": "6-4 3-6 6-7 6-1 6-3"
+    },
+    {
+      "round": "R32",
+      "slot": 15,
+      "p1_id": "wu",
+      "p2_id": "alcaraz",
+      "winner_id": "alcaraz",
+      "score_line": "6-3 6-4 6-1"
+    },
+    {
+      "round": "R64",
+      "slot": 0,
+      "p1_id": "zverev",
+      "p2_id": "halys",
+      "winner_id": "zverev",
+      "score_line": "6-4 4-6 7-6 6-7 6-3"
+    },
+    {
+      "round": "R64",
+      "slot": 1,
+      "p1_id": "popyrin",
+      "p2_id": "tabilo",
+      "winner_id": "tabilo",
+      "score_line": "2-6 7-6 7-6 6-2"
+    },
+    {
+      "round": "R64",
+      "slot": 2,
+      "p1_id": "darderi",
+      "p2_id": "svrcina",
+      "winner_id": "darderi",
+      "score_line": "6-3 6-7 6-4 6-4"
+    },
+    {
+      "round": "R64",
+      "slot": 3,
+      "p1_id": "sweeny",
+      "p2_id": "musetti",
+      "winner_id": "sweeny",
+      "score_line": "3-6 6-1 6-2 6-2"
+    },
+    {
+      "round": "R64",
+      "slot": 4,
+      "p1_id": "x_bu_yunchaokete",
+      "p2_id": "zheng",
+      "winner_id": "zheng",
+      "score_line": "6-3 2-6 6-2 6-3"
+    },
+    {
+      "round": "R64",
+      "slot": 5,
+      "p1_id": "svajda",
+      "p2_id": "gea",
+      "winner_id": "gea",
+      "score_line": "5-7 6-3 6-2 6-2"
+    },
+    {
+      "round": "R64",
+      "slot": 6,
+      "p1_id": "bergs",
+      "p2_id": "jong",
+      "winner_id": "bergs",
+      "score_line": "7-5 1-6 6-2 7-6"
+    },
+    {
+      "round": "R64",
+      "slot": 7,
+      "p1_id": "zandschulp",
+      "p2_id": "deminaur",
+      "winner_id": "zandschulp",
+      "score_line": "6-4 7-5 6-2"
+    },
+    {
+      "round": "R64",
+      "slot": 8,
+      "p1_id": "augeraliassime",
+      "p2_id": "khachanov",
+      "winner_id": "khachanov",
+      "score_line": "6-7 6-3 6-2 6-2"
+    },
+    {
+      "round": "R64",
+      "slot": 9,
+      "p1_id": "bonzi",
+      "p2_id": "buse",
+      "winner_id": "bonzi",
+      "score_line": "6-2 7-6 6-0"
+    },
+    {
+      "round": "R64",
+      "slot": 10,
+      "p1_id": "mensik",
+      "p2_id": "rodionov",
+      "winner_id": "mensik",
+      "score_line": "6-3 3-6 6-2 6-3"
+    },
+    {
+      "round": "R64",
+      "slot": 11,
+      "p1_id": "monfils",
+      "p2_id": "tien",
+      "winner_id": "tien",
+      "score_line": "6-3 6-4 6-3"
+    },
+    {
+      "round": "R64",
+      "slot": 12,
+      "p1_id": "fritz",
+      "p2_id": "bellucci",
+      "winner_id": "fritz",
+      "score_line": "6-0 6-1 6-1"
+    },
+    {
+      "round": "R64",
+      "slot": 13,
+      "p1_id": "struff",
+      "p2_id": "franciscocerundolo",
+      "winner_id": "franciscocerundolo",
+      "score_line": "5-7 7-5 4-6 6-2 6-3"
+    },
+    {
+      "round": "R64",
+      "slot": 14,
+      "p1_id": "blockx",
+      "p2_id": "trungelliti",
+      "winner_id": "blockx",
+      "score_line": "6-3 6-2 3-6 6-1"
+    },
+    {
+      "round": "R64",
+      "slot": 15,
+      "p1_id": "schoolkate",
+      "p2_id": "cobolli",
+      "winner_id": "cobolli",
+      "score_line": "3-6 6-3 6-4 7-5"
+    },
+    {
+      "round": "R64",
+      "slot": 16,
+      "p1_id": "medvedev",
+      "p2_id": "gorzny",
+      "winner_id": "medvedev",
+      "score_line": "6-1 6-3 7-5"
+    },
+    {
+      "round": "R64",
+      "slot": 17,
+      "p1_id": "munar",
+      "p2_id": "rinderknech",
+      "winner_id": "rinderknech",
+      "score_line": "7-6 6-2 7-5"
+    },
+    {
+      "round": "R64",
+      "slot": 18,
+      "p1_id": "vacherot",
+      "p2_id": "majchrzak",
+      "winner_id": "vacherot",
+      "score_line": "6-4 4-6 7-6 6-2"
+    },
+    {
+      "round": "R64",
+      "slot": 19,
+      "p1_id": "sakamoto",
+      "p2_id": "tiafoe",
+      "winner_id": "tiafoe",
+      "score_line": "6-3 7-6 7-5"
+    },
+    {
+      "round": "R64",
+      "slot": 20,
+      "p1_id": "nakashima",
+      "p2_id": "michelsen",
+      "winner_id": "michelsen",
+      "score_line": "6-3 6-4 6-4"
+    },
+    {
+      "round": "R64",
+      "slot": 21,
+      "p1_id": "merida",
+      "p2_id": "rublev",
+      "winner_id": "merida",
+      "score_line": "6-7 6-2 6-4 6-4"
+    },
+    {
+      "round": "R64",
+      "slot": 22,
+      "p1_id": "etcheverry",
+      "p2_id": "fearnley",
+      "winner_id": "etcheverry",
+      "score_line": "6-3 6-3 3-6 6-3"
+    },
+    {
+      "round": "R64",
+      "slot": 23,
+      "p1_id": "berrettini",
+      "p2_id": "navone",
+      "winner_id": "navone",
+      "score_line": "3-6 6-3 6-4 7-6"
+    },
+    {
+      "round": "R64",
+      "slot": 24,
+      "p1_id": "shelton",
+      "p2_id": "hurkacz",
+      "winner_id": "shelton",
+      "score_line": "6-3 5-7 7-6 7-5"
+    },
+    {
+      "round": "R64",
+      "slot": 25,
+      "p1_id": "shapovalov",
+      "p2_id": "assche",
+      "winner_id": "shapovalov",
+      "score_line": "6-0 6-4 7-6"
+    },
+    {
+      "round": "R64",
+      "slot": 26,
+      "p1_id": "lehecka",
+      "p2_id": "samuel",
+      "winner_id": "lehecka",
+      "score_line": "6-4 6-2 6-4"
+    },
+    {
+      "round": "R64",
+      "slot": 27,
+      "p1_id": "lloydharris",
+      "p2_id": "tsitsipas",
+      "winner_id": "tsitsipas",
+      "score_line": "6-7 6-3 7-6 6-3"
+    },
+    {
+      "round": "R64",
+      "slot": 28,
+      "p1_id": "bublik",
+      "p2_id": "mannarino",
+      "winner_id": "bublik",
+      "score_line": "6-3 6-1 6-1"
+    },
+    {
+      "round": "R64",
+      "slot": 29,
+      "p1_id": "prizmic",
+      "p2_id": "paul",
+      "winner_id": "paul",
+      "score_line": "6-2 6-3 5-7 6-4"
+    },
+    {
+      "round": "R64",
+      "slot": 30,
+      "p1_id": "duckworth",
+      "p2_id": "wu",
+      "winner_id": "wu",
+      "score_line": "7-5 6-3 6-1"
+    },
+    {
+      "round": "R64",
+      "slot": 31,
+      "p1_id": "faria",
+      "p2_id": "alcaraz",
+      "winner_id": "alcaraz",
+      "score_line": "4-6 6-0 6-3 6-2"
+    },
+    {
+      "round": "SF",
+      "slot": 0,
+      "p1_id": "zverev",
+      "p2_id": "khachanov",
+      "winner_id": "zverev",
+      "score_line": "6-3 7-6 7-6"
+    },
+    {
+      "round": "SF",
+      "slot": 1,
+      "p1_id": "tiafoe",
+      "p2_id": "shelton",
+      "winner_id": "shelton",
+      "score_line": "4-6 6-3 6-3 7-5"
+    }
+  ],
+  "player_stats": [
+    {
+      "id": "acosta",
+      "ranking": 82,
+      "price": 7,
+      "tier": "Silver"
+    },
+    {
+      "id": "alcaraz",
+      "ranking": 3,
+      "price": 50,
+      "tier": "Platinum"
+    },
+    {
+      "id": "altmaier",
+      "ranking": 57,
+      "price": 6,
+      "tier": "Silver"
+    },
+    {
+      "id": "arnaldi",
+      "ranking": 34,
+      "price": 9,
+      "tier": "Silver"
+    },
+    {
+      "id": "assche",
+      "ranking": 40,
+      "price": 8,
+      "tier": "Silver"
+    },
+    {
+      "id": "atmane",
+      "ranking": 90,
+      "price": 7,
+      "tier": "Silver"
+    },
+    {
+      "id": "augeraliassime",
+      "ranking": 4,
+      "price": 39,
+      "tier": "Platinum"
+    },
+    {
+      "id": "baez",
+      "ranking": 50,
+      "price": 10,
+      "tier": "Silver"
+    },
+    {
+      "id": "basavareddy",
+      "ranking": 146,
+      "price": 5,
+      "tier": "Silver"
+    },
+    {
+      "id": "bellucci",
+      "ranking": 96,
+      "price": 6,
+      "tier": "Silver"
+    },
+    {
+      "id": "bergs",
+      "ranking": 35,
+      "price": 10,
+      "tier": "Silver"
+    },
+    {
+      "id": "berrettini",
+      "ranking": 43,
+      "price": 10,
+      "tier": "Silver"
+    },
+    {
+      "id": "blanch",
+      "ranking": 225,
+      "price": 4,
+      "tier": "Silver"
+    },
+    {
+      "id": "blockx",
+      "ranking": 32,
+      "price": 11,
+      "tier": "Silver"
+    },
+    {
+      "id": "bonzi",
+      "ranking": 103,
+      "price": 6,
+      "tier": "Silver"
+    },
+    {
+      "id": "borges",
+      "ranking": 41,
+      "price": 11,
+      "tier": "Silver"
+    },
+    {
+      "id": "brooksby",
+      "ranking": 73,
+      "price": 6,
+      "tier": "Silver"
+    },
+    {
+      "id": "bublik",
+      "ranking": 16,
+      "price": 19,
+      "tier": "Gold"
+    },
+    {
+      "id": "burruchaga",
+      "ranking": 59,
+      "price": 7,
+      "tier": "Silver"
+    },
+    {
+      "id": "buse",
+      "ranking": 36,
+      "price": 11,
+      "tier": "Silver"
+    },
+    {
+      "id": "busta",
+      "ranking": 66,
+      "price": 8,
+      "tier": "Silver"
+    },
+    {
+      "id": "carabelli",
+      "ranking": 76,
+      "price": 6,
+      "tier": "Silver"
+    },
+    {
+      "id": "cerundolo",
+      "ranking": 51,
+      "price": 9,
+      "tier": "Silver"
+    },
+    {
+      "id": "choinski",
+      "ranking": 75,
+      "price": 7,
+      "tier": "Silver"
+    },
+    {
+      "id": "cilic",
+      "ranking": 81,
+      "price": 7,
+      "tier": "Silver"
+    },
+    {
+      "id": "cina",
+      "ranking": 184,
+      "price": 5,
+      "tier": "Silver"
+    },
+    {
+      "id": "cobolli",
+      "ranking": 6,
+      "price": 29,
+      "tier": "Platinum"
+    },
+    {
+      "id": "collignon",
+      "ranking": 38,
+      "price": 11,
+      "tier": "Silver"
+    },
+    {
+      "id": "comesana",
+      "ranking": 109,
+      "price": 5,
+      "tier": "Silver"
+    },
+    {
+      "id": "damm",
+      "ranking": 92,
+      "price": 7,
+      "tier": "Silver"
+    },
+    {
+      "id": "darderi",
+      "ranking": 22,
+      "price": 15,
+      "tier": "Gold"
+    },
+    {
+      "id": "deminaur",
+      "ranking": 7,
+      "price": 29,
+      "tier": "Platinum"
+    },
+    {
+      "id": "dimitrov",
+      "ranking": 142,
+      "price": 4,
+      "tier": "Silver"
+    },
+    {
+      "id": "djokovic",
+      "ranking": 5,
+      "price": 35,
+      "tier": "Platinum"
+    },
+    {
+      "id": "duckworth",
+      "ranking": 79,
+      "price": 6,
+      "tier": "Silver"
+    },
+    {
+      "id": "dzumhur",
+      "ranking": 105,
+      "price": 5,
+      "tier": "Silver"
+    },
+    {
+      "id": "etcheverry",
+      "ranking": 31,
+      "price": 12,
+      "tier": "Silver"
+    },
+    {
+      "id": "faria",
+      "ranking": 70,
+      "price": 9,
+      "tier": "Silver"
+    },
+    {
+      "id": "fearnley",
+      "ranking": 100,
+      "price": 5,
+      "tier": "Silver"
+    },
+    {
+      "id": "fery",
+      "ranking": 37,
+      "price": 12,
+      "tier": "Silver"
+    },
+    {
+      "id": "fils",
+      "ranking": 11,
+      "price": 27,
+      "tier": "Gold"
+    },
+    {
+      "id": "franciscocerundolo",
+      "ranking": 25,
+      "price": 15,
+      "tier": "Gold"
+    },
+    {
+      "id": "fritz",
+      "ranking": 10,
+      "price": 24,
+      "tier": "Platinum"
+    },
+    {
+      "id": "fucsovics",
+      "ranking": 101,
+      "price": 5,
+      "tier": "Silver"
+    },
+    {
+      "id": "gaston",
+      "ranking": 88,
+      "price": 5,
+      "tier": "Silver"
+    },
+    {
+      "id": "gea",
+      "ranking": 86,
+      "price": 8,
+      "tier": "Silver"
+    },
+    {
+      "id": "giron",
+      "ranking": 77,
+      "price": 7,
+      "tier": "Silver"
+    },
+    {
+      "id": "gorzny",
+      "ranking": 500,
+      "price": 4,
+      "tier": "Silver"
+    },
+    {
+      "id": "griekspoor",
+      "ranking": 56,
+      "price": 9,
+      "tier": "Silver"
+    },
+    {
+      "id": "guerrieri",
+      "ranking": 213,
+      "price": 5,
+      "tier": "Silver"
+    },
+    {
+      "id": "halys",
+      "ranking": 52,
+      "price": 11,
+      "tier": "Silver"
+    },
+    {
+      "id": "hanfmann",
+      "ranking": 54,
+      "price": 9,
+      "tier": "Silver"
+    },
+    {
+      "id": "hijikata",
+      "ranking": 85,
+      "price": 8,
+      "tier": "Silver"
+    },
+    {
+      "id": "hurkacz",
+      "ranking": 46,
+      "price": 8,
+      "tier": "Silver"
+    },
+    {
+      "id": "jodar",
+      "ranking": 13,
+      "price": 23,
+      "tier": "Gold"
+    },
+    {
+      "id": "jong",
+      "ranking": 99,
+      "price": 4,
+      "tier": "Silver"
+    },
+    {
+      "id": "kecmanovic",
+      "ranking": 64,
+      "price": 7,
+      "tier": "Silver"
+    },
+    {
+      "id": "kennedy",
+      "ranking": 500,
+      "price": 4,
+      "tier": "Silver"
+    },
+    {
+      "id": "khachanov",
+      "ranking": 49,
+      "price": 9,
+      "tier": "Silver"
+    },
+    {
+      "id": "kokkinakis",
+      "ranking": 443,
+      "price": 4,
+      "tier": "Silver"
+    },
+    {
+      "id": "kopriva",
+      "ranking": 69,
+      "price": 8,
+      "tier": "Silver"
+    },
+    {
+      "id": "kovacevic",
+      "ranking": 89,
+      "price": 6,
+      "tier": "Silver"
+    },
+    {
+      "id": "landaluce",
+      "ranking": 65,
+      "price": 9,
+      "tier": "Silver"
+    },
+    {
+      "id": "lehecka",
+      "ranking": 19,
+      "price": 16,
+      "tier": "Gold"
+    },
+    {
+      "id": "lloydharris",
+      "ranking": 186,
+      "price": 5,
+      "tier": "Silver"
+    },
+    {
+      "id": "machac",
+      "ranking": 58,
+      "price": 9,
+      "tier": "Silver"
+    },
+    {
+      "id": "majchrzak",
+      "ranking": 72,
+      "price": 8,
+      "tier": "Silver"
+    },
+    {
+      "id": "mannarino",
+      "ranking": 67,
+      "price": 6,
+      "tier": "Silver"
+    },
+    {
+      "id": "marozsan",
+      "ranking": 63,
+      "price": 8,
+      "tier": "Silver"
+    },
+    {
+      "id": "medjedovic",
+      "ranking": 78,
+      "price": 8,
+      "tier": "Silver"
+    },
+    {
+      "id": "medvedev",
+      "ranking": 8,
+      "price": 30,
+      "tier": "Platinum"
+    },
+    {
+      "id": "mensik",
+      "ranking": 18,
+      "price": 19,
+      "tier": "Gold"
+    },
+    {
+      "id": "merida",
+      "ranking": 39,
+      "price": 13,
+      "tier": "Silver"
+    },
+    {
+      "id": "michelsen",
+      "ranking": 45,
+      "price": 11,
+      "tier": "Silver"
+    },
+    {
+      "id": "misolic",
+      "ranking": 350,
+      "price": 4,
+      "tier": "Silver"
+    },
+    {
+      "id": "mochizuki",
+      "ranking": 118,
+      "price": 4,
+      "tier": "Silver"
+    },
+    {
+      "id": "molcan",
+      "ranking": 84,
+      "price": 10,
+      "tier": "Silver"
+    },
+    {
+      "id": "monfils",
+      "ranking": 327,
+      "price": 4,
+      "tier": "Silver"
+    },
+    {
+      "id": "moutet",
+      "ranking": 62,
+      "price": 6,
+      "tier": "Silver"
+    },
+    {
+      "id": "munar",
+      "ranking": 55,
+      "price": 9,
+      "tier": "Silver"
+    },
+    {
+      "id": "musetti",
+      "ranking": 14,
+      "price": 20,
+      "tier": "Gold"
+    },
+    {
+      "id": "nakashima",
+      "ranking": 17,
+      "price": 18,
+      "tier": "Gold"
+    },
+    {
+      "id": "navone",
+      "ranking": 48,
+      "price": 8,
+      "tier": "Silver"
+    },
+    {
+      "id": "norrie",
+      "ranking": 33,
+      "price": 12,
+      "tier": "Silver"
+    },
+    {
+      "id": "passaro",
+      "ranking": 200,
+      "price": 5,
+      "tier": "Silver"
+    },
+    {
+      "id": "paul",
+      "ranking": 21,
+      "price": 18,
+      "tier": "Gold"
+    },
+    {
+      "id": "perricard",
+      "ranking": 102,
+      "price": 6,
+      "tier": "Silver"
+    },
+    {
+      "id": "piros",
+      "ranking": 121,
+      "price": 6,
+      "tier": "Silver"
+    },
+    {
+      "id": "popyrin",
+      "ranking": 110,
+      "price": 5,
+      "tier": "Silver"
+    },
+    {
+      "id": "prizmic",
+      "ranking": 106,
+      "price": 7,
+      "tier": "Silver"
+    },
+    {
+      "id": "rinderknech",
+      "ranking": 29,
+      "price": 10,
+      "tier": "Silver"
+    },
+    {
+      "id": "rodionov",
+      "ranking": 145,
+      "price": 5,
+      "tier": "Silver"
+    },
+    {
+      "id": "royer",
+      "ranking": 74,
+      "price": 4,
+      "tier": "Silver"
+    },
+    {
+      "id": "rublev",
+      "ranking": 24,
+      "price": 15,
+      "tier": "Gold"
+    },
+    {
+      "id": "ruud",
+      "ranking": 20,
+      "price": 15,
+      "tier": "Gold"
+    },
+    {
+      "id": "safiullin",
+      "ranking": 98,
+      "price": 7,
+      "tier": "Silver"
+    },
+    {
+      "id": "sakamoto",
+      "ranking": 165,
+      "price": 4,
+      "tier": "Silver"
+    },
+    {
+      "id": "samuel",
+      "ranking": 128,
+      "price": 5,
+      "tier": "Silver"
+    },
+    {
+      "id": "schoolkate",
+      "ranking": 160,
+      "price": 4,
+      "tier": "Silver"
+    },
+    {
+      "id": "shang",
+      "ranking": 270,
+      "price": 4,
+      "tier": "Silver"
+    },
+    {
+      "id": "shapovalov",
+      "ranking": 47,
+      "price": 9,
+      "tier": "Silver"
+    },
+    {
+      "id": "shelton",
+      "ranking": 9,
+      "price": 30,
+      "tier": "Platinum"
+    },
+    {
+      "id": "shevchenko",
+      "ranking": 97,
+      "price": 7,
+      "tier": "Silver"
+    },
+    {
+      "id": "shimabukuro",
+      "ranking": 87,
+      "price": 8,
+      "tier": "Silver"
+    },
+    {
+      "id": "sonego",
+      "ranking": 91,
+      "price": 6,
+      "tier": "Silver"
+    },
+    {
+      "id": "struff",
+      "ranking": 44,
+      "price": 8,
+      "tier": "Silver"
+    },
+    {
+      "id": "svajda",
+      "ranking": 80,
+      "price": 7,
+      "tier": "Silver"
+    },
+    {
+      "id": "svrcina",
+      "ranking": 117,
+      "price": 6,
+      "tier": "Silver"
+    },
+    {
+      "id": "sweeny",
+      "ranking": 123,
+      "price": 5,
+      "tier": "Silver"
+    },
+    {
+      "id": "taberner",
+      "ranking": 202,
+      "price": 5,
+      "tier": "Silver"
+    },
+    {
+      "id": "tabilo",
+      "ranking": 28,
+      "price": 12,
+      "tier": "Silver"
+    },
+    {
+      "id": "tiafoe",
+      "ranking": 12,
+      "price": 24,
+      "tier": "Gold"
+    },
+    {
+      "id": "tien",
+      "ranking": 15,
+      "price": 20,
+      "tier": "Gold"
+    },
+    {
+      "id": "tirante",
+      "ranking": 42,
+      "price": 11,
+      "tier": "Silver"
+    },
+    {
+      "id": "trungelliti",
+      "ranking": 83,
+      "price": 7,
+      "tier": "Silver"
+    },
+    {
+      "id": "tsitsipas",
+      "ranking": 53,
+      "price": 9,
+      "tier": "Silver"
+    },
+    {
+      "id": "vacherot",
+      "ranking": 23,
+      "price": 13,
+      "tier": "Gold"
+    },
+    {
+      "id": "vallejo",
+      "ranking": 61,
+      "price": 8,
+      "tier": "Silver"
+    },
+    {
+      "id": "vera",
+      "ranking": 139,
+      "price": 5,
+      "tier": "Silver"
+    },
+    {
+      "id": "vukic",
+      "ranking": 95,
+      "price": 6,
+      "tier": "Silver"
+    },
+    {
+      "id": "walton",
+      "ranking": 93,
+      "price": 6,
+      "tier": "Silver"
+    },
+    {
+      "id": "wawrinka",
+      "ranking": 120,
+      "price": 6,
+      "tier": "Silver"
+    },
+    {
+      "id": "wendelken",
+      "ranking": 204,
+      "price": 5,
+      "tier": "Silver"
+    },
+    {
+      "id": "wolf",
+      "ranking": 688,
+      "price": 4,
+      "tier": "Silver"
+    },
+    {
+      "id": "wong",
+      "ranking": 94,
+      "price": 7,
+      "tier": "Silver"
+    },
+    {
+      "id": "wu",
+      "ranking": 111,
+      "price": 6,
+      "tier": "Silver"
+    },
+    {
+      "id": "x_bu_yunchaokete",
+      "ranking": 113,
+      "price": 5,
+      "tier": "Silver"
+    },
+    {
+      "id": "x_otto_virtanen",
+      "ranking": 109,
+      "price": 5,
+      "tier": "Silver"
+    },
+    {
+      "id": "zandschulp",
+      "ranking": 71,
+      "price": 8,
+      "tier": "Silver"
+    },
+    {
+      "id": "zheng",
+      "ranking": 122,
+      "price": 6,
+      "tier": "Silver"
+    },
+    {
+      "id": "zverev",
+      "ranking": 2,
+      "price": 50,
+      "tier": "Platinum"
+    }
+  ],
+  "entries": [
+    {
+      "user_id": "088650a5-44e4-4caf-a5be-d83641e930ab",
+      "score": 143,
+      "state": {
+        "phase": "pre_round",
+        "budget": 22.6,
+        "myTeam": [
+          "shelton",
+          "zverev"
+        ],
+        "captain": "shelton",
+        "cashedIn": [
+          "fils",
+          "royer",
+          "walton",
+          "perricard",
+          "jodar",
+          "nakashima",
+          "berrettini",
+          "svajda",
+          "jong",
+          "fritz",
+          "mensik"
+        ],
+        "transfers": [
+          {
+            "in": "nakashima",
+            "out": "fils",
+            "round": "R128"
+          },
+          {
+            "in": "berrettini",
+            "out": "walton",
+            "round": "R128"
+          },
+          {
+            "in": "zverev",
+            "out": "fritz",
+            "round": "R32"
+          }
+        ],
+        "viceCaptain": "zverev",
+        "initialSquad": [
+          "shelton",
+          "fritz",
+          "fils",
+          "jodar",
+          "mensik",
+          "walton",
+          "perricard",
+          "svajda",
+          "royer",
+          "jong"
+        ],
+        "captainHistory": [
+          {
+            "round": "R128",
+            "playerId": "fils"
+          },
+          {
+            "round": "R64",
+            "playerId": "shelton"
+          },
+          {
+            "round": "R32",
+            "playerId": "shelton"
+          },
+          {
+            "round": "R16",
+            "playerId": "zverev"
+          },
+          {
+            "round": "F",
+            "playerId": "shelton"
+          }
+        ],
+        "viceCaptainHistory": [
+          {
+            "round": "R128",
+            "playerId": "shelton"
+          },
+          {
+            "round": "R64",
+            "playerId": "mensik"
+          },
+          {
+            "round": "R32",
+            "playerId": "fritz"
+          },
+          {
+            "round": "R16",
+            "playerId": "shelton"
+          },
+          {
+            "round": "F",
+            "playerId": "zverev"
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "0f7892be-a038-494c-ab5a-e4484c221ec7",
+      "score": 132.5,
+      "state": {
+        "phase": "pre_round",
+        "budget": 30.9,
+        "myTeam": [
+          "zverev"
+        ],
+        "captain": "zverev",
+        "cashedIn": [
+          "comesana",
+          "fils",
+          "kovacevic",
+          "wawrinka",
+          "jong",
+          "monfils",
+          "rublev",
+          "jodar",
+          "cobolli",
+          "sweeny",
+          "medvedev",
+          "tsitsipas",
+          "michelsen"
+        ],
+        "transfers": [
+          {
+            "in": "tsitsipas",
+            "out": "fils",
+            "round": "R128"
+          },
+          {
+            "in": "michelsen",
+            "out": "rublev",
+            "round": "R64"
+          },
+          {
+            "in": "zverev",
+            "out": "cobolli",
+            "round": "R32"
+          }
+        ],
+        "viceCaptain": "michelsen",
+        "initialSquad": [
+          "medvedev",
+          "fils",
+          "cobolli",
+          "rublev",
+          "wawrinka",
+          "jodar",
+          "kovacevic",
+          "jong",
+          "monfils",
+          "sweeny"
+        ],
+        "captainHistory": [
+          {
+            "round": "R128",
+            "playerId": "jodar"
+          },
+          {
+            "round": "R64",
+            "playerId": "jodar"
+          },
+          {
+            "round": "R32",
+            "playerId": "cobolli"
+          },
+          {
+            "round": "R16",
+            "playerId": "zverev"
+          },
+          {
+            "round": "QF",
+            "playerId": "zverev"
+          },
+          {
+            "round": "SF",
+            "playerId": "zverev"
+          }
+        ],
+        "viceCaptainHistory": [
+          {
+            "round": "R128",
+            "playerId": "monfils"
+          },
+          {
+            "round": "R64",
+            "playerId": "medvedev"
+          },
+          {
+            "round": "R32",
+            "playerId": "medvedev"
+          },
+          {
+            "round": "R16",
+            "playerId": "medvedev"
+          },
+          {
+            "round": "QF",
+            "playerId": "michelsen"
+          },
+          {
+            "round": "SF",
+            "playerId": "michelsen"
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "2ed9095d-47bc-449c-a715-53d1725418fa",
+      "score": 12.5,
+      "state": {
+        "phase": "pre_round",
+        "budget": 0,
+        "myTeam": [
+          "djokovic",
+          "cobolli",
+          "fils",
+          "nakashima",
+          "vacherot",
+          "cerundolo",
+          "moutet",
+          "popyrin",
+          "dimitrov",
+          "monfils"
+        ],
+        "captain": "cobolli",
+        "cashedIn": [],
+        "transfers": [],
+        "viceCaptain": "nakashima",
+        "initialSquad": [
+          "djokovic",
+          "cobolli",
+          "fils",
+          "nakashima",
+          "vacherot",
+          "cerundolo",
+          "moutet",
+          "popyrin",
+          "dimitrov",
+          "monfils"
+        ],
+        "captainHistory": [
+          {
+            "round": "R128",
+            "playerId": "fils"
+          },
+          {
+            "round": "R64",
+            "playerId": "cobolli"
+          }
+        ],
+        "viceCaptainHistory": [
+          {
+            "round": "R128",
+            "playerId": "cobolli"
+          },
+          {
+            "round": "R64",
+            "playerId": "nakashima"
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "32828145-58a2-404e-bf7e-d82bb179fb24",
+      "score": 68.5,
+      "state": {
+        "phase": "pre_round",
+        "budget": 15.9,
+        "myTeam": [
+          "tiafoe",
+          "shelton"
+        ],
+        "captain": "tiafoe",
+        "cashedIn": [
+          "cobolli",
+          "jodar",
+          "vacherot",
+          "rublev",
+          "jong",
+          "blanch",
+          "shang",
+          "kennedy",
+          "gorzny",
+          "alcaraz",
+          "blockx"
+        ],
+        "transfers": [
+          {
+            "in": "tiafoe",
+            "out": "cobolli",
+            "round": "R16"
+          },
+          {
+            "in": "shelton",
+            "out": "jodar",
+            "round": "R16"
+          },
+          {
+            "in": "blockx",
+            "out": "rublev",
+            "round": "R16"
+          }
+        ],
+        "viceCaptain": "shelton",
+        "initialSquad": [
+          "alcaraz",
+          "cobolli",
+          "jodar",
+          "rublev",
+          "jong",
+          "kennedy",
+          "blanch",
+          "gorzny",
+          "vacherot",
+          "shang"
+        ],
+        "captainHistory": [
+          {
+            "round": "R128",
+            "playerId": "alcaraz"
+          },
+          {
+            "round": "QF",
+            "playerId": "alcaraz"
+          },
+          {
+            "round": "SF",
+            "playerId": "tiafoe"
+          }
+        ],
+        "viceCaptainHistory": [
+          {
+            "round": "R128",
+            "playerId": "jodar"
+          },
+          {
+            "round": "QF",
+            "playerId": null
+          },
+          {
+            "round": "SF",
+            "playerId": "shelton"
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "45576f33-e1ca-47ea-94a4-3d0deb771ba7",
+      "score": 118,
+      "state": {
+        "phase": "pre_round",
+        "budget": 15.1,
+        "myTeam": [
+          "shelton",
+          "fritz",
+          "khachanov",
+          "paul",
+          "tiafoe"
+        ],
+        "captain": "shelton",
+        "cashedIn": [
+          "fils",
+          "wolf",
+          "ruud",
+          "comesana",
+          "jodar",
+          "musetti",
+          "nakashima",
+          "munar",
+          "monfils"
+        ],
+        "transfers": [
+          {
+            "in": "musetti",
+            "out": "ruud",
+            "round": "R128"
+          },
+          {
+            "in": "nakashima",
+            "out": "fils",
+            "round": "R128"
+          },
+          {
+            "in": "paul",
+            "out": "nakashima",
+            "round": "R64"
+          },
+          {
+            "in": "tiafoe",
+            "out": "jodar",
+            "round": "R64"
+          }
+        ],
+        "viceCaptain": "fritz",
+        "initialSquad": [
+          "shelton",
+          "fritz",
+          "fils",
+          "jodar",
+          "munar",
+          "khachanov",
+          "wolf",
+          "monfils",
+          "ruud",
+          "comesana"
+        ],
+        "captainHistory": [
+          {
+            "round": "R128",
+            "playerId": "fils"
+          },
+          {
+            "round": "R64",
+            "playerId": "shelton"
+          },
+          {
+            "round": "R32",
+            "playerId": "shelton"
+          }
+        ],
+        "viceCaptainHistory": [
+          {
+            "round": "R128",
+            "playerId": "ruud"
+          },
+          {
+            "round": "R64",
+            "playerId": "fritz"
+          },
+          {
+            "round": "R32",
+            "playerId": "fritz"
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "49b012ea-3c50-4fcd-a18b-59122e2b9db3",
+      "score": 11,
+      "state": {
+        "phase": "pre_round",
+        "budget": 0,
+        "myTeam": [
+          "djokovic",
+          "cobolli",
+          "fils",
+          "musetti",
+          "vacherot",
+          "berrettini",
+          "royer",
+          "jong",
+          "mochizuki",
+          "dimitrov"
+        ],
+        "captain": "cobolli",
+        "cashedIn": [],
+        "transfers": [],
+        "viceCaptain": "musetti",
+        "initialSquad": [
+          "djokovic",
+          "cobolli",
+          "fils",
+          "musetti",
+          "vacherot",
+          "berrettini",
+          "royer",
+          "jong",
+          "mochizuki",
+          "dimitrov"
+        ],
+        "captainHistory": [
+          {
+            "round": "R64",
+            "playerId": "cobolli"
+          }
+        ],
+        "viceCaptainHistory": [
+          {
+            "round": "R64",
+            "playerId": "musetti"
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "4a198920-33d2-480a-80ea-653ec9356996",
+      "score": 64.5,
+      "state": {
+        "phase": "pre_round",
+        "budget": 36.3,
+        "myTeam": [
+          "khachanov"
+        ],
+        "captain": "khachanov",
+        "cashedIn": [
+          "shelton",
+          "rublev",
+          "nakashima",
+          "wawrinka",
+          "shang",
+          "kokkinakis",
+          "jodar",
+          "fritz",
+          "mensik",
+          "lehecka",
+          "vacherot",
+          "zheng",
+          "monfils",
+          "gea",
+          "medvedev",
+          "alcaraz"
+        ],
+        "transfers": [
+          {
+            "in": "mensik",
+            "out": "kokkinakis",
+            "round": "R64"
+          },
+          {
+            "in": "khachanov",
+            "out": "wawrinka",
+            "round": "R64"
+          },
+          {
+            "in": "medvedev",
+            "out": "shang",
+            "round": "R32"
+          },
+          {
+            "in": "gea",
+            "out": "zheng",
+            "round": "R32"
+          }
+        ],
+        "viceCaptain": null,
+        "initialSquad": [
+          "alcaraz",
+          "wawrinka",
+          "shang",
+          "zheng",
+          "monfils",
+          "kokkinakis",
+          "jodar",
+          "fritz",
+          "lehecka",
+          "vacherot"
+        ],
+        "captainHistory": [
+          {
+            "round": "R128",
+            "playerId": "alcaraz"
+          },
+          {
+            "round": "R64",
+            "playerId": "alcaraz"
+          },
+          {
+            "round": "R32",
+            "playerId": "alcaraz"
+          },
+          {
+            "round": "R16",
+            "playerId": "alcaraz"
+          },
+          {
+            "round": "QF",
+            "playerId": "alcaraz"
+          },
+          {
+            "round": "SF",
+            "playerId": "khachanov"
+          }
+        ],
+        "viceCaptainHistory": [
+          {
+            "round": "R128",
+            "playerId": "jodar"
+          },
+          {
+            "round": "R64",
+            "playerId": "jodar"
+          },
+          {
+            "round": "R32",
+            "playerId": null
+          },
+          {
+            "round": "R16",
+            "playerId": "medvedev"
+          },
+          {
+            "round": "QF",
+            "playerId": "khachanov"
+          },
+          {
+            "round": "SF",
+            "playerId": null
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "51face7f-b380-4537-bb14-db16443f97a2",
+      "score": 102,
+      "state": {
+        "phase": "pre_round",
+        "budget": 9.2,
+        "myTeam": [
+          "shelton",
+          "alcaraz",
+          "khachanov"
+        ],
+        "captain": "shelton",
+        "cashedIn": [
+          "cilic",
+          "atmane",
+          "wawrinka",
+          "jodar",
+          "rublev",
+          "prizmic",
+          "cobolli",
+          "bublik",
+          "mensik",
+          "navone",
+          "zheng"
+        ],
+        "transfers": [
+          {
+            "in": "navone",
+            "out": "cilic",
+            "round": "R128"
+          },
+          {
+            "in": "bublik",
+            "out": "prizmic",
+            "round": "R64"
+          },
+          {
+            "in": "alcaraz",
+            "out": "zheng",
+            "round": "R32"
+          },
+          {
+            "in": "khachanov",
+            "out": "bublik",
+            "round": "R32"
+          }
+        ],
+        "viceCaptain": "khachanov",
+        "initialSquad": [
+          "zheng",
+          "prizmic",
+          "atmane",
+          "cilic",
+          "shelton",
+          "mensik",
+          "jodar",
+          "cobolli",
+          "rublev",
+          "wawrinka"
+        ],
+        "captainHistory": [
+          {
+            "round": "R128",
+            "playerId": "cobolli"
+          },
+          {
+            "round": "R64",
+            "playerId": "cobolli"
+          },
+          {
+            "round": "R32",
+            "playerId": "cobolli"
+          },
+          {
+            "round": "R16",
+            "playerId": "alcaraz"
+          },
+          {
+            "round": "SF",
+            "playerId": "shelton"
+          }
+        ],
+        "viceCaptainHistory": [
+          {
+            "round": "R128",
+            "playerId": "shelton"
+          },
+          {
+            "round": "R64",
+            "playerId": "shelton"
+          },
+          {
+            "round": "R32",
+            "playerId": "shelton"
+          },
+          {
+            "round": "R16",
+            "playerId": "shelton"
+          },
+          {
+            "round": "SF",
+            "playerId": "khachanov"
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "524e264f-c7eb-4b03-9200-183dd0cfd647",
+      "score": 180.5,
+      "state": {
+        "phase": "pre_round",
+        "budget": 5.9,
+        "myTeam": [
+          "tiafoe",
+          "shelton",
+          "zverev"
+        ],
+        "captain": "zverev",
+        "cashedIn": [
+          "shang",
+          "kennedy",
+          "bergs",
+          "zheng",
+          "passaro",
+          "gorzny",
+          "jodar",
+          "fritz",
+          "tien"
+        ],
+        "transfers": [
+          {
+            "in": "passaro",
+            "out": "kennedy",
+            "round": "R128"
+          },
+          {
+            "in": "zverev",
+            "out": "bergs",
+            "round": "R16"
+          }
+        ],
+        "viceCaptain": "shelton",
+        "initialSquad": [
+          "bergs",
+          "jodar",
+          "tiafoe",
+          "shelton",
+          "fritz",
+          "kennedy",
+          "gorzny",
+          "tien",
+          "shang",
+          "zheng"
+        ],
+        "captainHistory": [
+          {
+            "round": "R128",
+            "playerId": "shelton"
+          },
+          {
+            "round": "R64",
+            "playerId": "shelton"
+          },
+          {
+            "round": "R16",
+            "playerId": "shelton"
+          },
+          {
+            "round": "QF",
+            "playerId": "tiafoe"
+          },
+          {
+            "round": "SF",
+            "playerId": "zverev"
+          }
+        ],
+        "viceCaptainHistory": [
+          {
+            "round": "R128",
+            "playerId": "tiafoe"
+          },
+          {
+            "round": "R64",
+            "playerId": "tiafoe"
+          },
+          {
+            "round": "R16",
+            "playerId": "tiafoe"
+          },
+          {
+            "round": "QF",
+            "playerId": "zverev"
+          },
+          {
+            "round": "SF",
+            "playerId": "shelton"
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "5cb18666-0dda-4234-96eb-bf04ec5630fd",
+      "score": 114.5,
+      "state": {
+        "phase": "pre_round",
+        "budget": 44.4,
+        "myTeam": [
+          "fritz",
+          "zverev",
+          "vacherot"
+        ],
+        "captain": "zverev",
+        "cashedIn": [
+          "busta",
+          "gaston",
+          "comesana",
+          "dimitrov",
+          "rublev",
+          "musetti",
+          "fearnley",
+          "monfils"
+        ],
+        "transfers": [
+          {
+            "in": "monfils",
+            "out": "busta",
+            "round": "R128"
+          }
+        ],
+        "viceCaptain": null,
+        "initialSquad": [
+          "fritz",
+          "musetti",
+          "rublev",
+          "busta",
+          "zverev",
+          "vacherot",
+          "gaston",
+          "fearnley",
+          "comesana",
+          "dimitrov"
+        ],
+        "captainHistory": [
+          {
+            "round": "R128",
+            "playerId": "zverev"
+          },
+          {
+            "round": "R64",
+            "playerId": "zverev"
+          },
+          {
+            "round": "R32",
+            "playerId": "zverev"
+          }
+        ],
+        "viceCaptainHistory": [
+          {
+            "round": "R128",
+            "playerId": "musetti"
+          },
+          {
+            "round": "R64",
+            "playerId": "musetti"
+          },
+          {
+            "round": "R32",
+            "playerId": null
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "60825ad8-913d-48cd-ae61-097734bcad5a",
+      "score": 112,
+      "state": {
+        "phase": "pre_round",
+        "budget": 7.6,
+        "myTeam": [
+          "zverev",
+          "khachanov"
+        ],
+        "captain": "zverev",
+        "cashedIn": [
+          "kennedy",
+          "blanch",
+          "wolf",
+          "rublev",
+          "machac",
+          "gorzny",
+          "misolic",
+          "ruud",
+          "jodar",
+          "fritz",
+          "shang",
+          "darderi",
+          "landaluce",
+          "vacherot",
+          "jong",
+          "dimitrov",
+          "blockx",
+          "alcaraz"
+        ],
+        "transfers": [
+          {
+            "in": "darderi",
+            "out": "ruud",
+            "round": "R128"
+          },
+          {
+            "in": "alcaraz",
+            "out": "jodar",
+            "round": "R16"
+          },
+          {
+            "in": "blockx",
+            "out": "fritz",
+            "round": "R16"
+          },
+          {
+            "in": "khachanov",
+            "out": "alcaraz",
+            "round": "QF"
+          }
+        ],
+        "viceCaptain": null,
+        "initialSquad": [
+          "jodar",
+          "zverev",
+          "fritz",
+          "shang",
+          "ruud",
+          "landaluce",
+          "vacherot",
+          "jong",
+          "dimitrov",
+          "kennedy"
+        ],
+        "captainHistory": [
+          {
+            "round": "R128",
+            "playerId": "zverev"
+          },
+          {
+            "round": "R64",
+            "playerId": "zverev"
+          },
+          {
+            "round": "R32",
+            "playerId": "zverev"
+          },
+          {
+            "round": "R16",
+            "playerId": "zverev"
+          },
+          {
+            "round": "QF",
+            "playerId": "alcaraz"
+          },
+          {
+            "round": "SF",
+            "playerId": "zverev"
+          }
+        ],
+        "viceCaptainHistory": [
+          {
+            "round": "R128",
+            "playerId": "jodar"
+          },
+          {
+            "round": "R64",
+            "playerId": "jodar"
+          },
+          {
+            "round": "R32",
+            "playerId": "fritz"
+          },
+          {
+            "round": "R16",
+            "playerId": "darderi"
+          },
+          {
+            "round": "QF",
+            "playerId": "zverev"
+          },
+          {
+            "round": "SF",
+            "playerId": null
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "60ab1ac4-01d0-4c40-bb1d-a145f59231a8",
+      "score": 168.5,
+      "state": {
+        "phase": "pre_round",
+        "budget": 2.8,
+        "myTeam": [
+          "shelton",
+          "zverev"
+        ],
+        "captain": "zverev",
+        "cashedIn": [
+          "djokovic",
+          "hijikata",
+          "shang",
+          "wawrinka",
+          "rublev",
+          "berrettini",
+          "faria",
+          "fritz",
+          "franciscocerundolo",
+          "tiafoe"
+        ],
+        "transfers": [
+          {
+            "in": "shelton",
+            "out": "djokovic",
+            "round": "R64"
+          },
+          {
+            "in": "zverev",
+            "out": "fritz",
+            "round": "R16"
+          }
+        ],
+        "viceCaptain": "shelton",
+        "initialSquad": [
+          "djokovic",
+          "fritz",
+          "franciscocerundolo",
+          "wawrinka",
+          "hijikata",
+          "faria",
+          "rublev",
+          "tiafoe",
+          "berrettini",
+          "shang"
+        ],
+        "captainHistory": [
+          {
+            "round": "R128",
+            "playerId": "djokovic"
+          },
+          {
+            "round": "R64",
+            "playerId": "fritz"
+          },
+          {
+            "round": "R32",
+            "playerId": "fritz"
+          },
+          {
+            "round": "R16",
+            "playerId": "shelton"
+          },
+          {
+            "round": "QF",
+            "playerId": "zverev"
+          },
+          {
+            "round": "SF",
+            "playerId": "zverev"
+          },
+          {
+            "round": "F",
+            "playerId": "zverev"
+          }
+        ],
+        "viceCaptainHistory": [
+          {
+            "round": "R128",
+            "playerId": "fritz"
+          },
+          {
+            "round": "R64",
+            "playerId": "tiafoe"
+          },
+          {
+            "round": "R32",
+            "playerId": "tiafoe"
+          },
+          {
+            "round": "R16",
+            "playerId": "tiafoe"
+          },
+          {
+            "round": "QF",
+            "playerId": "tiafoe"
+          },
+          {
+            "round": "SF",
+            "playerId": "shelton"
+          },
+          {
+            "round": "F",
+            "playerId": "shelton"
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "74cecbd2-3cfb-4783-a10f-9799e779a925",
+      "score": 114.5,
+      "state": {
+        "phase": "pre_round",
+        "budget": 33.4,
+        "myTeam": [
+          "tiafoe",
+          "shelton",
+          "khachanov"
+        ],
+        "captain": "shelton",
+        "cashedIn": [
+          "landaluce",
+          "vukic",
+          "nakashima",
+          "giron",
+          "vacherot",
+          "fritz",
+          "tien",
+          "michelsen",
+          "zandschulp"
+        ],
+        "transfers": [
+          {
+            "in": "tien",
+            "out": "fritz",
+            "round": "R32"
+          },
+          {
+            "in": "khachanov",
+            "out": "tien",
+            "round": "QF"
+          }
+        ],
+        "viceCaptain": null,
+        "initialSquad": [
+          "fritz",
+          "tiafoe",
+          "nakashima",
+          "michelsen",
+          "zandschulp",
+          "giron",
+          "landaluce",
+          "shelton",
+          "vacherot",
+          "vukic"
+        ],
+        "captainHistory": [
+          {
+            "round": "R128",
+            "playerId": "tiafoe"
+          },
+          {
+            "round": "R64",
+            "playerId": "tiafoe"
+          },
+          {
+            "round": "R32",
+            "playerId": "fritz"
+          },
+          {
+            "round": "R16",
+            "playerId": "shelton"
+          },
+          {
+            "round": "QF",
+            "playerId": "tiafoe"
+          },
+          {
+            "round": "SF",
+            "playerId": "tiafoe"
+          },
+          {
+            "round": "F",
+            "playerId": "shelton"
+          }
+        ],
+        "viceCaptainHistory": [
+          {
+            "round": "R128",
+            "playerId": "zandschulp"
+          },
+          {
+            "round": "R64",
+            "playerId": "fritz"
+          },
+          {
+            "round": "R32",
+            "playerId": "shelton"
+          },
+          {
+            "round": "R16",
+            "playerId": "tien"
+          },
+          {
+            "round": "QF",
+            "playerId": "michelsen"
+          },
+          {
+            "round": "SF",
+            "playerId": "shelton"
+          },
+          {
+            "round": "F",
+            "playerId": null
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "80310994-fa96-4e98-9edd-69e169911701",
+      "score": 67.5,
+      "state": {
+        "phase": "pre_round",
+        "budget": 46.2,
+        "myTeam": [
+          "khachanov"
+        ],
+        "captain": "alcaraz",
+        "cashedIn": [
+          "shang",
+          "kokkinakis",
+          "cilic",
+          "ruud",
+          "nakashima",
+          "rublev",
+          "monfils",
+          "fritz",
+          "merida",
+          "sweeny",
+          "darderi",
+          "etcheverry",
+          "tsitsipas",
+          "gea",
+          "alcaraz"
+        ],
+        "transfers": [
+          {
+            "in": "darderi",
+            "out": "ruud",
+            "round": "R64"
+          },
+          {
+            "in": "tsitsipas",
+            "out": "kokkinakis",
+            "round": "R64"
+          },
+          {
+            "in": "merida",
+            "out": "cilic",
+            "round": "R64"
+          },
+          {
+            "in": "sweeny",
+            "out": "nakashima",
+            "round": "R64"
+          },
+          {
+            "in": "etcheverry",
+            "out": "rublev",
+            "round": "R64"
+          },
+          {
+            "in": "gea",
+            "out": "sweeny",
+            "round": "R32"
+          }
+        ],
+        "viceCaptain": null,
+        "initialSquad": [
+          "alcaraz",
+          "nakashima",
+          "rublev",
+          "khachanov",
+          "shang",
+          "fritz",
+          "ruud",
+          "monfils",
+          "kokkinakis",
+          "cilic"
+        ],
+        "captainHistory": [
+          {
+            "round": "R128",
+            "playerId": "alcaraz"
+          },
+          {
+            "round": "R64",
+            "playerId": "alcaraz"
+          },
+          {
+            "round": "R32",
+            "playerId": "alcaraz"
+          },
+          {
+            "round": "R16",
+            "playerId": "alcaraz"
+          },
+          {
+            "round": "QF",
+            "playerId": "alcaraz"
+          },
+          {
+            "round": "SF",
+            "playerId": "alcaraz"
+          }
+        ],
+        "viceCaptainHistory": [
+          {
+            "round": "R128",
+            "playerId": "fritz"
+          },
+          {
+            "round": "R64",
+            "playerId": "fritz"
+          },
+          {
+            "round": "R32",
+            "playerId": "fritz"
+          },
+          {
+            "round": "R16",
+            "playerId": "gea"
+          },
+          {
+            "round": "QF",
+            "playerId": "gea"
+          },
+          {
+            "round": "SF",
+            "playerId": null
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "867c8f11-e5fd-499b-806a-e7c8c5edec4e",
+      "score": 86.5,
+      "state": {
+        "phase": "pre_round",
+        "budget": 22.4,
+        "myTeam": [
+          "khachanov",
+          "tiafoe"
+        ],
+        "captain": "tiafoe",
+        "cashedIn": [
+          "shang",
+          "wolf",
+          "nakashima",
+          "jong",
+          "monfils",
+          "mensik",
+          "fritz",
+          "paul",
+          "franciscocerundolo",
+          "alcaraz",
+          "blockx"
+        ],
+        "transfers": [
+          {
+            "in": "mensik",
+            "out": "wolf",
+            "round": "R64"
+          },
+          {
+            "in": "tiafoe",
+            "out": "fritz",
+            "round": "R32"
+          },
+          {
+            "in": "blockx",
+            "out": "paul",
+            "round": "R16"
+          }
+        ],
+        "viceCaptain": "khachanov",
+        "initialSquad": [
+          "khachanov",
+          "fritz",
+          "alcaraz",
+          "paul",
+          "franciscocerundolo",
+          "wolf",
+          "shang",
+          "monfils",
+          "nakashima",
+          "jong"
+        ],
+        "captainHistory": [
+          {
+            "round": "R128",
+            "playerId": "khachanov"
+          },
+          {
+            "round": "R64",
+            "playerId": "paul"
+          },
+          {
+            "round": "R32",
+            "playerId": "alcaraz"
+          },
+          {
+            "round": "R16",
+            "playerId": "alcaraz"
+          },
+          {
+            "round": "QF",
+            "playerId": "alcaraz"
+          },
+          {
+            "round": "SF",
+            "playerId": "tiafoe"
+          }
+        ],
+        "viceCaptainHistory": [
+          {
+            "round": "R128",
+            "playerId": "paul"
+          },
+          {
+            "round": "R64",
+            "playerId": "nakashima"
+          },
+          {
+            "round": "R32",
+            "playerId": "fritz"
+          },
+          {
+            "round": "R16",
+            "playerId": "franciscocerundolo"
+          },
+          {
+            "round": "QF",
+            "playerId": "tiafoe"
+          },
+          {
+            "round": "SF",
+            "playerId": "khachanov"
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "968fcd21-4c89-4332-9552-b7af8f6242cf",
+      "score": 101.5,
+      "state": {
+        "phase": "pre_round",
+        "budget": 43.1,
+        "myTeam": [
+          "shelton"
+        ],
+        "captain": "tiafoe",
+        "cashedIn": [
+          "griekspoor",
+          "dimitrov",
+          "marozsan",
+          "nakashima",
+          "shapovalov",
+          "mensik",
+          "fritz",
+          "paul",
+          "michelsen",
+          "tiafoe"
+        ],
+        "transfers": [
+          {
+            "in": "tiafoe",
+            "out": "dimitrov",
+            "round": "R64"
+          }
+        ],
+        "viceCaptain": null,
+        "initialSquad": [
+          "mensik",
+          "michelsen",
+          "shapovalov",
+          "paul",
+          "shelton",
+          "dimitrov",
+          "marozsan",
+          "nakashima",
+          "griekspoor",
+          "fritz"
+        ],
+        "captainHistory": [
+          {
+            "round": "R128",
+            "playerId": "michelsen"
+          },
+          {
+            "round": "R64",
+            "playerId": "mensik"
+          },
+          {
+            "round": "R32",
+            "playerId": "shelton"
+          },
+          {
+            "round": "R16",
+            "playerId": "shelton"
+          },
+          {
+            "round": "QF",
+            "playerId": "tiafoe"
+          },
+          {
+            "round": "SF",
+            "playerId": "tiafoe"
+          },
+          {
+            "round": "F",
+            "playerId": "tiafoe"
+          }
+        ],
+        "viceCaptainHistory": [
+          {
+            "round": "R128",
+            "playerId": "mensik"
+          },
+          {
+            "round": "R64",
+            "playerId": "fritz"
+          },
+          {
+            "round": "R32",
+            "playerId": "fritz"
+          },
+          {
+            "round": "R16",
+            "playerId": "fritz"
+          },
+          {
+            "round": "QF",
+            "playerId": "michelsen"
+          },
+          {
+            "round": "SF",
+            "playerId": "michelsen"
+          },
+          {
+            "round": "F",
+            "playerId": null
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "96f09bf4-1502-4e1e-8749-4a0c6a8fb0c4",
+      "score": 58,
+      "state": {
+        "phase": "pre_round",
+        "budget": 15.7,
+        "myTeam": [
+          "zandschulp",
+          "alcaraz",
+          "michelsen"
+        ],
+        "captain": "alcaraz",
+        "cashedIn": [
+          "griekspoor",
+          "djokovic",
+          "medjedovic",
+          "atmane",
+          "sonego",
+          "prizmic",
+          "fritz",
+          "mensik",
+          "lehecka",
+          "paul",
+          "tien"
+        ],
+        "transfers": [
+          {
+            "in": "alcaraz",
+            "out": "fritz",
+            "round": "R32"
+          },
+          {
+            "in": "michelsen",
+            "out": "mensik",
+            "round": "R32"
+          },
+          {
+            "in": "tien",
+            "out": "prizmic",
+            "round": "R32"
+          }
+        ],
+        "viceCaptain": "michelsen",
+        "initialSquad": [
+          "fritz",
+          "paul",
+          "mensik",
+          "prizmic",
+          "sonego",
+          "atmane",
+          "zandschulp",
+          "lehecka",
+          "djokovic",
+          "medjedovic"
+        ],
+        "captainHistory": [
+          {
+            "round": "R128",
+            "playerId": "fritz"
+          },
+          {
+            "round": "R64",
+            "playerId": "fritz"
+          },
+          {
+            "round": "R32",
+            "playerId": "fritz"
+          },
+          {
+            "round": "R16",
+            "playerId": "michelsen"
+          },
+          {
+            "round": "QF",
+            "playerId": "alcaraz"
+          }
+        ],
+        "viceCaptainHistory": [
+          {
+            "round": "R128",
+            "playerId": "djokovic"
+          },
+          {
+            "round": "R64",
+            "playerId": "mensik"
+          },
+          {
+            "round": "R32",
+            "playerId": "zandschulp"
+          },
+          {
+            "round": "R16",
+            "playerId": "zandschulp"
+          },
+          {
+            "round": "QF",
+            "playerId": "michelsen"
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "b89e4522-2da0-4edd-8a70-0d4e82e024d3",
+      "score": 40.5,
+      "state": {
+        "phase": "pre_round",
+        "budget": 32.7,
+        "myTeam": [
+          "alcaraz"
+        ],
+        "captain": "alcaraz",
+        "cashedIn": [
+          "dimitrov",
+          "kennedy",
+          "rublev",
+          "hurkacz",
+          "popyrin",
+          "monfils",
+          "cobolli",
+          "vacherot",
+          "navone",
+          "bergs",
+          "medvedev",
+          "paul"
+        ],
+        "transfers": [
+          {
+            "in": "bergs",
+            "out": "monfils",
+            "round": "R64"
+          },
+          {
+            "in": "navone",
+            "out": "popyrin",
+            "round": "R64"
+          },
+          {
+            "in": "medvedev",
+            "out": "cobolli",
+            "round": "R32"
+          }
+        ],
+        "viceCaptain": null,
+        "initialSquad": [
+          "alcaraz",
+          "cobolli",
+          "monfils",
+          "popyrin",
+          "kennedy",
+          "dimitrov",
+          "rublev",
+          "hurkacz",
+          "vacherot",
+          "paul"
+        ],
+        "captainHistory": [
+          {
+            "round": "R128",
+            "playerId": "alcaraz"
+          },
+          {
+            "round": "R64",
+            "playerId": "alcaraz"
+          },
+          {
+            "round": "R32",
+            "playerId": "alcaraz"
+          },
+          {
+            "round": "R16",
+            "playerId": "alcaraz"
+          },
+          {
+            "round": "QF",
+            "playerId": "alcaraz"
+          }
+        ],
+        "viceCaptainHistory": [
+          {
+            "round": "R128",
+            "playerId": "cobolli"
+          },
+          {
+            "round": "R64",
+            "playerId": "cobolli"
+          },
+          {
+            "round": "R32",
+            "playerId": "cobolli"
+          },
+          {
+            "round": "R16",
+            "playerId": "medvedev"
+          },
+          {
+            "round": "QF",
+            "playerId": null
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "bffed740-cd03-4182-8ed8-c7e8eeb7509d",
+      "score": 17.5,
+      "state": {
+        "phase": "pre_round",
+        "budget": 1,
+        "myTeam": [
+          "cobolli",
+          "musetti",
+          "shapovalov",
+          "landaluce",
+          "arnaldi",
+          "mensik",
+          "ruud",
+          "cerundolo",
+          "fritz",
+          "sonego"
+        ],
+        "captain": "cobolli",
+        "cashedIn": [],
+        "transfers": [],
+        "viceCaptain": "fritz",
+        "initialSquad": [
+          "cobolli",
+          "musetti",
+          "shapovalov",
+          "landaluce",
+          "arnaldi",
+          "mensik",
+          "ruud",
+          "cerundolo",
+          "fritz",
+          "sonego"
+        ],
+        "captainHistory": [
+          {
+            "round": "R128",
+            "playerId": "cobolli"
+          }
+        ],
+        "viceCaptainHistory": [
+          {
+            "round": "R128",
+            "playerId": "fritz"
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "c2758667-faa7-4805-a66d-ef848abdcdce",
+      "score": 89,
+      "state": {
+        "phase": "pre_round",
+        "budget": 1.8,
+        "myTeam": [
+          "shelton",
+          "tien",
+          "michelsen",
+          "alcaraz"
+        ],
+        "captain": "shelton",
+        "cashedIn": [
+          "munar",
+          "fils",
+          "machac",
+          "shang",
+          "jodar",
+          "nakashima",
+          "popyrin",
+          "schoolkate",
+          "fritz",
+          "zheng"
+        ],
+        "transfers": [
+          {
+            "in": "tien",
+            "out": "fils",
+            "round": "R128"
+          },
+          {
+            "in": "michelsen",
+            "out": "jodar",
+            "round": "R64"
+          },
+          {
+            "in": "alcaraz",
+            "out": "nakashima",
+            "round": "R32"
+          }
+        ],
+        "viceCaptain": null,
+        "initialSquad": [
+          "jodar",
+          "fils",
+          "nakashima",
+          "fritz",
+          "schoolkate",
+          "popyrin",
+          "shang",
+          "zheng",
+          "shelton",
+          "machac"
+        ],
+        "captainHistory": [
+          {
+            "round": "R128",
+            "playerId": "nakashima"
+          },
+          {
+            "round": "R64",
+            "playerId": "jodar"
+          },
+          {
+            "round": "R32",
+            "playerId": "shelton"
+          },
+          {
+            "round": "R16",
+            "playerId": "tien"
+          },
+          {
+            "round": "SF",
+            "playerId": "shelton"
+          }
+        ],
+        "viceCaptainHistory": [
+          {
+            "round": "R128",
+            "playerId": "machac"
+          },
+          {
+            "round": "R64",
+            "playerId": "fritz"
+          },
+          {
+            "round": "R32",
+            "playerId": "fritz"
+          },
+          {
+            "round": "R16",
+            "playerId": "shelton"
+          },
+          {
+            "round": "SF",
+            "playerId": null
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "e3a43da2-d991-4594-b991-1fae551b4199",
+      "score": 160,
+      "state": {
+        "phase": "pre_round",
+        "budget": 7.2,
+        "myTeam": [
+          "shelton",
+          "zverev"
+        ],
+        "captain": "shelton",
+        "cashedIn": [
+          "comesana",
+          "kokkinakis",
+          "zheng",
+          "dzumhur",
+          "fils",
+          "ruud",
+          "shang",
+          "blanch",
+          "acosta",
+          "cilic",
+          "monfils",
+          "jodar",
+          "cobolli",
+          "mensik",
+          "tiafoe"
+        ],
+        "transfers": [
+          {
+            "in": "tiafoe",
+            "out": "ruud",
+            "round": "R128"
+          },
+          {
+            "in": "mensik",
+            "out": "cilic",
+            "round": "R128"
+          },
+          {
+            "in": "zverev",
+            "out": "cobolli",
+            "round": "R32"
+          }
+        ],
+        "viceCaptain": "zverev",
+        "initialSquad": [
+          "shelton",
+          "cobolli",
+          "fils",
+          "jodar",
+          "ruud",
+          "shang",
+          "monfils",
+          "acosta",
+          "cilic",
+          "blanch"
+        ],
+        "captainHistory": [
+          {
+            "round": "R128",
+            "playerId": "shang"
+          },
+          {
+            "round": "R64",
+            "playerId": "tiafoe"
+          },
+          {
+            "round": "R32",
+            "playerId": "tiafoe"
+          },
+          {
+            "round": "R16",
+            "playerId": "zverev"
+          },
+          {
+            "round": "QF",
+            "playerId": "zverev"
+          },
+          {
+            "round": "SF",
+            "playerId": "zverev"
+          },
+          {
+            "round": "F",
+            "playerId": "shelton"
+          }
+        ],
+        "viceCaptainHistory": [
+          {
+            "round": "R128",
+            "playerId": "cilic"
+          },
+          {
+            "round": "R64",
+            "playerId": "mensik"
+          },
+          {
+            "round": "R32",
+            "playerId": "mensik"
+          },
+          {
+            "round": "R16",
+            "playerId": "shelton"
+          },
+          {
+            "round": "QF",
+            "playerId": "tiafoe"
+          },
+          {
+            "round": "SF",
+            "playerId": "shelton"
+          },
+          {
+            "round": "F",
+            "playerId": "zverev"
+          }
+        ]
+      }
+    },
+    {
+      "user_id": "f42aa3ef-f4d6-4f94-a648-b314f62b16bb",
+      "score": 100,
+      "state": {
+        "phase": "pre_round",
+        "budget": 29.9,
+        "myTeam": [
+          "tiafoe",
+          "shelton"
+        ],
+        "captain": "shelton",
+        "cashedIn": [
+          "kokkinakis",
+          "djokovic",
+          "dimitrov",
+          "wolf",
+          "comesana",
+          "shang",
+          "monfils",
+          "jodar",
+          "cobolli",
+          "bergs",
+          "medvedev",
+          "paul"
+        ],
+        "transfers": [
+          {
+            "in": "medvedev",
+            "out": "wolf",
+            "round": "R128"
+          },
+          {
+            "in": "bergs",
+            "out": "djokovic",
+            "round": "R64"
+          },
+          {
+            "in": "shelton",
+            "out": "bergs",
+            "round": "R32"
+          }
+        ],
+        "viceCaptain": "tiafoe",
+        "initialSquad": [
+          "djokovic",
+          "tiafoe",
+          "cobolli",
+          "paul",
+          "jodar",
+          "wolf",
+          "monfils",
+          "dimitrov",
+          "comesana",
+          "shang"
+        ],
+        "captainHistory": [
+          {
+            "round": "R128",
+            "playerId": "tiafoe"
+          },
+          {
+            "round": "R64",
+            "playerId": "medvedev"
+          },
+          {
+            "round": "R32",
+            "playerId": "medvedev"
+          },
+          {
+            "round": "R16",
+            "playerId": "shelton"
+          },
+          {
+            "round": "QF",
+            "playerId": "shelton"
+          }
+        ],
+        "viceCaptainHistory": [
+          {
+            "round": "R128",
+            "playerId": "jodar"
+          },
+          {
+            "round": "R64",
+            "playerId": "jodar"
+          },
+          {
+            "round": "R32",
+            "playerId": null
+          },
+          {
+            "round": "R16",
+            "playerId": "medvedev"
+          },
+          {
+            "round": "QF",
+            "playerId": "tiafoe"
+          }
+        ]
+      }
+    }
+  ]
+}
