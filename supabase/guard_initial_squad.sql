@@ -1,5 +1,7 @@
 -- ── The scoring squad can never be illegal, whatever writes it (2026-08-19) ──────────────────────
 -- APPLIED TO PRODUCTION. Kept here for version control and re-application.
+-- SUPERSEDED by supabase/2026-09-14_economy_budget200_transfers5.sql, applied to production 2026-09-15 21:48Z as
+-- migration 20260915214823: the $150M literal became public.budget_for(new.tournament_id). Body below = 2026-08-19.
 --
 -- THE HOLE. recompute-score scores EXCLUSIVELY off state.initialSquad and explicitly never falls
 -- back to myTeam. That array was validated NOWHERE: every gate in save_entry read v_squad, built
