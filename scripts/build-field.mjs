@@ -97,7 +97,9 @@ const fromPool = [...found.keys()].map(pid => {
 // Hand-entered entrants count ONLY if they're really in this draw (a withdrawal drops them).
 // Hand-entered entrants get their REAL 2026 form from extra2026.json when the stats run found
 // any; otherwise their form stays null (unknown), never a fabricated zero.
-const extraPath = 'src/data/extra2026.json';
+// Anchored on the repo root like every other path here — it used to be relative to the working
+// directory, so a run from anywhere but the root silently found no extras and wrote null form.
+const extraPath = new URL('src/data/extra2026.json', root);
 const extraById = new Map(
   (existsSync(extraPath) ? JSON.parse(readFileSync(extraPath, 'utf8')) : []).map(e => [e.id, e]),
 );
