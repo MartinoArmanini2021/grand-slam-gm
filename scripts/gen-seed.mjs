@@ -8,9 +8,22 @@
 //   node scripts/gen-seed.mjs cincinnati_2026            # write the seed
 //   node scripts/gen-seed.mjs cincinnati_2026 --check    # verify only; non-zero exit if stale
 //
+// RULE 2 OF THE RUNBOOK — prices and tiers are NEVER re-applied once published. They are what managers
+// drafted against; re-applying them reprices squads that are already locked. So the upsert this file
+// emits depends on the event's `status` in scripts/lib/events.mjs:
+//   upcoming  → on conflict, update ranking, price AND tier (nobody has drafted yet)
+//   live      → on conflict, update RANKING ONLY. A player with no row yet (a lucky loser, a late
+//   completed   entrant) still gets a full row, which reprices nobody. Existing price/tier: untouched.
+// A missing status is an error, not a default: the next event has to say which it is.
+// One more rule: a seed that was applied and then embedded verbatim in an applied migration is
+// HISTORY and is not regenerated — Cincinnati's lives inside apply_step2_step3_atomic.sql, and
+// src/__tests__/atomicApplyFile.test.ts fails the moment the two differ. `--check` on such an
+// event reports "out of date" against today's template; that is expected, leave the file alone.
+//
 // player_stats is ONE table shared by every event, so the generator CROSS-CHECKS: any player this
-// event shares with an already-written seed must come out at an identical rank/price/tier, or the
-// two seeds would fight and applying this one could retroactively change a past score.
+// event shares with an already-written seed is reported when rank/price/tier differ. Since fix 1.3
+// the table is keyed (tournament_id, id), so a difference is expected (each event owns its rows)
+// and is printed for eyeballing, never treated as an error.
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { EVENTS, getEvent } from './lib/events.mjs';
@@ -21,6 +34,15 @@ if (!id) { console.error('usage: node scripts/gen-seed.mjs <event-id> [--check]'
 const CHECK = flags.includes('--check');
 const ev = getEvent(id);
 const root = new URL('../', import.meta.url);
+
+const STATUSES = ['upcoming', 'live', 'completed'];
+if (!STATUSES.includes(ev.status)) {
+  console.error(`scripts/lib/events.mjs must declare status for ${id}: one of ${STATUSES.join(' | ')} (got ${JSON.stringify(ev.status)})`);
+  process.exit(2);
+}
+// Published = managers can, or once could, draft against these prices. From that moment on, price
+// and tier are frozen for every existing row.
+const published = ev.status !== 'upcoming';
 
 const field = JSON.parse(readFileSync(new URL(ev.field, root), 'utf8'));
 const rows = field.map(p => ({
@@ -52,7 +74,7 @@ const clashes = rows.filter(r => {
 });
 const shared = rows.filter(r => seen.has(r.id)).length;
 
-console.log(`\n  event:            ${id} — ${ev.label}`);
+console.log(`\n  event:            ${id} — ${ev.label} (${ev.status})`);
 console.log(`  field:            ${rows.length} players`);
 console.log(`  shared with existing seeds: ${shared}   mismatches: ${clashes.length}`);
 for (const c of clashes) {
@@ -68,27 +90,59 @@ if (clashes.length) {
   note: ${clashes.length} player(s) differ from an earlier seed — expected; each event keeps its own row.
 `);
 }
+
+// Wrap a long note into "-- " comment lines so the header stays readable.
+const comment = (text, width = 96) => {
+  const out = [];
+  let line = '';
+  for (const word of text.split(/\s+/)) {
+    if (line && (line + ' ' + word).length > width) { out.push(line); line = word; }
+    else line = line ? line + ' ' + word : word;
+  }
+  if (line) out.push(line);
+  return out.map(l => `-- ${l}`).join('\n');
+};
+
 {
   const body = rows.map(r => `  ('${id}', '${r.id}', ${r.ranking}, ${r.price}, '${r.tier}')`).join(',\n');
+  // The header says only what this generator can actually vouch for. Whether the field matches the
+  // published draw is reconcile-field's verdict, recorded per event in events.mjs — not a claim
+  // this template makes on its own (it used to print "0 missing, 0 phantom" for every event).
+  const reconciled = ev.reconciled
+    ? comment(`Reconciliation, as recorded in scripts/lib/events.mjs: ${ev.reconciled}`)
+    : comment('Reconciliation: not recorded for this event. This header proves NOTHING about the draw — run '
+      + "scripts/reconcile-field.mjs and record its verdict in scripts/lib/events.mjs (reconciled: '…').");
+  const applyNote = published
+    ? comment(`PUBLISHED EVENT (status: ${ev.status}). Runbook rule 2: prices and tiers are never re-applied once `
+      + 'managers have drafted against them. The upsert below refreshes RANKING ONLY on an existing row (the '
+      + 'upset multiplier reads it) and leaves price and tier exactly as they were locked. A player with no '
+      + 'row yet (a lucky loser, a late entrant) gets a full row — adding one row reprices nobody. The price and '
+      + "tier VALUES in this file are the generator's computation from today's field data and can differ from "
+      + 'what production locked; the archive snapshot is the record of what was actually played.')
+    : comment('UPCOMING EVENT. Apply before the market opens for it. Re-running while the event is still marked '
+      + 'upcoming in scripts/lib/events.mjs rewrites all four columns, which is fine until managers can draft. '
+      + "The moment they can, set status: 'live' there — from then on gen-seed never re-applies price or tier "
+      + '(runbook rule 2: what managers drafted against stays).');
+  const conflict = published
+    ? 'on conflict (tournament_id, id) do update set ranking = excluded.ranking;  -- published: price and tier are never re-applied'
+    : 'on conflict (tournament_id, id) do update set ranking = excluded.ranking, price = excluded.price, tier = excluded.tier;';
   const sql = `-- ── ${ev.label} — player_stats seed for server-side validation + scoring ────────────────
 -- WHY ALL FOUR COLUMNS: save_entry validates the TIER QUOTA off player_stats.tier and the BUDGET off
 -- .price, and recompute-score reads .ranking for the upset multiplier. A row carrying only \`ranking\`
 -- leaves tier/price NULL — the quota check then reads a legal 2/3/5 squad as 2/3/4 (so it can never
 -- be locked) and sum(price) silently under-counts the budget. Every drafted player needs all four.
 --
--- Generated by scripts/gen-seed.mjs from ${ev.field} (built from the published draw and reconciled
--- against Wikipedia: 0 missing, 0 phantom). ${rows.length} players.
+-- Generated by scripts/gen-seed.mjs from ${ev.field}: every player in that file, ${rows.length} rows,
+-- ${shared} of them also in another event's seed (differences there are expected — each event owns its rows).
+${reconciled}
 --
--- SAFE TO RUN ANY TIME, INCLUDING WHILE ANOTHER EVENT IS STILL BEING SCORED: the generator verifies
--- that every player shared with an existing seed (${shared} of them) carries an IDENTICAL rank, price
--- and tier — so this only ADDS the ${rows.length - shared} players new to this event and cannot
--- retroactively alter a past score. The upsert keeps it re-runnable.
+${applyNote}
 --
 -- Regenerate with:  node scripts/gen-seed.mjs ${id}
 
 insert into public.player_stats (tournament_id, id, ranking, price, tier) values
 ${body}
-on conflict (tournament_id, id) do update set ranking = excluded.ranking, price = excluded.price, tier = excluded.tier;
+${conflict}
 
 -- Verify: every entrant has a COMPLETE row (a NULL price or tier is the bug described above).
 -- select count(*) filter (where price is not null and tier is not null) as complete,
@@ -103,6 +157,8 @@ on conflict (tournament_id, id) do update set ranking = excluded.ranking, price 
   } else {
     writeFileSync(out, sql);
     console.log(`\n  ✓ wrote ${rows.length} rows → ${ev.seed}`);
-    console.log(`    (${rows.length - shared} new to this event, ${shared} identical to existing seeds)\n`);
+    console.log(published
+      ? `    (${ev.status}: the upsert refreshes ranking only — price and tier are never re-applied; new players get full rows)\n`
+      : `    (upcoming: the upsert applies ranking, price and tier — set status: 'live' in events.mjs the moment managers can draft)\n`);
   }
 }

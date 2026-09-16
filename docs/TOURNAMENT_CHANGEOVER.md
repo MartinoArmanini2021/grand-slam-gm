@@ -19,10 +19,13 @@ recalculated — permanently in practice. If the final had not been ingested and
 never gets those points and nothing reports a problem. The leaderboard just freezes at a wrong
 number. Everything else in this document is recoverable. This is not.
 
-**2. Never re-run `gen-seed.mjs` once prices are published.**
-Prices and tiers are what managers drafted against. Re-running reprices the field under squads that
-are already locked. If the display data is wrong, fix the display data — the shelf and `player_stats`
-are separate tables and you can correct one without touching the other.
+**2. Never re-apply prices once they are published.**
+Prices and tiers are what managers drafted against. Re-applying them reprices the field under squads
+that are already locked. If the display data is wrong, fix the display data — the shelf and
+`player_stats` are separate tables and you can correct one without touching the other. Since
+2026-09-16 the generator enforces this itself: with `status: 'live'` or `'completed'` in
+`scripts/lib/events.mjs`, `gen-seed.mjs` emits an upsert that never touches price or tier — re-running
+it for a published event only refreshes rankings and adds full rows for players who have none.
 
 **3. Unknown is not zero.**
 Anywhere the pipeline lacks data it must write `null`, never a stand-in. A `0-0` record reads as
@@ -81,6 +84,10 @@ rank sequence are fine — those are the withdrawals. Values going *backwards* m
 
     node scripts/gen-seed.mjs NEW
 
+NEW must carry `status: 'upcoming'` in `scripts/lib/events.mjs` at this point — the generator refuses
+to run without a status, and only an upcoming event gets price and tier written on re-run. It flips
+to `'live'` in 2.2, the moment managers can draft; from then on the generator never re-applies either.
+
 Paste into the Supabase SQL editor. **Check the first line matches the file before you Run** — a
 failed copy leaves the old clipboard in place and reports success having done nothing.
 
@@ -130,6 +137,10 @@ If any number moved, scoring is still catching up. Wait.
 
 Must return NEW. NULL means the row is missing — stop.
 
+Then, in `scripts/lib/events.mjs`, set NEW to `status: 'live'` and OLD to `'completed'`. From this
+moment `gen-seed.mjs` never re-applies NEW's prices or tiers (rule 2); a later run only refreshes
+rankings and adds rows for late entrants.
+
 ### 2.3 Watch one full cycle before touching the client
 
 Wait five minutes:
@@ -170,7 +181,13 @@ has unfilled slots and some real main-draw players have **no match row at all**.
 > transfer. With 18 slots unfilled that was 16 real players. **The re-ingest is a correctness
 > requirement, not tidiness, and it has a hard deadline: first ball.**
 
-Re-run 1.1 through 1.5, then **REDEPLOY `ingest-draw`, then** re-ingest.
+Re-run 1.1, 1.2, 1.3 and 1.5 — the field, the form, the staleness test and the shelf — then
+**REDEPLOY `ingest-draw`, then** re-ingest. **Not 1.4 as it was written**: rule 2. Once managers can
+draft, the seed is never re-applied over their prices. What the late entrants need is a ROW EACH, and
+`node scripts/gen-seed.mjs NEW` gives exactly that once `status: 'live'` is set in
+`scripts/lib/events.mjs`: its upsert inserts full rows for players who have none (the lucky losers,
+the late-placed qualifiers) and touches RANKING ONLY on rows that exist. If nobody can draft yet —
+the event is still `upcoming` — the full seed applies as in 1.4.
 
 > **SILENT — the field is COMPILED INTO the edge function.** `ingest-draw` imports the field JSON
 > at build time, so the deployed copy still holds the roster from whenever you last deployed it.
@@ -209,7 +226,7 @@ the timezone wrong by a session shuts the market early or leaves it open through
 | Wrong `atpId` | silhouette, not an error | field JSON |
 | Missing form written as 0-0 or 50 | app states a real player never played | `expandManual`, `build-field`, `surfacePct` |
 | Re-ingest without re-stamping | new rows unstamped | `job20_round_schedule.sql` |
-| Re-running `gen-seed` after launch | reprices locked squads | rule 2 |
+| `gen-seed` run after launch with NEW still `upcoming` in `events.mjs` | reprices locked squads | rule 2; set `status: 'live'` at the flip |
 | Stale field in the edge function | ingest reports ok, new players get no match row | redeploy `ingest-draw` |
 | Public league deleted | **every save fails** — `save_entry` requires it | `leagues.is_public` |
 

@@ -15,6 +15,8 @@ export const EVENTS = {
     seed: 'supabase/seed_cincinnati_player_stats.sql',
     label: 'Cincinnati Open 2026',
     surface: 'hard',       // which surface win% feeds the price model
+    // upcoming | live | completed — gen-seed applies price and tier only while upcoming (runbook rule 2).
+    status: 'completed',
     // Real main-draw entrants who are NOT in the top-300 stats pool (wildcards/qualifiers). Bio is
     // real; 2026 form is left neutral (ytd 0/0/0, surface 50) because we have no verified match data
     // for them — their rank (>300) floors the price and puts them in the bottom tier anyway, so a big
@@ -36,6 +38,13 @@ export const EVENTS = {
     seed: 'supabase/seed_usopen_player_stats.sql',
     label: 'US Open 2026',
     surface: 'hard',
+    status: 'completed',
+    // What reconcile-field actually found — recorded here so the seed header stops claiming "0 missing, 0 phantom".
+    reconciled:
+      'field built 2026-08-29 from the completed draw, 128 players — NOT the 0 missing / 0 phantom the header used to ' +
+      'claim. Three seeded entrants withdrew before the first ball and never played (Ruud, Cilic, Kokkinakis — full ' +
+      'refunds, free repairs), and the two lucky losers who entered late (Vallejo, Géa) were missing until the mid-event ' +
+      'draw repair (Job 50) added them by hand. Regenerated 2026-09-16 with the event completed: 129 rows, ranking-only upsert.',
     // Real main-draw entrants outside the top-300 stats pool. Rankings are the ones the
     // tournament itself published on the draw page where it gave one (Misolic entered on a
     // protected ranking of 101; Kokkinakis's PR is 84 but his actual rank is far lower, so we
