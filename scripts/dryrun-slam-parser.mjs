@@ -14,16 +14,9 @@
 // no database. If this passes, draw day holds no parser surprises; if it fails, we find out with
 // days to spare instead of minutes.
 
-import { readFileSync } from 'node:fs';
-import { pathToFileURL } from 'node:url';
-import { register } from 'node:module';
-
-// The parser is TypeScript; run it through a loader without adding a build step.
-try {
-  register('ts-node/esm', pathToFileURL('./'));
-} catch {
-  /* fall back below */
-}
+// The parser is TypeScript; Node 22.18+ strips type annotations natively, so it imports like any
+// other module — no ts-node, no loader registration, no build step (build-field.mjs does the same).
+import { buildResolver, parseFullDraw } from '../src/data/drawParser.ts';
 import { fetchDraw } from './lib/wiki.mjs';
 
 const PAGE = process.argv.slice(2).find(a => !a.startsWith('--')) ?? "2025 US Open – Men's singles";
@@ -43,8 +36,6 @@ console.log('  bracket templates:', JSON.stringify(counts));
 // against a real field is exercised separately by the existing parser tests.
 const slug = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '')
   .toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 40);
-
-const { parseFullDraw } = await import('../src/data/drawParser.ts');
 
 const SLAM_ROUNDS = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'];
 const { draw, results, meta } = parseFullDraw(wikitext, {
@@ -104,7 +95,6 @@ if (!champName) ok = false;
 // in the first round — the same man appearing as two people, which is how a draw silently corrupts.
 // Re-parse with the PRODUCTION resolver over a small roster of known 2025 entrants and check they
 // are found in BOTH the compact sections and the finals bracket.
-const { buildResolver: prodResolver } = await import('../src/data/drawParser.ts');
 const probeRoster = [
   { id: 'sinner', name: 'Jannik Sinner' },
   { id: 'alcaraz', name: 'Carlos Alcaraz' },
@@ -114,7 +104,7 @@ const probeRoster = [
 ];
 const probe = parseFullDraw(wikitext, {
   scoredRounds: SLAM_ROUNDS,
-  resolve: prodResolver(probeRoster),
+  resolve: buildResolver(probeRoster),
   includeIncomplete: true,
 });
 console.log('\n  name resolution with the production resolver:');
