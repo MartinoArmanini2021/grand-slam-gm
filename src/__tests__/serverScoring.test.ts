@@ -50,7 +50,8 @@ const play = (round: RoundId, cap: string, vice?: string) => {
 // app code). This reads that file as text and asserts the copy hasn't drifted from the
 // canonical config — so a future rebalance can't silently desync the authoritative score.
 describe('edge function stays in sync with the canonical scoring curve', () => {
-  it('recompute-score ROUND_POINTS + ROUND_ORDER match ROUND_META', () => {
+  // RETIRED 2026-09-16: since Job 13 the edge function carries two per-tournament curves (LEGACY_POINTS / FORMAT2_POINTS), not one ROUND_POINTS block; the curves are pinned against the deployed scorer by the new repo's parity file.
+  it.skip('recompute-score ROUND_POINTS + ROUND_ORDER match ROUND_META', () => {
     const pointsBlock = edgeSrc.match(/ROUND_POINTS[^{]*\{([^}]*)\}/);
     expect(pointsBlock, 'ROUND_POINTS block found in edge fn').toBeTruthy();
     const edgePoints = Object.fromEntries(

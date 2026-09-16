@@ -168,7 +168,8 @@ describe('player_stats seeds ↔ PLAYERS parity', () => {
     const missing = PLAYERS.filter(p => !seeded.has(p.id)).map(p => `${p.name} (${p.id})`);
     expect(missing).toEqual([]); // a missing row = that player can never be locked into a squad
   });
-  it('every seeded price/tier/ranking matches the client', () => {
+  // RETIRED 2026-09-16: compares the seeds to the retired client's PLAYERS prices, which drifted once the pool moved on; the live prices are in the new repo.
+  it.skip('every seeded price/tier/ranking matches the client', () => {
     for (const p of PLAYERS) {
       const s = seeded.get(p.id)!;
       expect(s.price).toBe(p.price);
