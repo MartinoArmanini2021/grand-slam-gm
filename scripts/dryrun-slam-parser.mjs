@@ -24,17 +24,11 @@ try {
 } catch {
   /* fall back below */
 }
+import { fetchDraw } from './lib/wiki.mjs';
 
 const PAGE = process.argv.slice(2).find(a => !a.startsWith('--')) ?? "2025 US Open – Men's singles";
 
-const url = `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(PAGE)}`
-  + `&prop=wikitext&formatversion=2&format=json&origin=*`;
-
-const res = await fetch(url);
-if (!res.ok) throw new Error(`Wikipedia fetch failed: ${res.status}`);
-const wiki = await res.json();
-const wikitext = wiki?.parse?.wikitext;
-if (typeof wikitext !== 'string') throw new Error(wiki?.error?.info ?? 'Draw page not found');
+const wikitext = await fetchDraw(PAGE);
 
 console.log(`\n  page: ${PAGE}`);
 console.log(`  wikitext: ${wikitext.length.toLocaleString()} chars`);

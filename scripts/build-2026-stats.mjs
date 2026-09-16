@@ -30,6 +30,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { EVENTS as EVENT_DEFS } from './lib/events.mjs';
 import { ALIAS } from '../src/data/drawParser.ts';
 import { surfacePct, surfaceRecord } from './lib/stats.mjs';
+import { fetchWikitext, sleep } from './lib/wiki.mjs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -140,26 +141,8 @@ const NAME_ALIAS = Object.fromEntries(
 const keyOf = (s) => { const k = matchKey(s); return NAME_ALIAS[k] ?? k; };
 const priceFor = (rank) => Math.max(4, Math.min(50, Math.round(52 * Math.pow(rank, -0.42))));
 
-const API = 'https://en.wikipedia.org/w/api.php';
-// Wikipedia throttles anonymous bursts hard. Be a good citizen: descriptive
-// User-Agent, serial requests with a delay, and retry with backoff on failure.
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const HEADERS = { 'User-Agent': 'GrandSlamGM-stats/1.0 (fantasy tennis app; contact: martinoarmanini@gmail.com)' };
-async function fetchWikitext(title) {
-  const url = `${API}?action=parse&prop=wikitext&formatversion=2&format=json&page=${encodeURIComponent(title)}`;
-  for (let attempt = 0; attempt < 4; attempt++) {
-    try {
-      const res = await fetch(url, { headers: HEADERS });
-      if (res.status === 404) return { missing: true };           // page truly doesn't exist
-      if (res.status === 429 || res.status >= 500) { await sleep(800 * (attempt + 1)); continue; }
-      if (!res.ok) return null;
-      const j = await res.json();
-      if (j.error) return j.error.code === 'missingtitle' ? { missing: true } : null;
-      return { wikitext: j.parse?.wikitext ?? null };
-    } catch { await sleep(600 * (attempt + 1)); }
-  }
-  return null; // exhausted retries (throttled/network) — distinct from missing
-}
+// The fetch itself lives in scripts/lib/wiki.mjs (User-Agent, serial requests, retry with back-off);
+// fetchEvent below only knows which title shapes to try.
 // try the main title then any alternates, each with the " – Men's singles" suffix.
 // Returns { wikitext } | { missing:true } (all variants 404) | { throttled:true }.
 async function fetchEvent(e) {
@@ -171,7 +154,7 @@ async function fetchEvent(e) {
   for (const stem of [e.t, ...(e.alt || [])]) {
     for (const title of [`${stem} – Men's singles`, `${stem} – Singles`, stem]) {
       const r = await fetchWikitext(title);
-      if (r === null) { sawThrottle = true; continue; }
+      if (r.throttled) { sawThrottle = true; continue; }
       if (r.wikitext) return { wikitext: r.wikitext };
       // r.missing → try the next shape
     }

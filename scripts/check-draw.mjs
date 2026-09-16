@@ -24,8 +24,8 @@
 
 import { cleanTeam } from '../src/data/drawParser.ts';
 import { getEvent } from './lib/events.mjs';
+import { fetchWikitext } from './lib/wiki.mjs';
 
-const API = 'https://en.wikipedia.org/w/api.php';
 const [id, ...flags] = process.argv.slice(2);
 if (!id) { console.error('usage: node scripts/check-draw.mjs <event-id> [--page="<wiki title>"]'); process.exit(2); }
 const ev = getEvent(id);
@@ -39,18 +39,16 @@ if (!Number.isInteger(ev.drawSize)) {
 // seeds have byes, so 64 of the 128 first-round slots stay empty by design.
 const EXPECTED = ev.drawSize === 128 ? 128 : 2 * ev.drawSize - 128;
 
-const res = await fetch(
-  `${API}?action=parse&page=${encodeURIComponent(TITLE)}&prop=wikitext&formatversion=2&format=json&origin=*`,
-);
-if (!res.ok) {
-  console.log(`\n  ${TITLE}\n  page fetch failed: ${res.status} — retry, do NOT read this as "no draw"\n`);
+const page = await fetchWikitext(TITLE);
+if (page.throttled) {
+  console.log(`\n  ${TITLE}\n  Wikipedia throttled or unreachable — retry, do NOT read this as "no draw"\n`);
   process.exit(1);
 }
-const w = (await res.json())?.parse?.wikitext ?? '';
-if (!w) {
-  console.log(`\n  ${TITLE}\n  no wikitext — page may not exist yet\n`);
+if (page.missing) {
+  console.log(`\n  ${TITLE}\n  no such page — it may not exist yet\n`);
   process.exit(1);
 }
+const w = page.wikitext;
 
 const brackets = (w.match(/\{\{\s*[0-9]+TeamBracket/gi) || []).length;
 const slots = [...w.matchAll(/\|\s*RD1-team(\d{2})\s*=([^\n]*)/g)].map((m) => m[2].trim());

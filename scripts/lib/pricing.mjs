@@ -17,17 +17,3 @@ export function priceOf(ranking, ytd, surfaceWin) {
   const surfMult = 1 + (surfaceWin != null ? (surfaceWin / 100 - 0.5) * 0.5 : 0);
   return Math.max(4, Math.min(50, Math.round(rawBase * formMult * surfMult)));
 }
-
-// Fetch a Wikipedia draw page's wikitext via the CORS-open MediaWiki API — the exact source the
-// live feed polls, so the tooling and the app can never read different draws.
-export async function fetchDraw(page) {
-  const url = `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(page)}`
-    + `&prop=wikitext&formatversion=2&format=json&origin=*`;
-  const json = await (await fetch(url)).json();
-  const wikitext = json?.parse?.wikitext;
-  if (typeof wikitext !== 'string') {
-    console.error(`could not load draw page "${page}": ${json?.error?.info ?? 'not found'}`);
-    process.exit(2);
-  }
-  return wikitext;
-}
