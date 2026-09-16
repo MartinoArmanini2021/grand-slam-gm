@@ -338,9 +338,8 @@ async function main() {
 
 
   if (DRY) { console.log('\n--dry: nothing written.'); return; }
-  writeFileSync(POOL_PATH + '.bak', JSON.stringify(pool, null, 0) + '\n');
   writeFileSync(POOL_PATH, JSON.stringify(out, null, 0) + '\n');
-  console.log(`\nWrote ${POOL_PATH} (backup: atp300.json.bak).`);
+  console.log(`\nWrote ${POOL_PATH}.`);
   writeFileSync(join(root, 'src/data/extra2026.json'), JSON.stringify(extras, null, 2));
   console.log('Wrote src/data/extra2026.json (' + extras.length + ' hand-entered entrants).');
 }

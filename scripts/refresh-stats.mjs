@@ -171,9 +171,8 @@ async function main() {
   if (sinner) console.log(`\nspot-check ${sinner.name}: rank ${sinner.rank}, $${sinner.price}M, ytd`, sinner.ytd, 'surface', sinner.surface);
 
   if (DRY) { console.log('\n--dry: nothing written.'); return; }
-  writeFileSync(POOL_PATH + '.bak', JSON.stringify(pool, null, 0) + '\n');
   writeFileSync(POOL_PATH, JSON.stringify(out, null, 0) + '\n');
-  console.log(`\nWrote ${POOL_PATH} (backup: atp300.json.bak).`);
+  console.log(`\nWrote ${POOL_PATH}.`);
 }
 
 main().catch((e) => { console.error('\nFAILED:', e.message); process.exitCode = 1; });

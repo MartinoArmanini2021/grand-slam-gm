@@ -30,3 +30,6 @@ dist-ssr
 
 # Supabase CLI local artifacts
 supabase/.temp/
+
+# Tool and editor backups — the pool builders no longer write them; git is the backup.
+*.bak
