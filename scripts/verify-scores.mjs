@@ -108,4 +108,6 @@ if (scored === 0) { console.log(`
 console.log(failures === 0
   ? `\n  Every stored score is exactly reproducible from the results. No discrepancies.\n`
   : `\n  ${failures} DISCREPANCY(S) — investigate before trusting the leaderboard.\n`);
-process.exit(failures === 0 ? 0 : 1);
+// Set the code and let the loop drain: process.exit() here races the closing fetch handle on Windows
+// and aborts with a libuv assertion, masking the code (the same lesson reconcile-field learned).
+process.exitCode = failures === 0 ? 0 : 1;

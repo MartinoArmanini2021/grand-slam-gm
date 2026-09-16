@@ -110,4 +110,6 @@ for (const tid of TOURNAMENTS) {
 console.log(problems === 0
   ? `\n  Every stored state is well-formed. No client/server divergence is possible from the data.\n`
   : `\n  ${problems} PROBLEM(S) found — see above.\n`);
-process.exit(problems === 0 ? 0 : 1);
+// Set the code and let the loop drain: process.exit() here races the closing fetch handle on Windows
+// and aborts with a libuv assertion, masking the code (the same lesson reconcile-field learned).
+process.exitCode = problems === 0 ? 0 : 1;
