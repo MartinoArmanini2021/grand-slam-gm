@@ -29,6 +29,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { EVENTS as EVENT_DEFS } from './lib/events.mjs';
 import { ALIAS } from '../src/data/drawParser.ts';
+import { surfacePct, surfaceRecord } from './lib/stats.mjs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -254,10 +255,6 @@ async function main() {
   const events = pickEvents();
   console.log(`Aggregating 2026 YTD form from ${events.length} Wikipedia event pages…\n`);
 
-  // Below this many matches a surface record says more about scheduling than about the player, so
-  // the overall season stands in. Four is deliberately low: it keeps a real clay specialist's clay
-  // number while refusing to price anyone off a single result.
-  const MIN_SURFACE = 4;
   const stat = new Map(); // key -> {w,l,titles,surf:{hard,clay,grass:{w,l}}}
   const blank = () => ({ w: 0, l: 0, titles: 0, surf: { hard: { w: 0, l: 0 }, clay: { w: 0, l: 0 }, grass: { w: 0, l: 0 } } });
   const bump = (name, won, surf) => {
@@ -300,30 +297,8 @@ async function main() {
     console.log(`  ✓ ${e.t.padEnd(42)} ${n} matches${champ ? `, champ ${champ}` : ''}`);
   }
 
-  // merge into pool: 2026 YTD stats where we have them; keep current rank/price
-  const pct = (w, l) => (w + l ? Math.round((100 * w) / (w + l)) : null);
-  const surfacePct = (st) => {
-    const overall = pct(st.w, st.l);
-    const thinSeason = st.w + st.l < MIN_SURFACE;
-    const one = (k) => {
-      const { w, l } = st.surf[k];
-      if (w + l >= MIN_SURFACE) return pct(w, l);        // his own record on this surface
-      if (thinSeason) return null;                        // too few matches to say anything — UNKNOWN, not 50%
-      return overall;                                     // his season stands in for the surface
-    };
-    return { hard: one('hard'), clay: one('clay'), grass: one('grass') };
-  };
-  // The evidence behind each percentage: the wins-losses actually played on that surface, and
-  // whether the figure is that surface's own record or the overall season standing in for it.
-  // Without this the pool cannot tell "76% on hard, 13-4" from "76% season, two hard matches".
-  const surfaceRecord = (st) => {
-    const out = {};
-    for (const k of ['hard', 'clay', 'grass']) {
-      const { w, l } = st.surf[k];
-      out[k] = { w, l, real: w + l >= MIN_SURFACE };
-    }
-    return out;
-  };
+  // merge into pool: 2026 YTD stats where we have them; keep current rank/price. The surface
+  // percentages come from scripts/lib/stats.mjs — the one rule both pool builders share.
   // ONE reading of the stats table for a name. The pool loop and the hand-entered loop below used
   // to each carry their own copy of this, and copies drift.
   const formFor = (name) => {

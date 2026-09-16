@@ -24,6 +24,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { surfacePct } from './lib/stats.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const POOL_PATH = join(root, 'src/data/atp300.json');
@@ -128,13 +129,9 @@ async function main() {
   }
   console.log(`Total matches counted: ${matchCount}`);
 
-  // surface%: real per-surface rate with ≥4 matches, else overall, else null
-  const pct = (w, l) => (w + l ? Math.round((100 * w) / (w + l)) : null);
-  const surfacePct = (st) => {
-    const overall = pct(st.w, st.l);
-    const one = (k) => { const { w, l } = st.surf[k]; return w + l >= 4 ? pct(w, l) : overall; };
-    return { hard: one('hard'), clay: one('clay'), grass: one('grass') };
-  };
+  // surface%: the shared rule in scripts/lib/stats.mjs — a surface's own record from MIN_SURFACE
+  // matches, else the season overall, else null for a season too thin to say anything. This file
+  // used to turn a four-match season into hard percentages of its own; now it cannot.
   const MS_PER_YEAR = 365.25 * 864e5;
   const ageToday = (st) => {
     if (st.age == null) return null;
