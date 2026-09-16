@@ -1,3 +1,9 @@
+-- ── SUPERSEDED 2026-09-16 ── DO NOT RUN. This restores the save_entry of 26 August 2026, which
+-- production replaced on 2 September (the basket market: market_check + a rewritten save_entry) and
+-- again on 15 September (the per-tournament economy). Running it now would not "undo Job 16" — it
+-- would remove the basket market and the economy change with it. The current rollback, captured
+-- from production, is supabase/rollback_save_entry_market_check_2026-09-16.sql. Kept for history.
+--
 -- ── ROLLBACK for Job 16 ──────────────────────────────────────────────────────────────────────────
 -- The EXACT save_entry definition deployed immediately before the Job 16 hardening
 -- (captured from pg_get_functiondef on 2026-08-26, before applying

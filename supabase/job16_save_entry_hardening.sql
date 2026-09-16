@@ -1,3 +1,10 @@
+-- ── SUPERSEDED 2026-09-16 ── DO NOT RE-APPLY. Applied 26 August 2026 and since REPLACED in production
+-- by the basket market (2 September), whose market_check enforces the same two rules — the bank never
+-- goes negative, only eliminated players are sold and only players still in the draw are signed — in
+-- a different shape, and by the per-tournament economy (15 September). Re-applying this file would
+-- overwrite the current save_entry with the 26 August body. The live bodies are captured in
+-- supabase/rollback_save_entry_market_check_2026-09-16.sql. Kept for history.
+--
 -- ── Job 16 — close the two remaining holes in save_entry ─────────────────────────────────────────
 --
 -- Applied 2026-08-26, with Martino's explicit go-ahead (this is the rule guarding every save, so it
