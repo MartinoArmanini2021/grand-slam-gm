@@ -28,6 +28,7 @@
 // (United/Davis/Laver Cup) are excluded. Stats are never invented.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { EVENTS as EVENT_DEFS } from './lib/events.mjs';
+import { ALIAS } from '../src/data/drawParser.ts';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -125,15 +126,16 @@ const clean = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerC
 // Strip Wikipedia disambiguators like "(tennis)" / "(Spanish player)" BEFORE reducing
 // to a–z, so "João Fonseca (tennis)" and pool "Joao Fonseca" resolve to the same key.
 const matchKey = (s) => clean(s).replace(/\(.*?\)/g, '').replace(/[^a-z]/g, '');
-// Draw-page spelling -> pool spelling, compared AFTER matchKey. Without this a player is
-// silently credited with zero 2026 matches, which the app then renders as "0-0" — a claim
-// that he played and lost nothing, rather than "we don't know".
-const NAME_ALIAS = {
-  // pool spelling -> draw-page spelling. Applied to the POOL name at lookup, because the
-  // stats table is keyed by whatever the draw pages call the player. Getting the direction
-  // wrong is silent: the player simply shows no 2026 matches.
-  aleksandrshevchenko: 'alexandershevchenko',
-};
+// Draw-page spelling -> pool spelling, derived from the parser's own ALIAS map (keyed by the
+// normalised Wikipedia spelling, valued by the roster spelling) so the two can never drift.
+// Applied AT STORE TIME to every name that enters the stats table — winner, loser, the pair key,
+// the lost-round — and again at lookup, where it is a no-op for a pool spelling. A page that
+// spells a player the pool's way and a page that spells him Wikipedia's way now land on ONE key.
+// Applying it at lookup only, as before, lost every match from pages using the pool spelling —
+// silently: the player simply showed no 2026 matches, which the app renders as "0-0".
+const NAME_ALIAS = Object.fromEntries(
+  Object.entries(ALIAS).map(([wiki, roster]) => [matchKey(wiki), matchKey(roster)]),
+);
 const keyOf = (s) => { const k = matchKey(s); return NAME_ALIAS[k] ?? k; };
 const priceFor = (rank) => Math.max(4, Math.min(50, Math.round(52 * Math.pow(rank, -0.42))));
 
@@ -259,7 +261,7 @@ async function main() {
   const stat = new Map(); // key -> {w,l,titles,surf:{hard,clay,grass:{w,l}}}
   const blank = () => ({ w: 0, l: 0, titles: 0, surf: { hard: { w: 0, l: 0 }, clay: { w: 0, l: 0 }, grass: { w: 0, l: 0 } } });
   const bump = (name, won, surf) => {
-    const k = matchKey(name); if (!k) return;
+    const k = keyOf(name); if (!k) return;
     const s = stat.get(k) ?? blank();
     if (won) s.w++; else s.l++;
     if (surf) { if (won) s.surf[surf].w++; else s.surf[surf].l++; }
@@ -279,15 +281,15 @@ async function main() {
     let n = 0;
     for (const blk of bracketBlocks(w)) {
       for (const mt of bracketMatches(blk)) {
-        const pair = [matchKey(mt.winner), matchKey(mt.loser)].sort().join('|');
+        const pair = [keyOf(mt.winner), keyOf(mt.loser)].sort().join('|');
         if (seen.has(pair)) continue; // dedupe overlap (section vs finals bracket)
         seen.add(pair);
         bump(mt.winner, true, e.s); bump(mt.loser, false, e.s); n++;
-        if (mt.round) lostRound.set(matchKey(mt.loser), mt.round); // one loss/event → their result
+        if (mt.round) lostRound.set(keyOf(mt.loser), mt.round); // one loss/event → their result
       }
     }
     const champ = championOf(w);
-    if (champ) { const s = stat.get(keyOf(champ)); if (s) s.titles++; lostRound.set(matchKey(champ), 'W'); }
+    if (champ) { const s = stat.get(keyOf(champ)); if (s) s.titles++; lostRound.set(keyOf(champ), 'W'); }
     // record each player's result at this event for the per-tournament panel
     const meta = { tournament: displayName(e), short: shortFor(e), surface: e.s, lvl: levelOf(e) };
     for (const [k, result] of lostRound) {
@@ -322,11 +324,23 @@ async function main() {
     }
     return out;
   };
+  // ONE reading of the stats table for a name. The pool loop and the hand-entered loop below used
+  // to each carry their own copy of this, and copies drift.
+  const formFor = (name) => {
+    const st = stat.get(keyOf(name));
+    if (!st || st.w + st.l === 0) return null;
+    // per-tournament results, biggest events first, capped so the panel stays readable
+    const rs = (results.get(keyOf(name)) ?? [])
+      .sort((a, b) => LEVEL_RANK[a.lvl] - LEVEL_RANK[b.lvl])
+      .slice(0, 10)
+      .map(({ tournament, surface, short, result }) => ({ tournament, surface, short, result }));
+    return { surface: surfacePct(st), surfaceRecord: surfaceRecord(st), ytd: { wins: st.w, losses: st.l, titles: st.titles }, statsYear: 2026, results2026: rs };
+  };
   let enriched = 0; const noData = [];
   const out = pool.map((p) => {
     const base = { ...p, price: priceFor(p.rank) };
-    const st = stat.get(keyOf(p.name));
-    if (!st || st.w + st.l === 0) {
+    const form = formFor(p.name);
+    if (!form) {
       // no 2026 tour-level data → keep whatever form the pool already had, labelled with
       // its season so a 2025 fallback is never mistaken for current form (null → no label).
       noData.push(p.name);
@@ -334,12 +348,7 @@ async function main() {
       return { ...base, surface: base.surface ?? null, ytd: keep, statsYear: keep ? (base.statsYear ?? 2025) : undefined };
     }
     enriched++;
-    // per-tournament results, biggest events first, capped so the panel stays readable
-    const rs = (results.get(keyOf(p.name)) ?? [])
-      .sort((a, b) => LEVEL_RANK[a.lvl] - LEVEL_RANK[b.lvl])
-      .slice(0, 10)
-      .map(({ tournament, surface, short, result }) => ({ tournament, surface, short, result }));
-    return { ...base, surface: surfacePct(st), surfaceRecord: surfaceRecord(st), ytd: { wins: st.w, losses: st.l, titles: st.titles }, statsYear: 2026, results2026: rs };
+    return { ...base, ...form };
   });
 
   console.log(`\n── report ──────────────────────────────────────────`);
@@ -361,13 +370,9 @@ async function main() {
   for (const m of manualAll) {
     if (seenExtra.has(m.id)) continue;
     seenExtra.add(m.id);
-    const st = stat.get(keyOf(m.name));
-    if (!st || st.w + st.l === 0) { extras.push({ id: m.id, name: m.name, surface: null, ytd: null, results2026: [] }); continue; }
-    const rs = (results.get(keyOf(m.name)) ?? [])
-      .sort((a, b) => LEVEL_RANK[a.lvl] - LEVEL_RANK[b.lvl]).slice(0, 10)
-      .map(({ tournament, surface, short, result }) => ({ tournament, surface, short, result }));
-    extras.push({ id: m.id, name: m.name, surface: surfacePct(st), surfaceRecord: surfaceRecord(st),
-      ytd: { wins: st.w, losses: st.l, titles: st.titles }, statsYear: 2026, results2026: rs });
+    const form = formFor(m.name);
+    if (!form) { extras.push({ id: m.id, name: m.name, surface: null, ytd: null, results2026: [] }); continue; }
+    extras.push({ id: m.id, name: m.name, ...form });
   }
   console.log('');
   console.log('hand-entered entrants:');

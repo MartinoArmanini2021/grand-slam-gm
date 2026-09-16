@@ -26,7 +26,7 @@ const matchKey = (round: RoundId, slot: number): string => `${round}_${slot}`;
 // undraftable — and if the two copies of this function ever disagree, client and server disagree
 // on identity. Caught rehearsing the 2025 US Open draw, 2026-08-27.
 const FOLD: Record<string, string> = { 'ø': 'o', 'æ': 'ae', 'œ': 'oe', 'ł': 'l', 'đ': 'd', 'ð': 'd', 'þ': 'th', 'ß': 'ss', 'ı': 'i' };
-const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+export const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
   .replace(/[øæœłđðþßı]/g, (c) => FOLD[c] ?? c)
   .replace(/[-\s]+/g, ' ').trim();
 // Wikipedia disambiguates some articles: "[[Alex de Minaur (tennis)|…]]",
@@ -64,7 +64,7 @@ export function teamTarget(raw: string): string {
 // seed 11. Neither accent-folding nor word-sorting can bridge those, and the failure is
 // silent — the player resolves to a synthetic id and is simply absent from the field.
 // Keyed by the normalised WIKIPEDIA spelling, valued by the normalised ROSTER spelling.
-const ALIAS: Record<string, string> = {
+export const ALIAS: Record<string, string> = {
   'alexander shevchenko': 'aleksandr shevchenko',
   'francis tiafoe': 'frances tiafoe',
   'daniel vallejo': 'adolfo daniel vallejo',

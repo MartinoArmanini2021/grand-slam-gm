@@ -13,9 +13,9 @@
 // gained 13 players between the first build and cutover, all of whom would have been undraftable.
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { buildResolver, splitBrackets, teamTarget, stripDisambig } from '../src/data/drawParser.ts';
+import { buildResolver, splitBrackets, teamTarget, stripDisambig, norm } from '../src/data/drawParser.ts';
 import { getEvent, expandManual } from './lib/events.mjs';
-import { tierOf, fetchDraw, norm } from './lib/pricing.mjs';
+import { tierOf, fetchDraw } from './lib/pricing.mjs';
 
 const [id, ...flags] = process.argv.slice(2);
 if (!id) { console.error('usage: node scripts/build-field.mjs <event-id> [--dry] [--page="<wiki title>"]'); process.exit(2); }

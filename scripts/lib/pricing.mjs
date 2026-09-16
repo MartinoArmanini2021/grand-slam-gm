@@ -31,5 +31,3 @@ export async function fetchDraw(page) {
   }
   return wikitext;
 }
-
-export const norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[-\s]+/g, ' ').trim();
