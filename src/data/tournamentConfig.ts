@@ -11,24 +11,49 @@ import type { RoundId } from '../types';
 export type Surface = 'grass' | 'hard' | 'clay';
 
 // ── Shared round metadata ────────────────────────────────────────────────────
-// One canonical curve by round name: a given round is worth the same points in
-// every tournament (a Masters final scores like a Slam final). A tournament just
-// declares WHICH of these rounds it plays (its `rounds` list) — the engine derives
-// everything else (exit staging, transfer lock, bracket columns) from that.
-export const ROUND_META: Record<RoundId, { label: string; short: string; points: number }> = {
-  R128: { label: 'Round of 128', short: 'R128', points: 1 },
-  R64:  { label: 'Round of 64',  short: 'R64',  points: 1 },
-  R32:  { label: 'Round of 32',  short: 'R32',  points: 2 },
-  R16:  { label: 'Round of 16',  short: 'R16',  points: 5 },
-  QF:   { label: 'Quarter-Final', short: 'QF',  points: 10 },
-  SF:   { label: 'Semi-Final', short: 'SF',  points: 20 },
-  F:    { label: 'Final', short: 'F',   points: 40 },
+// Round LABELS are the same in every tournament (a Masters final is still "the Final").
+// Round POINTS are not — see SCORING_CURVES below — so they live separately.
+export const ROUND_META: Record<RoundId, { label: string; short: string }> = {
+  R128: { label: 'Round of 128', short: 'R128' },
+  R64:  { label: 'Round of 64',  short: 'R64' },
+  R32:  { label: 'Round of 32',  short: 'R32' },
+  R16:  { label: 'Round of 16',  short: 'R16' },
+  QF:   { label: 'Quarter-Final', short: 'QF' },
+  SF:   { label: 'Semi-Final', short: 'SF' },
+  F:    { label: 'Final', short: 'F' },
 };
 
 // Canonical earliest→latest ordering of every possible round — the basis for
 // "how far did a player get" (exit staging), independent of which subset a given
 // tournament scores.
 export const ROUND_ORDER: RoundId[] = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'];
+
+// ── Scoring curve (per tournament, since Job 13 / docs/FORMAT_OPTIONS.md) ────────────────
+// Base points per round. Two curves:
+//   legacy  — the original curve. Events played under it are pinned to it FOREVER: a manual
+//             rescore of an archived tournament must reproduce the standings its managers
+//             actually lived.
+//   format2 — the "early-fat" curve (docs/FORMAT_OPTIONS.md, Format 2) adopted for every
+//             tournament from the US Open onward, cutting how QF-onward-heavy the season is
+//             (~69% of points arriving QF-onward down to ~51%) while keeping the Final the
+//             biggest single prize.
+//
+// This MUST mirror LEGACY_POINTS / FORMAT2_POINTS / LEGACY_TOURNAMENTS in the server's
+// authoritative copy (supabase/functions/recompute-score/index.ts) exactly — the client only
+// DISPLAYS and locally projects scores; the edge function is the only writer of record. The
+// parity test in serverScoring.test.ts pins the two together so they can't silently drift.
+export type ScoringCurveId = 'legacy' | 'format2';
+
+export const SCORING_CURVES: Record<ScoringCurveId, Record<RoundId, number>> = {
+  legacy:  { R128: 1, R64: 1, R32: 2, R16: 5, QF: 10, SF: 20, F: 40 },
+  format2: { R128: 1, R64: 2, R32: 3, R16: 5, QF: 8,  SF: 13, F: 20 },
+};
+
+// Which events are pinned to the legacy curve — everything else scores on Format 2. MUST match
+// the server's LEGACY_TOURNAMENTS set exactly (checked by the parity test).
+const LEGACY_CURVE_TOURNAMENTS = new Set(['montreal_2026', 'cincinnati_2026']);
+export const curveIdFor = (tournamentId: string): ScoringCurveId =>
+  LEGACY_CURVE_TOURNAMENTS.has(tournamentId) ? 'legacy' : 'format2';
 
 export interface SurfaceTheme {
   label: string;   // "Grass" / "Hard" / "Clay" — shown in the header
@@ -303,6 +328,11 @@ function resolveActiveId(): string {
 
 export const ACTIVE_TOURNAMENT_ID = resolveActiveId();
 export const TOURNAMENT: Tournament = TOURNAMENTS[ACTIVE_TOURNAMENT_ID];
+
+// Base points by round for THIS session's tournament — resolved once at boot, same as
+// TOURNAMENT itself (switching tournaments reboots the app). Whatever curve this pulls from
+// SCORING_CURVES must be what the server would use for the same tournament id.
+export const ROUND_POINTS: Record<RoundId, number> = SCORING_CURVES[curveIdFor(ACTIVE_TOURNAMENT_ID)];
 
 // The round played BEFORE this tournament's first SCORED round, or undefined when there isn't one.
 // A 96-draw Masters byes its 32 seeds into the second round, so the 64 unseeded contest an opening

@@ -58,9 +58,13 @@ describe('ingest-draw — config-driven, never guessing', () => {
 });
 
 describe('recompute-score — resolves from app_config or stops', () => {
-  // RETIRED 2026-09-16: the fallback it guarded against is gone (the test below proves the throw); the montreal_2026 it now finds is Job 13's LEGACY_TOURNAMENTS curve set, not a fallback.
-  it.skip('has no hardcoded tournament fallback', async () => {
-    expect(codeOnly(await raw('recompute-score'))).not.toMatch(/montreal_2026/);
+  it('has no hardcoded tournament fallback', async () => {
+    // The dangerous shape this guards: `tournamentId ?? 'montreal_2026'` (or any other literal
+    // id) as a silent default when app_config can't be read. A tournament id appearing elsewhere
+    // — e.g. in the legacy-vs-Format-2 scoring-curve registry (LEGACY_TOURNAMENTS, since Job 13)
+    // — is a deliberate, static decision about HOW to score a known event, not a guess at WHICH
+    // event to score, and is fine; only banning the fallback idiom itself tells the two apart.
+    expect(codeOnly(await raw('recompute-score'))).not.toMatch(/\?\?\s*['"][a-z0-9_]+['"]/);
   });
 
   it('throws rather than scoring an unresolved tournament', async () => {
