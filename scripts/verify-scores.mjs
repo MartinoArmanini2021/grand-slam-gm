@@ -18,59 +18,13 @@
 // It reads only anon-readable feeds — matches, player_stats, board_entries — so it needs no secret
 // and can be run by anyone with the public key. It is READ-ONLY and writes nothing.
 
-import { readFileSync } from 'node:fs';
+import { api, paged, activeTournament } from './lib/supabase.mjs';
 
-const env = Object.fromEntries(
-  readFileSync(new URL('../.env', import.meta.url), 'utf8')
-    .split(/\r?\n/).filter(l => l.includes('=') && !l.trim().startsWith('#'))
-    .map(l => [l.slice(0, l.indexOf('=')).trim(), l.slice(l.indexOf('=') + 1).trim()]),
-);
-const URL_ = env.VITE_SUPABASE_URL;
-const KEY = env.VITE_SUPABASE_ANON_KEY;
-// Ignore flags when reading the tournament id, or `--detail` gets treated as a tournament name and
-// the script cheerfully reports "0 entries · no discrepancies" — a pass that proves nothing, which
-// is the single worst outcome for a verification tool.
-const args = process.argv.slice(2).filter(a => !a.startsWith('--'));
 const DETAIL = process.argv.includes('--detail');
-
-const api = async (path) => {
-  const res = await fetch(`${URL_}/rest/v1/${path}`, {
-    headers: { apikey: KEY, Authorization: `Bearer ${KEY}` },
-  });
-  if (!res.ok) throw new Error(`${path} → ${res.status} ${await res.text()}`);
-  return res.json();
-};
-
-// board_entries grows with the player base and PostgREST caps a single response (db-max-rows,
-// default ~1000) — a bare select would silently verify only the first page and report success.
-// Page until a short page ends it; the explicit order keeps page boundaries stable.
-const paged = async (path, page = 1000) => {
-  const rows = [];
-  for (let from = 0; ; from += page) {
-    const res = await fetch(`${URL_}/rest/v1/${path}`, {
-      headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, Range: `${from}-${from + page - 1}` },
-    });
-    if (!res.ok) throw new Error(`${path} → ${res.status} ${await res.text()}`);
-    const batch = await res.json();
-    rows.push(...batch);
-    if (batch.length < page) return rows;
-  }
-};
-
-// No hardcoded default. An unnamed run resolves whatever the server says is ACTIVE — the same
-// rule recompute-score follows ("NO HARDCODED FALLBACK"): a checker pinned to yesterday's event
-// silently verifies the wrong tournament and reads as reassurance.
-const rpc = async (fn) => {
-  const res = await fetch(`${URL_}/rest/v1/rpc/${fn}`, {
-    method: 'POST',
-    headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
-    body: '{}',
-  });
-  if (!res.ok) throw new Error(`rpc/${fn} → ${res.status} ${await res.text()}`);
-  return res.json();
-};
-const TOURNAMENT = args[0] ?? await rpc('get_active_tournament');
-if (!TOURNAMENT) throw new Error('No tournament: pass one explicitly or set app_config.active_tournament_id.');
+// No hardcoded default, and flags are never read as a tournament name — both enforced by the shared
+// helper. A checker pinned to yesterday's event, or one that took `--detail` for a tournament and
+// cheerfully reported "0 entries · no discrepancies", would read as reassurance while proving nothing.
+const TOURNAMENT = await activeTournament();
 
 // ── the engine, transcribed from supabase/functions/recompute-score ─────────────────────────────
 // Deliberately re-implemented rather than imported: a check that shares its implementation with the

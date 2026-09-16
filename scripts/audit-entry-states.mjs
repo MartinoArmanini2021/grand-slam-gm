@@ -1,6 +1,6 @@
 // ── Invariant audit over every stored entry state ────────────────────────────────────────────────
 //
-//   node scripts/audit-entry-states.mjs [tournament_id ...]      (default: both played events)
+//   node scripts/audit-entry-states.mjs [tournament_id ...]      (default: the ACTIVE event)
 //
 // verify-scores proves the TOTALS reconcile. That is necessary and not sufficient: a state can
 // reconcile today and still be malformed in ways that bite later, or that the client and the server
@@ -22,19 +22,7 @@
 //  7. initialSquad size/duplicates — the frozen snapshot is what scores; a dupe double-counts.
 // READ-ONLY.
 
-import { readFileSync } from 'node:fs';
-
-const env = Object.fromEntries(
-  readFileSync(new URL('../.env', import.meta.url), 'utf8')
-    .split(/\r?\n/).filter(l => l.includes('=') && !l.trim().startsWith('#'))
-    .map(l => [l.slice(0, l.indexOf('=')).trim(), l.slice(l.indexOf('=') + 1).trim()]),
-);
-const U = env.VITE_SUPABASE_URL, K = env.VITE_SUPABASE_ANON_KEY;
-const H = { apikey: K, Authorization: `Bearer ${K}` };
-const api = async (p) => {
-  const r = await fetch(`${U}/rest/v1/${p}`, { headers: H });
-  if (!r.ok) throw new Error(`${p} → ${r.status} ${await r.text()}`);
-  return r.json();
+import { paged, activeTournament } from './lib/supabase.mjs';
 };
 
 // The server's order, verbatim. Anything outside it is invisible to the scorer.
@@ -43,13 +31,16 @@ const idx = (r) => ROUND_ORDER.indexOf(r);
 const SQUAD_SIZE = 10;
 
 const ids = process.argv.slice(2).filter(a => !a.startsWith('--'));
-const TOURNAMENTS = ids.length ? ids : ['montreal_2026', 'cincinnati_2026'];
+// No hardcoded default: an unnamed run audits whatever the server says is ACTIVE, like every other
+// checker. A default pinned to finished events would audit history and report the live one clean.
+const TOURNAMENTS = ids.length ? ids : [await activeTournament([])];
 
 let problems = 0;
 const flag = (who, msg) => { problems++; console.log(`  ✗ ${who}  ${msg}`); };
 
 for (const tid of TOURNAMENTS) {
-  const board = await api(`board_entries?tournament_id=eq.${tid}&select=user_id,score,state`);
+  // paged: board_entries grows with the player base and PostgREST caps one response at ~1000 rows.
+  const board = await paged(`board_entries?tournament_id=eq.${tid}&select=user_id,score,state&order=user_id.asc`);
   console.log(`\n  ${tid} — ${board.length} entries`);
 
   for (const e of board) {

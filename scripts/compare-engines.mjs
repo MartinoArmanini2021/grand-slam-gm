@@ -20,53 +20,12 @@
 // existed. A parity check frozen in the past is worse than none, because it reads as reassurance.
 //
 // Reads the same anon-visible feeds the apps do. READ-ONLY.
-import { readFileSync } from 'node:fs';
+import { api, paged, activeTournament } from './lib/supabase.mjs';
 
-const env = Object.fromEntries(
-  readFileSync(new URL('../.env', import.meta.url), 'utf8')
-    .split(/\r?\n/).filter(l => l.includes('=') && !l.trim().startsWith('#'))
-    .map(l => [l.slice(0, l.indexOf('=')).trim(), l.slice(l.indexOf('=') + 1).trim()]),
-);
-const api = async (path) => {
-  const res = await fetch(`${env.VITE_SUPABASE_URL}/rest/v1/${path}`, {
-    headers: { apikey: env.VITE_SUPABASE_ANON_KEY, Authorization: `Bearer ${env.VITE_SUPABASE_ANON_KEY}` },
-  });
-  if (!res.ok) throw new Error(`${path} → ${res.status} ${await res.text()}`);
-  return res.json();
-};
-
-// Same two rules as verify-scores.mjs: no hardcoded tournament default (an unnamed run checks
-// whatever the server says is ACTIVE), and board_entries is paged past PostgREST's response cap
-// so the diff never silently compares a fraction of the field.
-const rpc = async (fn) => {
-  const res = await fetch(`${env.VITE_SUPABASE_URL}/rest/v1/rpc/${fn}`, {
-    method: 'POST',
-    headers: {
-      apikey: env.VITE_SUPABASE_ANON_KEY, Authorization: `Bearer ${env.VITE_SUPABASE_ANON_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: '{}',
-  });
-  if (!res.ok) throw new Error(`rpc/${fn} → ${res.status} ${await res.text()}`);
-  return res.json();
-};
-const paged = async (path, page = 1000) => {
-  const rows = [];
-  for (let from = 0; ; from += page) {
-    const res = await fetch(`${env.VITE_SUPABASE_URL}/rest/v1/${path}`, {
-      headers: {
-        apikey: env.VITE_SUPABASE_ANON_KEY, Authorization: `Bearer ${env.VITE_SUPABASE_ANON_KEY}`,
-        Range: `${from}-${from + page - 1}`,
-      },
-    });
-    if (!res.ok) throw new Error(`${path} → ${res.status} ${await res.text()}`);
-    const batch = await res.json();
-    rows.push(...batch);
-    if (batch.length < page) return rows;
-  }
-};
-const TOURNAMENT = process.argv.slice(2).find(a => !a.startsWith('--')) ?? await rpc('get_active_tournament');
-if (!TOURNAMENT) throw new Error('No tournament: pass one explicitly or set app_config.active_tournament_id.');
+// Same two rules as verify-scores.mjs, now enforced by the shared helper: no hardcoded tournament
+// default (an unnamed run checks whatever the server says is ACTIVE), and board_entries is paged
+// past PostgREST's response cap so the diff never silently compares a fraction of the field.
+const TOURNAMENT = await activeTournament();
 
 const [matchRows, statRows, boardRows] = await Promise.all([
   api(`matches?tournament_id=eq.${TOURNAMENT}&select=round,slot,p1_id,p2_id,winner_id`),

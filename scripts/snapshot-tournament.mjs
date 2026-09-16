@@ -14,46 +14,10 @@
 // Re-verify a snapshot at any time with: node scripts/verify-scores.mjs <tournament_id>
 // (it recomputes from the same inputs — a mismatch against the file means something moved).
 
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync } from 'node:fs';
+import { api, paged, activeTournament } from './lib/supabase.mjs';
 
-const env = Object.fromEntries(
-  readFileSync(new URL('../.env', import.meta.url), 'utf8')
-    .split(/\r?\n/).filter(l => l.includes('=') && !l.trim().startsWith('#'))
-    .map(l => [l.slice(0, l.indexOf('=')).trim(), l.slice(l.indexOf('=') + 1).trim()]),
-);
-const URL_ = env.VITE_SUPABASE_URL;
-const KEY = env.VITE_SUPABASE_ANON_KEY;
-const H = { apikey: KEY, Authorization: `Bearer ${KEY}` };
-
-const api = async (path) => {
-  const res = await fetch(`${URL_}/rest/v1/${path}`, { headers: H });
-  if (!res.ok) throw new Error(`${path} → ${res.status} ${await res.text()}`);
-  return res.json();
-};
-// Page past PostgREST's response cap so a large field is never silently truncated.
-const paged = async (path, page = 1000) => {
-  const rows = [];
-  for (let from = 0; ; from += page) {
-    const res = await fetch(`${URL_}/rest/v1/${path}`, {
-      headers: { ...H, Range: `${from}-${from + page - 1}` },
-    });
-    if (!res.ok) throw new Error(`${path} → ${res.status} ${await res.text()}`);
-    const batch = await res.json();
-    rows.push(...batch);
-    if (batch.length < page) return rows;
-  }
-};
-const rpc = async (fn) => {
-  const res = await fetch(`${URL_}/rest/v1/rpc/${fn}`, {
-    method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: '{}',
-  });
-  if (!res.ok) throw new Error(`rpc/${fn} → ${res.status} ${await res.text()}`);
-  return res.json();
-};
-
-const arg = process.argv.slice(2).find(a => !a.startsWith('--'));
-const TOURNAMENT = arg ?? await rpc('get_active_tournament');
-if (!TOURNAMENT) throw new Error('No tournament: pass one explicitly or set app_config.active_tournament_id.');
+const TOURNAMENT = await activeTournament();
 
 const [matches, stats, board, profiles] = await Promise.all([
   api(`matches?tournament_id=eq.${TOURNAMENT}&select=round,slot,p1_id,p2_id,winner_id,score_line&order=round,slot`),
