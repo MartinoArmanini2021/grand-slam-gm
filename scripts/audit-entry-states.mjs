@@ -23,7 +23,6 @@
 // READ-ONLY.
 
 import { paged, activeTournament } from './lib/supabase.mjs';
-};
 
 // The server's order, verbatim. Anything outside it is invisible to the scorer.
 const ROUND_ORDER = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'];
