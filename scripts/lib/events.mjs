@@ -17,6 +17,7 @@ export const EVENTS = {
     surface: 'hard',       // which surface win% feeds the price model
     // upcoming | live | completed — gen-seed applies price and tier only while upcoming (runbook rule 2).
     status: 'completed',
+    drawSize: 96,          // 96-draw Masters: 64 of the 128 first-round slots are filled, the 32 seeds have byes
     // Real main-draw entrants who are NOT in the top-300 stats pool (wildcards/qualifiers). Bio is
     // real; 2026 form is left neutral (ytd 0/0/0, surface 50) because we have no verified match data
     // for them — their rank (>300) floors the price and puts them in the bottom tier anyway, so a big
@@ -39,6 +40,7 @@ export const EVENTS = {
     label: 'US Open 2026',
     surface: 'hard',
     status: 'completed',
+    drawSize: 128,         // a Slam: all 128 first-round slots filled, no byes
     // What reconcile-field actually found — recorded here so the seed header stops claiming "0 missing, 0 phantom".
     reconciled:
       'field built 2026-08-29 from the completed draw, 128 players — NOT the 0 missing / 0 phantom the header used to ' +
