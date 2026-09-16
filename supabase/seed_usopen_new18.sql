@@ -1,0 +1,20 @@
+insert into public.player_stats (tournament_id, id, ranking, price, tier) values
+  ('usopen_2026','gaston',88,5,'Silver'),
+  ('usopen_2026','wong',94,7,'Silver'),
+  ('usopen_2026','fearnley',100,5,'Silver'),
+  ('usopen_2026','svrcina',117,6,'Silver'),
+  ('usopen_2026','mochizuki',118,4,'Silver'),
+  ('usopen_2026','piros',121,6,'Silver'),
+  ('usopen_2026','samuel',128,5,'Silver'),
+  ('usopen_2026','vera',139,5,'Silver'),
+  ('usopen_2026','dimitrov',142,4,'Silver'),
+  ('usopen_2026','rodionov',145,5,'Silver'),
+  ('usopen_2026','basavareddy',146,5,'Silver'),
+  ('usopen_2026','schoolkate',160,4,'Silver'),
+  ('usopen_2026','sakamoto',165,4,'Silver'),
+  ('usopen_2026','cina',184,5,'Silver'),
+  ('usopen_2026','lloydharris',186,5,'Silver'),
+  ('usopen_2026','passaro',200,5,'Silver'),
+  ('usopen_2026','wendelken',204,5,'Silver'),
+  ('usopen_2026','guerrieri',213,5,'Silver')
+on conflict (tournament_id, id) do nothing;

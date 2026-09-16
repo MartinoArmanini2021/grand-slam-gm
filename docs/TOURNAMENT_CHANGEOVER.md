@@ -1,204 +1,228 @@
-# Changing tournaments — Cincinnati → US Open
+# Changing tournaments — the runbook
 
-**The procedure for ending one event and starting the next.** Written before it is needed, because
-the last cutover is what caused the 12-hour leaderboard freeze.
+**Ending one event and starting the next.** Written generically: `OLD` is the finishing tournament,
+`NEW` is the one starting. Substitute ids as you go.
 
-Read the whole thing once before starting. The order is load-bearing and two of the steps have a
-window where getting it wrong is silent.
+Read it once before starting. The order is load-bearing, and the steps marked **SILENT** fail without
+an error message — the app keeps working and shows you something wrong.
 
----
-
-## The one rule that matters
-
-**Do not repoint the server at the new tournament until the old one's final score is settled.**
-
-`recompute-score` only ever scores the tournament named in `app_config`. The moment you repoint it,
-Cincinnati stops being recalculated — permanently, in practice, because you will not point back.
-If the final's result had not yet been ingested and scored, whoever won Cincinnati on the last
-match never gets those points, and nothing anywhere reports a problem. The leaderboard just stops,
-frozen at a number that is wrong.
-
-Everything else here is recoverable. That is not.
+Rewritten 2026-08-28 after the Cincinnati → US Open changeover, which sprang six traps this document
+did not previously mention. They are all here now.
 
 ---
 
-## Part 1 — Prepare (any time after the US Open draw publishes)
+## The three rules
 
-Nothing here touches the running game. All of it is safe while Cincinnati is still being played.
+**1. Do not repoint the server until OLD's final score has settled.**
+`recompute-score` only ever scores the tournament in `app_config`. Repoint it and OLD stops being
+recalculated — permanently in practice. If the final had not been ingested and scored, the winner
+never gets those points and nothing reports a problem. The leaderboard just freezes at a wrong
+number. Everything else in this document is recoverable. This is not.
 
-### 1.1 Build the field from the published draw
+**2. Never re-run `gen-seed.mjs` once prices are published.**
+Prices and tiers are what managers drafted against. Re-running reprices the field under squads that
+are already locked. If the display data is wrong, fix the display data — the shelf and `player_stats`
+are separate tables and you can correct one without touching the other.
 
-```bash
-cd C:\Users\marti\tennis-fantasy
-```
-```bash
-node scripts/build-field.mjs usopen_2026
-```
+**3. Unknown is not zero.**
+Anywhere the pipeline lacks data it must write `null`, never a stand-in. A `0-0` record reads as
+"played two matches, lost none" and a `50` reads as a real 50%. Both are claims about a player you
+cannot make.
 
-Then prove it matches the real draw — **this is not optional**, it is what caught a 4-team-bracket
-miscount at the Cincinnati cutover:
+---
 
-```bash
-node scripts/reconcile-field.mjs usopen_2026
-```
+## Part 1 — Prepare (safe while OLD is still being played)
 
-Must report **0 missing, 0 phantom**. If it reports anything else, stop and tell me: the field is
-the input to everything below, and a wrong field means wrong prices, wrong tiers and wrong scores.
+### 1.1 Build the field
 
-If the draw contains entrants outside the top-300 pool (wildcards, qualifiers), add them to the
-`manual` list for `usopen_2026` in `scripts/lib/events.mjs` and re-run both commands.
+    node scripts/build-field.mjs NEW
+    node scripts/reconcile-field.mjs NEW
 
-### 1.2 Generate the player seed
+Must report **0 missing, 0 phantom**. Not optional — it caught a 4-team-bracket miscount at the
+Cincinnati cutover.
 
-```bash
-node scripts/gen-seed.mjs usopen_2026
-```
+Entrants outside the top-300 pool (wildcards, protected rankings) go in the `manual` list for NEW in
+`scripts/lib/events.mjs`, then re-run both.
 
-Writes `supabase/seed_usopen_player_stats.sql`. Every player gets **all four** of id, ranking, price
-and tier — a row missing price or tier makes a legal 2/3/5 squad read as illegal, so it can never be
-locked.
+> **SILENT — a manual entry needs an `atpId` or the player has no face.** Look it up on the player's
+> own Wikipedia page: the ATP profile link is `atptour.com/en/players/<name-slug>/<ID>/`, and the
+> slug being the player's name is what proves the id is theirs. A `{{ATP|ID}}` template works too.
+> **A wrong id does not error** — ATP serves a generic silhouette at the same 300x300 with HTTP 200,
+> so the app's fallback never fires. And you cannot check from a script: atptour.com returns 403 to
+> any server-side fetch but 200 to a browser image tag. A human has to look at it.
 
-### 1.3 Teach the results feed about the new event
+> **SILENT — protected rankings.** A player entering on a PR is in the draw *because* his real rank
+> fell. Using the PR prices him as a top-100 player and shrinks his upset multiplier. Use the real
+> rank. `fieldTooling.test.ts` enforces that manual entrants rank > 300.
 
-`supabase/functions/ingest-draw/index.ts` carries a `TOURNAMENTS` registry. Add a `usopen_2026`
-entry alongside the existing two, importing the field JSON from 1.1. **A Grand Slam has no byes**, so
-its rounds are `['R128','R64','R32','R16','QF','SF','F']` — not the Masters list.
+### 1.2 Refresh 2026 form
 
-Then deploy it:
+    node scripts/build-2026-stats.mjs --dry
 
-```bash
-npx supabase functions deploy ingest-draw --project-ref mrdmlfumdsxufifjulbt
-```
+Check `events found: N/N` before running it for real without `--dry`.
 
-**Why now and not later:** the feed refuses a tournament it does not carry. Deployed after the
-switch, every ingest run 400s and the leaderboard never starts. Deployed now, it changes nothing —
-the crons are still asking for Cincinnati.
+> **SILENT — `atp300.raw.json` is a STALE snapshot.** It disagreed with `atp300.json` on 120 of 300
+> ranks. Never rank from the raw file. The arbiter is the seed list — see 1.3.
 
-### 1.4 Apply the seed
+> **SILENT — the name alias map runs pool to draw, not draw to pool.** `matchKey()` reduces names to
+> bare letters, so the pool's "Aleksandr Shevchenko" never meets the draw's "Alexander Shevchenko".
+> `NAME_ALIAS` is consulted on the **pool** name at lookup time while stats are **stored** under the
+> **draw** spelling. Write it backwards and it does nothing — the player simply shows no matches. It
+> cost a rank-97 player his entire season (16-19 across 10 tournaments) until it was caught.
 
-Copy it:
+### 1.3 The staleness test
 
-```bash
-Get-Content C:\Users\marti\tennis-fantasy\supabase\seed_usopen_player_stats.sql -Raw | Set-Clipboard
-```
+Seeds are assigned by ranking, so **seed order must track rank order monotonically**. Gaps in the
+rank sequence are fine — those are the withdrawals. Values going *backwards* mean stale ranks.
+
+    node -e "const f=require('./src/data/NEWField.json');const s=f.filter(p=>p.seed).sort((a,b)=>a.seed-b.seed);let prev=0,bad=0;for(const p of s){if(p.ranking<prev)bad++;prev=p.ranking}console.log(bad?bad+' OUT-OF-ORDER SEEDS — RANKS ARE STALE':'seed order tracks rank order — ranks are current')"
+
+### 1.4 Generate and apply the seed
+
+    node scripts/gen-seed.mjs NEW
 
 Paste into the Supabase SQL editor. **Check the first line matches the file before you Run** — a
-failed copy leaves the previous clipboard contents in place and reports success having done nothing.
+failed copy leaves the old clipboard in place and reports success having done nothing.
 
-Verify — the US Open row must show its full field with **0 incomplete**:
+    select tournament_id, count(*) as players,
+           count(*) filter (where price is null or tier is null) as incomplete_rows
+    from public.player_stats group by tournament_id order by tournament_id;
 
-```sql
-select tournament_id, count(*) as players,
-       count(*) filter (where price is null or tier is null) as incomplete_rows
-from public.player_stats group by tournament_id order by tournament_id;
-```
+`incomplete_rows` must be 0. A row missing price or tier makes a legal 2/3/5 squad read as illegal,
+so it can never be locked.
 
-This cannot disturb Cincinnati. Since fix 1.3 the table is keyed `(tournament_id, id)`, so each
-event owns its own rows — that is precisely what that migration bought.
+### 1.5 Load the shelf
+
+> **SILENT — the shelf and the field file use DIFFERENT key styles.** `src/data/<event>Field.json` is
+> camelCase and nested (`atpId`, `ranking`, `surface.hard`, `ytd.wins`, `yearResults`).
+> `public.tournament_fields.field` is snake_case and flat (`atp_id`, `atp_rank`, `hard_pct`,
+> `ytd_wins`, `year_results`). Pasting the field file straight in leaves every rank, price and photo
+> undefined while still looking like a valid array of the right length. Transform, then verify a
+> sample row's keys before trusting it.
+
+### 1.6 Teach the results feed
+
+Add NEW to the `TOURNAMENTS` registry in `supabase/functions/ingest-draw/index.ts`. **A Grand Slam
+has no byes** — its rounds are R128, R64, R32, R16, QF, SF, F — not the Masters list.
+
+    npx supabase functions deploy ingest-draw --project-ref mrdmlfumdsxufifjulbt
+
+Deploy **now**, not after the switch: the feed refuses a tournament it does not carry, so deployed
+late every ingest 400s and the leaderboard never starts. Deployed now it changes nothing — the crons
+are still asking for OLD.
 
 ---
 
-## Part 2 — The switch (one sitting, after Cincinnati's final)
+## Part 2 — The switch (one sitting, after OLD's final)
 
-### 2.1 Prove Cincinnati is finished and settled
+### 2.1 Prove OLD is finished and settled
 
-The final must have a result **and** the scores must have stopped moving:
+    select round, count(*) as matches, count(winner_id) as decided
+    from public.matches where tournament_id = 'OLD' group by round order by min(slot);
 
-```sql
-select round, count(*) as matches, count(winner_id) as decided
-from public.matches where tournament_id = 'cincinnati_2026'
-group by round order by min(slot);
-```
-
-`F` must show `1 / 1`. Then take the standings twice, five minutes apart:
-
-```sql
-select user_id, score from public.entries
-where tournament_id = 'cincinnati_2026' order by score desc;
-```
-
-**Identical both times.** If any number moved, scoring is still catching up — wait. Repointing now
-would freeze the leaderboard mid-calculation and there is no going back to fix it.
+`F` must show 1 of 1. Then take the standings **twice, five minutes apart** — identical both times.
+If any number moved, scoring is still catching up. Wait.
 
 ### 2.2 Repoint the server
 
-```sql
-update public.app_config
-   set value = 'usopen_2026', updated_at = now()
- where key = 'active_tournament_id';
-```
+    update public.app_config set value = 'NEW', updated_at = now() where key = 'active_tournament_id';
+    select public.active_tournament_id();
 
-```sql
-select public.active_tournament_id();
-```
-
-Must return `usopen_2026`. If it returns NULL, the row is missing or misnamed — stop. (It returns
-NULL rather than guessing, deliberately: it used to fall back to a hardcoded `montreal_2026`, which
-would have quietly pointed the whole pipeline at a finished event.)
+Must return NEW. NULL means the row is missing — stop.
 
 ### 2.3 Watch one full cycle before touching the client
 
-Wait five minutes, then:
+Wait five minutes:
 
-```sql
-select 'ingest'  as feed, last_run_at::text, ok::text, coalesce(error, 'none') as err
-from public.ingest_health  where tournament_id = public.active_tournament_id()
-union all
-select 'scoring', last_run_at::text, ok::text, coalesce(error, 'none')
-from public.scoring_health where tournament_id = public.active_tournament_id();
-```
+    select 'ingest' as feed, last_run_at::text, ok::text, coalesce(error,'none') as err
+    from public.ingest_health where tournament_id = public.active_tournament_id()
+    union all
+    select 'scoring', last_run_at::text, ok::text, coalesce(error,'none')
+    from public.scoring_health where tournament_id = public.active_tournament_id();
 
-Both `ok = true`, both recent. **This is the checkpoint.** If the feed is unhappy, the only thing
-that has changed is one config row — put it back and nobody has seen anything:
+Both `ok = true`, both recent. **This is the checkpoint** — only one config row has changed, so
+rolling back is putting it back.
 
-```sql
-update public.app_config set value = 'cincinnati_2026', updated_at = now() where key = 'active_tournament_id';
-```
+### 2.4 Ship the client — Lovable era
 
-### 2.4 Ship the client
+The client is the Lovable project now, not this repo. Code changes go through the Lovable agent:
+there is no write-file tool, `send_message` is the only path, and it costs credits. Budget for that
+before a cutover — running out mid-changeover blocks every app-side fix.
 
-In `src/data/tournamentConfig.ts`:
+> **SILENT — `DEFAULT_TOURNAMENT_ID` in `src/lib/game/data.ts` is a MANUAL step, and it was missed.**
+> `activeTournamentQuery` returns it as a *successful* result whenever `get_active_tournament()`
+> errors, so React Query caches it as fresh for five minutes and never retries. One transient blip
+> and a brand-new manager is silently shown a **completed** tournament — no market, champion already
+> crowned, nothing that looks wrong. **Update it to NEW as part of every changeover.**
 
-- `cincinnati_2026` → `status: 'completed'`
-- `usopen_2026` → `status: 'live'`
-- fill in the US Open `schedule` from the published order of play
-
-```bash
-npm test
-```
-```bash
-npm run deploy:preview
-```
-
-Check the preview, then deploy to production.
-
-**Why the client goes last:** between 2.2 and here, managers are still looking at Cincinnati while
-the server has moved on. That is harmless — Cincinnati is over and its scores are final. The reverse
-order is not: a client offering the US Open before the server scores it would show every new squad
-sitting on zero points, with nothing wrong that anyone could see.
+Also confirm the scoring curve. `LEGACY_TOURNAMENTS` in `engine.ts` pins already-played events to the
+curve their managers actually lived. A finished event must never be re-scored on a new curve.
 
 ---
 
-## What your managers experience
+## Part 3 — After the draw completes (slams only)
 
-Nothing abrupt, and this is what Phase 2.1 and 2.4 bought:
+A slam draw publishes **before qualifying finishes**. Until the last qualifier is placed, the bracket
+has unfilled slots and some real main-draw players have **no match row at all**.
 
-- **Never used the switcher** → they open on the US Open, ready to draft.
-- **Had switched to Cincinnati at some point** → they land on Cincinnati, see the finished-tournament
-  card with the champion, where they placed and their final score, and a button to the US Open.
-- **Either way** they can go back to Cincinnati or Montréal any time and browse — squads, standings,
-  the full draw — with every control inert and a line explaining why.
+> **SILENT and destructive — `outOfDraw()` reads "no match row after lock" as "knocked out in the
+> opening round".** At lock, every such player is refunded in full and their owner gets a free
+> transfer. With 18 slots unfilled that was 16 real players. **The re-ingest is a correctness
+> requirement, not tidiness, and it has a hard deadline: first ball.**
 
-No one gets a save rejection, and no one loses work to a stale tournament.
+Re-run 1.1 through 1.5, then **REDEPLOY `ingest-draw`, then** re-ingest.
+
+> **SILENT — the field is COMPILED INTO the edge function.** `ingest-draw` imports the field JSON
+> at build time, so the deployed copy still holds the roster from whenever you last deployed it.
+> Rebuild the field and the running function cannot resolve the new names: it writes 64 match rows
+> that look perfectly healthy, `ingest_health.ok` stays true, and the new players simply have **no
+> match row** — which at lock means every one of them is refunded. Seen for real on 2026-08-29:
+> ingest reported ok with all 64 R128 rows written, and all 18 qualifiers missing.
+> **Run `npx supabase functions deploy ingest-draw` after every field rebuild, before re-ingesting.**
+
+Then:
+
+> **Re-stamp the schedule.** `buildMatchRows` writes seven columns and `started_at` is not one of
+> them. Existing rows keep their stamp — the upsert only SETs payload columns, verified empirically —
+> but the **new** rows arrive with `started_at` NULL. The lock still fires because it only needs one
+> stamped row, so this is completeness rather than correctness; still, re-run
+> `supabase/job20_round_schedule.sql` so all of them carry it.
+
+    select round, count(*) as rows, count(started_at) as stamped,
+           min(started_at at time zone 'America/New_York')::text as first_ball_local
+    from public.matches where tournament_id='NEW' group by round order by min(slot);
+
+Check `first_ball_local` against the tournament's published order of play. The database stores UTC;
+a US Open day session starting 11:00 in New York is 15:00 UTC and 17:00 in central Europe. Getting
+the timezone wrong by a session shuts the market early or leaves it open through the first round.
+
+---
+
+## The trap index — everything that fails silently
+
+| Trap | Symptom | Where |
+|---|---|---|
+| `DEFAULT_TOURNAMENT_ID` not updated | new manager sees a finished event | Lovable `data.ts` |
+| Shelf loaded with camelCase keys | ranks, prices, photos all undefined | `tournament_fields` |
+| Ranked from `atp300.raw.json` | wrong prices and tiers throughout | pool files |
+| `NAME_ALIAS` written draw to pool | a player shows zero matches all season | `build-2026-stats.mjs` |
+| Wrong `atpId` | silhouette, not an error | field JSON |
+| Missing form written as 0-0 or 50 | app states a real player never played | `expandManual`, `build-field`, `surfacePct` |
+| Re-ingest without re-stamping | new rows unstamped | `job20_round_schedule.sql` |
+| Re-running `gen-seed` after launch | reprices locked squads | rule 2 |
+| Stale field in the edge function | ingest reports ok, new players get no match row | redeploy `ingest-draw` |
+| Public league deleted | **every save fails** — `save_entry` requires it | `leagues.is_public` |
 
 ---
 
 ## After it lands
 
-- Cincinnati's scores in `public.entries` are now frozen for good. Nothing recomputes a tournament
-  that is not the active one.
-- Archive it the way Montréal was: `docs/archive/cincinnati_2026/`, and **capture the player_stats
-  rows scoped to `cincinnati_2026`**, not the whole table. The Montréal archive got this wrong — it
-  dumped the live table on the day, which by then held the *next* event's rankings.
-- `montreal_2026` and `cincinnati_2026` both stay in the switcher as completed events. That is the
-  season-long story working as intended, not clutter.
+- OLD's scores are frozen. Nothing recomputes a tournament that is not active.
+- Archive it under `docs/archive/OLD/`, capturing `player_stats` **scoped to OLD**, not the whole
+  table. The Montréal archive dumped the live table, which by then held the next event's rankings.
+- Check the grants. After any schema work, confirm no view is writable by `anon` and no table grants
+  it TRUNCATE — **RLS does not govern TRUNCATE**, the privilege alone does.
+
+    select c.relname, has_table_privilege('anon','public.'||c.relname,'TRUNCATE') as anon_truncate
+    from pg_class c join pg_namespace n on n.oid=c.relnamespace
+    where n.nspname='public' and c.relkind in ('r','v') order by 2 desc, 1;

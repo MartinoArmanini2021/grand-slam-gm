@@ -12,7 +12,7 @@
 // Re-run it LATE. Qualifying finishing (or a withdrawal) changes the field — at Cincinnati the draw
 // gained 13 players between the first build and cutover, all of whom would have been undraftable.
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { buildResolver, splitBrackets, teamTarget, stripDisambig } from '../src/data/drawParser.ts';
 import { getEvent, expandManual } from './lib/events.mjs';
 import { tierOf, fetchDraw, norm } from './lib/pricing.mjs';
@@ -77,7 +77,10 @@ for (const b of sections) {
 // ── 3) Emit ──────────────────────────────────────────────────────────────────────────────────────
 const fromPool = [...found.keys()].map(pid => {
   const p = poolById.get(pid);
-  const surface = p.surface ?? { hard: 50, clay: 50, grass: 50 };
+  // NEVER substitute a number for missing form. A 50 here is indistinguishable from a real 50%,
+  // and 0-0 reads as "played, lost none" rather than "unknown". Kokkinakis actually went 2-2 in
+  // 2026 and the app showed him as having played no tennis at all. null means UNKNOWN.
+  const surface = p.surface ?? null;
   return {
     id: p.id, name: p.name, country: p.country, flag: p.flag,
     age: p.age ?? null, hand: p.hand ?? 'R',
@@ -86,13 +89,25 @@ const fromPool = [...found.keys()].map(pid => {
     atpId: p.atpId ?? null,
     photoUrl: p.photoUrl ?? null,
     ranking: p.rank, seed: seedById.get(pid) ?? null,
-    surface: { hard: surface.hard ?? 50, clay: surface.clay ?? 50, grass: surface.grass ?? 50 },
-    ytd: p.ytd ?? { wins: 0, losses: 0, titles: 0 },
+    surface: surface ? { hard: surface.hard ?? null, clay: surface.clay ?? null, grass: surface.grass ?? null } : null,
+    ytd: p.ytd ?? null,
     yearResults: (p.results2026 ?? []).map(r => ({ short: r.short, result: r.result })),
   };
 });
 // Hand-entered entrants count ONLY if they're really in this draw (a withdrawal drops them).
-const manualIn = (ev.manual ?? []).filter(m => unmatched.has(norm(m.name))).map(expandManual);
+// Hand-entered entrants get their REAL 2026 form from extra2026.json when the stats run found
+// any; otherwise their form stays null (unknown), never a fabricated zero.
+const extraPath = 'src/data/extra2026.json';
+const extraById = new Map(
+  (existsSync(extraPath) ? JSON.parse(readFileSync(extraPath, 'utf8')) : []).map(e => [e.id, e]),
+);
+const manualIn = (ev.manual ?? []).filter(m => unmatched.has(norm(m.name))).map(m => {
+  const base = expandManual(m);
+  const x = extraById.get(m.id);
+  if (!x) return base;
+  return { ...base, surface: x.surface ?? null, ytd: x.ytd ?? null,
+    yearResults: (x.results2026 ?? []).map(r => ({ short: r.short, result: r.result })) };
+});
 const field = [...fromPool, ...manualIn].sort((a, b) => (a.seed ?? 999) - (b.seed ?? 999) || a.ranking - b.ranking);
 const stillMissing = [...unmatched].filter(n => !(ev.manual ?? []).some(m => norm(m.name) === n));
 

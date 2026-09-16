@@ -1,0 +1,254 @@
+[
+  {
+    "id": "monfils",
+    "name": "Gaël Monfils",
+    "surface": {
+      "hard": 33,
+      "clay": 25,
+      "grass": 31
+    },
+    "surfaceRecord": {
+      "hard": {
+        "w": 3,
+        "l": 6,
+        "real": true
+      },
+      "clay": {
+        "w": 1,
+        "l": 3,
+        "real": true
+      },
+      "grass": {
+        "w": 0,
+        "l": 0,
+        "real": false
+      }
+    },
+    "ytd": {
+      "wins": 4,
+      "losses": 9,
+      "titles": 0
+    },
+    "statsYear": 2026,
+    "results2026": [
+      {
+        "tournament": "Australian Open",
+        "surface": "hard",
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "tournament": "French Open",
+        "surface": "clay",
+        "short": "RG",
+        "result": "R128"
+      },
+      {
+        "tournament": "BNP Paribas Open",
+        "surface": "hard",
+        "short": "IW",
+        "result": "R64"
+      },
+      {
+        "tournament": "Monte-Carlo Masters",
+        "surface": "clay",
+        "short": "MC",
+        "result": "R64"
+      },
+      {
+        "tournament": "Mutua Madrid Open",
+        "surface": "clay",
+        "short": "MAD",
+        "result": "R128"
+      },
+      {
+        "tournament": "ASB Classic",
+        "surface": "hard",
+        "short": "AKL",
+        "result": "R128"
+      },
+      {
+        "tournament": "Mexican Open",
+        "surface": "hard",
+        "short": "MO",
+        "result": "R64"
+      },
+      {
+        "tournament": "National Bank Open",
+        "surface": "hard",
+        "short": "MTL",
+        "result": "R64"
+      },
+      {
+        "tournament": "Cincinnati Open",
+        "surface": "hard",
+        "short": "CIN",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "kokkinakis",
+    "name": "Thanasi Kokkinakis",
+    "surface": {
+      "hard": 25,
+      "clay": 29,
+      "grass": 29
+    },
+    "surfaceRecord": {
+      "hard": {
+        "w": 1,
+        "l": 3,
+        "real": true
+      },
+      "clay": {
+        "w": 1,
+        "l": 1,
+        "real": false
+      },
+      "grass": {
+        "w": 0,
+        "l": 1,
+        "real": false
+      }
+    },
+    "ytd": {
+      "wins": 2,
+      "losses": 5,
+      "titles": 0
+    },
+    "statsYear": 2026,
+    "results2026": [
+      {
+        "tournament": "French Open",
+        "surface": "clay",
+        "short": "RG",
+        "result": "R64"
+      },
+      {
+        "tournament": "Wimbledon Championships",
+        "surface": "grass",
+        "short": "WIM",
+        "result": "R128"
+      },
+      {
+        "tournament": "Adelaide International",
+        "surface": "hard",
+        "short": "ADL",
+        "result": "R64"
+      },
+      {
+        "tournament": "Cincinnati Open",
+        "surface": "hard",
+        "short": "CIN",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "wolf",
+    "name": "J.J. Wolf",
+    "surface": {
+      "hard": 50,
+      "clay": 50,
+      "grass": 50
+    },
+    "surfaceRecord": {
+      "hard": {
+        "w": 2,
+        "l": 1,
+        "real": false
+      },
+      "clay": {
+        "w": 0,
+        "l": 1,
+        "real": false
+      },
+      "grass": {
+        "w": 0,
+        "l": 0,
+        "real": false
+      }
+    },
+    "ytd": {
+      "wins": 2,
+      "losses": 2,
+      "titles": 0
+    },
+    "statsYear": 2026,
+    "results2026": [
+      {
+        "tournament": "U.S. Men’s Clay Court Championships",
+        "surface": "clay",
+        "short": "UMC",
+        "result": "R128"
+      },
+      {
+        "tournament": "Cincinnati Open",
+        "surface": "hard",
+        "short": "CIN",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "misolic",
+    "name": "Filip Misolic",
+    "surface": {
+      "hard": null,
+      "clay": null,
+      "grass": null
+    },
+    "surfaceRecord": {
+      "hard": {
+        "w": 0,
+        "l": 3,
+        "real": false
+      },
+      "clay": {
+        "w": 0,
+        "l": 0,
+        "real": false
+      },
+      "grass": {
+        "w": 0,
+        "l": 0,
+        "real": false
+      }
+    },
+    "ytd": {
+      "wins": 0,
+      "losses": 3,
+      "titles": 0
+    },
+    "statsYear": 2026,
+    "results2026": [
+      {
+        "tournament": "Australian Open",
+        "surface": "hard",
+        "short": "AO",
+        "result": "R128"
+      },
+      {
+        "tournament": "Brisbane International",
+        "surface": "hard",
+        "short": "BRI",
+        "result": "R128"
+      }
+    ]
+  },
+  {
+    "id": "gorzny",
+    "name": "Sebastian Gorzny",
+    "surface": null,
+    "ytd": null,
+    "results2026": []
+  },
+  {
+    "id": "kennedy",
+    "name": "Jack Kennedy",
+    "surface": null,
+    "ytd": null,
+    "results2026": []
+  }
+]

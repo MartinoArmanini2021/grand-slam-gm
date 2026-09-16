@@ -6,6 +6,11 @@
 //   node scripts/sim-balance.mjs                 # default: 12 managers, 20k tournaments
 //   node scripts/sim-balance.mjs 10 40000        # managers, runs
 //   node scripts/sim-balance.mjs 12 20000 --alt  # also test alternative points curves
+//   node scripts/sim-balance.mjs 22 5000 --slam --budget=200
+//       --slam       the CURRENT game: US Open field, 128-draw (R128 start), Format 2 curve
+//                    1·2·3·5·8·13·20 and the R128 75% refund. Default stays the Cincinnati
+//                    64-draw on the legacy curve so the 2026-08-14 results remain reproducible.
+//       --budget=N   starting budget in $M (default 150) — the same run answers "what if $200M?"
 //
 // Match model: P(A beats B) = logistic(k · ln(rankB/rankA)), k=0.5 — calibrated so #1 beats #10
 // ≈76%, #1 beats #100 ≈91%, #10 beats #50 ≈69%, which matches ATP hard-court base rates closely.
@@ -15,22 +20,29 @@ import { readFileSync } from 'node:fs';
 const N_MANAGERS = Number(process.argv[2]) || 12;
 const N_RUNS     = Number(process.argv[3]) || 20000;
 const TEST_ALT   = process.argv.includes('--alt');
+const SLAM       = process.argv.includes('--slam');
+const BUDGET_ARG = process.argv.find(a => a.startsWith('--budget='));
 
 // ── the REAL rules ────────────────────────────────────────────────────────────────────────────
-const ROUNDS      = ['R64', 'R32', 'R16', 'QF', 'SF', 'F'];
-const ROUND_POINTS= { R64: 1, R32: 2, R16: 5, QF: 10, SF: 20, F: 40 };
-const RETURN_RATE = { R64: 0.70, R32: 0.55, R16: 0.40, QF: 0.25, SF: 0, F: 0 };
+const ROUNDS      = SLAM ? ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'] : ['R64', 'R32', 'R16', 'QF', 'SF', 'F'];
+const ROUND_POINTS= SLAM ? { R128: 1, R64: 2, R32: 3, R16: 5, QF: 8, SF: 13, F: 20 }
+                         : { R64: 1, R32: 2, R16: 5, QF: 10, SF: 20, F: 40 };
+const RETURN_RATE = SLAM ? { R128: 0.75, R64: 0.70, R32: 0.55, R16: 0.40, QF: 0.25, SF: 0, F: 0 }
+                         : { R64: 0.70, R32: 0.55, R16: 0.40, QF: 0.25, SF: 0, F: 0 };
 const CAPTAIN = 2, VICE = 1.5;
 let TRANSFER_CAP = Infinity;   // max re-signings per tournament (swept below)
-const BUDGET = 150, SQUAD = 10;
+const BUDGET = BUDGET_ARG ? Number(BUDGET_ARG.split('=')[1]) : 150;
+const SQUAD = 10;
+const DRAW = SLAM ? 128 : 64;  // players in the first scored round's bracket
 const QUOTA = { Platinum: 2, Gold: 3, Silver: 5 };
 const tierOf = (r) => (r <= 10 ? 'Platinum' : r <= 25 ? 'Gold' : 'Silver');
 const UPSET_HALF = 30;
 const upsetMult = (w, l) => (l == null || w <= l ? 1 : 1 + (w - l) / ((w - l) + UPSET_HALF));
 const winPoints = (base, w, l) => Math.round(base * upsetMult(w, l));
 
-// ── field: the real Cincinnati entrants, real prices ──────────────────────────────────────────
-const raw = JSON.parse(readFileSync(new URL('../src/data/cincinnati2026Field.json', import.meta.url), 'utf8'));
+// ── field: the real entrants (Cincinnati by default, US Open with --slam), real prices ─────────
+const FIELD_FILE = SLAM ? '../src/data/usopen2026Field.json' : '../src/data/cincinnati2026Field.json';
+const raw = JSON.parse(readFileSync(new URL(FIELD_FILE, import.meta.url), 'utf8'));
 const priceFor = (ranking, ytd, surfWin) => {                   // mirrors players.ts priceBreakdown
   const rawBase = 55 * Math.pow(Math.max(1, ranking), -0.46);
   const played = ytd ? ytd.wins + ytd.losses : 0;
@@ -44,14 +56,14 @@ const FIELD = raw.map(p => ({
   price: priceFor(p.ranking, p.ytd, p.surface?.hard),
 })).sort((a, b) => a.rank - b.rank);
 
-// The 64 who contest R64, seeded into a standard bracket (1v64, 2v63 … properly nested).
-const ENTRANTS = FIELD.slice(0, 64);
+// The DRAW who contest the first scored round, seeded into a standard bracket (1vN, 2vN-1 … nested).
+const ENTRANTS = FIELD.slice(0, DRAW);
 function seedOrder(n) {                                          // standard single-elim seeding
   let o = [0];
   for (let s = 1; s < n; s *= 2) { const m = s * 2 - 1; o = o.flatMap(x => [x, m - x]); }
   return o;
 }
-const BRACKET = seedOrder(64).map(i => ENTRANTS[i]);             // index = draw slot
+const BRACKET = seedOrder(DRAW).map(i => ENTRANTS[i]);           // index = draw slot
 
 // ── match model ───────────────────────────────────────────────────────────────────────────────
 const K = 0.5;
@@ -72,22 +84,28 @@ function buildSquad(strategy, rng) {
     contrarian: (pool) => [...pool].sort((a, b) => a.rank - b.rank).slice(3),        // skip the very top
     random:     (pool) => [...pool].sort(() => rng() - 0.5),
   }[strategy];
-  for (const t of ['Platinum', 'Gold', 'Silver']) {
-    const cand = order(pools[t]);
-    for (const p of cand) { if (pick[t].length < QUOTA[t]) pick[t].push(p); }
+  // Greedy in the strategy's order, with the feasibility check a real manager makes: take a
+  // player only if the CHEAPEST possible fill of every seat still open afterwards fits under
+  // the cap. Every strategy therefore ends with a legal, full 2/3/5 squad. (The old version
+  // drafted first and "repaired" by downgrading Silvers only — once they were all $4M it spun
+  // on no-op swaps and returned squads of up to $194M under a $150M cap.)
+  const TIERS = ['Platinum', 'Gold', 'Silver'];
+  const cheapestFill = (taken) =>
+    TIERS.reduce((s, t) => {
+      const open = QUOTA[t] - pick[t].length - (taken.tier === t ? 1 : 0);
+      const rest = pools[t].filter(p => p !== taken && !pick[t].includes(p)).sort((a, b) => a.price - b.price);
+      return s + rest.slice(0, open).reduce((x, p) => x + p.price, 0);
+    }, 0);
+  let cost = 0;
+  for (const t of TIERS) {
+    for (const p of order(pools[t])) {
+      if (pick[t].length >= QUOTA[t]) break;
+      if (cost + p.price + cheapestFill(p) > BUDGET) continue;
+      pick[t].push(p);
+      cost += p.price;
+    }
   }
-  let squad = [...pick.Platinum, ...pick.Gold, ...pick.Silver];
-  // Repair over-budget squads by swapping the priciest Silver/Gold down until affordable.
-  let guard = 0;
-  while (squad.reduce((s, p) => s + p.price, 0) > BUDGET && guard++ < 200) {
-    const swapTier = squad.filter(p => p.tier === 'Silver').length ? 'Silver' : 'Gold';
-    const worst = squad.filter(p => p.tier === swapTier).sort((a, b) => b.price - a.price)[0];
-    const repl = FIELD.filter(p => p.tier === swapTier && !squad.includes(p))
-      .sort((a, b) => a.price - b.price)[0];
-    if (!repl) break;
-    squad = squad.map(p => (p === worst ? repl : p));
-  }
-  return squad;
+  return [...pick.Platinum, ...pick.Gold, ...pick.Silver];
 }
 
 // ── one tournament ────────────────────────────────────────────────────────────────────────────
@@ -175,6 +193,13 @@ const managers = Array.from({ length: N_MANAGERS }, (_, i) => {
   const strategy = i < STRATS.length ? STRATS[i] : 'random';
   return { i, strategy, squad: buildSquad(strategy, rng) };
 });
+// Every simulated squad must be one the server would accept — otherwise the "best drafter" is a cheat.
+for (const m of managers) {
+  const cost = m.squad.reduce((s, p) => s + p.price, 0);
+  const n = (t) => m.squad.filter(p => p.tier === t).length;
+  if (m.squad.length !== SQUAD || n('Platinum') !== 2 || n('Gold') !== 3 || n('Silver') !== 5 || cost > BUDGET)
+    throw new Error(`illegal squad for ${m.strategy}: ${m.squad.length} players ${n('Platinum')}/${n('Gold')}/${n('Silver')} $${cost}M > $${BUDGET}M`);
+}
 
 function runLeague({ transfers }) {
   const stats = managers.map(m => ({
@@ -251,9 +276,31 @@ function report(label, R) {
   console.log(`  correlation pre-Final score → final:    ${R.corr.toFixed(3)}`);
 }
 
-console.log(`\n  Field: ${FIELD.length} draftable · ${ENTRANTS.length} in the R64 bracket`);
+// ── draft convergence: do the squads look alike? (built once from the fixed seed) ──────────────
+{
+  let shared = 0, pairs = 0;
+  for (let a = 0; a < managers.length; a++) for (let b = a + 1; b < managers.length; b++) {
+    shared += managers[a].squad.filter(p => managers[b].squad.includes(p)).length; pairs++;
+  }
+  const topPlat = FIELD.filter(p => p.tier === 'Platinum').sort((a, b) => b.price - a.price).slice(0, 2);
+  const bothStars = managers.filter(m => topPlat.every(p => m.squad.includes(p))).length;
+  const distinct = new Set(managers.flatMap(m => m.squad.map(p => p.id))).size;
+  const avgSpend = managers.reduce((s, m) => s + m.squad.reduce((x, p) => x + p.price, 0), 0) / managers.length;
+  console.log(`\n  DRAFT CONVERGENCE — ${managers.length} squads: ${distinct} distinct players · two squads share ${(shared / pairs).toFixed(2)} on average · ${bothStars} hold both ${topPlat.map(p => p.name).join(' + ')} · avg spend $${avgSpend.toFixed(1)}M`);
+  for (const m of managers.slice(0, STRATS.length))
+    console.log(`  ${m.strategy.padEnd(11)} ${m.squad.map(p => `${p.name.split(' ').pop()} ${p.price}`).join(', ')}`);
+}
+
+console.log(`\n  Field: ${FIELD.length} draftable · ${ENTRANTS.length} in the ${ROUNDS[0]} bracket${SLAM ? ' (US Open, Format 2 curve)' : ' (Cincinnati, legacy curve)'}`);
 console.log(`  League: ${N_MANAGERS} managers · ${N_RUNS.toLocaleString()} simulated tournaments`);
 console.log(`  Squad: ${SQUAD} players (2 Platinum / 3 Gold / 5 Silver) · $${BUDGET}M`);
+{
+  const cheapest = ['Platinum', 'Gold', 'Silver'].reduce((s, t) =>
+    s + FIELD.filter(p => p.tier === t).sort((a, b) => a.price - b.price).slice(0, QUOTA[t]).reduce((x, p) => x + p.price, 0), 0);
+  const dearest = ['Platinum', 'Gold', 'Silver'].reduce((s, t) =>
+    s + FIELD.filter(p => p.tier === t).sort((a, b) => b.price - a.price).slice(0, QUOTA[t]).reduce((x, p) => x + p.price, 0), 0);
+  console.log(`  Cheapest legal squad $${cheapest}M · dearest $${dearest}M · headroom under the cap $${BUDGET - cheapest}M`);
+}
 
 const A = runLeague({ transfers: false });
 report('A · STATIC SQUADS (no cash-in, no transfers)', A);
@@ -262,7 +309,7 @@ report('B · WITH BUDGET RECOVERY (cash in the fallen, re-sign each break)', B);
 
 // ── the headline question: what is the Final actually worth? ───────────────────────────────────
 console.log(`\n${'═'.repeat(86)}\n  THE FINAL'S WEIGHT — is ×40 vs ×1 defensible?\n${'═'.repeat(86)}`);
-const poolOf = (pts) => ROUNDS.map(r => ({ r, matches: 32 / 2 ** ROUNDS.indexOf(r), pool: pts[r] * (32 / 2 ** ROUNDS.indexOf(r)) }));
+const poolOf = (pts) => ROUNDS.map(r => ({ r, matches: DRAW / 2 / 2 ** ROUNDS.indexOf(r), pool: pts[r] * (DRAW / 2 / 2 ** ROUNDS.indexOf(r)) }));
 console.log('\n  round  matches  base  TOTAL POOL  concentration (pts to a single player)');
 for (const x of poolOf(ROUND_POINTS)) {
   console.log(`  ${x.r.padEnd(5)}  ${String(x.matches).padStart(7)}  ${String(ROUND_POINTS[x.r]).padStart(4)}  ${String(x.pool).padStart(10)}  ${String(ROUND_POINTS[x.r]).padStart(3)} pts to each of ${x.matches} winner(s)`);
@@ -275,7 +322,7 @@ console.log('  A big gap means your draft decides your season. A small gap means
 console.log('  refunds            transfer cap   skill gap   winner   median    last   best-vs-worst win share');
 const BASE_RATES = { ...RETURN_RATE };
 for (const [rlabel, scale] of [['none (0%)', 0], ['half', 0.5], ['current', 1]]) {
-  for (const cap of [Infinity, 3, 2]) {
+  for (const cap of [Infinity, 5, 4, 3, 2]) {
     for (const k of Object.keys(BASE_RATES)) RETURN_RATE[k] = BASE_RATES[k] * scale;
     TRANSFER_CAP = cap;
     const R = runLeague({ transfers: scale > 0 });

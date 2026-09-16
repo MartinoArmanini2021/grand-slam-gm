@@ -51,15 +51,15 @@ export const EVENTS = {
       // he is absent from the top-300 pool for that reason. Using 101 priced him at $7M and, worse,
       // would have shrunk his upset multiplier as though he were a top-100 player. Nominal, like
       // the wildcards below.
-      { id: 'misolic',    name: 'Filip Misolic',      country: 'Austria',       flag: '🇦🇹', age: 25,   hand: 'R', ranking: 350 },
-      { id: 'monfils',    name: 'Gaël Monfils',       country: 'France',        flag: '🇫🇷', age: 39,   hand: 'R', ranking: 327 },
-      { id: 'kokkinakis', name: 'Thanasi Kokkinakis', country: 'Australia',     flag: '🇦🇺', age: 30,   hand: 'R', ranking: 443 },
+      { id: 'misolic',    name: 'Filip Misolic',      country: 'Austria',       flag: '🇦🇹', age: 25,   hand: 'R', ranking: 350, atpId: 'M0JZ' },
+      { id: 'monfils',    name: 'Gaël Monfils',       country: 'France',        flag: '🇫🇷', age: 39,   hand: 'R', ranking: 327, atpId: 'MC65' },
+      { id: 'kokkinakis', name: 'Thanasi Kokkinakis', country: 'Australia',     flag: '🇦🇺', age: 30,   hand: 'R', ranking: 443, atpId: 'KD46' },
       // This page writes him "J. J. Wolf" with spaces; Cincinnati's writes "J.J. Wolf".
       // The name must match the wikilink target of THIS event's page, not the player's
       // canonical spelling — which is why the two entries differ.
-      { id: 'wolf',       name: 'J. J. Wolf',         country: 'United States', flag: '🇺🇸', age: 27,   hand: 'R', ranking: 688 },
-      { id: 'gorzny',     name: 'Sebastian Gorzny',   country: 'United States', flag: '🇺🇸', age: null, hand: 'R', ranking: 500 },
-      { id: 'kennedy',    name: 'Jack Kennedy',       country: 'United States', flag: '🇺🇸', age: null, hand: 'R', ranking: 500 },
+      { id: 'wolf',       name: 'J. J. Wolf',         country: 'United States', flag: '🇺🇸', age: 27,   hand: 'R', ranking: 688, atpId: 'W09G' },
+      { id: 'gorzny',     name: 'Sebastian Gorzny',   country: 'United States', flag: '🇺🇸', age: 22, hand: 'R', ranking: 500, atpId: 'G0JJ' },
+      { id: 'kennedy',    name: 'Jack Kennedy',       country: 'United States', flag: '🇺🇸', age: 18, hand: 'R', ranking: 500, atpId: 'K0NP' },
     ],
   },
 };
@@ -73,10 +73,12 @@ export function getEvent(id) {
   return ev;
 }
 
-// A MANUAL entry only needs identity + rank; the rest is neutral filler in the field's shape.
+// A MANUAL entry carries identity + rank only. Its FORM IS UNKNOWN, and unknown is NOT zero:
+// this used to emit ytd 0-0-0 and surface 50/50/50, which rendered real ATP players as having
+// played no tennis at all. build-field overlays real 2026 form from extra2026.json when it exists.
 export const expandManual = (m) => ({
   ...m, seed: null,
-  surface: { hard: 50, clay: 50, grass: 50 },
-  ytd: { wins: 0, losses: 0, titles: 0 },
+  surface: null,
+  ytd: null,
   yearResults: [],
 });

@@ -27,6 +27,7 @@
 // script can't find are SKIPPED and listed — never silently dropped. Team events
 // (United/Davis/Laver Cup) are excluded. Stats are never invented.
 import { readFileSync, writeFileSync } from 'node:fs';
+import { EVENTS as EVENT_DEFS } from './lib/events.mjs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -124,6 +125,16 @@ const clean = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerC
 // Strip Wikipedia disambiguators like "(tennis)" / "(Spanish player)" BEFORE reducing
 // to a–z, so "João Fonseca (tennis)" and pool "Joao Fonseca" resolve to the same key.
 const matchKey = (s) => clean(s).replace(/\(.*?\)/g, '').replace(/[^a-z]/g, '');
+// Draw-page spelling -> pool spelling, compared AFTER matchKey. Without this a player is
+// silently credited with zero 2026 matches, which the app then renders as "0-0" — a claim
+// that he played and lost nothing, rather than "we don't know".
+const NAME_ALIAS = {
+  // pool spelling -> draw-page spelling. Applied to the POOL name at lookup, because the
+  // stats table is keyed by whatever the draw pages call the player. Getting the direction
+  // wrong is silent: the player simply shows no 2026 matches.
+  aleksandrshevchenko: 'alexandershevchenko',
+};
+const keyOf = (s) => { const k = matchKey(s); return NAME_ALIAS[k] ?? k; };
 const priceFor = (rank) => Math.max(4, Math.min(50, Math.round(52 * Math.pow(rank, -0.42))));
 
 const API = 'https://en.wikipedia.org/w/api.php';
@@ -276,7 +287,7 @@ async function main() {
       }
     }
     const champ = championOf(w);
-    if (champ) { const s = stat.get(matchKey(champ)); if (s) s.titles++; lostRound.set(matchKey(champ), 'W'); }
+    if (champ) { const s = stat.get(keyOf(champ)); if (s) s.titles++; lostRound.set(matchKey(champ), 'W'); }
     // record each player's result at this event for the per-tournament panel
     const meta = { tournament: displayName(e), short: shortFor(e), surface: e.s, lvl: levelOf(e) };
     for (const [k, result] of lostRound) {
@@ -295,7 +306,7 @@ async function main() {
     const one = (k) => {
       const { w, l } = st.surf[k];
       if (w + l >= MIN_SURFACE) return pct(w, l);        // his own record on this surface
-      if (thinSeason) return 50;                          // nothing is known — stay neutral
+      if (thinSeason) return null;                        // too few matches to say anything — UNKNOWN, not 50%
       return overall;                                     // his season stands in for the surface
     };
     return { hard: one('hard'), clay: one('clay'), grass: one('grass') };
@@ -314,7 +325,7 @@ async function main() {
   let enriched = 0; const noData = [];
   const out = pool.map((p) => {
     const base = { ...p, price: priceFor(p.rank) };
-    const st = stat.get(matchKey(p.name));
+    const st = stat.get(keyOf(p.name));
     if (!st || st.w + st.l === 0) {
       // no 2026 tour-level data → keep whatever form the pool already had, labelled with
       // its season so a 2025 fallback is never mistaken for current form (null → no label).
@@ -324,7 +335,7 @@ async function main() {
     }
     enriched++;
     // per-tournament results, biggest events first, capped so the panel stays readable
-    const rs = (results.get(matchKey(p.name)) ?? [])
+    const rs = (results.get(keyOf(p.name)) ?? [])
       .sort((a, b) => LEVEL_RANK[a.lvl] - LEVEL_RANK[b.lvl])
       .slice(0, 10)
       .map(({ tournament, surface, short, result }) => ({ tournament, surface, short, result }));
@@ -340,10 +351,35 @@ async function main() {
     const p = out.find((x) => x.id === id);
     if (p) console.log(`  ${p.name.padEnd(20)} rank ${String(p.rank).padStart(3)} $${p.price}M  2026 ${p.ytd ? `${p.ytd.wins}-${p.ytd.losses} (${p.ytd.titles}t)` : '—'}  ${p.surface ? JSON.stringify(p.surface) : ''}`);
   }
+  // ── hand-entered entrants ────────────────────────────────────────────────
+  // Everyone in EVENTS.*.manual sits outside the top-300 pool, so pool.map() above never
+  // saw them even though the draws we just parsed contain their matches. Emit them to a
+  // side file with the SAME shape and the SAME 2026 semantics as the pool.
+  const manualAll = Object.values(EVENT_DEFS).flatMap((e) => e.manual ?? []);
+  const seenExtra = new Set();
+  const extras = [];
+  for (const m of manualAll) {
+    if (seenExtra.has(m.id)) continue;
+    seenExtra.add(m.id);
+    const st = stat.get(keyOf(m.name));
+    if (!st || st.w + st.l === 0) { extras.push({ id: m.id, name: m.name, surface: null, ytd: null, results2026: [] }); continue; }
+    const rs = (results.get(keyOf(m.name)) ?? [])
+      .sort((a, b) => LEVEL_RANK[a.lvl] - LEVEL_RANK[b.lvl]).slice(0, 10)
+      .map(({ tournament, surface, short, result }) => ({ tournament, surface, short, result }));
+    extras.push({ id: m.id, name: m.name, surface: surfacePct(st), surfaceRecord: surfaceRecord(st),
+      ytd: { wins: st.w, losses: st.l, titles: st.titles }, statsYear: 2026, results2026: rs });
+  }
+  console.log('');
+  console.log('hand-entered entrants:');
+  for (const e of extras) console.log('  ' + e.id.padEnd(12) + (e.ytd ? e.ytd.wins + '-' + e.ytd.losses + ' (' + e.ytd.titles + 't)  ' + JSON.stringify(e.surface) : 'no 2026 tour-level matches'));
+
+
   if (DRY) { console.log('\n--dry: nothing written.'); return; }
   writeFileSync(POOL_PATH + '.bak', JSON.stringify(pool, null, 0) + '\n');
   writeFileSync(POOL_PATH, JSON.stringify(out, null, 0) + '\n');
   console.log(`\nWrote ${POOL_PATH} (backup: atp300.json.bak).`);
+  writeFileSync(join(root, 'src/data/extra2026.json'), JSON.stringify(extras, null, 2));
+  console.log('Wrote src/data/extra2026.json (' + extras.length + ' hand-entered entrants).');
 }
 
 main().catch((e) => { console.error('\nFAILED:', e.message); process.exitCode = 1; });
