@@ -180,6 +180,21 @@ Deno.serve(async (req) => {
       throw new Error('recompute-score could not resolve a tournament: no tournamentId in the request and app_config.active_tournament_id is unset or unreadable.');
     }
 
+    // FROZEN? A finished tournament's standings are archived in public.tournament_status by
+    // freeze_tournament(). Once that row exists this function must not touch entries.score nor the
+    // scoring_health heartbeat for it — the archive is the record, and a heartbeat that ticks for a
+    // tournament nobody scores would read as proof of health. The read has to SUCCEED for us to
+    // proceed: if the status table cannot be read we throw (→ 500, ok:false heartbeat, watchdog line)
+    // rather than assume "not frozen" and rewrite an archived board on a transient error.
+    const { data: frozen, error: fErr } = await db
+      .from('tournament_status').select('tournament_id').eq('tournament_id', tournamentId).maybeSingle();
+    if (fErr) throw fErr;
+    if (frozen) {
+      return new Response(JSON.stringify({ ok: true, tournamentId, skipped: 'completed' }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // Results the server holds → the rounds that are actually "done".
     const { data: matchRows, error: mErr } = await db
       .from('matches').select('round, slot, p1_id, p2_id, winner_id').eq('tournament_id', tournamentId);

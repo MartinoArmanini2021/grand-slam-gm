@@ -1,3 +1,7 @@
+-- ⚠️ STALE COPY (2026-09-22): the live pipeline_watchdog() has the WALKOVER GAP + ROUND PLAN blocks (migration
+-- 2026-09-14_round_plan.sql, in grand-slam-gm/supabase/migrations) and, since 2026-09-22_tournament_status_freeze.sql,
+-- the FROZEN / OFF-SEASON block. Never re-run this file: it would delete those. Kept for history.
+
 -- ── Pipeline watchdog: alert within ~15 min if ingest OR scoring stalls ──────────────────────────
 -- WHY: the freeze that cost us a day was SILENT. This checks both crons every 15 minutes and pings
 -- your Slack/Discord webhook if either goes stale — so a stall becomes a 15-minute alert, never an

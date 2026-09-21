@@ -406,6 +406,14 @@ Deno.serve(async (req) => {
     const roster = cfg.roster;
     const SCORED_ROUNDS = cfg.rounds;
 
+    // FROZEN? See recompute-score: an archived tournament's draw is never re-parsed or rewritten, not
+    // even for a manual body.page re-parse, and no ingest_health heartbeat is written for it. A failed
+    // read throws (→ ingest_health ok:false, watchdog line) rather than assuming "not frozen".
+    const { data: frozen, error: fErr } = await db
+      .from('tournament_status').select('tournament_id').eq('tournament_id', tournamentId).maybeSingle();
+    if (fErr) throw fErr;
+    if (frozen) return json({ ok: true, tournamentId, skipped: 'completed' });
+
     const wikiUrl = `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(page)}`
       + `&prop=wikitext&formatversion=2&format=json&origin=*`;
     const fetchWiki = async (): Promise<string> => {
