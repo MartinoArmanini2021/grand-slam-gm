@@ -3,7 +3,11 @@
 --
 -- File   : C:\Users\marti\gsgm-migrations\2026-09-22_tournament_status_freeze.sql
 -- Target : Supabase project mrdmlfumdsxufifjulbt (production), SQL editor, as postgres.
--- APPLIED: UP-A 2026-09-21 23:07Z as migration 20260921230748 tournament_status_freeze_up_a (table empty; nothing frozen yet).
+-- APPLIED: UP-A 2026-09-21 23:07Z as migration 20260921230748 tournament_status_freeze_up_a (table empty);
+--          edge fns deployed 2026-09-22 20:13Z (recompute-score v20, ingest-draw v14) on Martino's word;
+--          checkpoint confirmed; BACKFILL 2026-09-22 20:27Z (usopen 22/22, cincinnati 8/4, montreal 8/8);
+--          UP-B 2026-09-22 20:28Z as migration 20260922202828 tournament_status_freeze_up_b; VERIFY V1-V6 clean
+--          (manual invoke -> skipped:completed, updated_at unchanged; second freeze same xmin+hash; line-diff NEW only).
 -- Drafted: 2026-09-22 from the live function bodies (pg_get_functiondef, md5-verified against
 --          grand-slam-gm/supabase/migrations/2026-09-14_round_plan.sql A3/A5), nine days after the
 --          US Open final. Brief + review: Martino, 2026-09-22. Nothing runs without his word.
