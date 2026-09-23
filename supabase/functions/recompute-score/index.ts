@@ -71,7 +71,45 @@ function leaderOfRecord(history: { round: string; playerId: string }[] | undefin
   return best?.playerId;
 }
 
-function scoreEntry(state: EntryState, matches: MatchRow[], rankById: Record<string, number>, playedRounds: string[], points: Record<string, number>): number {
+// ── captain auto-promotion (adopted 2026-09-23, Shanghai onward) ─────────────────────────────
+// Asked for by a manager in the US Open survey. An armband never sits empty while the squad has a
+// survivor: captain out + vice alive → the vice becomes captain; a vice slot left empty (its holder
+// out, or moved up) → the best-ranked survivor who is not captain; both out → the two best-ranked
+// survivors. A holder the manager picked who is still alive is never replaced. Derived here, never
+// written: entries.state stays what the manager saved, so their own pick at the next window wins.
+// Every promotion raises a multiplier and none lowers one, so the rule can only add points.
+// "Survivor" = in the squad for that round, appears in the draw, and lost no match in an EARLIER
+// round. "Best-ranked" = lowest player_stats.ranking, missing/non-positive last, ties by id.
+// The three 2026 events already played are pinned to the old rule FOREVER (a rescore must
+// reproduce what their managers lived). IDENTICAL to effectiveArmbands() in the app's engine.ts
+// (grand-slam-gm src/lib/game/engine.ts); src/__tests__/armbandAuto.test.ts runs this code.
+const LEGACY_ARMBAND_TOURNAMENTS = new Set(['montreal_2026', 'cincinnati_2026', 'usopen_2026']);
+const autoArmbandFor = (tid: string) => !LEGACY_ARMBAND_TOURNAMENTS.has(tid);
+
+function aliveForRound(matches: MatchRow[], id: string, round: string): boolean {
+  const ri = ROUND_ORDER.indexOf(round);
+  let seen = false;
+  for (const m of matches) {
+    if (m.p1 !== id && m.p2 !== id) continue;
+    seen = true;
+    if (m.winner && m.winner !== id && ROUND_ORDER.indexOf(m.round) < ri) return false;
+  }
+  return seen;
+}
+
+function effectiveLeaders(
+  recordCaptain: string | null, recordVice: string | null, squad: string[],
+  matches: MatchRow[], round: string, rankById: Record<string, number>,
+): { captain: string | null; vice: string | null } {
+  const alive = (id: string | null): id is string => !!id && squad.includes(id) && aliveForRound(matches, id, round);
+  const rankOf = (id: string) => { const r = rankById[id]; return typeof r === 'number' && r > 0 ? r : Number.POSITIVE_INFINITY; };
+  const pool = squad.filter(id => alive(id)).sort((a, b) => rankOf(a) - rankOf(b) || (a < b ? -1 : a > b ? 1 : 0));
+  const captain = alive(recordCaptain) ? recordCaptain : alive(recordVice) ? recordVice : (pool[0] ?? null);
+  const vice = alive(recordVice) && recordVice !== captain ? recordVice : (pool.find(id => id !== captain) ?? null);
+  return { captain, vice };
+}
+
+function scoreEntry(state: EntryState, matches: MatchRow[], rankById: Record<string, number>, playedRounds: string[], points: Record<string, number>, autoArmband = false): number {
   const idx = (r: string) => ROUND_ORDER.indexOf(r);
   const rank = (id: string) => rankById[id] ?? 40;
   // INTEGRITY (P3): score ONLY off the frozen initialSquad snapshot; a never-locked entry
@@ -83,8 +121,11 @@ function scoreEntry(state: EntryState, matches: MatchRow[], rankById: Record<str
     const ri = idx(round);
     let squad = [...initial];
     for (const t of state.transfers ?? []) if (idx(t.round) < ri) squad = squad.map(id => (id === t.out ? t.in : id));
-    const captain = leaderOfRecord(state.captainHistory, round);
-    const vice = leaderOfRecord(state.viceCaptainHistory, round);
+    const recordCaptain = leaderOfRecord(state.captainHistory, round) ?? null;
+    const recordVice = leaderOfRecord(state.viceCaptainHistory, round) ?? null;
+    const { captain, vice } = autoArmband
+      ? effectiveLeaders(recordCaptain, recordVice, squad, matches, round, rankById)
+      : { captain: recordCaptain, vice: recordVice };
     const base = points[round] ?? 0;
     const rm = matches.filter(m => m.round === round);
     for (const id of squad) {
@@ -230,7 +271,7 @@ Deno.serve(async (req) => {
     // the serial loop would never finish inside the cron window at 100k+ entries.
     const scores = entries.map(e => ({
       user_id: e.user_id,
-      score: scoreEntry((e.state ?? {}) as EntryState, matches, rankById, playedRounds, curveFor(tournamentId!)),
+      score: scoreEntry((e.state ?? {}) as EntryState, matches, rankById, playedRounds, curveFor(tournamentId!), autoArmbandFor(tournamentId!)),
     }));
     let updated = 0;
     const CHUNK = 5000;
