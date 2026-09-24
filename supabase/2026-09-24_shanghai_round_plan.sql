@@ -24,6 +24,11 @@
 --     from public.round_plan p
 --    where m.tournament_id = 'shanghai_2026' and m.round = 'R64'
 --      and p.tournament_id = m.tournament_id and p.round = m.round;
+--
+-- APPLIED: 2026-09-24 via apply_migration "shanghai_round_plan" (version 20260924145441) on Martino's word
+--          ("go ahead with A, B and C"). Rehearsed first in a rolled-back transaction. VERIFY after apply: six
+--          rows as below, round_plan_health('shanghai_2026') = ok; market_window_controller(true) still returns
+--          only the five past US Open 'ready' lines — no stamp or plant, nothing for Shanghai until the flip.
 -- =====================================================================================================
 
 -- PRE-CHECK (read-only)

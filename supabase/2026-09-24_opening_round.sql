@@ -25,6 +25,12 @@
 -- Security mirrors public.matches: RLS on, one SELECT policy for everyone, SELECT-only grants for the
 -- client roles (Supabase's default privileges would otherwise hand them INSERT/UPDATE/DELETE/TRUNCATE,
 -- and RLS does not govern TRUNCATE).
+--
+-- APPLIED: 2026-09-24 via apply_migration "opening_round" (version 20260924145403) on Martino's word
+--          ("go ahead with A, B and C"). Rehearsed first in a rolled-back transaction. VERIFY after apply:
+--          RLS on, 1 policy, anon/authenticated SELECT only (no INSERT/UPDATE/DELETE/TRUNCATE), service_role
+--          INSERT, 0 rows; anon REST read 200 [], anon REST insert refused (42501 permission denied).
+--          The ingest-draw that writes it is deployed on Shanghai draw day, with Shanghai's field.
 -- =====================================================================================================
 
 -- PRE-CHECK (read-only) ------------------------------------------------------------------------------
