@@ -73,6 +73,26 @@ export const EVENTS = {
       { id: 'kennedy',    name: 'Jack Kennedy',       country: 'United States', flag: '🇺🇸', age: 18, hand: 'R', ranking: 500, atpId: 'K0NP' },
     ],
   },
+
+  // Rolex Shanghai Masters, main draw 7–18 Oct 2026 (qualifying 5–6 Oct). A MEN-ONLY event, so its
+  // Wikipedia page is "– Singles", not the "– Men's singles" of a combined event like Cincinnati.
+  // A 96-draw Masters: the 32 seeds bye into the second round (our R64) and the 64 unseeded players
+  // play an opening round nobody scores (it goes to public.opening_round, not matches).
+  // Rehearsed 2026-09-24 against "2025 Rolex Shanghai Masters – Singles": 94 of 96 resolved to the pool
+  // (the two left over are 2025-only entrants), and the parser read R64 32 · R32 16 · R16 8 · QF 4 ·
+  // SF 2 · F 1, all decided, final Rinderknech v Vacherot — correct.
+  // Every name on the 2026 page's projected seed list + protected ranking + withdrawals list resolves
+  // to the pool (checked 2026-09-24). Fill `manual` only for draw entrants outside the top-300 pool.
+  shanghai_2026: {
+    page: '2026 Rolex Shanghai Masters – Singles',
+    field: 'src/data/shanghai2026Field.json',
+    seed: 'supabase/seed_shanghai_player_stats.sql',
+    label: 'Shanghai Masters 2026',
+    surface: 'hard',
+    status: 'upcoming',
+    drawSize: 96,
+    manual: [],
+  },
 };
 
 export function getEvent(id) {

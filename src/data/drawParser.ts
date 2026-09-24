@@ -348,3 +348,42 @@ export function parseFullDraw(
   }
   return { draw, results, meta, scores };
 }
+
+// ── What the scored rounds alone cannot see (added 2026-09-24, before Shanghai) ──────────────────
+
+// A 96-player draw (a Masters) opens with a round nobody scores: the 64 unseeded players play it
+// while the 32 seeds have a bye. The section brackets carry it as their first round, which this
+// parser calls R128. Returns that round when the event does not score it, null when it does (a
+// Slam, whose R128 is its first scored round).
+export function openingRound(scoredRounds: RoundId[]): RoundId | null {
+  return scoredRounds.includes(SECTION_ROUNDS[0]) ? null : SECTION_ROUNDS[0];
+}
+
+// The first scored round from the moment the draw is published. The strict parse keeps a pairing
+// only once BOTH players are known, so a Masters' first scored round (each seed against the winner
+// of an opening-round match) would not exist at all until the opening round is played: no draw, no
+// squad-lock time, nothing to show for two days. At a Slam, a slot still waiting for its qualifier
+// would likewise drop the player already drawn there. The half-known pairings are added here with
+// the missing side 'tbd'. A complete pairing is never replaced, and later rounds are untouched.
+export function withFirstRoundPending(
+  draw: LiveMatch[], wikitext: string, scoredRounds: RoundId[], resolve: (raw: string) => string,
+): LiveMatch[] {
+  const first = scoredRounds[0];
+  if (!first) return draw;
+  const have = new Set(draw.map(m => matchKey(m.round, m.slot)));
+  const pending = parseFullDraw(wikitext, { scoredRounds: [first], resolve, includeIncomplete: true }).draw
+    .filter(m => !have.has(matchKey(m.round, m.slot)));
+  return [...draw, ...pending];
+}
+
+// The players knocked out in the decided matches of a draw: the loser of every pairing with a
+// recorded winner. Used for the unscored opening round, which never reaches `matches`.
+export function losersOf(draw: LiveMatch[], results: LiveResults): string[] {
+  const out: string[] = [];
+  for (const m of draw) {
+    const w = results[matchKey(m.round, m.slot)];
+    if (w === m.p1Id) out.push(m.p2Id);
+    else if (w === m.p2Id) out.push(m.p1Id);
+  }
+  return out;
+}

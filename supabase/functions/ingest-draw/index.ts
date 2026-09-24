@@ -291,6 +291,35 @@ function parseFullDraw(
   }
   return { draw, results, meta, scores };
 }
+
+// A 96-player draw's unscored opening round (the sections' first round, R128 here); null at a Slam.
+function openingRound(scoredRounds: RoundId[]): RoundId | null {
+  return scoredRounds.includes(SECTION_ROUNDS[0]) ? null : SECTION_ROUNDS[0];
+}
+
+// The first scored round from the moment the draw is published, half-known pairings included with
+// the missing side 'tbd'. Complete pairings are never replaced; later rounds are untouched.
+function withFirstRoundPending(
+  draw: LiveMatch[], wikitext: string, scoredRounds: RoundId[], resolve: (raw: string) => string,
+): LiveMatch[] {
+  const first = scoredRounds[0];
+  if (!first) return draw;
+  const have = new Set(draw.map((m) => matchKey(m.round, m.slot)));
+  const pending = parseFullDraw(wikitext, { scoredRounds: [first], resolve, includeIncomplete: true }).draw
+    .filter((m) => !have.has(matchKey(m.round, m.slot)));
+  return [...draw, ...pending];
+}
+
+// The loser of every pairing with a recorded winner.
+function losersOf(draw: LiveMatch[], results: LiveResults): string[] {
+  const out: string[] = [];
+  for (const m of draw) {
+    const w = results[matchKey(m.round, m.slot)];
+    if (w === m.p1Id) out.push(m.p2Id);
+    else if (w === m.p2Id) out.push(m.p1Id);
+  }
+  return out;
+}
 // ════════════ END PARSER INLINED COPY ════════════
 
 // REGISTRY of every tournament this deploy can ingest. Each entry's page/rounds/field MUST stay in
@@ -432,7 +461,13 @@ Deno.serve(async (req) => {
     // `scores` was parsed and then dropped here for the whole life of this function — every user's
     // browser re-fetched and re-parsed the same page just to show a set score. It is now carried
     // through to buildMatchRows and stored once, by the cron, for everyone.
-    const { draw, results, scores } = parseFullDraw(wikitext, { scoredRounds: [...SCORED_ROUNDS], resolve });
+    const parsed = parseFullDraw(wikitext, { scoredRounds: [...SCORED_ROUNDS], resolve });
+    const { results, scores } = parsed;
+    // The first scored round is written from the moment the draw is published, the unknown side
+    // 'tbd' (see withFirstRoundPending). Before Shanghai 2026 a Masters wrote NO rows at all until
+    // its unscored opening round had been played, so for the first days of the draft the app had
+    // no draw, no squad-lock time and no idea it was a 96-player event.
+    const draw = withFirstRoundPending(parsed.draw, wikitext, [...SCORED_ROUNDS], resolve);
 
     const existingWinners: Record<string, string | null> = {};
     {
@@ -469,9 +504,43 @@ Deno.serve(async (req) => {
       written = rows.length;
     }
 
+    // THE UNSCORED OPENING ROUND of a 96-player draw (a Masters). It never reaches `matches`: the app
+    // does not score it, and a result there would close the draft (the draft stays open until the
+    // first SCORED round's first ball, two days after the opening round starts). It is recorded in
+    // public.opening_round instead, so the app can show who is already out while managers are still
+    // drafting. Isolated: a failure here is logged and never blocks the scored rows written above.
+    const opener = openingRound([...SCORED_ROUNDS]);
+    const openerOut = new Set<string>();
+    if (opener) {
+      try {
+        const op = parseFullDraw(wikitext, { scoredRounds: [opener], resolve });
+        const { data: priorOp, error: pErr } = await db
+          .from('opening_round').select('slot, winner_id').eq('tournament_id', tournamentId);
+        if (pErr) throw pErr;
+        const kept: Record<string, string | null> = {};
+        for (const r of priorOp ?? []) kept[matchKey(opener, r.slot)] = r.winner_id;
+        const opRows = buildMatchRows(tournamentId, op.draw, op.results, kept, {}, op.scores)
+          .map(({ tournament_id, slot, p1_id, p2_id, winner_id, score_line }) =>
+            ({ tournament_id, slot, p1_id, p2_id, winner_id, score_line }));
+        if (opRows.length) {
+          const { error: oErr } = await db.from('opening_round').upsert(opRows, { onConflict: 'tournament_id,slot' });
+          if (oErr) throw oErr;
+        }
+        const decided: LiveResults = {};
+        for (const r of opRows) if (r.winner_id) decided[matchKey(opener, r.slot)] = r.winner_id;
+        for (const id of losersOf(op.draw, decided)) openerOut.add(id);
+      } catch (e) {
+        console.error('opening_round write failed (scored rows unaffected):', errorText(e));
+      }
+    }
+
     const inDraw = new Set<string>();
     for (const m of draw) { inDraw.add(m.p1Id); inDraw.add(m.p2Id); }
-    const draftedMissing = draw.length ? roster.map((p) => p.id).filter((id) => !inDraw.has(id)) : [];
+    // An opening-round loser is out of the draw by RESULT, not missing from it. Without this, every
+    // one of a Masters' 32 would raise a WALKOVER GAP alert from the moment the draft locks.
+    const draftedMissing = draw.length
+      ? roster.map((p) => p.id).filter((id) => !inDraw.has(id) && !openerOut.has(id))
+      : [];
 
     const ranAt = new Date().toISOString();
     await db.from('ingest_health').upsert({
@@ -488,6 +557,7 @@ Deno.serve(async (req) => {
       matchesWritten: written,
       draftedMissingCount: draftedMissing.length,
       draftedMissing: draftedMissing.slice(0, 20),
+      openingRoundLosers: openerOut.size,
       ranAt,
     });
   } catch (err) {

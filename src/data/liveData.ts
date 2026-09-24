@@ -12,7 +12,7 @@
 import type { RoundId } from '../types';
 import { PLAYERS } from './players';
 import type { LiveMatch, LiveResults, PlayerMetaMap, LiveScores } from './liveResults';
-import { TOURNAMENT, OPENING_ROUND } from './tournamentConfig';
+import { TOURNAMENT, OPENING_ROUND, wikipediaPageFor } from './tournamentConfig';
 import { flagEmoji } from './flags';
 import {
   buildResolver, cleanTeam, splitBrackets, teamTarget,
@@ -38,7 +38,7 @@ export const LIVE = {
   // The Wikipedia article carrying the men's-singles draw for the active tournament.
   // Confirmed live: "2026 National Bank Open – Men's singles" resolves with the expected
   // 8-section + finals bracket structure. Keep in sync with the ingest Edge Function.
-  wikipediaPage: `2026 ${TOURNAMENT.name} – Men's singles`,
+  wikipediaPage: wikipediaPageFor(TOURNAMENT),
   pollIntervalMs: 5 * 60_000, // Wikipedia trails a finished match by a few minutes
 };
 

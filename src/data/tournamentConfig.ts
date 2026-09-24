@@ -158,7 +158,14 @@ export interface Tournament {
   // order of play when it publishes.
   schedule?: Partial<Record<RoundId, string>>;
   court?: SurfaceTheme['court']; // optional court palette override (else the surface default)
+  // The Wikipedia draw page, when it is not `${year} ${name} – Men's singles`. A MEN-ONLY event
+  // (Shanghai, Paris) has no women's draw, so its page is plain "– Singles".
+  wikipediaPage?: string;
 }
+
+/** The Wikipedia page the draw is read from — the one rule every tool and test must share. */
+export const wikipediaPageFor = (t: Tournament): string =>
+  t.wikipediaPage ?? `${t.year} ${t.name} – Men's singles`;
 
 // Every tournament the app knows about. One is active at a time (ACTIVE_TOURNAMENT_ID);
 // the rest are staged, ready to switch to once their field + data are wired.
@@ -283,6 +290,21 @@ export const TOURNAMENTS: Record<string, Tournament> = {
       line: '#ffffff',
       net: '#eef4f0', netShadow: '#0a1f44', crowdLight: '#dbeafe', crowdDark: '#8ea6c8',
     },
+  },
+  // Kept here only so the tooling and the ingest registry have an app-side twin to be checked
+  // against (fieldTooling / ingestConfig / liveIngestParity tests). The live app is grand-slam-gm.
+  shanghai_2026: {
+    id: 'shanghai_2026',
+    name: 'Shanghai Masters',
+    edition: 'Shanghai Masters 2026',
+    year: 2026,
+    surface: 'hard',
+    location: 'Shanghai, China',
+    drawSize: 96,
+    rounds: ['R64', 'R32', 'R16', 'QF', 'SF', 'F'], // 32 seeds bye past the unscored opening round
+    mode: 'live',
+    status: 'staged',
+    wikipediaPage: '2026 Rolex Shanghai Masters – Singles', // men-only event: "– Singles"
   },
 };
 

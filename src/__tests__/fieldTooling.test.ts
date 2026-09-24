@@ -3,7 +3,7 @@ import { EVENTS } from '../../scripts/lib/events.mjs';
 import { tierOf, priceOf } from '../../scripts/lib/pricing.mjs';
 import { PLAYERS } from '../data/players';
 import { getTier } from '../data/tiers';
-import { TOURNAMENTS, TOURNAMENT } from '../data/tournamentConfig';
+import { TOURNAMENTS, TOURNAMENT, wikipediaPageFor } from '../data/tournamentConfig';
 
 // The field/seed generators run in Node, which can't import the app's modules (players.ts pulls in
 // tournamentConfig → import.meta.env, a Vite-only global). So scripts/lib/ carries a deliberate copy
@@ -33,11 +33,12 @@ describe('tooling ↔ app parity: the event registry', () => {
   });
 
   it('each Wikipedia page matches the one the live feed derives', () => {
-    // liveData builds it as `2026 ${TOURNAMENT.name} – Men's singles`. If the tooling read a
-    // different page, the field would be built from one draw and scored against another.
+    // liveData builds it with wikipediaPageFor ("– Men's singles", or "– Singles" at a men-only
+    // event). If the tooling read a different page, the field would be built from one draw and
+    // scored against another.
     for (const [id, ev] of Object.entries(EVENTS)) {
       const t = TOURNAMENTS[id];
-      expect(ev.page, `page for ${id}`).toBe(`${t.year} ${t.name} – Men's singles`);
+      expect(ev.page, `page for ${id}`).toBe(wikipediaPageFor(t));
     }
   });
 

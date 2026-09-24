@@ -4,7 +4,7 @@ import fieldJson from '../data/montreal2026Field.json';
 import { buildResolver, parseFullDraw, buildMatchRows, parseBracket } from '../data/drawParser';
 import type { LiveMatch, LiveResults } from '../data/liveResults';
 import { matchKey } from '../data/liveResults';
-import { TOURNAMENT, ACTIVE_TOURNAMENT_ID, TOURNAMENTS } from '../data/tournamentConfig';
+import { TOURNAMENT, ACTIVE_TOURNAMENT_ID, TOURNAMENTS, wikipediaPageFor } from '../data/tournamentConfig';
 import { LIVE } from '../data/liveData';
 
 // The ingest-draw Edge Function is standalone Deno and can't import the Vite config, so it carries
@@ -42,7 +42,7 @@ describe('every ingest registry entry matches the app config', () => {
       const t = TOURNAMENTS[id];
       expect(t, `app has no tournament config for ${id}`).toBeDefined();
       expect(entry.rounds).toEqual(t.rounds);
-      expect(entry.page).toBe(`2026 ${t.name} – Men's singles`); // the page LIVE derives at runtime
+      expect(entry.page).toBe(wikipediaPageFor(t)); // the page LIVE derives at runtime
     });
   }
 });

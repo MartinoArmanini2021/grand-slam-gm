@@ -57,6 +57,23 @@ describe('ingest-draw — config-driven, never guessing', () => {
   });
 });
 
+describe('ingest-draw — a 96-player Masters from draw day (Shanghai setup, 2026-09-24)', () => {
+  it('writes the first scored round with its still-unknown sides, not only complete pairings', async () => {
+    expect(codeOnly(await raw('ingest-draw'))).toMatch(/const draw = withFirstRoundPending\(parsed\.draw, wikitext, \[\.\.\.SCORED_ROUNDS\], resolve\)/);
+  });
+
+  it('records the unscored opening round in public.opening_round, isolated from the scored rows', async () => {
+    const s = codeOnly(await raw('ingest-draw'));
+    expect(s).toMatch(/const opener = openingRound\(\[\.\.\.SCORED_ROUNDS\]\)/);
+    expect(s).toMatch(/\.from\('opening_round'\)\.upsert\(opRows, \{ onConflict: 'tournament_id,slot' \}\)/);
+    expect(s).toMatch(/opening_round write failed \(scored rows unaffected\)/);
+  });
+
+  it('does not report opening-round losers as missing from the draw (no WALKOVER GAP flood)', async () => {
+    expect(codeOnly(await raw('ingest-draw'))).toMatch(/!inDraw\.has\(id\) && !openerOut\.has\(id\)/);
+  });
+});
+
 describe('recompute-score — resolves from app_config or stops', () => {
   it('has no hardcoded tournament fallback', async () => {
     // The dangerous shape this guards: `tournamentId ?? 'montreal_2026'` (or any other literal
