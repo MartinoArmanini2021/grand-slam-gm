@@ -27,6 +27,13 @@
 --     into the next match's 'tbd' slot.
 --
 -- Tests: supabase/six_kings_picks_tests.sql (a rolled-back transaction that poses as two managers).
+--
+-- APPLIED: 2026-09-24 via apply_migration "six_kings_picks" (version 20260924193401) on Martino's word
+-- ("go"), after the app half was already live. VERIFY passed: RLS on with one policy per table, anon and
+-- authenticated SELECT only (no INSERT/UPDATE/DELETE/TRUNCATE), save_pick SECURITY DEFINER with
+-- search_path=public, executable by authenticated only. The six players were loaded the same day with the
+-- ranks below (Sinner 1, Zverev 2, Alcaraz 3, Djokovic 5, de Minaur 7, Fritz 10). No matches yet: they go
+-- in when the bracket is announced.
 -- =====================================================================================================
 
 -- PRE-CHECK (read-only)
@@ -147,16 +154,17 @@ select has_function_privilege('anon', 'public.save_pick(text,integer,text)', 'EX
 -- =====================================================================================================
 -- DATA — the event itself (event id 'sixkings_2026')
 -- =====================================================================================================
--- Players: provisional ranks = the order of the ATP ranking of 22 Sep 2026 (the Shanghai projected seeds:
--- Sinner 1, Zverev 2, Alcaraz 3, de Minaur 10, Djokovic 11, Fritz 12). REFRESH them before Day 1:
+-- Players: provisional ranks = the ATP ranks in our player pool (src/data/atp300.json, refreshed after
+-- the US Open). Corrected 24 Sep: an earlier draft had 10/11/12 for de Minaur/Djokovic/Fritz, which were
+-- their Shanghai SEEDING POSITIONS on the entry list, not ATP ranks. REFRESH them before Day 1:
 --   update public.pick_players set atp_rank = <n> where event_id = 'sixkings_2026' and id = '<id>';
 -- insert into public.pick_players (event_id, id, name, country, flag, atp_rank, atp_id) values
 --   ('sixkings_2026', 'sinner',   'Jannik Sinner',    'ITA', '🇮🇹', 1,  'S0AG'),
 --   ('sixkings_2026', 'zverev',   'Alexander Zverev', 'GER', '🇩🇪', 2,  'Z355'),
 --   ('sixkings_2026', 'alcaraz',  'Carlos Alcaraz',   'ESP', '🇪🇸', 3,  'A0E2'),
---   ('sixkings_2026', 'deminaur', 'Alex de Minaur',   'AUS', '🇦🇺', 10, 'DH58'),
---   ('sixkings_2026', 'djokovic', 'Novak Djokovic',   'SRB', '🇷🇸', 11, 'D643'),
---   ('sixkings_2026', 'fritz',    'Taylor Fritz',     'USA', '🇺🇸', 12, 'FB98');
+--   ('sixkings_2026', 'djokovic', 'Novak Djokovic',   'SRB', '🇷🇸', 5,  'D643'),
+--   ('sixkings_2026', 'deminaur', 'Alex de Minaur',   'AUS', '🇦🇺', 7,  'DH58'),
+--   ('sixkings_2026', 'fritz',    'Taylor Fritz',     'USA', '🇺🇸', 10, 'FB98');
 --
 -- Matches (when the bracket is announced; example shape — the two byes and pairings come from the bracket):
 -- insert into public.pick_matches (event_id, match_no, round, p1_id, p2_id, starts_at) values
