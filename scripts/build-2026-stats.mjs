@@ -86,7 +86,7 @@ const EVENTS = [
   { t: '2026 Croatia Open Umag', s: C, alt: ['2026 Croatia Open'] },
   { t: '2026 Los Cabos Open', s: H, alt: ['2026 Mifel Tennis Open', '2026 Abierto de Tenis Mifel'] },
   { t: '2026 Generali Open Kitzbühel', s: C, alt: ['2026 Austrian Open', '2026 Generali Open'] },
-  { t: '2026 Mubadala Citi DC Open', s: H, alt: ['2026 Washington Open', '2026 Citi Open'] }, // ✓ (Washington)
+  { t: '2026 Mubadala Citi DC Open', s: H, alt: ['2026 Mubadala DC Open', '2026 Washington Open', '2026 Citi Open'] }, // Washington — renamed; the old title is a redirect (0 matches until 2026-09-24)
   // — August hard: the Masters immediately before Cincinnati. Montréal is the single most
   //   relevant form input for a Cincinnati field (same surface, same players, days earlier),
   //   so it MUST be counted — it was missing while the list stopped at "before Montréal".
@@ -95,6 +95,18 @@ const EVENTS = [
   // relevant form input for a US Open field: same surface, same players, days earlier. Fils won
   // it. Missing it would price the US Open on form that stops a fortnight short.
   { t: '2026 Cincinnati Open', s: H, alt: ['2026 Western & Southern Open', '2026 Cincinnati Masters'] },
+  // — Between the US Open and Shanghai (added 2026-09-24 for the Shanghai field). All hard courts.
+  //   Checked with find-event-pages.mjs that day: Winston-Salem, Chengdu and Hangzhou resolve to
+  //   "<event> – Singles"; Tokyo and Beijing had no draw page yet (their week had not started),
+  //   so re-check them on draw day — an event with no page is skipped, never invented.
+  { t: '2026 Winston-Salem Open', s: H },
+  { t: '2026 US Open', s: H, slam: true },
+  { t: '2026 Chengdu Open', s: H },
+  { t: '2026 Hangzhou Open', s: H },
+  // NOT '2026 Japan Open': that page is a BADMINTON tournament, and the bare stem is one of the shapes
+  // fetchEvent tries, so it silently fed 155 badminton matches into tennis form (caught in a dry run).
+  { t: '2026 Japan Open Tennis Championships', s: H, alt: ['2026 Kinoshita Group Japan Open Tennis Championships'] },
+  { t: '2026 China Open', s: H, alt: ['2026 China Open (tennis)'] },
 ];
 
 const pickEvents = () => ONLY === 'slams' ? EVENTS.filter((e) => e.slam) : EVENTS;
@@ -112,12 +124,16 @@ const SHORT = {
   // from the form strip (and Båstad drawn as a hard court instead of clay).
   '2026 Swedish Open': 'BAD', '2026 Mubadala Citi DC Open': 'WDC', '2026 Barcelona Open Banc Sabadell': 'BCN',
   '2026 National Bank Open': 'MTL',
+  // Shanghai-field additions (2026-09-24). Explicit, because the initials fallback would give the
+  // Chengdu Open and the China Open the same code.
+  '2026 US Open': 'USO', '2026 Winston-Salem Open': 'WIN', '2026 Chengdu Open': 'CHE',
+  '2026 Hangzhou Open': 'HAN', '2026 Japan Open Tennis Championships': 'TOK', '2026 China Open': 'BEI',
   '2026 Terra Wortmann Open': 'HAL', '2026 Qatar ExxonMobil Open': 'DOH', '2026 ABN AMRO Open': 'ROT', '2026 Rio Open': 'RIO',
 };
 const M1000 = new Set(['2026 BNP Paribas Open', '2026 Miami Open', '2026 Mutua Madrid Open', '2026 Italian Open', '2026 Monte-Carlo Masters']);
 const M500 = new Set(['2026 Dubai Tennis Championships', "2026 Queen's Club Championships", '2026 Mubadala Citi DC Open',
   '2026 Hamburg Open', '2026 Barcelona Open Banc Sabadell', '2026 Terra Wortmann Open', '2026 ABN AMRO Open',
-  '2026 Rio Open', '2026 Qatar ExxonMobil Open']);
+  '2026 Rio Open', '2026 Qatar ExxonMobil Open', '2026 Japan Open Tennis Championships', '2026 China Open']);
 const shortFor = (e) => SHORT[e.t] || e.t.replace(/^2026 /, '').split(/\s+/).map((w) => w[0]).join('').slice(0, 3).toUpperCase();
 const levelOf = (e) => (e.slam ? 'G' : M1000.has(e.t) ? 'M1000' : M500.has(e.t) ? 'M500' : '250');
 const displayName = (e) => e.t.replace(/^2026 /, '');
@@ -141,6 +157,10 @@ const NAME_ALIAS = Object.fromEntries(
 const keyOf = (s) => { const k = matchKey(s); return NAME_ALIAS[k] ?? k; };
 const priceFor = (rank) => Math.max(4, Math.min(50, Math.round(52 * Math.pow(rank, -0.42))));
 
+// A tennis page: a tennis infobox/event header, or a tennis bracket template ("16TeamBracket-Compact-Tennis3").
+const isTennisPage = (w) =>
+  /\{\{\s*(?:Tennis events|Infobox tennis|TennisEventInfo)/i.test(w) || /TeamBracket[^|}\n]*Tennis/i.test(w);
+
 // The fetch itself lives in scripts/lib/wiki.mjs (User-Agent, serial requests, retry with back-off);
 // fetchEvent below only knows which title shapes to try.
 // try the main title then any alternates, each with the " – Men's singles" suffix.
@@ -155,8 +175,11 @@ async function fetchEvent(e) {
     for (const title of [`${stem} – Men's singles`, `${stem} – Singles`, stem]) {
       const r = await fetchWikitext(title);
       if (r.throttled) { sawThrottle = true; continue; }
-      if (r.wikitext) return { wikitext: r.wikitext };
-      // r.missing → try the next shape
+      // The page must be TENNIS. The bare stem is one of the shapes tried, and a stem can name another
+      // sport's event: "2026 Japan Open" is a badminton tournament whose brackets parse as matches like
+      // any others (caught 2026-09-24 in a dry run, 155 badminton matches). Not tennis → next shape.
+      if (r.wikitext && isTennisPage(r.wikitext)) return { wikitext: r.wikitext };
+      // r.missing (or another sport) → try the next shape
     }
   }
   return sawThrottle ? { throttled: true } : { missing: true };
