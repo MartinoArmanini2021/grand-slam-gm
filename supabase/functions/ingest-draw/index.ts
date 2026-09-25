@@ -364,6 +364,15 @@ const CORS = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...CORS } });
 
+// ════════════ WIKIPEDIA FETCH ════════════
+// Wikimedia's API etiquette asks every client for a descriptive User-Agent with a way to reach its
+// operator; anonymous traffic is the first to be throttled or blocked. The server scripts send one
+// with the same contact (scripts/lib/wiki.mjs). Every Wikipedia request goes through wikiFetch.
+const WIKI_USER_AGENT = 'GrandSlamGM/1.0 (https://grandslamgm.com; martinoarmanini@gmail.com)';
+const wikiFetch = (url: string): Promise<Response> =>
+  fetch(url, { headers: { 'User-Agent': WIKI_USER_AGENT } });
+// ════════════ END WIKIPEDIA FETCH ════════════
+
 // ── transient-failure shield for the REST hop ──────────────────────────────────────────
 // On the free-tier box the FIRST call of a cold run sometimes takes 5–15 s while PostgREST opens a
 // fresh DB connection, and the gateway answers 504 "Gateway Timeout" (seen 2026-09-11, ~50% of runs
@@ -446,7 +455,7 @@ Deno.serve(async (req) => {
     const wikiUrl = `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(page)}`
       + `&prop=wikitext&formatversion=2&format=json&origin=*`;
     const fetchWiki = async (): Promise<string> => {
-      const res = await fetch(wikiUrl);
+      const res = await wikiFetch(wikiUrl);
       if (!res.ok) throw new Error(`Wikipedia fetch failed: ${res.status}`);
       const wiki = await res.json();
       const wt = wiki?.parse?.wikitext;
