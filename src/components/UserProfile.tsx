@@ -88,7 +88,7 @@ export default function UserProfile({ open, onClose }: { open: boolean; onClose:
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(18,161,80,0.12)', color: 'var(--green)' }}>VERIFIED</span>
               </div>
             ) : (
-              <input value={email} onChange={e => set({ email: e.target.value })} placeholder="you@email.com" type="email" className="w-full text-sm px-3 py-2.5 rounded-xl" style={reqStyle(email)} />
+              <input value={email} onChange={e => set({ email: e.target.value })} placeholder="Your email" type="email" className="w-full text-sm px-3 py-2.5 rounded-xl" style={reqStyle(email)} />
             )}
           </Row>
           <Row label="Country" req>
