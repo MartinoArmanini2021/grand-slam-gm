@@ -1,0 +1,11 @@
+{
+  "about": "Rolex Paris Masters 2026, main draw Mon 2 – Sun 8 Nov, La Défense Arena (Paris time; CET from 25 Oct). Scored rounds R32→F as PROPOSED (the 8 seeds bye the unscored R64); waiting on Martino's call. Round-by-day follows the 2025 edition (R1 Mon–Tue, R2 Tue–Wed, R3 Thu, QF Fri, SF Sat, F Sun). Every time is an early floor: pin each from the order of play the evening before.",
+  "tz": "Europe/Paris",
+  "rounds": [
+    { "round": "R32", "local": "2026-11-03 11:00", "note": "2nd round, the seeds' first match: DRAFT LOCK" },
+    { "round": "R16", "local": "2026-11-05 11:00", "note": "3rd round" },
+    { "round": "QF", "local": "2026-11-06 11:00" },
+    { "round": "SF", "local": "2026-11-07 13:00" },
+    { "round": "F", "local": "2026-11-08 14:00" }
+  ]
+}
