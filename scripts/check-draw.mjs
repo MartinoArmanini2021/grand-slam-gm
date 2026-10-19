@@ -32,12 +32,14 @@ const ev = getEvent(id);
 const pageFlag = flags.find((f) => f.startsWith('--page='));
 const TITLE = pageFlag ? pageFlag.slice('--page='.length).replace(/^["']|["']$/g, '') : ev.page;
 if (!Number.isInteger(ev.drawSize)) {
-  console.error(`scripts/lib/events.mjs must declare drawSize for ${id} (128 for a Slam, 96 for a Masters)`);
+  console.error(`scripts/lib/events.mjs must declare drawSize for ${id} (128 for a Slam, 96 or 56 for a Masters)`);
   process.exit(2);
 }
 // Filled first-round slots the page must show: every slot for a Slam; for a 96-draw Masters the 32
-// seeds have byes, so 64 of the 128 first-round slots stay empty by design.
-const EXPECTED = ev.drawSize === 128 ? 128 : 2 * ev.drawSize - 128;
+// seeds have byes, so 64 of the 128 first-round slots stay empty by design; a 56-draw (Paris) has 64
+// first-round slots and its 8 top seeds' stay empty, so 48. In general: players minus byes.
+const FIRST_ROUND_SLOTS = ev.drawSize > 64 ? 128 : 64;
+const EXPECTED = 2 * ev.drawSize - FIRST_ROUND_SLOTS;
 
 const page = await fetchWikitext(TITLE);
 if (page.throttled) {
@@ -51,7 +53,10 @@ if (page.missing) {
 const w = page.wikitext;
 
 const brackets = (w.match(/\{\{\s*[0-9]+TeamBracket/gi) || []).length;
-const slots = [...w.matchAll(/\|\s*RD1-team(\d{2})\s*=([^\n]*)/g)].map((m) => m[2].trim());
+// Round-one slots of the 16-team SECTIONS only. A men-only "– Singles" page (Shanghai, Paris) also
+// carries the qualifying draw as 4-team brackets, and every bracket has RD1 slots of its own.
+const sectionText = w.split(/(?=\{\{\s*[0-9]+TeamBracket)/i).filter((b) => /^\{\{\s*16TeamBracket/i.test(b)).join('\n');
+const slots = [...sectionText.matchAll(/\|\s*RD1-team(\d{2})\s*=([^\n]*)/g)].map((m) => m[2].trim());
 
 // The parser's own cleaner decides what is empty: it drops every {{template}}, so a slot holding only
 // the empty-flag placeholder {{flagicon|}} reads as empty — the same reading ingest-draw will make.

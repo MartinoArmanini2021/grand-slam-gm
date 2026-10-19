@@ -219,13 +219,18 @@ function buildMatchRows(
   });
 }
 
-const SECTION_ROUNDS: RoundId[] = ['R128', 'R64', 'R32', 'R16'];
+// A 56-draw (Paris): 4 sections R64→QF; their QF repeats the finals bracket's, which supplies it.
 const FINALS_ROUNDS: RoundId[] = ['QF', 'SF', 'F'];
+function sectionRoundsFor(drawSize?: number): RoundId[] {
+  return drawSize !== undefined && drawSize <= 64 ? ['R64', 'R32', 'R16', 'QF'] : ['R128', 'R64', 'R32', 'R16'];
+}
 
 function parseFullDraw(
-  wikitext: string, opts: { scoredRounds: RoundId[]; resolve: (raw: string) => string; includeIncomplete?: boolean },
+  wikitext: string, opts: { scoredRounds: RoundId[]; resolve: (raw: string) => string; includeIncomplete?: boolean; drawSize?: number },
 ): { draw: LiveMatch[]; results: LiveResults; meta: DrawMetaMap; scores: LiveScores } {
-  const { scoredRounds, resolve, includeIncomplete = false } = opts;
+  const { scoredRounds, resolve, includeIncomplete = false, drawSize } = opts;
+  const sectionRounds = sectionRoundsFor(drawSize);
+  const maxSections = sectionRounds[0] === 'R64' ? 4 : 8;
   const brackets = splitBrackets(wikitext);
   const sections = brackets.filter((b) => /^16TeamBracket/i.test(b.type));
   const finals = brackets.find((b) => /^8TeamBracket/i.test(b.type));
@@ -236,7 +241,7 @@ function parseFullDraw(
   // match's identity stable as the draw fills in. splitBrackets matches ANY NTeamBracket, so an extra
   // 16-team bracket appearing on the page would push every later section's index up by one and hand
   // already-recorded winners to different pairings: the exact failure structural slots exist to stop.
-  // Both a 96-draw Masters and a 128-draw Slam publish exactly 8.
+  // Both a 96-draw Masters and a 128-draw Slam publish exactly 8; a 56-draw publishes 4.
   //
   // Guarded on MORE than 8, not "not exactly 8", and the asymmetry is deliberate. Extra sections are
   // the dangerous direction. FEWER is normal and safe: a partially-published page simply has trailing
@@ -254,8 +259,8 @@ function parseFullDraw(
   // silenced the alarm indefinitely. Fixed 2026-08-18 in pipeline_watchdog.sql, which now alerts on
   // stale OR not-ok. Worth stating plainly, because the guard's whole safety argument rests on the
   // failure being noticed.
-  if (sections.length > 8) {
-    throw new Error(`Draw shape unexpected: ${sections.length} section brackets, expected at most 8. Refusing to parse rather than risk renumbering slots.`);
+  if (sections.length > maxSections) {
+    throw new Error(`Draw shape unexpected: ${sections.length} section brackets, expected at most ${maxSections}. Refusing to parse rather than risk renumbering slots.`);
   }
 
   const perRound: Partial<Record<RoundId, { slot: number; winner: string | undefined; p1Id: string; p2Id: string; score: MatchScore | undefined }[]>> = {};
@@ -265,16 +270,17 @@ function parseFullDraw(
   const noteTotals = (roundIds: RoundId[], sectionCount: number) => {
     for (const r of roundIds) roundTotal[r] = sectionCount * pairsPerSection(roundIds, r);
   };
-  const collect = (text: string, roundIds: RoundId[], sectionIdx: number) => {
+  const collect = (text: string, roundIds: RoundId[], sectionIdx: number, skip: RoundId[] = []) => {
     const { draw, results, meta: sectionMeta, scores: sectionScores } = parseBracket(text, roundIds, resolve, includeIncomplete);
     Object.assign(meta, sectionMeta);
     for (const m of draw) {
+      if (skip.includes(m.round)) continue;
       const slot = sectionIdx * pairsPerSection(roundIds, m.round) + m.slot;
       (perRound[m.round] ??= []).push({ slot, winner: results[matchKey(m.round, m.slot)], p1Id: m.p1Id, p2Id: m.p2Id, score: sectionScores[matchKey(m.round, m.slot)] });
     }
   };
-  sections.forEach((s, i) => collect(s.text, SECTION_ROUNDS, i));
-  noteTotals(SECTION_ROUNDS, sections.length);
+  sections.forEach((s, i) => collect(s.text, sectionRounds, i, FINALS_ROUNDS));
+  noteTotals(sectionRounds.filter((r) => !FINALS_ROUNDS.includes(r)), sections.length);
   if (finals) { collect(finals.text, FINALS_ROUNDS, 0); noteTotals(FINALS_ROUNDS, 1); }
 
   const draw: LiveMatch[] = [];
@@ -292,20 +298,21 @@ function parseFullDraw(
   return { draw, results, meta, scores };
 }
 
-// A 96-player draw's unscored opening round (the sections' first round, R128 here); null at a Slam.
-function openingRound(scoredRounds: RoundId[]): RoundId | null {
-  return scoredRounds.includes(SECTION_ROUNDS[0]) ? null : SECTION_ROUNDS[0];
+// A Masters' unscored opening round (the sections' first round: R128 at a 96-draw, R64 at a 56); null at a Slam.
+function openingRound(scoredRounds: RoundId[], drawSize?: number): RoundId | null {
+  const first = sectionRoundsFor(drawSize)[0];
+  return scoredRounds.includes(first) ? null : first;
 }
 
 // The first scored round from the moment the draw is published, half-known pairings included with
 // the missing side 'tbd'. Complete pairings are never replaced; later rounds are untouched.
 function withFirstRoundPending(
-  draw: LiveMatch[], wikitext: string, scoredRounds: RoundId[], resolve: (raw: string) => string,
+  draw: LiveMatch[], wikitext: string, scoredRounds: RoundId[], resolve: (raw: string) => string, drawSize?: number,
 ): LiveMatch[] {
   const first = scoredRounds[0];
   if (!first) return draw;
   const have = new Set(draw.map((m) => matchKey(m.round, m.slot)));
-  const pending = parseFullDraw(wikitext, { scoredRounds: [first], resolve, includeIncomplete: true }).draw
+  const pending = parseFullDraw(wikitext, { scoredRounds: [first], resolve, includeIncomplete: true, drawSize }).draw
     .filter((m) => !have.has(matchKey(m.round, m.slot)));
   return [...draw, ...pending];
 }
@@ -331,7 +338,8 @@ function losersOf(draw: LiveMatch[], results: LiveResults): string[] {
 // a coupled release with a real window for mismatch. Carrying every live-or-imminent event means the
 // cutover is just the app_config flip (no redeploy, no ordering hazard), and an id we don't know
 // still fails LOUDLY below instead of ingesting the wrong draw.
-const TOURNAMENTS: Record<string, { page: string; rounds: readonly string[]; roster: { id: string; name: string }[] }> = {
+// drawSize only where the page is not the 96/128 shape: a 56-draw (Paris) has 4 sections that start at R64.
+const TOURNAMENTS: Record<string, { page: string; rounds: readonly string[]; roster: { id: string; name: string }[]; drawSize?: number }> = {
   montreal_2026: {
     page: "2026 National Bank Open – Men's singles",
     rounds: ['R64', 'R32', 'R16', 'QF', 'SF', 'F'],
@@ -443,6 +451,7 @@ Deno.serve(async (req) => {
     const page = body.page ?? cfg.page;
     const roster = cfg.roster;
     const SCORED_ROUNDS = cfg.rounds;
+    const drawSize = cfg.drawSize;
 
     // FROZEN? See recompute-score: an archived tournament's draw is never re-parsed or rewritten, not
     // even for a manual body.page re-parse, and no ingest_health heartbeat is written for it. A failed
@@ -470,13 +479,13 @@ Deno.serve(async (req) => {
     // `scores` was parsed and then dropped here for the whole life of this function — every user's
     // browser re-fetched and re-parsed the same page just to show a set score. It is now carried
     // through to buildMatchRows and stored once, by the cron, for everyone.
-    const parsed = parseFullDraw(wikitext, { scoredRounds: [...SCORED_ROUNDS], resolve });
+    const parsed = parseFullDraw(wikitext, { scoredRounds: [...SCORED_ROUNDS], resolve, drawSize });
     const { results, scores } = parsed;
     // The first scored round is written from the moment the draw is published, the unknown side
     // 'tbd' (see withFirstRoundPending). Before Shanghai 2026 a Masters wrote NO rows at all until
     // its unscored opening round had been played, so for the first days of the draft the app had
     // no draw, no squad-lock time and no idea it was a 96-player event.
-    const draw = withFirstRoundPending(parsed.draw, wikitext, [...SCORED_ROUNDS], resolve);
+    const draw = withFirstRoundPending(parsed.draw, wikitext, [...SCORED_ROUNDS], resolve, drawSize);
 
     const existingWinners: Record<string, string | null> = {};
     {
@@ -518,11 +527,11 @@ Deno.serve(async (req) => {
     // first SCORED round's first ball, two days after the opening round starts). It is recorded in
     // public.opening_round instead, so the app can show who is already out while managers are still
     // drafting. Isolated: a failure here is logged and never blocks the scored rows written above.
-    const opener = openingRound([...SCORED_ROUNDS]);
+    const opener = openingRound([...SCORED_ROUNDS], drawSize);
     const openerOut = new Set<string>();
     if (opener) {
       try {
-        const op = parseFullDraw(wikitext, { scoredRounds: [opener], resolve });
+        const op = parseFullDraw(wikitext, { scoredRounds: [opener], resolve, drawSize });
         const { data: priorOp, error: pErr } = await db
           .from('opening_round').select('slot, winner_id').eq('tournament_id', tournamentId);
         if (pErr) throw pErr;
