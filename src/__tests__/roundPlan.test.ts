@@ -37,15 +37,23 @@ describe('round-plan', () => {
     expect(rows.map((r) => ({ round: r.round, slots: r.slots, first: r.first.toISOString().replace('.000', ''), prev_round: r.prev_round, prev_slots: r.prev_slots }))).toEqual(applied);
   });
 
-  it('Paris: five scored rounds R32→F, the first with no prev_round, all in order', () => {
+  it('Paris: all six rounds score (decided 20 Oct); R64 has 24 matches, so R32 waits for 24 winners', () => {
     const rows: Row[] = planRows('paris_2026', parisSpec);
-    expect(rows.map((r) => r.round)).toEqual(['R32', 'R16', 'QF', 'SF', 'F']);
+    expect(rows.map((r) => r.round)).toEqual(['R64', 'R32', 'R16', 'QF', 'SF', 'F']);
     expect(rows[0]!.prev_round).toBeNull();
-    expect(rows.map((r) => r.slots)).toEqual([16, 8, 4, 2, 1]);
+    expect(rows.map((r) => r.slots)).toEqual([24, 16, 8, 4, 2, 1]);
+    expect(rows.map((r) => r.prev_slots)).toEqual([null, 24, 16, 8, 4, 2]);
     for (let i = 1; i < rows.length; i++) expect(rows[i]!.first > rows[i - 1]!.first).toBe(true);
     const sql: string = planSql('paris_2026', parisSpec, '2026-10-20');
-    expect(sql).toContain("('paris_2026', 'R32', 16, '2026-11-03T10:00:00Z', null, null,");
+    expect(sql).toContain("('paris_2026', 'R64', 24, '2026-11-02T10:00:00Z', null, null,");
+    expect(sql).toContain("('paris_2026', 'R32', 16, '2026-11-04T10:00:00Z', 'R64', 24,");
     expect(sql).toContain('-- ROLLBACK');
+  });
+
+  it('refuses a round with more matches than its name allows', () => {
+    expect(() =>
+      planRows('x', { tz: 'Europe/Paris', rounds: [{ round: 'SF', slots: 3, local: '2026-11-07 11:00' }, { round: 'F', local: '2026-11-08 11:00' }] }),
+    ).toThrow(/slots must be 1–2/);
   });
 
   it('refuses a schedule out of order, with a gap, or without the final', () => {

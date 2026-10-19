@@ -58,6 +58,10 @@ export function planRows(id, spec) {
   let prev = null;
   for (const r of spec.rounds) {
     if (!(r.round in SLOTS)) throw new Error(`unknown round "${r.round}"`);
+    // A round with byes has fewer matches than its name says: a 56-draw's R64 is 24 matches (the top 8
+    // seeds skip it), so the round after it waits for 24 winners. "slots" in the schedule says so.
+    const slots = r.slots ?? SLOTS[r.round];
+    if (!Number.isInteger(slots) || slots < 1 || slots > SLOTS[r.round]) throw new Error(`${r.round}: slots must be 1–${SLOTS[r.round]}`);
     if (prev && ORDER.indexOf(r.round) !== ORDER.indexOf(prev.round) + 1)
       throw new Error(`${r.round} must come right after ${ORDER[ORDER.indexOf(prev.round) + 1] ?? '—'}, not after ${prev.round}`);
     const first = zonedToUtc(r.local, spec.tz);
@@ -65,14 +69,14 @@ export function planRows(id, spec) {
     rows.push({
       tournament_id: id,
       round: r.round,
-      slots: SLOTS[r.round],
+      slots,
       first,
       local: r.local,
       prev_round: prev?.round ?? null,
-      prev_slots: prev ? SLOTS[prev.round] : null,
+      prev_slots: prev ? prev.slots : null,
       note: `${r.pinned ? 'pinned' : 'floor'} ${r.local} ${spec.tz}${r.note ? ` (${r.note})` : ''}${r.pinned ? '' : ' — pin from the order of play'}`,
     });
-    prev = { round: r.round, first, local: r.local };
+    prev = { round: r.round, first, local: r.local, slots };
   }
   if (rows.at(-1).round !== 'F') throw new Error('the schedule must end with the final (F)');
   return rows;

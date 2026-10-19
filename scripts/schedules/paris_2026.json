@@ -1,11 +1,12 @@
 {
-  "about": "Rolex Paris Masters 2026, main draw Mon 2 – Sun 8 Nov, La Défense Arena (Paris time; CET from 25 Oct). Scored rounds R32→F as PROPOSED (the 8 seeds bye the unscored R64); waiting on Martino's call. Round-by-day follows the 2025 edition (R1 Mon–Tue, R2 Tue–Wed, R3 Thu, QF Fri, SF Sat, F Sun). Every time is an early floor: pin each from the order of play the evening before.",
+  "about": "Rolex Paris Masters 2026, main draw Mon 2 – Sun 8 Nov, La Défense Arena (Paris time; CET from 25 Oct). Martino decided 20 Oct: ALL SIX rounds score, R64 → F; a top-8 seed's R64 bye scores zero. R64 has 24 matches (the 8 top seeds skip it), so R32 waits for 24 winners. Calendar as in reports/grand-slam-gm-paris-setup.md. Every time is an early floor: pin each from the order of play the evening before.",
   "tz": "Europe/Paris",
   "rounds": [
-    { "round": "R32", "local": "2026-11-03 11:00", "note": "2nd round, the seeds' first match: DRAFT LOCK" },
+    { "round": "R64", "slots": 24, "local": "2026-11-02 11:00", "note": "1st round, DRAFT LOCK; the top 8 seeds have a bye" },
+    { "round": "R32", "local": "2026-11-04 11:00", "note": "2nd round, the top 8 seeds' first match; could start Tue 3 afternoon" },
     { "round": "R16", "local": "2026-11-05 11:00", "note": "3rd round" },
     { "round": "QF", "local": "2026-11-06 11:00" },
     { "round": "SF", "local": "2026-11-07 13:00" },
-    { "round": "F", "local": "2026-11-08 14:00" }
+    { "round": "F", "local": "2026-11-08 15:00", "note": "not before 15:00" }
   ]
 }
