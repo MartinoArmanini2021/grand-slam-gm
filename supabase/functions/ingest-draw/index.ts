@@ -309,12 +309,22 @@ function openingRound(scoredRounds: RoundId[], drawSize?: number): RoundId | nul
 function withFirstRoundPending(
   draw: LiveMatch[], wikitext: string, scoredRounds: RoundId[], resolve: (raw: string) => string, drawSize?: number,
 ): LiveMatch[] {
-  const first = scoredRounds[0];
+  const [first, second] = scoredRounds;
   if (!first) return draw;
   const have = new Set(draw.map((m) => matchKey(m.round, m.slot)));
-  const pending = parseFullDraw(wikitext, { scoredRounds: [first], resolve, includeIncomplete: true, drawSize }).draw
+  const pendingOf = (round: RoundId) => parseFullDraw(wikitext, { scoredRounds: [round], resolve, includeIncomplete: true, drawSize }).draw
     .filter((m) => !have.has(matchKey(m.round, m.slot)));
-  return [...draw, ...pending];
+  const pending = pendingOf(first);
+  // A seed with a BYE through a SCORED first round (Paris: the top 8 skip R64) has no first-round
+  // match at all, and a player with no match row reads as out of the draw once play starts (full
+  // refund, free transfer, OUT badge). So its second-round pairing is written from draw day too.
+  // No other draw has such a player: at a Slam nobody byes, at a 96-draw the byes are into R64.
+  const inFirst = new Set(parseFullDraw(wikitext, { scoredRounds: [first], resolve, includeIncomplete: true, drawSize }).draw
+    .flatMap((m) => [m.p1Id, m.p2Id]));
+  const byes = second
+    ? pendingOf(second).filter((m) => [m.p1Id, m.p2Id].some((id) => id !== 'tbd' && !inFirst.has(id)))
+    : [];
+  return [...draw, ...pending, ...byes];
 }
 
 // The loser of every pairing with a recorded winner.
