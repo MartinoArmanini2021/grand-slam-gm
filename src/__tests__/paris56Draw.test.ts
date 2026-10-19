@@ -11,8 +11,9 @@ import type { RoundId } from '../types';
 // one step too early ("R128" 24, "R64" 16, …) and the sections' QF doubled the finals bracket's.
 // Pinned against the real 2025 page (champion Sinner, final v Auger-Aliassime).
 
-const PARIS: RoundId[] = ['R32', 'R16', 'QF', 'SF', 'F'];   // the proposed scored rounds
-const ALL: RoundId[] = ['R64', 'R32', 'R16', 'QF', 'SF', 'F'];
+// All six rounds are scored (owner's decision, 20 Oct 2026): the top 8 seeds' R64 byes score zero.
+const PARIS: RoundId[] = ['R64', 'R32', 'R16', 'QF', 'SF', 'F'];
+const ALL = PARIS;
 
 const slug = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '');
 const rosterOf = (wikitext: string) => {
@@ -71,28 +72,90 @@ describe('the 2025 Paris page, read as a 56-draw', () => {
   });
 });
 
-describe('Paris draw day: the unscored opener and the first scored round', () => {
-  it('the opener is R64 when R32 is the first scored round', () => {
-    expect(openingRound(PARIS, 56)).toBe('R64');
-    expect(openingRound(ALL, 56)).toBeNull();
+// The 2025 page as it looked on draw day: first-round pairings known, nobody has played, the 8 bye
+// seeds already placed in the second round, nothing later. Qualifying brackets are left alone.
+const cell = /(\|\s*RD(\d)-team\d+\s*=)(.*?)(?=\s*\|\s*RD|$)/gm;
+function drawDay(wikitext: string): string {
+  const r64 = new Set(parseFullDraw(wikitext, { scoredRounds: ['R64'], resolve, drawSize: 56 }).draw.flatMap(m => [m.p1Id, m.p2Id]));
+  const starts = [...wikitext.matchAll(/\{\{(\d+)TeamBracket/g)];
+  let out = wikitext.slice(0, starts[0]?.index ?? wikitext.length);
+  starts.forEach((m, i) => {
+    const text = wikitext.slice(m.index, starts[i + 1]?.index ?? wikitext.length);
+    if (m[1] === '16') {
+      out += text.replace(cell, (_all, head: string, rd: string, raw: string) => {
+        if (rd === '1') return head + raw.replace(/'''/g, '');
+        if (rd === '2') return r64.has(resolve(raw)) ? head + ' ' : head + raw.replace(/'''/g, '');
+        return head + ' ';
+      });
+    } else if (m[1] === '8') {
+      out += text.replace(cell, (_all, head: string) => head + ' ');
+    } else {
+      out += text;
+    }
+  });
+  return out;
+}
+
+describe('Paris draw day: six scored rounds, byes included', () => {
+  it('no unscored opener: R64 is the first scored round', () => {
+    expect(openingRound(PARIS, 56)).toBeNull();
     expect(openingRound(['R64', 'R32', 'R16', 'QF', 'SF', 'F'])).toBe('R128'); // 96-draw unchanged
+    expect(openingRound(['R32', 'R16', 'QF', 'SF', 'F'], 56)).toBe('R64');
   });
 
-  it('the opener read alone gives 24 matches and 24 players out', () => {
-    const op = parseFullDraw(paris2025, { scoredRounds: ['R64'], resolve, drawSize: 56 });
-    expect(op.draw).toHaveLength(24);
-    expect(losersOf(op.draw, op.results)).toHaveLength(24);
+  const dd = drawDay(paris2025);
+  const strict = parseFullDraw(dd, { scoredRounds: PARIS, resolve, drawSize: 56 }).draw;
+  const day1 = withFirstRoundPending(strict, dd, PARIS, resolve, 56);
+
+  it('the rewound page has no results and 8 seeds waiting in the second round', () => {
+    expect(Object.keys(parseFullDraw(dd, { scoredRounds: PARIS, resolve, drawSize: 56 }).results)).toHaveLength(0);
+    expect(count(day1)).toEqual({ R64: 24, R32: 8 });
   });
 
-  it('withFirstRoundPending keeps every R32 pairing, seeds included', () => {
+  it('every bye seed has a row from draw day: his R32 pairing, opponent tbd', () => {
+    const r32 = day1.filter(m => m.round === 'R32');
+    for (const m of r32) expect([m.p1Id, m.p2Id].filter(id => id === 'tbd')).toHaveLength(1);
+    const byeSeeds = r32.flatMap(m => [m.p1Id, m.p2Id]).filter(id => id !== 'tbd');
+    expect(byeSeeds).toContain('carlosalcaraz');
+    expect(byeSeeds).toContain('janniksinner');
+    expect(new Set(byeSeeds).size).toBe(8);
+  });
+
+  it('all 56 players are in the draw on day one, so none reads as out of it', () => {
+    const ids = new Set(day1.flatMap(m => [m.p1Id, m.p2Id]).filter(id => id !== 'tbd'));
+    expect(ids.size).toBe(56);
+  });
+
+  it('a bye seed keeps the same R32 slot once his opponent is known', () => {
+    const full = parseFullDraw(paris2025, { scoredRounds: ['R32'], resolve, drawSize: 56 }).draw;
+    for (const m of day1.filter(x => x.round === 'R32')) {
+      const seed = m.p1Id === 'tbd' ? m.p2Id : m.p1Id;
+      expect(full.find(f => f.slot === m.slot && (f.p1Id === seed || f.p2Id === seed)), seed).toBeDefined();
+    }
+  });
+
+  it('on the finished page nothing is added twice', () => {
     const scored = parseFullDraw(paris2025, { scoredRounds: PARIS, resolve, drawSize: 56 }).draw;
-    const withPending = withFirstRoundPending(scored, paris2025, PARIS, resolve, 56);
-    expect(withPending.filter(m => m.round === 'R32')).toHaveLength(16);
+    expect(withFirstRoundPending(scored, paris2025, PARIS, resolve, 56)).toHaveLength(scored.length);
   });
 
   it('a too-many-sections page is refused rather than renumbered', () => {
     const extra = paris2025 + '\n' + paris2025.slice(paris2025.indexOf('{{16TeamBracket'), paris2025.indexOf('{{16TeamBracket') + 4000);
     expect(() => parseFullDraw(extra, { scoredRounds: ALL, resolve, drawSize: 56 })).toThrow(/at most 4/);
+  });
+
+  it('losersOf still works on the scored first round', () => {
+    const op = parseFullDraw(paris2025, { scoredRounds: ['R64'], resolve, drawSize: 56 });
+    expect(losersOf(op.draw, op.results)).toHaveLength(24);
+  });
+});
+
+describe('the 96-draw is untouched: no bye rows are invented at Shanghai', () => {
+  it('Shanghai 2025 on draw day still gets only its R64 pairings', () => {
+    const r = buildResolver(rosterOf(shanghai2025));
+    const MASTERS: RoundId[] = ['R64', 'R32', 'R16', 'QF', 'SF', 'F'];
+    const scored = parseFullDraw(shanghai2025, { scoredRounds: MASTERS, resolve: r, drawSize: 96 }).draw;
+    expect(withFirstRoundPending(scored, shanghai2025, MASTERS, r, 96)).toHaveLength(scored.length);
   });
 });
 
