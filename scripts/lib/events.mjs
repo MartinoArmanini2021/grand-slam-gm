@@ -93,6 +93,22 @@ export const EVENTS = {
     drawSize: 96,
     manual: [],
   },
+
+  // Rolex Paris Masters, main draw Mon 2 – Sun 8 Nov 2026 (qualifying Sat 31 Oct – Sun 1 Nov), La
+  // Défense Arena, Nanterre, indoor hard. MEN-ONLY, so "– Singles". A 56-DRAW: 16 seeds, the top 8
+  // bye the first round (R64), so the page has 4 sections (R64→QF) + the finals bracket + the
+  // qualifying brackets. Rehearsed 2026-10-19 against "2025 Rolex Paris Masters – Singles": R64 24 ·
+  // R32 16 · R16 8 · QF 4 · SF 2 · F 1, all decided, final Auger-Aliassime v Sinner — correct.
+  paris_2026: {
+    page: '2026 Rolex Paris Masters – Singles',
+    field: 'src/data/paris2026Field.json',
+    seed: 'supabase/seed_paris_player_stats.sql',
+    label: 'Paris Masters 2026',
+    surface: 'hard',
+    status: 'upcoming',
+    drawSize: 56,
+    manual: [],
+  },
 };
 
 export function getEvent(id) {

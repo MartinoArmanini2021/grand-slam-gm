@@ -261,8 +261,18 @@ export function buildMatchRows(
 // RD1..RD4 = R128→R64→R32→R16) that each feed one winner into a single FINALS bracket
 // ({{8TeamBracket…}}, RD1..RD3 = QF→SF→F). Verified against the real 2025 NBO page:
 // 32/32/16/8/4/2/1 matches for R128…F and the correct champion.
-const SECTION_ROUNDS: RoundId[] = ['R128', 'R64', 'R32', 'R16'];
+//
+// A 56-player Masters (Paris) is published as 4 sections whose rounds are one step LATER
+// (RD1..RD4 = R64→R32→R16→QF; the 8 top seeds have byes in R64) plus the same finals bracket.
+// Its sections' QF repeats the finals bracket's QF, so the finals bracket alone supplies it.
+// Verified against the real 2025 Paris page: 24/16/8/4/2/1 matches for R64…F, champion Sinner.
 const FINALS_ROUNDS: RoundId[] = ['QF', 'SF', 'F'];
+
+// The rounds a section bracket spans. drawSize is the event's (scripts/lib/events.mjs); absent
+// means a 96- or 128-draw, the only shapes there were before Paris.
+export function sectionRoundsFor(drawSize?: number): RoundId[] {
+  return drawSize !== undefined && drawSize <= 64 ? ['R64', 'R32', 'R16', 'QF'] : ['R128', 'R64', 'R32', 'R16'];
+}
 
 // Parse the WHOLE draw page into one stitched draw + results. Each bracket parses on its
 // own (their RD-team keys would collide), then slots are renumbered GLOBALLY per round
@@ -270,9 +280,11 @@ const FINALS_ROUNDS: RoundId[] = ['QF', 'SF', 'F'];
 // tournament's SCORED rounds are emitted (R128 is dropped — advancement into R64 is already
 // resolved and the app doesn't score the opening round).
 export function parseFullDraw(
-  wikitext: string, opts: { scoredRounds: RoundId[]; resolve: (raw: string) => string; includeIncomplete?: boolean },
+  wikitext: string, opts: { scoredRounds: RoundId[]; resolve: (raw: string) => string; includeIncomplete?: boolean; drawSize?: number },
 ): { draw: LiveMatch[]; results: LiveResults; meta: DrawMetaMap; scores: LiveScores } {
-  const { scoredRounds, resolve, includeIncomplete = false } = opts;
+  const { scoredRounds, resolve, includeIncomplete = false, drawSize } = opts;
+  const sectionRounds = sectionRoundsFor(drawSize);
+  const maxSections = sectionRounds[0] === 'R64' ? 4 : 8;
   const brackets = splitBrackets(wikitext);
   const sections = brackets.filter(b => /^16TeamBracket/i.test(b.type));
   const finals = brackets.find(b => /^8TeamBracket/i.test(b.type));
@@ -285,7 +297,7 @@ export function parseFullDraw(
   // match's identity stable as the draw fills in. splitBrackets matches ANY NTeamBracket, so an extra
   // 16-team bracket appearing on the page would push every later section's index up by one and hand
   // already-recorded winners to different pairings: the exact failure structural slots exist to stop.
-  // Both a 96-draw Masters and a 128-draw Slam publish exactly 8.
+  // Both a 96-draw Masters and a 128-draw Slam publish exactly 8; a 56-draw publishes 4.
   //
   // Guarded on MORE than 8, not "not exactly 8", and the asymmetry is deliberate. Extra sections are
   // the dangerous direction. FEWER is normal and safe: a partially-published page simply has trailing
@@ -303,8 +315,8 @@ export function parseFullDraw(
   // silenced the alarm indefinitely. Fixed 2026-08-18 in pipeline_watchdog.sql, which now alerts on
   // stale OR not-ok. Worth stating plainly, because the guard's whole safety argument rests on the
   // failure being noticed.
-  if (sections.length > 8) {
-    throw new Error(`Draw shape unexpected: ${sections.length} section brackets, expected at most 8. Refusing to parse rather than risk renumbering slots.`);
+  if (sections.length > maxSections) {
+    throw new Error(`Draw shape unexpected: ${sections.length} section brackets, expected at most ${maxSections}. Refusing to parse rather than risk renumbering slots.`);
   }
 
   const perRound: Partial<Record<RoundId, { slot: number; winner: string | undefined; p1Id: string; p2Id: string; score: MatchScore | undefined }[]>> = {};
@@ -322,16 +334,17 @@ export function parseFullDraw(
   const noteTotals = (roundIds: RoundId[], sectionCount: number) => {
     for (const r of roundIds) roundTotal[r] = sectionCount * pairsPerSection(roundIds, r);
   };
-  const collect = (text: string, roundIds: RoundId[], sectionIdx: number) => {
+  const collect = (text: string, roundIds: RoundId[], sectionIdx: number, skip: RoundId[] = []) => {
     const { draw, results, meta: sectionMeta, scores: sectionScores } = parseBracket(text, roundIds, resolve, includeIncomplete);
     Object.assign(meta, sectionMeta);
     for (const m of draw) {
+      if (skip.includes(m.round)) continue;
       const slot = sectionIdx * pairsPerSection(roundIds, m.round) + m.slot;
       (perRound[m.round] ??= []).push({ slot, winner: results[matchKey(m.round, m.slot)], p1Id: m.p1Id, p2Id: m.p2Id, score: sectionScores[matchKey(m.round, m.slot)] });
     }
   };
-  sections.forEach((s, i) => collect(s.text, SECTION_ROUNDS, i));
-  noteTotals(SECTION_ROUNDS, sections.length);
+  sections.forEach((s, i) => collect(s.text, sectionRounds, i, FINALS_ROUNDS));
+  noteTotals(sectionRounds.filter(r => !FINALS_ROUNDS.includes(r)), sections.length);
   if (finals) { collect(finals.text, FINALS_ROUNDS, 0); noteTotals(FINALS_ROUNDS, 1); }
 
   const draw: LiveMatch[] = [];
@@ -353,10 +366,12 @@ export function parseFullDraw(
 
 // A 96-player draw (a Masters) opens with a round nobody scores: the 64 unseeded players play it
 // while the 32 seeds have a bye. The section brackets carry it as their first round, which this
-// parser calls R128. Returns that round when the event does not score it, null when it does (a
-// Slam, whose R128 is its first scored round).
-export function openingRound(scoredRounds: RoundId[]): RoundId | null {
-  return scoredRounds.includes(SECTION_ROUNDS[0]) ? null : SECTION_ROUNDS[0];
+// parser calls R128 (R64 at a 56-draw like Paris, whose 8 top seeds have the bye). Returns that
+// round when the event does not score it, null when it does (a Slam, whose R128 is its first
+// scored round).
+export function openingRound(scoredRounds: RoundId[], drawSize?: number): RoundId | null {
+  const first = sectionRoundsFor(drawSize)[0];
+  return scoredRounds.includes(first) ? null : first;
 }
 
 // The first scored round from the moment the draw is published. The strict parse keeps a pairing
@@ -366,12 +381,12 @@ export function openingRound(scoredRounds: RoundId[]): RoundId | null {
 // would likewise drop the player already drawn there. The half-known pairings are added here with
 // the missing side 'tbd'. A complete pairing is never replaced, and later rounds are untouched.
 export function withFirstRoundPending(
-  draw: LiveMatch[], wikitext: string, scoredRounds: RoundId[], resolve: (raw: string) => string,
+  draw: LiveMatch[], wikitext: string, scoredRounds: RoundId[], resolve: (raw: string) => string, drawSize?: number,
 ): LiveMatch[] {
   const first = scoredRounds[0];
   if (!first) return draw;
   const have = new Set(draw.map(m => matchKey(m.round, m.slot)));
-  const pending = parseFullDraw(wikitext, { scoredRounds: [first], resolve, includeIncomplete: true }).draw
+  const pending = parseFullDraw(wikitext, { scoredRounds: [first], resolve, includeIncomplete: true, drawSize }).draw
     .filter(m => !have.has(matchKey(m.round, m.slot)));
   return [...draw, ...pending];
 }

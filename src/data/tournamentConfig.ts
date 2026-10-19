@@ -306,6 +306,19 @@ export const TOURNAMENTS: Record<string, Tournament> = {
     status: 'staged',
     wikipediaPage: '2026 Rolex Shanghai Masters – Singles', // men-only event: "– Singles"
   },
+  paris_2026: {
+    id: 'paris_2026',
+    name: 'Paris Masters',
+    edition: 'Paris Masters 2026',
+    year: 2026,
+    surface: 'hard',
+    location: 'Paris, France',
+    drawSize: 56,
+    rounds: ['R32', 'R16', 'QF', 'SF', 'F'], // 8 seeds bye past the unscored opening round (R64) — PROPOSED, his call
+    mode: 'live',
+    status: 'staged',
+    wikipediaPage: '2026 Rolex Paris Masters – Singles', // men-only event: "– Singles"
+  },
 };
 
 const ACTIVE_STORE_KEY = 'gsgm-active-tournament';

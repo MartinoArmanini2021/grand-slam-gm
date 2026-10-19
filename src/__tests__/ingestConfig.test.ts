@@ -59,12 +59,14 @@ describe('ingest-draw — config-driven, never guessing', () => {
 
 describe('ingest-draw — a 96-player Masters from draw day (Shanghai setup, 2026-09-24)', () => {
   it('writes the first scored round with its still-unknown sides, not only complete pairings', async () => {
-    expect(codeOnly(await raw('ingest-draw'))).toMatch(/const draw = withFirstRoundPending\(parsed\.draw, wikitext, \[\.\.\.SCORED_ROUNDS\], resolve\)/);
+    expect(codeOnly(await raw('ingest-draw'))).toMatch(/const draw = withFirstRoundPending\(parsed\.draw, wikitext, \[\.\.\.SCORED_ROUNDS\], resolve, drawSize\)/);
   });
 
   it('records the unscored opening round in public.opening_round, isolated from the scored rows', async () => {
     const s = codeOnly(await raw('ingest-draw'));
-    expect(s).toMatch(/const opener = openingRound\(\[\.\.\.SCORED_ROUNDS\]\)/);
+    expect(s).toMatch(/const opener = openingRound\(\[\.\.\.SCORED_ROUNDS\], drawSize\)/);
+    // The draw size reaches every parse (2026-10-19): a 56-draw's sections start at R64, not R128.
+    expect(s).toMatch(/const drawSize = cfg\.drawSize;/);
     expect(s).toMatch(/\.from\('opening_round'\)\.upsert\(opRows, \{ onConflict: 'tournament_id,slot' \}\)/);
     expect(s).toMatch(/opening_round write failed \(scored rows unaffected\)/);
   });

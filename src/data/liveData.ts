@@ -66,7 +66,7 @@ export function parseBracket(wikitext: string, roundIds: RoundId[]): { draw: Liv
 const PARSED_ROUNDS = OPENING_ROUND ? [OPENING_ROUND, ...TOURNAMENT.rounds] : TOURNAMENT.rounds;
 
 export function parseFullDraw(wikitext: string): { draw: LiveMatch[]; results: LiveResults; meta: PlayerMetaMap; scores: LiveScores } {
-  const { draw, results, meta, scores } = parseFullDrawCore(wikitext, { scoredRounds: PARSED_ROUNDS, resolve, includeIncomplete: true });
+  const { draw, results, meta, scores } = parseFullDrawCore(wikitext, { scoredRounds: PARSED_ROUNDS, resolve, includeIncomplete: true, drawSize: TOURNAMENT.drawSize });
   return { draw, results, meta: toPlayerMeta(meta), scores };
 }
 
