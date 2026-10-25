@@ -18,7 +18,7 @@
 // (it never writes a field from the wrong year), and steps 3–4 are skipped. That proves the parser
 // and the pool on a draw whose answer is known.
 import { spawnSync } from 'node:child_process';
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { EVENTS } from './lib/events.mjs';
@@ -49,13 +49,26 @@ function run(label, script, scriptArgs) {
   return true;
 }
 
+/** Players in the event's field file (0 when missing or the empty placeholder). */
+function fieldCount(ev) {
+  try {
+    const list = JSON.parse(readFileSync(resolve(ROOT, ev.field), 'utf8'));
+    return Array.isArray(list) ? list.length : 0;
+  } catch {
+    return 0;
+  }
+}
+
 export function followUps(eventId, ev) {
   const plan = readdirSync(resolve(ROOT, 'supabase')).find((f) => f.endsWith(`_${eventId}_round_plan.sql`));
   return [
     ['Apply the prices (seed)', `apply ${ev.seed} (Supabase SQL editor or apply_migration "${eventId}_player_stats")`],
     ['Apply the lock times (if not done yet)', plan ? `apply supabase/${plan}` : `node scripts/round-plan.mjs ${eventId}  → then apply it`],
     ['Feed: add the event to the registry', `supabase/functions/ingest-draw/index.ts → TOURNAMENTS.${eventId} = { page: "${ev.page}", rounds, roster: the field, drawSize: ${ev.drawSize} }`],
-    ['Feed: deploy', 'npx supabase functions deploy ingest-draw --project-ref mrdmlfumdsxufifjulbt'],
+    [
+      'Feed: deploy',
+      `${fieldCount(ev) >= ev.drawSize ? `field has ${fieldCount(ev)} players: OK` : `⚠ STOP: ${ev.field} has ${fieldCount(ev)} players, not ${ev.drawSize}. Build the field first.`}\n      npx supabase functions deploy ingest-draw --project-ref mrdmlfumdsxufifjulbt`,
+    ],
     ['Feed: run once by hand for the event', `POST /functions/v1/ingest-draw {"tournamentId":"${eventId}"} with the service key, then: select round, count(*) from matches where tournament_id='${eventId}' group by 1;`],
     ['Switch the game to the event', `update public.app_config set value = '${eventId}', updated_at = now() where key = 'active_tournament_id';`],
     ['Stamp the first round\'s lock time', 'the stamp SQL at the top of the round plan file'],
