@@ -20,6 +20,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import montrealField from '../../../src/data/montreal2026Field.json' with { type: 'json' };
 import cincinnatiField from '../../../src/data/cincinnati2026Field.json' with { type: 'json' };
 import usopenField from '../../../src/data/usopen2026Field.json' with { type: 'json' };
+// Paris: the field file is EMPTY until draw night (scripts/drawday.mjs writes it). Never deploy this
+// function before that file has the 56 players, or every Paris name resolves to nobody.
+import parisField from '../../../src/data/paris2026Field.json' with { type: 'json' };
 
 // ── auth guard (inlined from supabase/functions/_shared/serviceGuard.ts) ──
 function decodeJwtRole(token: string): string | null {
@@ -367,6 +370,14 @@ const TOURNAMENTS: Record<string, { page: string; rounds: readonly string[]; ros
     page: "2026 US Open – Men's singles",
     rounds: ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'],
     roster: usopenField as { id: string; name: string }[],
+  },
+  // A 56-draw: 4 sections that start at R64, plus the finals bracket. ALL SIX rounds score (owner,
+  // 20 Oct); the top 8 seeds' R64 byes score zero, and their R32 pairings are written from draw day.
+  paris_2026: {
+    page: '2026 Rolex Paris Masters – Singles',
+    rounds: ['R64', 'R32', 'R16', 'QF', 'SF', 'F'],
+    roster: parisField as { id: string; name: string }[],
+    drawSize: 56,
   },
 };
 // NO DEFAULT, deliberately. A hardcoded fallback here meant a bodyless invoke silently ingested

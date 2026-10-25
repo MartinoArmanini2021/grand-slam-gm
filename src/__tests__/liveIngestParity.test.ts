@@ -17,6 +17,7 @@ import { LIVE } from '../data/liveData';
 const INGEST_REGISTRY: Record<string, { page: string; rounds: string[] }> = {
   montreal_2026:   { page: "2026 National Bank Open – Men's singles", rounds: ['R64', 'R32', 'R16', 'QF', 'SF', 'F'] },
   cincinnati_2026: { page: "2026 Cincinnati Open – Men's singles",    rounds: ['R64', 'R32', 'R16', 'QF', 'SF', 'F'] },
+  paris_2026:      { page: '2026 Rolex Paris Masters – Singles',      rounds: ['R64', 'R32', 'R16', 'QF', 'SF', 'F'] },
 };
 
 describe('ingest-draw ↔ app config parity', () => {
