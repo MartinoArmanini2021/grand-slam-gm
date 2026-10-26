@@ -18,7 +18,7 @@ function loadWikiFetch(fetchImpl: typeof fetch): (url: string) => Promise<Respon
 }
 
 describe('ingest-draw identifies itself to Wikipedia', () => {
-  it('sends a User-Agent naming the app, its site and a contact', async () => {
+  it('sends a User-Agent naming the app and its site, with no personal address', async () => {
     let sent: Headers | undefined;
     const wikiFetch = loadWikiFetch((async (_url: RequestInfo | URL, init?: RequestInit) => {
       sent = new Headers(init?.headers);
@@ -26,7 +26,7 @@ describe('ingest-draw identifies itself to Wikipedia', () => {
     }) as typeof fetch);
     const res = await wikiFetch('https://en.wikipedia.org/w/api.php?action=query&format=json');
     expect(res.status).toBe(200);
-    expect(sent?.get('user-agent') ?? '').toMatch(/^GrandSlamGM\/1\.0 \(https:\/\/grandslamgm\.com; [^\s()]+@[^\s()]+\)$/);
+    expect(sent?.get('user-agent') ?? '').toBe('GrandSlamGM/1.0 (https://grandslamgm.com)');
   });
 
   it('reaches Wikipedia only through that helper', () => {

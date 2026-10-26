@@ -165,19 +165,31 @@ const REST_ATTEMPTS = 3;
 const pathOf = (input: RequestInfo | URL): string => {
   try { return new URL(input instanceof Request ? input.url : String(input)).pathname; } catch { return '?'; }
 };
+// CLOCK SKEW (26 Oct 2026): right after a cold start the edge box's clock can run a second or two
+// ahead of the database's, and PostgREST refuses our own service key with 401 PGRST303 "JWT issued
+// at future" until the clocks agree. The key is fine, so this one 401 is retried like a 5xx (about a
+// second apart); every other 401 is a real refusal and fails at once.
+const isClockSkew = async (res: Response): Promise<boolean> => {
+  if (res.status !== 401) return false;
+  try { return (await res.clone().text()).includes('PGRST303'); } catch { return false; }
+};
 const retryingFetch: typeof fetch = async (input, init) => {
   let lastRes: Response | undefined;
   let lastErr: unknown;
+  let wait = 0;
   for (let attempt = 1; attempt <= REST_ATTEMPTS; attempt++) {
-    if (attempt > 1) await new Promise((r) => setTimeout(r, 1500 * (attempt - 1)));
+    if (attempt > 1) await new Promise((r) => setTimeout(r, wait));
     try {
       const res = await fetch(input, init);
-      if (!RETRY_STATUS.has(res.status)) return res;
+      const skew = await isClockSkew(res);
+      if (!skew && !RETRY_STATUS.has(res.status)) return res;
       lastRes = res;
-      console.warn(`rest ${res.status} on attempt ${attempt}/${REST_ATTEMPTS}: ${pathOf(input)}`);
-      await res.body?.cancel().catch(() => {});
+      wait = skew ? 1000 : 1500 * attempt;
+      console.warn(`rest ${res.status}${skew ? ' PGRST303' : ''} on attempt ${attempt}/${REST_ATTEMPTS}: ${pathOf(input)}`);
+      if (attempt < REST_ATTEMPTS) await res.body?.cancel().catch(() => {});
     } catch (e) {
       lastErr = e;
+      wait = 1500 * attempt;
       console.warn(`rest network error on attempt ${attempt}/${REST_ATTEMPTS}:`, e);
     }
   }
@@ -198,6 +210,7 @@ Deno.serve(async (req) => {
   const denied = assertServiceRole(req);
   if (denied) return denied;
   let tournamentId: string | undefined;
+  let freezeChecked = false; // true once tournament_status has been read and said "not frozen"
   try {
     const url = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -235,6 +248,7 @@ Deno.serve(async (req) => {
         headers: { 'Content-Type': 'application/json' },
       });
     }
+    freezeChecked = true;
 
     // Results the server holds → the rounds that are actually "done".
     const { data: matchRows, error: mErr } = await db
@@ -301,6 +315,19 @@ Deno.serve(async (req) => {
     if (tournamentId) {
       try {
         const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { global: { fetch: retryingFetch } });
+        // Failed before the freeze check finished? Ask again with a fresh request: a FROZEN event gets
+        // no heartbeat, even a failing one (the error would sit on an archived event's row and alert).
+        // Only a read that SUCCEEDS and finds the row skips it; a failed re-read keeps the failure visible.
+        if (!freezeChecked) {
+          const { data: isFrozen, error: rErr } = await db
+            .from('tournament_status').select('tournament_id').eq('tournament_id', tournamentId).maybeSingle();
+          if (!rErr && isFrozen) {
+            console.warn('error before the freeze check on a frozen event; no heartbeat:', errorText(err));
+            return new Response(JSON.stringify({ ok: true, tournamentId, skipped: 'completed' }), {
+              headers: { 'Content-Type': 'application/json' },
+            });
+          }
+        }
         await db.from('scoring_health').upsert(
           { tournament_id: tournamentId, last_run_at: new Date().toISOString(), ok: false, error: errorText(err).slice(0, 500) },
           { onConflict: 'tournament_id' });

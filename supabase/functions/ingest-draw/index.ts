@@ -384,9 +384,9 @@ const json = (body: unknown, status = 200) =>
 
 // ════════════ WIKIPEDIA FETCH ════════════
 // Wikimedia's API etiquette asks every client for a descriptive User-Agent with a way to reach its
-// operator; anonymous traffic is the first to be throttled or blocked. The server scripts send one
-// with the same contact (scripts/lib/wiki.mjs). Every Wikipedia request goes through wikiFetch.
-const WIKI_USER_AGENT = 'GrandSlamGM/1.0 (https://grandslamgm.com; martinoarmanini@gmail.com)';
+// operator; anonymous traffic is the first to be throttled or blocked. The site URL is the contact
+// (no personal address in code since 26 Oct 2026). Every Wikipedia request goes through wikiFetch.
+const WIKI_USER_AGENT = 'GrandSlamGM/1.0 (https://grandslamgm.com)';
 const wikiFetch = (url: string): Promise<Response> =>
   fetch(url, { headers: { 'User-Agent': WIKI_USER_AGENT } });
 // ════════════ END WIKIPEDIA FETCH ════════════
@@ -402,19 +402,31 @@ const pathOf = (input: RequestInfo | URL): string => {
 };
 const RETRY_STATUS = new Set([502, 503, 504]);
 const REST_ATTEMPTS = 3;
+// CLOCK SKEW (26 Oct 2026): right after a cold start the edge box's clock can run a second or two
+// ahead of the database's, and PostgREST refuses our own service key with 401 PGRST303 "JWT issued
+// at future" until the clocks agree. The key is fine, so this one 401 is retried like a 5xx (about a
+// second apart); every other 401 is a real refusal and fails at once.
+const isClockSkew = async (res: Response): Promise<boolean> => {
+  if (res.status !== 401) return false;
+  try { return (await res.clone().text()).includes('PGRST303'); } catch { return false; }
+};
 const retryingFetch: typeof fetch = async (input, init) => {
   let lastRes: Response | undefined;
   let lastErr: unknown;
+  let wait = 0;
   for (let attempt = 1; attempt <= REST_ATTEMPTS; attempt++) {
-    if (attempt > 1) await new Promise((r) => setTimeout(r, 1500 * (attempt - 1)));
+    if (attempt > 1) await new Promise((r) => setTimeout(r, wait));
     try {
       const res = await fetch(input, init);
-      if (!RETRY_STATUS.has(res.status)) return res;
+      const skew = await isClockSkew(res);
+      if (!skew && !RETRY_STATUS.has(res.status)) return res;
       lastRes = res;
-      console.warn(`rest ${res.status} on attempt ${attempt}/${REST_ATTEMPTS}: ${pathOf(input)}`);
-      await res.body?.cancel().catch(() => {});
+      wait = skew ? 1000 : 1500 * attempt;
+      console.warn(`rest ${res.status}${skew ? ' PGRST303' : ''} on attempt ${attempt}/${REST_ATTEMPTS}: ${pathOf(input)}`);
+      if (attempt < REST_ATTEMPTS) await res.body?.cancel().catch(() => {});
     } catch (e) {
       lastErr = e;
+      wait = 1500 * attempt;
       console.warn(`rest network error on attempt ${attempt}/${REST_ATTEMPTS}:`, e);
     }
   }
@@ -439,6 +451,7 @@ Deno.serve(async (req) => {
   const denied = assertServiceRole(req);
   if (denied) return denied;
   let tournamentId = '(none supplied)';
+  let freezeChecked = false; // true once tournament_status has been read and said "not frozen"
   try {
     const db = restClient();
 
@@ -470,6 +483,7 @@ Deno.serve(async (req) => {
       .from('tournament_status').select('tournament_id').eq('tournament_id', tournamentId).maybeSingle();
     if (fErr) throw fErr;
     if (frozen) return json({ ok: true, tournamentId, skipped: 'completed' });
+    freezeChecked = true;
 
     const wikiUrl = `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(page)}`
       + `&prop=wikitext&formatversion=2&format=json&origin=*`;
@@ -592,6 +606,17 @@ Deno.serve(async (req) => {
     console.error('ingest-draw error:', err);
     try {
       const db = restClient();
+      // Failed before the freeze check finished? Ask again with a fresh request: a FROZEN event gets
+      // no heartbeat, even a failing one. Only a read that SUCCEEDS and finds the row skips it; a
+      // failed re-read keeps the failure visible, as before.
+      if (!freezeChecked && tournamentId !== '(none supplied)') {
+        const { data: isFrozen, error: rErr } = await db
+          .from('tournament_status').select('tournament_id').eq('tournament_id', tournamentId).maybeSingle();
+        if (!rErr && isFrozen) {
+          console.warn('error before the freeze check on a frozen event; no heartbeat:', errorText(err));
+          return json({ ok: true, tournamentId, skipped: 'completed' });
+        }
+      }
       await db.from('ingest_health').upsert({
         tournament_id: tournamentId, last_run_at: new Date().toISOString(), ok: false,
         error: errorText(err).slice(0, 500),
