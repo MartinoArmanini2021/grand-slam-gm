@@ -8,7 +8,8 @@
 //                        never read it as "no draw" or "no such page"
 
 export const API = 'https://en.wikipedia.org/w/api.php';
-const HEADERS = { 'User-Agent': 'GrandSlamGM-tooling/1.0 (fantasy tennis app; contact: martinoarmanini@gmail.com)' };
+// Identifies the tool by the site only, as ingest-draw does (no personal address in code since 26 Oct 2026).
+const HEADERS = { 'User-Agent': 'GrandSlamGM-tooling/1.0 (https://grandslamgm.com)' };
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export async function fetchWikitext(title, { attempts = 4 } = {}) {
