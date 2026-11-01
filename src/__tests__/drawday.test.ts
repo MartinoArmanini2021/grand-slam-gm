@@ -29,7 +29,7 @@ describe('drawday --plan', () => {
       at = i;
     }
     expect(out).toContain("set value = 'paris_2026'");
-    expect(out).toContain('2026-10-19_paris_2026_round_plan.sql');
+    expect(out).toContain('2026-11-01_paris_2026_round_plan.sql');
   });
 
   it('refuses an unknown event', () => {

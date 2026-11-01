@@ -375,7 +375,9 @@ const TOURNAMENTS: Record<string, { page: string; rounds: readonly string[]; ros
   // 20 Oct); the top 8 seeds' R64 byes score zero, and their R32 pairings are written from draw day.
   paris_2026: {
     page: '2026 Rolex Paris Masters – Singles',
-    rounds: ['R64', 'R32', 'R16', 'QF', 'SF', 'F'],
+    // From the SECOND round (decided 1 Nov 2026): R64 is the unscored opening round, kept in
+    // opening_round (its losers show as out while squads are open), as for a 96-player Masters.
+    rounds: ['R32', 'R16', 'QF', 'SF', 'F'],
     roster: parisField as { id: string; name: string }[],
     drawSize: 56,
   },

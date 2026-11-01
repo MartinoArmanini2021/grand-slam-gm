@@ -37,16 +37,16 @@ describe('round-plan', () => {
     expect(rows.map((r) => ({ round: r.round, slots: r.slots, first: r.first.toISOString().replace('.000', ''), prev_round: r.prev_round, prev_slots: r.prev_slots }))).toEqual(applied);
   });
 
-  it('Paris: all six rounds score (decided 20 Oct); R64 has 24 matches, so R32 waits for 24 winners', () => {
+  it('Paris: from the second round (decided 1 Nov); R32 is the draft lock, Tue 3 Nov 11:00 Paris (floor)', () => {
     const rows: Row[] = planRows('paris_2026', parisSpec);
-    expect(rows.map((r) => r.round)).toEqual(['R64', 'R32', 'R16', 'QF', 'SF', 'F']);
+    expect(rows.map((r) => r.round)).toEqual(['R32', 'R16', 'QF', 'SF', 'F']);
     expect(rows[0]!.prev_round).toBeNull();
-    expect(rows.map((r) => r.slots)).toEqual([24, 16, 8, 4, 2, 1]);
-    expect(rows.map((r) => r.prev_slots)).toEqual([null, 24, 16, 8, 4, 2]);
+    expect(rows.map((r) => r.slots)).toEqual([16, 8, 4, 2, 1]);
+    expect(rows.map((r) => r.prev_slots)).toEqual([null, 16, 8, 4, 2]);
     for (let i = 1; i < rows.length; i++) expect(rows[i]!.first > rows[i - 1]!.first).toBe(true);
-    const sql: string = planSql('paris_2026', parisSpec, '2026-10-20');
-    expect(sql).toContain("('paris_2026', 'R64', 24, '2026-11-02T10:00:00Z', null, null,");
-    expect(sql).toContain("('paris_2026', 'R32', 16, '2026-11-04T10:00:00Z', 'R64', 24,");
+    const sql: string = planSql('paris_2026', parisSpec, '2026-11-01');
+    expect(sql).toContain("('paris_2026', 'R32', 16, '2026-11-03T10:00:00Z', null, null,");
+    expect(sql).toContain("('paris_2026', 'R16',  8, '2026-11-05T10:00:00Z', 'R32', 16,");
     expect(sql).toContain('-- ROLLBACK');
   });
 

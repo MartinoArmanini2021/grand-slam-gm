@@ -12,9 +12,10 @@ import ingestSrc from '../../supabase/functions/ingest-draw/index.ts?raw';
 import montrealField from '../data/montreal2026Field.json';
 import cincinnatiField from '../data/cincinnati2026Field.json';
 import usopenField from '../data/usopen2026Field.json';
+import parisField from '../data/paris2026Field.json';
 import { EXPIRED, SKEW, cronRequest, loadEdge, ok, type Reply, type Router } from './edgeHarness';
 
-const FIELDS = { montrealField, cincinnatiField, usopenField };
+const FIELDS = { montrealField, cincinnatiField, usopenField, parisField };
 const ID = 'usopen_2026';
 
 const FUNCTIONS = [

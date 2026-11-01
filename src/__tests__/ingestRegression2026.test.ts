@@ -13,6 +13,7 @@ import ingestSrc from '../../supabase/functions/ingest-draw/index.ts?raw';
 import montrealField from '../data/montreal2026Field.json';
 import cincinnatiField from '../data/cincinnati2026Field.json';
 import usopenField from '../data/usopen2026Field.json';
+import parisField from '../data/paris2026Field.json';
 import nbo from './fixtures/nbo2026-fulldraw.txt?raw';
 import cin from './fixtures/cin2026-fulldraw.txt?raw';
 import uso from './fixtures/uso2026-fulldraw.txt?raw';
@@ -39,7 +40,7 @@ describe.each(CASES)('ingest-draw on $id reproduces the stored matches', ({ id, 
       if (call.method === 'POST' && ['matches', 'opening_round', 'ingest_health'].includes(call.table)) return ok([]);
       return undefined;
     };
-    const h = loadEdge(ingestSrc, route, { montrealField, cincinnatiField, usopenField });
+    const h = loadEdge(ingestSrc, route, { montrealField, cincinnatiField, usopenField, parisField });
     const res = await h.handler(cronRequest({ tournamentId: id }));
     expect(res.status, await res.clone().text()).toBe(200);
 

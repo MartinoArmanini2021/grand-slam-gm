@@ -314,7 +314,7 @@ export const TOURNAMENTS: Record<string, Tournament> = {
     surface: 'hard',
     location: 'Paris, France',
     drawSize: 56,
-    rounds: ['R64', 'R32', 'R16', 'QF', 'SF', 'F'], // R64 IS scored (owner, 20 Oct); the top 8 seeds' byes score zero
+    rounds: ['R32', 'R16', 'QF', 'SF', 'F'], // from the SECOND round (owner, 1 Nov): R64 is the unscored opening round
     mode: 'live',
     status: 'staged',
     wikipediaPage: '2026 Rolex Paris Masters – Singles', // men-only event: "– Singles"
