@@ -143,7 +143,14 @@ update public.round_plan
    and not exists (select 1 from public.matches m where m.tournament_id = ${q(id)} and m.round = ${q(round)}
                      and (m.winner_id is not null or (m.started_at is not null and m.started_at <= now())));
 -- expect: UPDATE 1 (UPDATE 0 = the round has begun, or a wrong id/round)
-`;
+${spec.rounds[0]?.round === round ? `
+-- The FIRST scored round is stamped by hand (it has no previous round): move its lock with the pin,
+-- or the app keeps counting down to the old time and the draft may lock early, then reopen.
+update public.matches m set started_at = p.first_ball from public.round_plan p
+ where m.tournament_id = ${q(id)} and m.round = ${q(round)} and m.winner_id is null
+   and (m.started_at is null or m.started_at > now())
+   and p.tournament_id = m.tournament_id and p.round = m.round;
+` : ''}`;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

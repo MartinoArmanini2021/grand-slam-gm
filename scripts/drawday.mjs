@@ -61,6 +61,7 @@ function fieldCount(ev) {
 
 export function followUps(eventId, ev) {
   const plan = readdirSync(resolve(ROOT, 'supabase')).find((f) => f.endsWith(`_${eventId}_round_plan.sql`));
+  const shelf = readdirSync(resolve(ROOT, 'supabase')).find((f) => f.endsWith(`_${eventId}_shelf.sql`));
   return [
     ['Apply the prices (seed)', `apply ${ev.seed} (Supabase SQL editor or apply_migration "${eventId}_player_stats")`],
     ['Apply the lock times (if not done yet)', plan ? `apply supabase/${plan}` : `node scripts/round-plan.mjs ${eventId}  → then apply it`],
@@ -70,10 +71,11 @@ export function followUps(eventId, ev) {
       `${fieldCount(ev) >= ev.drawSize ? `field has ${fieldCount(ev)} players: OK` : `⚠ STOP: ${ev.field} has ${fieldCount(ev)} players, not ${ev.drawSize}. Build the field first.`}\n      npx supabase functions deploy ingest-draw --project-ref mrdmlfumdsxufifjulbt`,
     ],
     ['Feed: run once by hand for the event', `POST /functions/v1/ingest-draw {"tournamentId":"${eventId}"} with the service key, then: select round, count(*) from matches where tournament_id='${eventId}' group by 1;`],
+    ['App shelf: the draft pool (without it nobody can draft)', shelf ? `apply supabase/${shelf}` : `node scripts/shelf-sql.mjs ${eventId}  → then apply it`],
     ['Switch the game to the event', `update public.app_config set value = '${eventId}', updated_at = now() where key = 'active_tournament_id';`],
     ['Stamp the first round\'s lock time', 'the stamp SQL at the top of the round plan file'],
     ['Remove the old Shanghai lock times', "delete from public.round_plan where tournament_id = 'shanghai_2026';"],
-    ['App: default event + "jump into the game" on', 'deploy grand-slam-gm branch paris-flip (four gates, wrangler pages deploy)'],
+    ['App: default event + "jump into the game" on', 'deploy the grand-slam-gm branch that switches the default event (four gates, wrangler pages deploy)'],
     ['Checks', `node scripts/new-tournament.mjs ${eventId}  ·  select * from public.round_plan_health('${eventId}');  ·  select * from public.app_state;`],
   ];
 }
@@ -83,7 +85,8 @@ function printFollowUps(ev) {
   followUps(id, ev).forEach(([what, how], i) => console.log(`  ${String(i + 1).padStart(2)}. ${what}\n      ${how}`));
   console.log('\nThen, Sunday evening after qualifying: re-run this script (the field gains the qualifiers),');
   console.log('re-apply only the NEW players\' prices, redeploy the feed, and pin the first ball:');
-  console.log(`  node scripts/round-plan.mjs ${id} --pin R64 "<YYYY-MM-DD HH:MM Paris>" "order of play"`);
+  console.log(`  node scripts/round-plan.mjs ${id} --pin <first scored round> "<YYYY-MM-DD HH:MM Paris>" "order of play"`);
+  console.log('and, for the first scored round, run the stamp SQL again so the lock moves with the pin.');
 }
 
 function main() {

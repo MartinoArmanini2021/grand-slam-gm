@@ -63,14 +63,11 @@ describe('Paris 2026 scores from the second round', () => {
     expect(new Set([...firstRound, ...known])).toEqual(new Set(parisField.map((p) => p.id)));
   });
 
-  // KNOWN LIMIT: before the first round is played, its 48 players have no row in `matches` yet, so
-  // the heartbeat lists them as drafted_missing. The watchdog's WALKOVER GAP line only looks once the
-  // event is under way (a winner or a started match), so this is silent before the lock; if the R32
-  // lock comes while first-round matches are still unplayed, expect a temporary alert on Tuesday,
-  // gone as each first-round match finishes (winners appear in R32, losers count as out).
-  it('lists exactly the 48 unplayed first-round players as missing, and nobody else', async () => {
+  // A player still to play his unscored first-round match is in the draw, not a walkover gap: the
+  // watchdog must stay quiet on Tuesday while the first round finishes after the lock.
+  it('raises no walkover gap for players still to play their first-round match', async () => {
     const { health } = await firstRun();
     expect(health.ok).toBe(true);
-    expect(health.drafted_missing_count).toBe(48);
+    expect(health.drafted_missing_count).toBe(0);
   });
 });

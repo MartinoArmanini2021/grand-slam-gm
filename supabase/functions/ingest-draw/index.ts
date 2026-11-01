@@ -566,6 +566,10 @@ Deno.serve(async (req) => {
     // drafting. Isolated: a failure here is logged and never blocks the scored rows written above.
     const opener = openingRound([...SCORED_ROUNDS], drawSize);
     const openerOut = new Set<string>();
+    // Still to play their (unscored) opening-round match: in the draw, just not in `matches` yet. Paris
+    // 2026 starts in round 2 and its first round can run past the lock, so without this every such
+    // player would read as a walkover gap until his match ends (1 Nov 2026).
+    const openerPending = new Set<string>();
     if (opener) {
       try {
         const op = parseFullDraw(wikitext, { scoredRounds: [opener], resolve, drawSize });
@@ -584,6 +588,7 @@ Deno.serve(async (req) => {
         const decided: LiveResults = {};
         for (const r of opRows) if (r.winner_id) decided[matchKey(opener, r.slot)] = r.winner_id;
         for (const id of losersOf(op.draw, decided)) openerOut.add(id);
+        for (const r of opRows) if (!r.winner_id) { openerPending.add(r.p1_id); openerPending.add(r.p2_id); }
       } catch (e) {
         console.error('opening_round write failed (scored rows unaffected):', errorText(e));
       }
@@ -594,7 +599,7 @@ Deno.serve(async (req) => {
     // An opening-round loser is out of the draw by RESULT, not missing from it. Without this, every
     // one of a Masters' 32 would raise a WALKOVER GAP alert from the moment the draft locks.
     const draftedMissing = draw.length
-      ? roster.map((p) => p.id).filter((id) => !inDraw.has(id) && !openerOut.has(id))
+      ? roster.map((p) => p.id).filter((id) => !inDraw.has(id) && !openerOut.has(id) && !openerPending.has(id))
       : [];
 
     const ranAt = new Date().toISOString();
