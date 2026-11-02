@@ -13,14 +13,15 @@ import cincinnatiField from '../data/cincinnati2026Field.json';
 import usopenField from '../data/usopen2026Field.json';
 import parisField from '../data/paris2026Field.json';
 import wikitext from './fixtures/par2026-fulldraw.txt?raw';
+import played2025 from './fixtures/par2025-fulldraw.txt?raw';
 import { cronRequest, loadEdge, ok, type Router } from './edgeHarness';
 
 type Row = { round: string; slot: number; p1_id: string; p2_id: string; winner_id: string | null };
 type HealthRow = { ok: boolean; drafted_missing_count: number; matches_written: number };
 
-async function firstRun() {
+async function firstRun(page: string = wikitext) {
   const route: Router = (call) => {
-    if (call.table === 'en.wikipedia.org') return ok({ parse: { wikitext } });
+    if (call.table === 'en.wikipedia.org') return ok({ parse: { wikitext: page } });
     if (call.table === 'tournament_status') return ok([]);
     if (call.method === 'GET' && ['matches', 'match_overrides', 'opening_round'].includes(call.table)) return ok([]);
     if (call.method === 'POST' && ['matches', 'opening_round', 'ingest_health'].includes(call.table)) return ok([]);
@@ -56,5 +57,18 @@ describe('Paris 2026 scores from the Last 16', () => {
     const { health } = await firstRun();
     expect(health.ok).toBe(true);
     expect(health.drafted_missing_count).toBe(0);
+  });
+
+  // Squads open when all eight Last 16 rows are known. The live placeholders are slots 0–7 (stamped
+  // with the lock time), so the feed must write exactly those slots, or a 'tbd' row would stay behind
+  // and squads would never open. The 2025 page is a fully played 56-draw of the same shape.
+  it('once the second round is played, fills exactly the eight Last 16 slots 0–7, no tbd', async () => {
+    const { matches } = await firstRun(played2025);
+    const r16 = matches.filter((m) => m.round === 'R16');
+    expect(r16.map((m) => m.slot).sort((a, b) => a - b)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+    expect(r16.some((m) => m.p1_id === 'tbd' || m.p2_id === 'tbd')).toBe(false);
+    expect(matches.filter((m) => m.round === 'R64' || m.round === 'R32')).toHaveLength(0);
+    // the upsert never carries started_at, so the stamped lock time on the placeholders survives
+    expect(matches.every((m) => !('started_at' in m))).toBe(true);
   });
 });
