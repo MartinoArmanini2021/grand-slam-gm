@@ -255,6 +255,15 @@ Deno.serve(async (req) => {
       .from('matches').select('round, slot, p1_id, p2_id, winner_id').eq('tournament_id', tournamentId);
     if (mErr) throw mErr;
     const matches: MatchRow[] = (matchRows ?? []).map(m => ({ round: m.round, slot: m.slot, p1: m.p1_id, p2: m.p2_id, winner: m.winner_id }));
+    // A short draw's unscored opening round can still be in play after the lock (Paris 2026: 9 of its
+    // 24 matches share Tuesday with the second round). Those players are in no match row yet, so
+    // aliveForRound would call them out and auto-promotion would move their armband until they play.
+    // Each UNDECIDED opening match joins as an 'R96' row: not in ROUND_ORDER, never scored, no winner,
+    // so it only says "these two are still in". Mirrors withOpeningPending() in the app's data.ts.
+    const { data: opRows, error: oErr } = await db
+      .from('opening_round').select('p1_id, p2_id').eq('tournament_id', tournamentId).is('winner_id', null);
+    if (oErr) throw oErr;
+    for (const o of opRows ?? []) matches.push({ round: 'R96', slot: 0, p1: o.p1_id, p2: o.p2_id, winner: null });
     const playedRounds = ROUND_ORDER.filter(r => matches.some(m => m.round === r && m.winner));
 
     // SCOPED to this tournament (player_stats is keyed (tournament_id, id) since fix 1.3). Reading it

@@ -28,7 +28,7 @@ const statusThen = (...replies: Reply[]): Router => (call, nth) => {
   if (call.table === 'tournament_status') return replies[nth - 1];
   if (call.method === 'POST' && (call.table === 'scoring_health' || call.table === 'ingest_health')) return ok([]);
   // recompute-score's not-frozen path: nothing to score
-  if (call.method === 'GET' && ['matches', 'player_stats', 'entries'].includes(call.table)) return ok([]);
+  if (call.method === 'GET' && ['matches', 'opening_round', 'player_stats', 'entries'].includes(call.table)) return ok([]);
   return undefined;
 };
 const FROZEN_ROW = ok([{ tournament_id: ID }]);

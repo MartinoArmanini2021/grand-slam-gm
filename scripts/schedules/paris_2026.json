@@ -1,11 +1,32 @@
 {
-  "about": "Rolex Paris Masters 2026, main draw Mon 2 – Sun 8 Nov, La Défense Arena (Paris time; CET from 25 Oct). Martino decided 1 Nov: the game starts from the SECOND round (R32 → F); the first round (R64, 24 matches, the 8 top seeds have a bye) is not scored and is kept in opening_round, so its losers show as out while squads are open. This replaces the 20 Oct decision (all six rounds), taken too late to launch before Monday's first ball. Every time is an early floor: pin each from the order of play the evening before.",
+  "about": "Rolex Paris Masters 2026, main draw Mon 2 – Sun 8 Nov, La Défense Arena (Paris time; CET from 25 Oct). Martino decided 1 Nov: the game starts from the SECOND round (R32 → F); the first round (R64, 24 matches, the 8 top seeds have a bye) is not scored and is kept in opening_round, so its losers show as out while squads are open. This replaces the 20 Oct decision (all six rounds), taken too late to launch before Monday's first ball. Every time is an early floor: pin each from the order of play the evening before. 2 Nov: checked against the official schedule (29 Oct): R64 Mon 2 + Tue 3 (9 of 24 on Tuesday), R32 Tue 3 + Wed 4, R16 Thu, QF Fri, SF Sat, F Sun 15:00. Every round after R32 is played in one day, so each market window is a clean overnight gap. QF and SF moved to the day's first ball.",
   "tz": "Europe/Paris",
   "rounds": [
-    { "round": "R32", "slots": 16, "local": "2026-11-03 11:00", "note": "2nd round, DRAFT LOCK; the top 8 seeds' first match; floor Tue 3 Nov, pin from Monday evening's order of play" },
-    { "round": "R16", "local": "2026-11-05 11:00", "note": "3rd round" },
-    { "round": "QF", "local": "2026-11-06 11:00" },
-    { "round": "SF", "local": "2026-11-07 13:00" },
-    { "round": "F", "local": "2026-11-08 15:00", "note": "not before 15:00" }
+    {
+      "round": "R32",
+      "slots": 16,
+      "local": "2026-11-03 11:00",
+      "note": "2nd round, DRAFT LOCK; the top 8 seeds' first match; floor Tue 3 Nov, pin from Monday evening's order of play"
+    },
+    {
+      "round": "R16",
+      "local": "2026-11-05 11:00",
+      "note": "3rd round; official schedule 29 Oct: Thursday from 11:00, 8 singles"
+    },
+    {
+      "round": "QF",
+      "local": "2026-11-06 12:00",
+      "note": "official schedule 29 Oct: play from 12:00, singles QF on centre court from 14:00"
+    },
+    {
+      "round": "SF",
+      "local": "2026-11-07 11:30",
+      "note": "official schedule 29 Oct: play from 11:30, centre court 12:00 / 14:30 / 17:00"
+    },
+    {
+      "round": "F",
+      "local": "2026-11-08 15:00",
+      "note": "official schedule 29 Oct: singles final 15:00"
+    }
   ]
 }
