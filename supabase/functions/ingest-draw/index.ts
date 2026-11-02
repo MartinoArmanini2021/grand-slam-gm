@@ -375,9 +375,10 @@ const TOURNAMENTS: Record<string, { page: string; rounds: readonly string[]; ros
   // 20 Oct); the top 8 seeds' R64 byes score zero, and their R32 pairings are written from draw day.
   paris_2026: {
     page: '2026 Rolex Paris Masters – Singles',
-    // From the SECOND round (decided 1 Nov 2026): R64 is the unscored opening round, kept in
-    // opening_round (its losers show as out while squads are open), as for a 96-player Masters.
-    rounds: ['R32', 'R16', 'QF', 'SF', 'F'],
+    // From the LAST 16 (decided 2 Nov 2026; the second round from 1 Nov until then): R64 is the
+    // unscored opening round, kept in opening_round; R32 is unscored too and stored nowhere. The app
+    // opens squads only once all eight Last 16 pairings are known, so nobody drafts while games play.
+    rounds: ['R16', 'QF', 'SF', 'F'],
     roster: parisField as { id: string; name: string }[],
     drawSize: 56,
   },
@@ -596,6 +597,15 @@ Deno.serve(async (req) => {
 
     const inDraw = new Set<string>();
     for (const m of draw) { inDraw.add(m.p1Id); inDraw.add(m.p2Id); }
+    // Unscored rounds after the opener (Paris 2026 from the Last 16: R32) are stored nowhere; their
+    // players are accounted for by the draw page itself, not missing from it.
+    for (const r of sectionRoundsFor(drawSize).filter((x) => x !== opener && !SCORED_ROUNDS.includes(x))) {
+      try {
+        for (const m of parseFullDraw(wikitext, { scoredRounds: [r], resolve, includeIncomplete: true, drawSize }).draw) {
+          inDraw.add(m.p1Id); inDraw.add(m.p2Id);
+        }
+      } catch (e) { console.error(`unscored ${r} parse failed (scored rows unaffected):`, errorText(e)); }
+    }
     // An opening-round loser is out of the draw by RESULT, not missing from it. Without this, every
     // one of a Masters' 32 would raise a WALKOVER GAP alert from the moment the draft locks.
     const draftedMissing = draw.length

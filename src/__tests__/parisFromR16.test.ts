@@ -1,10 +1,11 @@
-// Paris 2026 from the SECOND round (decided 1 Nov 2026), through the REAL ingest-draw handler.
+// Paris 2026 from the LAST 16 (decided 2 Nov 2026; from the second round 1–2 Nov), through the REAL
+// ingest-draw handler.
 //
-// The first round (R64: 24 matches, the 8 top seeds have a bye) is not scored. It goes to
-// opening_round, so the app shows its losers as out while squads are open, exactly like the
-// opening round of a 96-player Masters. `matches` gets the scored rounds only, from R32, with the
-// unknown side 'tbd' until the first round is played. Fixture: the Wikipedia page on 1 Nov 2026
-// (revid 1383251111), the draw published, no match played yet.
+// The first round (R64: 24 matches, the 8 top seeds have a bye) is not scored and goes to
+// opening_round, as before. The second round (R32) is not scored either and is stored nowhere:
+// `matches` gets the scored rounds only, from R16, and the app opens squads only once all eight
+// Last 16 pairings are known. Fixture: the Wikipedia page on 1 Nov 2026 (revid 1383251111), the draw
+// published, no match played yet, so no Last 16 pairing is known.
 import { describe, expect, it } from 'vitest';
 import ingestSrc from '../../supabase/functions/ingest-draw/index.ts?raw';
 import montrealField from '../data/montreal2026Field.json';
@@ -34,12 +35,12 @@ async function firstRun() {
   return { res, body, matches, opening, health };
 }
 
-describe('Paris 2026 scores from the second round', () => {
-  it('writes no first-round rows to matches: only R32 and later', async () => {
+describe('Paris 2026 scores from the Last 16', () => {
+  it('writes no first- or second-round rows to matches (none at all on draw day)', async () => {
     const { res, matches } = await firstRun();
     expect(res.status).toBe(200);
-    expect(matches.length).toBeGreaterThan(0);
-    expect(new Set(matches.map((m) => m.round))).toEqual(new Set(['R32']));
+    expect(matches.filter((m) => m.round === 'R64' || m.round === 'R32')).toHaveLength(0);
+    expect(matches).toHaveLength(0);
   });
 
   it('keeps the 24 first-round matches in opening_round, nobody decided yet', async () => {
@@ -51,21 +52,7 @@ describe('Paris 2026 scores from the second round', () => {
     expect(players.has('tbd')).toBe(false);
   });
 
-  it('puts the 8 top seeds in R32 against "tbd" and the other R32 slots wait for winners', async () => {
-    const { matches, opening } = await firstRun();
-    const firstRound = new Set(opening.flatMap((m) => [m.p1_id, m.p2_id]));
-    const known = matches.flatMap((m) => [m.p1_id, m.p2_id]).filter((id) => id !== 'tbd');
-    // every known R32 player is a bye seed: not in the first round
-    expect(known.every((id) => !firstRound.has(id))).toBe(true);
-    expect(new Set(known).size).toBe(8);
-    // the whole field is covered: 48 in the first round + 8 seeds = 56
-    expect(new Set([...firstRound, ...known]).size).toBe(56);
-    expect(new Set([...firstRound, ...known])).toEqual(new Set(parisField.map((p) => p.id)));
-  });
-
-  // A player still to play his unscored first-round match is in the draw, not a walkover gap: the
-  // watchdog must stay quiet on Tuesday while the first round finishes after the lock.
-  it('raises no walkover gap for players still to play their first-round match', async () => {
+  it('raises no walkover gap: first- and second-round players are accounted for by the page', async () => {
     const { health } = await firstRun();
     expect(health.ok).toBe(true);
     expect(health.drafted_missing_count).toBe(0);
