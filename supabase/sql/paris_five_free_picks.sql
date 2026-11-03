@@ -12,7 +12,14 @@
 --    place from the live definitions, each edit matched exactly once or the migration stops.
 -- 4. paris_regroup_last16 (the trigger on matches) no longer regroups: the 16 keep their groups as
 --    labels, and their prices are scaled by one common factor so $100M sits halfway between the
---    cheapest and the dearest five: f = 200 / (cheapest five + dearest five).
+--    cheapest and the dearest five: f = 200 / (cheapest five + dearest five). Every run is written
+--    to paris_reprice_log (ok or not), so a failure is never only a line in the Postgres log.
+-- 5. From the independent review (3 Nov): guard_initial_squad no longer re-checks a squad whose
+--    initialSquad did not change (a corrected pairing after squads open can move prices, and the
+--    re-check on the scorer's bulk UPDATE would have aborted scoring for everyone); a free-pick
+--    draft takes only players with a match in the event (the 40 knocked out before the Last 16 are
+--    in player_stats too); growth_by_source and notification_candidates count the event's squad
+--    size instead of 10.
 
 create or replace function public.squad_size_for(p_tournament text)
 returns integer language sql immutable parallel safe as $$
@@ -70,7 +77,12 @@ begin
     'save_entry tier cap');
   d := pg_temp.once(d,
     $o$if v_locked and v_size <> 10 then$o$,
-    $n$if v_locked and v_size <> public.squad_size_for(p_tournament) then$n$,
+    $n$if not public.tier_quotas_apply(p_tournament) and exists (select 1 from unnest(v_squad) sid
+        where not exists (select 1 from public.matches m where m.tournament_id = p_tournament
+                            and (m.p1_id = sid or m.p2_id = sid))) then
+      raise exception 'Pick only players still in the draw';
+    end if;
+    if v_locked and v_size <> public.squad_size_for(p_tournament) then$n$,
     'save_entry lock size');
   d := pg_temp.once(d,
     $o$'Your squad must be exactly 10 players to lock (got %)', v_size;$o$,
@@ -84,6 +96,15 @@ begin
 
   -- guard_initial_squad
   d := pg_get_functiondef('public.guard_initial_squad()'::regprocedure);
+  d := pg_temp.once(d,
+    $o$  if v_n = 0 then return new; end if;$o$,
+    $n$  if v_n = 0 then return new; end if;
+  -- An UPDATE that leaves the drafted squad as it was (the scorer, an armband or transfer save)
+  -- passed this check when the squad was drafted: prices may have moved since, never re-judge it.
+  if tg_op = 'UPDATE' and new.state->'initialSquad' is not distinct from old.state->'initialSquad' then
+    return new;
+  end if;$n$,
+    'guard unchanged squad');
   d := pg_temp.once(d,
     $o$if v_n <> 10 then$o$,
     $n$if v_n <> public.squad_size_for(new.tournament_id) then$n$,
@@ -109,7 +130,40 @@ begin
     $n$if public.tier_quotas_apply(p_tournament) and (v_plat > 2 or v_gold > 3 or v_silv > 5) then$n$,
     'market_check tier cap');
   execute d;
+
+  -- notification_candidates (dormant while notify_mode = 'off'): the event's squad size
+  d := pg_get_functiondef('public.notification_candidates(timestamptz)'::regprocedure);
+  if (length(d) - length(replace(d, $o$jsonb_array_length(coalesce(e.state->'initialSquad', '[]'::jsonb)) = 10$o$, ''))) = 0 then
+    raise exception 'paris_five_free_picks: notification_candidates squad test not found';
+  end if;
+  d := replace(d, $o$jsonb_array_length(coalesce(e.state->'initialSquad', '[]'::jsonb)) = 10$o$,
+                  $n$jsonb_array_length(coalesce(e.state->'initialSquad', '[]'::jsonb)) = public.squad_size_for(v_tid)$n$);
+  d := pg_temp.once(d, $o$'{}'::text[], 10, public.max_transfers_for(v_tid)$o$,
+                       $n$'{}'::text[], public.squad_size_for(v_tid), public.max_transfers_for(v_tid)$n$, 'notify draft slots');
+  d := pg_temp.once(d, $o$greatest(0, 10 - coalesce(array_length(e.squad, 1), 0))$o$,
+                       $n$greatest(0, public.squad_size_for(v_tid) - coalesce(array_length(e.squad, 1), 0))$n$, 'notify empty slots');
+  execute d;
 end $mig$;
+
+create or replace view public.growth_by_source as
+ SELECT COALESCE(signup_source, '(before tracking)'::text) AS source,
+    count(*) AS signups,
+    count(*) FILTER (WHERE (EXISTS ( SELECT 1
+           FROM entries e
+          WHERE e.user_id = p.id AND jsonb_array_length(COALESCE(e.state -> 'initialSquad'::text, '[]'::jsonb)) = public.squad_size_for(e.tournament_id)))) AS drafted,
+    min(created_at) AS first_signup,
+    max(created_at) AS last_signup
+   FROM profiles p
+  GROUP BY (COALESCE(signup_source, '(before tracking)'::text));
+
+-- every reprice run, ok or not (read it on Wed night; never exposed to the app)
+create table if not exists public.paris_reprice_log (
+  at timestamptz not null default now(),
+  ok boolean not null,
+  note text not null
+);
+alter table public.paris_reprice_log enable row level security;
+revoke all on public.paris_reprice_log from public, anon, authenticated;
 
 -- the Last 16 reprice: same guards as before (all eight pairings known, nothing started, still the
 -- draft), computed from the snapshot so a rerun changes nothing and a corrected pairing recomputes.
@@ -127,6 +181,8 @@ begin
                       union select m.p2_id from public.matches m where m.tournament_id = 'paris_2026' and m.round = 'R16');
       if v_n <> 16 then
         raise warning 'paris_regroup_last16: % of the 16 Last 16 players are known, nothing changed', v_n;
+        insert into public.paris_reprice_log (ok, note)
+          values (false, format('%s of the 16 Last 16 players are in the snapshot: prices unchanged', v_n));
       else
         with r16 as (
           select m.p1_id as id from public.matches m where m.tournament_id = 'paris_2026' and m.round = 'R16'
@@ -149,10 +205,25 @@ begin
           from target t
          where ps.tournament_id = 'paris_2026' and ps.id = t.id
            and (ps.tier, ps.price) is distinct from (t.tier, t.price);
+        get diagnostics v_n = row_count;
+        if v_n > 0 then
+          insert into public.paris_reprice_log (ok, note)
+            select true, format('%s prices set; cheapest five $%sM, dearest five $%sM', v_n,
+                     (select sum(price) from (select ps.price from public.player_stats ps join public.matches m
+                        on m.tournament_id = 'paris_2026' and m.round = 'R16' and ps.id in (m.p1_id, m.p2_id)
+                       where ps.tournament_id = 'paris_2026' order by ps.price limit 5) a),
+                     (select sum(price) from (select ps.price from public.player_stats ps join public.matches m
+                        on m.tournament_id = 'paris_2026' and m.round = 'R16' and ps.id in (m.p1_id, m.p2_id)
+                       where ps.tournament_id = 'paris_2026' order by ps.price desc limit 5) b));
+        end if;
       end if;
     end if;
   exception when others then
     raise warning 'paris_regroup_last16: %', sqlerrm;
+    begin
+      insert into public.paris_reprice_log (ok, note) values (false, 'reprice failed: ' || sqlerrm);
+    exception when others then null;
+    end;
   end;
   return null;
 end $$;
