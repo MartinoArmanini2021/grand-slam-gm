@@ -5,10 +5,15 @@
 // it re-derives each winner straight from the wikitext (bold + advancement) so a PARSER bug is
 // caught too, then compares Wikipedia-truth ↔ app-parser ↔ live public.matches ↔ ingest health.
 //
-//   node scripts/verify-app.mjs
+//   node scripts/verify-app.mjs [tournamentId]
+//
+// tournamentId is optional — defaults to app_config.active_tournament_id (same source of truth
+// ingest-draw and recompute-score use), so this always checks whichever event is actually live.
+// Pass one explicitly to check a specific tournament by hand, e.g. a just-finished event.
 //
 // Exit 0 = all green. Exit 1 = a correctness problem (details printed). Exit 2 = couldn't run
-// (network/source). Designed to be run by the nightly agent AND by hand anytime.
+// (network/source/unresolved tournament). Runs on a schedule via GitHub Actions
+// (.github/workflows/verify-live-data.yml) and by hand anytime.
 //
 // KNOWN FAILURE MODE (flagged 2026-09-01): in a sandboxed Claude Code cloud environment, this
 // script needs outbound HTTPS to en.wikipedia.org and to the Supabase project host
@@ -26,8 +31,18 @@ import { buildResolver, splitBrackets, parseFullDraw, buildMatchRows } from '../
 // Public, RLS-guarded anon key (same one that ships in every browser) — read-only, no secrets.
 const SUPA = 'https://mrdmlfumdsxufifjulbt.supabase.co';
 const ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yZG1sZnVtZHN4dWZpZmp1bGJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNzU1NTQsImV4cCI6MjEwMDc1MTU1NH0.5SKW9HXQ1rGNUyH1hdgX_esoEYVYK4qPcuRtYgaCdKQ';
-const TID = 'montreal_2026';
-const PAGE = "2026 National Bank Open – Men's singles";
+
+// Per-tournament Wikipedia page + draftable field. MUST mirror the ingest-draw edge function's own
+// TOURNAMENTS registry (supabase/functions/ingest-draw/index.ts) — same page names — so what this
+// verifies is exactly what ingest-draw itself pulls from Wikipedia. Add an entry here whenever one
+// is added there. (Fixed 2026-09-01: this used to hardcode montreal_2026/its field below, which
+// silently kept re-verifying that event forever after it finished — cincinnati_2026 went live with
+// zero live-data coverage. NO HARDCODED TOURNAMENT: see TID resolution in main().)
+const TOURNAMENTS = {
+  montreal_2026: { page: "2026 National Bank Open – Men's singles", field: 'montreal2026Field.json' },
+  cincinnati_2026: { page: "2026 Cincinnati Open – Men's singles", field: 'cincinnati2026Field.json' },
+};
+
 const SCORED = ['R64', 'R32', 'R16', 'QF', 'SF', 'F'];
 const SECTION_ROUNDS = ['R128', 'R64', 'R32', 'R16'];
 const FINALS_ROUNDS = ['QF', 'SF', 'F'];
@@ -36,10 +51,6 @@ const FRESH_MIN = 20; // ingest cron runs every 5 min → stale if no successful
 const fail = [], warn = [], ok = [];
 const F = (m) => fail.push(m); const W = (m) => warn.push(m); const OK = (m) => ok.push(m);
 
-const field = JSON.parse(readFileSync(new URL('../src/data/montreal2026Field.json', import.meta.url), 'utf8'));
-const nameById = new Map(field.map((p) => [p.id, p.name]));
-const resolve = buildResolver(field);
-const nm = (id) => id == null ? '—' : id === 'tbd' ? 'TBD' : (nameById.get(id) ?? id.replace(/^x_/, '').replace(/_/g, ' '));
 const pk = (a, b) => [a, b].sort().join(' vs ');
 const rest = async (path) => {
   const r = await fetch(`${SUPA}/rest/v1/${path}`, { headers: { apikey: ANON, Authorization: `Bearer ${ANON}` } });
@@ -50,6 +61,22 @@ const rest = async (path) => {
 // Set process.exitCode (never process.exit) and let the loop drain — on Windows/Node, exiting
 // while an undici fetch socket is still open trips a libuv assertion that masks the exit code.
 async function main() {
+  // ── which tournament: an explicit CLI arg for a manual/local run, else app_config.active_-
+  // tournament_id — the SAME single source of truth ingest-draw and recompute-score resolve from
+  // (see supabase/functions/recompute-score/index.ts). No hardcoded fallback: this script exists
+  // to prove the LIVE tournament's data flow is correct, so silently checking the wrong one (or a
+  // finished one) would be worse than refusing to run.
+  const TID = process.argv[2] || (await rest('app_config?key=eq.active_tournament_id&select=value'))[0]?.value;
+  if (!TID) { console.error('could not resolve a tournament: no CLI arg and app_config.active_tournament_id is unset or unreadable.'); process.exitCode = 2; return; }
+  const cfg = TOURNAMENTS[TID];
+  if (!cfg) { console.error(`no Wikipedia page/field registered for "${TID}" (know: ${Object.keys(TOURNAMENTS).join(', ')}) — add it to TOURNAMENTS above and redeploy before switching app_config.active_tournament_id.`); process.exitCode = 2; return; }
+  const { page: PAGE, field: fieldFile } = cfg;
+
+  const field = JSON.parse(readFileSync(new URL(`../src/data/${fieldFile}`, import.meta.url), 'utf8'));
+  const nameById = new Map(field.map((p) => [p.id, p.name]));
+  const resolve = buildResolver(field);
+  const nm = (id) => id == null ? '—' : id === 'tbd' ? 'TBD' : (nameById.get(id) ?? id.replace(/^x_/, '').replace(/_/g, ' '));
+
   // ── fetch the three views ──
   const wikiUrl = `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(PAGE)}&prop=wikitext&formatversion=2&format=json&origin=*`;
   const wikitext = (await (await fetch(wikiUrl)).json())?.parse?.wikitext;
